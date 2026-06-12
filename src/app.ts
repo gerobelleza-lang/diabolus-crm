@@ -13,6 +13,8 @@ import {
 } from './agent/tools/executor.js';
 import { createSupabaseRepo } from './db/supabaseRepo.js';
 import { authMiddleware, getAuthContext } from './middleware/auth.js';
+import { rateLimitMiddleware } from './middleware/rateLimit.js';
+import { loggingMiddleware } from './middleware/logging.js';
 import { logCost, getCostSummary, estimateCost } from './agent/costLogger.js';
 
 const app = new Hono();
