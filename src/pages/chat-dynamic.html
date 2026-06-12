@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat IA — Diabolus CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white h-screen flex flex-col">
+  <script>if(!localStorage.getItem("token"))window.location.href="/login";</script>
+  
+  <header class="bg-black/50 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center font-bold">⚡</div>
+      <div>
+        <h1 class="text-2xl font-bold">Diabolus Chat</h1>
+        <p class="text-xs text-gray-400">Asistente IA Conversacional</p>
+      </div>
+    </div>
+    <div class="flex gap-4">
+      <button onclick="location.href='/dashboard'" class="px-4 py-2 text-gray-400 hover:text-white">📊 Dashboard</button>
+      <button onclick="location.href='/logout'" class="px-4 py-2 border border-gray-700 rounded-lg">🚪 Logout</button>
+    </div>
+  </header>
+
+  <div class="flex-1 flex gap-6 overflow-hidden p-6">
+    <div class="flex-1 flex flex-col">
+      <!-- Mensajes -->
+      <div class="flex-1 overflow-y-auto space-y-4 mb-6 pr-4" id="messagesContainer">
+        <div class="flex justify-center items-center h-full">
+          <div class="text-center max-w-2xl">
+            <h2 class="text-3xl font-bold mb-4">Hola 👋</h2>
+            <p class="text-gray-400 text-lg mb-4">Cuéntame qué necesitas registrar hoy.</p>
+            <div class="space-y-2">
+              <button onclick="sendMessage('He cobrado 450€ de María por corte')" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer hover:border-orange-500 text-left">
+                <p class="text-sm font-semibold">💰 "He cobrado 450€ de María por corte"</p>
+              </button>
+              <button onclick="sendMessage('¿Cuánto gané esta semana?')" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer hover:border-orange-500 text-left">
+                <p class="text-sm font-semibold">📊 "¿Cuánto gané esta semana?"</p>
+              </button>
+              <button onclick="sendMessage('Cliente nuevo: Laura, 666123456')" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer hover:border-orange-500 text-left">
+                <p class="text-sm font-semibold">👤 "Cliente nuevo: Laura, 666123456"</p>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="space-y-4">
+        <div class="flex gap-3">
+          <div class="flex-1 relative">
+            <input type="text" id="messageInput" placeholder="He cobrado 450€ de María..." class="w-full px-6 py-4 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition" onkeypress="if(event.key==='Enter') sendMessage()"/>
+            <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm"><span id="charCount">0</span>/500</div>
+          </div>
+          <button id="sendBtn" onclick="sendMessage()" class="px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg hover:shadow-lg hover:shadow-orange-500/50 font-semibold transition flex items-center gap-2">✈️ <span id="sendBtnText">Enviar</span></button>
+        </div>
+        <div class="text-xs text-gray-500">
+          <p>⚡ Parser L0: Comandos simples • 🧠 LLM: Análisis complejo • 🔐 RGPD-compliant</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="w-80 flex flex-col border-l border-gray-800 pl-6 space-y-6">
+      <div>
+        <h3 class="text-sm font-bold text-gray-400 mb-3">HOY</h3>
+        <div class="space-y-3">
+          <div class="bg-gray-800/50 rounded-lg p-4">
+            <p class="text-xs text-gray-400">Ganancia</p>
+            <p class="text-2xl font-bold text-orange-400" id="todayEarnings">€0.00</p>
+          </div>
+          <div class="bg-gray-800/50 rounded-lg p-4">
+            <p class="text-xs text-gray-400">Transacciones</p>
+            <p class="text-2xl font-bold text-blue-400" id="todayCount">0</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-bold text-gray-400 mb-3">HISTORIAL</h3>
+        <div class="space-y-2 max-h-64 overflow-y-auto" id="historyContainer">
+          <p class="text-xs text-gray-500 text-center py-4">Sin historial aún</p>
+        </div>
+      </div>
+
+      <div class="bg-gray-800/30 border border-gray-700/50 rounded-lg p-4 text-xs">
+        <p class="text-gray-400 mb-2">💡 <span class="font-semibold">Tip:</span></p>
+        <p class="text-gray-300">Di naturalmente qué hiciste y Diabolus registrará todo automáticamente.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const charCount = document.getElementById('charCount');
+    const historyContainer = document.getElementById('historyContainer');
+    let historyCount = 0;
+
+    const getToken = () => localStorage.getItem('token') || '';
+    const getSalonId = () => localStorage.getItem('salon_id') || '';
+
+    messageInput.addEventListener('input', () => {
+      charCount.textContent = messageInput.value.length;
+    });
+
+    async function sendMessage(msg) {
+      const message = msg || messageInput.value.trim();
+      if (!message) return;
+
+      const wasEmpty = messagesContainer.querySelector('h2.text-3xl') !== null;
+      if (wasEmpty) messagesContainer.innerHTML = '';
+
+      // Mostrar mensaje del usuario
+      const userDiv = document.createElement('div');
+      userDiv.className = 'flex justify-end';
+      userDiv.innerHTML = `<div class="max-w-xs bg-orange-500/30 border border-orange-500 rounded-lg p-4">
+        <p class="text-sm">${message}</p>
+      </div>`;
+      messagesContainer.appendChild(userDiv);
+
+      messageInput.value = '';
+      charCount.textContent = '0';
+      sendBtn.disabled = true;
+      document.getElementById('sendBtnText').textContent = 'Enviando...';
+
+      try {
+        const response = await fetch('/api/agent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`,
+            'X-Salon-ID': getSalonId(),
+          },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+
+        // Mostrar respuesta del agente
+        const agentDiv = document.createElement('div');
+        agentDiv.className = 'flex justify-start';
+        agentDiv.innerHTML = `<div class="max-w-xs bg-gray-800 border border-gray-700 rounded-lg p-4">
+          <p class="text-sm text-gray-300">${data.outcome || data.text || 'Comando procesado'}</p>
+          <p class="text-xs text-gray-500 mt-2">Nivel ${data.level} • €${(data.cost || 0).toFixed(4)}</p>
+        </div>`;
+        messagesContainer.appendChild(agentDiv);
+
+        // Agregar al historial
+        historyCount++;
+        if (historyCount === 1) historyContainer.innerHTML = '';
+        const historyItem = document.createElement('div');
+        historyItem.className = 'px-4 py-3 bg-gray-800/30 border border-gray-700/50 rounded-lg text-sm';
+        historyItem.innerHTML = `<p class="text-gray-300">${message}</p>
+          <p class="text-xs text-gray-500 mt-1">✓ Completado</p>`;
+        historyContainer.insertBefore(historyItem, historyContainer.firstChild);
+
+        // Actualizar stats
+        if (data.outcome && data.outcome.includes('€')) {
+          const match = data.outcome.match(/€([\d.]+)/);
+          if (match) {
+            const amount = parseFloat(match[1]);
+            const todayElem = document.getElementById('todayEarnings');
+            const currentAmount = parseFloat(todayElem.textContent.replace('€', ''));
+            todayElem.textContent = '€' + (currentAmount + amount).toFixed(2);
+            document.getElementById('todayCount').textContent = parseInt(document.getElementById('todayCount').textContent) + 1;
+          }
+        }
+
+        // Auto-scroll
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      } catch (error) {
+        console.error('Error:', error);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'flex justify-start';
+        errorDiv.innerHTML = `<div class="max-w-xs bg-red-500/20 border border-red-500 rounded-lg p-4">
+          <p class="text-sm text-red-400">Error: ${error.message}</p>
+        </div>`;
+        messagesContainer.appendChild(errorDiv);
+      } finally {
+        sendBtn.disabled = false;
+        document.getElementById('sendBtnText').textContent = 'Enviar';
+        messageInput.focus();
+      }
+    }
+  </script>
+</body>
+</html>
