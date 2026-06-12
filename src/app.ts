@@ -19,6 +19,7 @@ import { logCost, getCostSummary, estimateCost } from './agent/costLogger.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { getDashboardStats, getClientsList, getTransactionsList, getReportsSummary } from './api/data.js';
+import { handleLogin, handleSignup, validateJWT } from './api/auth.js';
 
 const app = new Hono();
 
@@ -617,3 +618,78 @@ app.get('/api/reports', async (c) => {
 });
 
 export default app;
+
+// ===== AUTH ROUTES =====
+
+app.post('/api/auth/login', async (c) => {
+  try {
+    const { email, password } = await c.req.json();
+    
+    if (!email || !password) {
+      return c.json({ error: 'Email and password required' }, 400);
+    }
+
+    const result = await handleLogin(email, password);
+    return c.json(result, 200);
+  } catch (error: any) {
+    console.error('POST /api/auth/login error:', error);
+    return c.json({ error: error.message || 'Login failed' }, 401);
+  }
+});
+
+app.post('/api/auth/signup', async (c) => {
+  try {
+    const { businessName, email, password, profession } = await c.req.json();
+    
+    if (!businessName || !email || !password || !profession) {
+      return c.json({ error: 'All fields required' }, 400);
+    }
+
+    const result = await handleSignup(businessName, email, password, profession);
+    return c.json(result, 201);
+  } catch (error: any) {
+    console.error('POST /api/auth/signup error:', error);
+    return c.json({ error: error.message || 'Signup failed' }, 400);
+  }
+});
+
+// GET /login
+app.get('/login', (c) => {
+  try {
+    const html = readFileSync(join(process.cwd(), 'src', 'pages', 'login.html'), 'utf-8');
+    return c.html(html);
+  } catch (e) {
+    return c.text('Login page not found', 404);
+  }
+});
+
+// GET /signup
+app.get('/signup', (c) => {
+  try {
+    const html = readFileSync(join(process.cwd(), 'src', 'pages', 'signup.html'), 'utf-8');
+    return c.html(html);
+  } catch (e) {
+    return c.text('Signup page not found', 404);
+  }
+});
+
+// GET /logout
+app.get('/logout', (c) => {
+  // El logout se hace en el frontend limpiando localStorage
+  // Esta ruta solo devuelve HTML que hace logout
+  return c.html(`
+    <!DOCTYPE html>
+    <html>
+    <head><title>Logout</title></head>
+    <body>
+      <script>
+        localStorage.removeItem('token');
+        localStorage.removeItem('salon_id');
+        localStorage.removeItem('email');
+        window.location.href = '/login';
+      </script>
+      <p>Cerrando sesión...</p>
+    </body>
+    </html>
+  `);
+});

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Diabolus CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-md">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="flex justify-center mb-4">
+        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center font-bold text-3xl">⚡</div>
+      </div>
+      <h1 class="text-3xl font-bold mb-2">DIABOLUS</h1>
+      <p class="text-gray-400">El CRM que entiende tu negocio</p>
+    </div>
+
+    <!-- Login Form -->
+    <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 space-y-6">
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-2">Email</label>
+          <input type="email" id="email" placeholder="tu@email.com" required class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-orange-500 focus:outline-none text-white placeholder-gray-500"/>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Contraseña</label>
+          <input type="password" id="password" placeholder="••••••••" required class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-orange-500 focus:outline-none text-white placeholder-gray-500"/>
+        </div>
+
+        <div id="error" class="hidden bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm"></div>
+
+        <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg font-semibold hover:shadow-lg hover:shadow-orange-500/50 transition">
+          <span id="btnText">Iniciar sesión</span>
+          <span id="btnLoading" class="hidden">Cargando...</span>
+        </button>
+      </form>
+
+      <div class="relative my-6">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-700"></div></div>
+        <div class="relative flex justify-center text-sm"><span class="px-2 bg-gray-800 text-gray-400">O</span></div>
+      </div>
+
+      <p class="text-center text-gray-400">
+        ¿No tienes cuenta? 
+        <a href="/signup" class="text-orange-400 hover:text-orange-300 font-semibold">Crea una aquí</a>
+      </p>
+    </div>
+
+    <!-- Demo Note -->
+    <div class="mt-8 bg-gray-800/50 border border-gray-700 rounded-lg p-4 text-center text-sm text-gray-400">
+      <p>🔬 <strong>Modo demo:</strong></p>
+      <p class="mt-1">Email: demo@diabolus.com</p>
+      <p>Pass: demo1234</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const errorDiv = document.getElementById('error');
+    const btnText = document.getElementById('btnText');
+    const btnLoading = document.getElementById('btnLoading');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorDiv.classList.add('hidden');
+      btnText.classList.add('hidden');
+      btnLoading.classList.remove('hidden');
+
+      try {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        // Llamar endpoint de login
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email, password})
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Error en el login');
+        }
+
+        // Guardar token y salon_id
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('salon_id', data.salonId);
+        localStorage.setItem('email', email);
+
+        // Redirigir a dashboard
+        window.location.href = '/dashboard';
+      } catch (error) {
+        errorDiv.classList.remove('hidden');
+        errorDiv.textContent = error.message;
+        btnText.classList.remove('hidden');
+        btnLoading.classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
