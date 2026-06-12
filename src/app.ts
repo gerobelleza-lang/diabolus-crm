@@ -16,6 +16,8 @@ import { authMiddleware, getAuthContext } from './middleware/auth.js';
 import { rateLimitMiddleware } from './middleware/rateLimit.js';
 import { loggingMiddleware } from './middleware/logging.js';
 import { logCost, getCostSummary, estimateCost } from './agent/costLogger.js';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 const app = new Hono();
 
@@ -506,3 +508,51 @@ app.get('/chat-premium', (c) => {
 </body>
 </html>`);
 });
+
+// Nuevas rutas para servir las páginas de diseño
+app.get('/dashboard', (c) => {
+  try {
+    const html = readFileSync(join(process.cwd(), 'src', 'pages', 'dashboard.html'), 'utf-8');
+    return c.html(html);
+  } catch (e) {
+    return c.text('Dashboard page not found', 404);
+  }
+});
+
+app.get('/transactions', (c) => {
+  try {
+    const html = readFileSync(join(process.cwd(), 'src', 'pages', 'transactions.html'), 'utf-8');
+    return c.html(html);
+  } catch (e) {
+    return c.text('Transactions page not found', 404);
+  }
+});
+
+app.get('/clients', (c) => {
+  try {
+    const html = readFileSync(join(process.cwd(), 'src', 'pages', 'clients.html'), 'utf-8');
+    return c.html(html);
+  } catch (e) {
+    return c.text('Clients page not found', 404);
+  }
+});
+
+app.get('/reports', (c) => {
+  try {
+    const html = readFileSync(join(process.cwd(), 'src', 'pages', 'reports.html'), 'utf-8');
+    return c.html(html);
+  } catch (e) {
+    return c.text('Reports page not found', 404);
+  }
+});
+
+app.get('/chat-premium', (c) => {
+  try {
+    const html = readFileSync(join(process.cwd(), 'src', 'pages', 'chat-premium.html'), 'utf-8');
+    return c.html(html);
+  } catch (e) {
+    return c.text('Chat Premium page not found', 404);
+  }
+});
+
+export default app;

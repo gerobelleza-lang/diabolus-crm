@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportes — Diabolus CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .gradient-text { background: linear-gradient(135deg, #ff4500 0%, #ff6b1a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .chart-container { position: relative; height: 350px; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
+
+  <!-- Sidebar -->
+  <div class="fixed left-0 top-0 w-64 h-screen bg-black border-r border-gray-800 flex flex-col z-40">
+    <div class="p-6 border-b border-gray-800">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center font-bold">⚡</div>
+        <span class="font-bold text-xl">DIABOLUS</span>
+      </div>
+    </div>
+    <nav class="flex-1 p-4 space-y-2">
+      <a href="/dashboard" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">📊 Dashboard</a>
+      <a href="/transactions" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">💰 Transacciones</a>
+      <a href="/clients" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">👥 Clientes</a>
+      <a href="/reports" class="block px-4 py-3 bg-orange-500/20 border-l-2 border-orange-500 text-orange-400 rounded transition">📈 Reportes</a>
+      <a href="/chat-premium" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">💬 Chat IA</a>
+    </nav>
+    <div class="p-4 border-t border-gray-800">
+      <div class="flex items-center gap-3 px-4 py-3 bg-gray-800 rounded">
+        <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center font-bold">M</div>
+        <div><p class="text-sm font-semibold">María García</p><p class="text-xs text-gray-400">Peluquería</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="ml-64 min-h-screen">
+    <!-- Header -->
+    <header class="bg-black/50 border-b border-gray-800 sticky top-0 z-30">
+      <div class="px-8 py-4">
+        <div class="flex items-center justify-between mb-4">
+          <h1 class="text-2xl font-bold">Reportes</h1>
+          <div class="flex gap-3">
+            <button class="px-6 py-2 border border-gray-700 hover:border-orange-500 rounded-lg font-semibold transition">📥 Descargar PDF</button>
+            <button class="px-6 py-2 border border-gray-700 hover:border-orange-500 rounded-lg font-semibold transition">📊 Enviar por email</button>
+          </div>
+        </div>
+        <!-- Filters -->
+        <div class="flex gap-4 items-center">
+          <select class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-orange-500">
+            <option>Esta semana</option>
+            <option>Último mes</option>
+            <option>Últimos 3 meses</option>
+            <option>Este año</option>
+            <option>Personalizado</option>
+          </select>
+          <select class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-orange-500">
+            <option>Todos los tipos</option>
+            <option>Ingresos</option>
+            <option>Gastos</option>
+            <option>Clientes</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="p-8">
+      <!-- Executive Summary -->
+      <div class="bg-gradient-to-r from-orange-500/20 to-orange-600/10 border border-orange-500/30 rounded-lg p-6 mb-8">
+        <h2 class="text-xl font-bold mb-4">📊 Resumen Ejecutivo Semanal (5-11 Jun)</h2>
+        <div class="grid grid-cols-4 gap-4">
+          <div>
+            <p class="text-sm text-gray-400">Total ingresos</p>
+            <p class="text-2xl font-bold gradient-text mt-1">€1,850</p>
+            <p class="text-xs text-green-400 mt-1">↑ 15% vs semana anterior</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-400">Total gastos</p>
+            <p class="text-2xl font-bold text-red-400 mt-1">€340</p>
+            <p class="text-xs text-red-400 mt-1">↑ 8% vs semana anterior</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-400">Balance neto</p>
+            <p class="text-2xl font-bold text-blue-400 mt-1">€1,510</p>
+            <p class="text-xs text-blue-400 mt-1">Máximo desde mayo</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-400">Número de clientes</p>
+            <p class="text-2xl font-bold text-purple-400 mt-1">12</p>
+            <p class="text-xs text-purple-400 mt-1">+2 clientes nuevos</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Ingresos Diarios -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 class="text-lg font-bold mb-4">Ingresos diarios</h3>
+          <div class="chart-container">
+            <canvas id="chartDailyIncome"></canvas>
+          </div>
+        </div>
+
+        <!-- Gastos por Categoría -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 class="text-lg font-bold mb-4">Distribución de gastos</h3>
+          <div class="chart-container">
+            <canvas id="chartExpenses"></canvas>
+          </div>
+        </div>
+
+        <!-- Ingresos vs Gastos -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 class="text-lg font-bold mb-4">Comparativa semanal</h3>
+          <div class="chart-container">
+            <canvas id="chartComparison"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Servicios -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 class="text-lg font-bold mb-4">Top servicios vendidos</h3>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="flex-1">
+                <p class="text-sm font-semibold">Corte</p>
+                <div class="w-full bg-gray-700 rounded h-2 mt-1">
+                  <div class="bg-orange-500 h-2 rounded" style="width: 45%"></div>
+                </div>
+              </div>
+              <p class="font-bold text-orange-400 w-20 text-right">€585</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex-1">
+                <p class="text-sm font-semibold">Tinte</p>
+                <div class="w-full bg-gray-700 rounded h-2 mt-1">
+                  <div class="bg-blue-500 h-2 rounded" style="width: 32%"></div>
+                </div>
+              </div>
+              <p class="font-bold text-blue-400 w-20 text-right">€415</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex-1">
+                <p class="text-sm font-semibold">Manicura</p>
+                <div class="w-full bg-gray-700 rounded h-2 mt-1">
+                  <div class="bg-purple-500 h-2 rounded" style="width: 18%"></div>
+                </div>
+              </div>
+              <p class="font-bold text-purple-400 w-20 text-right">€235</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex-1">
+                <p class="text-sm font-semibold">Otros</p>
+                <div class="w-full bg-gray-700 rounded h-2 mt-1">
+                  <div class="bg-pink-500 h-2 rounded" style="width: 5%"></div>
+                </div>
+              </div>
+              <p class="font-bold text-pink-400 w-20 text-right">€65</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Insights -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Clientes Top -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 class="text-lg font-bold mb-4">👑 Clientes top de la semana</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center font-bold">A</div>
+                <div>
+                  <p class="font-semibold">Ana García</p>
+                  <p class="text-xs text-gray-400">3 servicios</p>
+                </div>
+              </div>
+              <p class="font-bold text-orange-400">€165</p>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center font-bold">D</div>
+                <div>
+                  <p class="font-semibold">Diana Rodríguez</p>
+                  <p class="text-xs text-gray-400">2 servicios</p>
+                </div>
+              </div>
+              <p class="font-bold text-blue-400">€135</p>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center font-bold">E</div>
+                <div>
+                  <p class="font-semibold">Elena Sánchez</p>
+                  <p class="text-xs text-gray-400">2 servicios</p>
+                </div>
+              </div>
+              <p class="font-bold text-purple-400">€120</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+          <h3 class="text-lg font-bold mb-4">📈 Métricas clave</h3>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center p-3 border-b border-gray-700">
+              <p class="text-gray-400">Ticket promedio</p>
+              <p class="font-bold text-orange-400">€45</p>
+            </div>
+            <div class="flex justify-between items-center p-3 border-b border-gray-700">
+              <p class="text-gray-400">Transacciones totales</p>
+              <p class="font-bold text-blue-400">41</p>
+            </div>
+            <div class="flex justify-between items-center p-3 border-b border-gray-700">
+              <p class="text-gray-400">Días activos</p>
+              <p class="font-bold text-green-400">6 / 7</p>
+            </div>
+            <div class="flex justify-between items-center p-3 border-b border-gray-700">
+              <p class="text-gray-400">Ratio gastos/ingresos</p>
+              <p class="font-bold text-purple-400">18%</p>
+            </div>
+            <div class="flex justify-between items-center p-3">
+              <p class="text-gray-400">Clientes recurrentes</p>
+              <p class="font-bold text-pink-400">83%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Transactions Table -->
+      <div class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+        <div class="p-6 border-b border-gray-700">
+          <h3 class="text-lg font-bold">📋 Transacciones detalladas (Esta semana)</h3>
+        </div>
+        <table class="w-full">
+          <thead class="bg-gray-700/50 border-b border-gray-700">
+            <tr>
+              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-300">Fecha</th>
+              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-300">Cliente/Concepto</th>
+              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-300">Tipo</th>
+              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-300">Monto</th>
+              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-300">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700">
+            <tr class="hover:bg-gray-700/30 transition">
+              <td class="px-6 py-4 text-sm">11 jun</td>
+              <td class="px-6 py-4"><div class="flex items-center gap-2"><div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-xs font-bold">A</div><span>Ana García - Corte</span></div></td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Ingreso</span></td>
+              <td class="px-6 py-4 font-semibold text-green-400">+€55</td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Pagado</span></td>
+            </tr>
+            <tr class="hover:bg-gray-700/30 transition">
+              <td class="px-6 py-4 text-sm">11 jun</td>
+              <td class="px-6 py-4"><div class="flex items-center gap-2"><div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold">D</div><span>Diana Rodríguez - Tratamiento</span></div></td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Ingreso</span></td>
+              <td class="px-6 py-4 font-semibold text-green-400">+€75</td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Pagado</span></td>
+            </tr>
+            <tr class="hover:bg-gray-700/30 transition">
+              <td class="px-6 py-4 text-sm">10 jun</td>
+              <td class="px-6 py-4"><div class="flex items-center gap-2">⚡<span>Electricidad (factura)</span></div></td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded">Gasto</span></td>
+              <td class="px-6 py-4 font-semibold text-red-400">-€120</td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Pagado</span></td>
+            </tr>
+            <tr class="hover:bg-gray-700/30 transition">
+              <td class="px-6 py-4 text-sm">10 jun</td>
+              <td class="px-6 py-4"><div class="flex items-center gap-2"><div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-xs font-bold">E</div><span>Elena Sánchez - Manicura</span></div></td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Ingreso</span></td>
+              <td class="px-6 py-4 font-semibold text-green-400">+€35</td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Pagado</span></td>
+            </tr>
+            <tr class="hover:bg-gray-700/30 transition">
+              <td class="px-6 py-4 text-sm">10 jun</td>
+              <td class="px-6 py-4"><div class="flex items-center gap-2">📦<span>Compra de productos</span></div></td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded">Gasto</span></td>
+              <td class="px-6 py-4 font-semibold text-red-400">-€220</td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Pagado</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer Notes -->
+      <div class="mt-8 p-4 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-gray-400">
+        <p>📌 <span class="font-semibold">Nota:</span> Este reporte cubre el período 5-11 de junio de 2026. Todos los datos están auditados y son RGPD-compliant. Descarga el PDF para archivar una copia.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Gráfico: Ingresos Diarios
+    const ctx1 = document.getElementById('chartDailyIncome').getContext('2d');
+    new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: ['Lun 5', 'Mar 6', 'Mié 7', 'Jue 8', 'Vie 9', 'Sáb 10', 'Dom 11'],
+        datasets: [{
+          label: 'Ingresos',
+          data: [220, 280, 260, 320, 350, 310, 120],
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true, labels: { color: '#9ca3af' } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: '#374151' } },
+          x: { ticks: { color: '#9ca3af' }, grid: { display: false } }
+        }
+      }
+    });
+
+    // Gráfico: Gastos por Categoría
+    const ctx2 = document.getElementById('chartExpenses').getContext('2d');
+    new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Productos', 'Electricidad', 'Alquiler', 'Otros'],
+        datasets: [{
+          data: [220, 120, 100, 30],
+          backgroundColor: ['#ef4444', '#f59e0b', '#8b5cf6', '#6b7280'],
+          borderColor: '#111827',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true, position: 'bottom', labels: { color: '#9ca3af' } } }
+      }
+    });
+
+    // Gráfico: Comparativa Semanal
+    const ctx3 = document.getElementById('chartComparison').getContext('2d');
+    new Chart(ctx3, {
+      type: 'bar',
+      data: {
+        labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+        datasets: [
+          {
+            label: 'Ingresos',
+            data: [1605, 1850, 1720, 1600],
+            backgroundColor: '#10b981',
+            borderRadius: 6
+          },
+          {
+            label: 'Gastos',
+            data: [315, 340, 280, 310],
+            backgroundColor: '#ef4444',
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true, labels: { color: '#9ca3af' } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: '#374151' } },
+          x: { ticks: { color: '#9ca3af' }, grid: { display: false } }
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>
