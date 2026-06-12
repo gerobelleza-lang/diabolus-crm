@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Signup — Diabolus CRM</title>
   <script src="https://cdn.tailwindcss.com"></script>
+<!-- Validations added -->
 </head>
 <body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white min-h-screen flex items-center justify-center">
   <div class="w-full max-w-md">
@@ -102,5 +103,49 @@
       }
     });
   </script>
+<!-- Validations added -->
 </body>
 </html>
+    const passwordInput = document.getElementById('password');
+    const emailInput = document.getElementById('email');
+    const businessNameInput = document.getElementById('businessName');
+    let passwordValid = false;
+    let emailValid = false;
+
+    // Validar email en tiempo real
+    emailInput?.addEventListener('blur', () => {
+      const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value);
+      if (!isValid && emailInput.value) {
+        emailInput.classList.add('border-red-500');
+        emailInput.classList.remove('border-gray-600');
+      } else {
+        emailInput.classList.remove('border-red-500');
+        emailInput.classList.add('border-gray-600');
+        emailValid = isValid;
+      }
+    });
+
+    // Validar contraseña en tiempo real
+    passwordInput?.addEventListener('input', () => {
+      const isValid = passwordInput.value.length >= 8;
+      if (passwordInput.value && !isValid) {
+        passwordInput.classList.add('border-red-500');
+        passwordInput.classList.remove('border-gray-600');
+      } else {
+        passwordInput.classList.remove('border-red-500');
+        passwordInput.classList.add('border-gray-600');
+        passwordValid = isValid;
+      }
+    });
+
+    // Deshabilitar botón si hay errores
+    const updateButtonState = () => {
+      const submitBtn = document.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = !emailValid || !passwordValid;
+        submitBtn.classList.toggle('opacity-50', !emailValid || !passwordValid);
+      }
+    };
+
+    emailInput?.addEventListener('change', updateButtonState);
+    passwordInput?.addEventListener('change', updateButtonState);
