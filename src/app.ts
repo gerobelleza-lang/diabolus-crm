@@ -163,62 +163,101 @@ app.get('/api/costs', (c) => {
 
 export { app };
 
-// Beautiful Landing Page
+
+// Beautiful Landing Page - v2 (Product-Focused)
 app.get('/landing', (c) => {
   return c.html(`<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Diabolus v40 — CRM Inteligente</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diabolus CRM — El CRM que entiende tu negocio</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .gradient-text { background: linear-gradient(135deg, #ff4500 0%, #ff6b1a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .gradient-text { background: linear-gradient(135deg, #ff4500 0%, #ff6b1a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
     .glow { box-shadow: 0 0 30px rgba(255, 69, 0, 0.3); }
+    .card-hover { transition: all 0.3s ease; }
+    .card-hover:hover { border-color: #ff4500; box-shadow: 0 0 20px rgba(255, 69, 0, 0.2); transform: translateY(-4px); }
   </style>
 </head>
-<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white font-sans">
-  <header class="fixed top-0 w-full bg-black/80 backdrop-blur border-b border-gray-700 z-50">
+<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white font-sans">
+  <nav class="fixed top-0 w-full bg-black/50 backdrop-blur border-b border-gray-800 z-50">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold">⚡</div>
-        <h1 class="text-2xl font-bold">Diabolus v40</h1>
+        <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center font-bold text-lg">⚡</div>
+        <span class="font-bold text-xl">DIABOLUS</span>
       </div>
-      <nav class="hidden md:flex gap-8"><a href="#features" class="hover:text-orange-500">Features</a></nav>
+      <button class="px-6 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg font-semibold transition">Comenzar</button>
     </div>
-  </header>
+  </nav>
 
-  <section class="min-h-screen flex items-center justify-center px-6 pt-20">
+  <section class="min-h-screen flex items-center justify-center px-6 pt-20 pb-20">
+    <div class="max-w-5xl mx-auto text-center space-y-8">
+      <div class="inline-block px-4 py-2 bg-gray-800 border border-gray-700 rounded-full text-sm text-gray-300">
+        ✨ IA Conversacional Nativa + Auditoría RGPD
+      </div>
+      <h1 class="text-6xl md:text-7xl font-black leading-tight">
+        El CRM que entiende<br/><span class="gradient-text">tu negocio</span>
+      </h1>
+      <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto">
+        Dile "He cobrado 3 servicios hoy" y Diabolus crea automáticamente 3 transacciones.
+        <span class="text-orange-400 font-semibold">Sin clicks, sin formularios.</span>
+      </p>
+      <div class="flex gap-4 justify-center flex-wrap pt-8">
+        <button class="px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg hover:shadow-lg font-semibold text-lg transition glow">
+          Probar gratis
+        </button>
+        <button class="px-8 py-4 border-2 border-orange-500 rounded-lg hover:bg-orange-500/10 font-semibold text-lg transition">
+          Ver demo
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 px-6 bg-gray-900/50 border-y border-gray-800">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-4xl font-bold text-center mb-16">Por qué Diabolus</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 card-hover">
+          <div class="text-4xl mb-4">🧠</div>
+          <h3 class="text-xl font-bold mb-3">IA Conversacional</h3>
+          <p class="text-gray-400">Habla natural. Entiende contexto. Cero training necesario.</p>
+        </div>
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 card-hover">
+          <div class="text-4xl mb-4">⚡</div>
+          <h3 class="text-xl font-bold mb-3">60% Gratis</h3>
+          <p class="text-gray-400">Parser determinístico (L0) resuelve la mayoría sin costo.</p>
+        </div>
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 card-hover">
+          <div class="text-4xl mb-4">🔒</div>
+          <h3 class="text-xl font-bold mb-3">RGPD Nativo</h3>
+          <p class="text-gray-400">Auditoría append-only. Cumple RGPD desde día 1.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 px-6">
+    <div class="max-w-6xl mx-auto text-center">
+      <h2 class="text-4xl font-bold mb-8">Casos reales</h2>
+      <p class="text-gray-400 mb-12 max-w-3xl mx-auto">
+        Pequeños negocios ganan 2-3h diarias. Gastronomía, estética, consultoría, fitness. Todos automatizando admin con Diabolus.
+      </p>
+    </div>
+  </section>
+
+  <section class="py-24 px-6 bg-gradient-to-b from-orange-900/20 to-transparent border-t border-gray-800">
     <div class="max-w-4xl mx-auto text-center space-y-8">
-      <h2 class="text-5xl md:text-7xl font-bold gradient-text">CRM Inteligente con IA</h2>
-      <p class="text-xl text-gray-400">Parser L0 + LLM L1-L3 + Supabase RLS + OpenRouter</p>
-      <div class="flex gap-4 justify-center flex-wrap">
-        <a href="/" class="px-8 py-3 bg-orange-500 rounded-lg hover:bg-orange-600 transition font-semibold glow">Chat</a>
-        <a href="/admin" class="px-8 py-3 border border-gray-600 rounded-lg hover:border-orange-500 transition">Admin</a>
-      </div>
+      <h2 class="text-4xl font-bold">¿Listo para automatizar?</h2>
+      <p class="text-xl text-gray-400">Prueba gratis. Sin tarjeta. 30 días full access.</p>
+      <button class="px-12 py-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg font-bold text-lg hover:shadow-lg transition glow">
+        Comienza ahora
+      </button>
     </div>
   </section>
 
-  <section id="features" class="py-20 px-6 bg-gray-800/50">
-    <div class="max-w-6xl mx-auto"><h3 class="text-4xl font-bold text-center mb-16">Capacidades</h3>
-    <div class="grid md:grid-cols-3 gap-8">
-      <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-orange-500 transition">
-        <div class="text-3xl mb-4">🧠</div><h4 class="text-xl font-semibold mb-2">Parser L0</h4>
-        <p class="text-gray-400">Patrones determinísticos sin costo (0ms).</p>
-      </div>
-      <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-orange-500 transition">
-        <div class="text-3xl mb-4">⚙️</div><h4 class="text-xl font-semibold mb-2">LLM L1-L3</h4>
-        <p class="text-gray-400">OpenRouter para comandos complejos.</p>
-      </div>
-      <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-orange-500 transition">
-        <div class="text-3xl mb-4">🔒</div><h4 class="text-xl font-semibold mb-2">Multi-Tenant RLS</h4>
-        <p class="text-gray-400">Aislamiento por JWT + Row Level Security.</p>
-      </div>
-    </div></div>
-  </section>
-
-  <footer class="border-t border-gray-700 py-12 px-6 text-center">
-    <p class="text-gray-400">Diabolus v40.0.0 • Production Grade • <a href="https://github.com/gerobelleza-lang/diabolus-crm" class="text-orange-500 hover:underline">GitHub</a></p>
+  <footer class="border-t border-gray-800 py-8 px-6 text-center text-gray-500">
+    <p>© 2026 Diabolus CRM • <a href="https://github.com/gerobelleza-lang/diabolus-crm" class="text-orange-500 hover:underline">GitHub</a></p>
   </footer>
 </body>
 </html>`);
