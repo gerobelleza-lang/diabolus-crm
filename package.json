@@ -1,0 +1,26 @@
+{
+  "name": "diabolus-crm",
+  "version": "40.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Diabolus CRM v40 — multi-tenant con Supabase RLS, autenticación y persistencia real",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@supabase/supabase-js": "^2.43.0",
+    "dotenv": "^17.4.2",
+    "hono": "^4.6.14",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
