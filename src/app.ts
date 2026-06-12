@@ -417,3 +417,92 @@ app.get('/dashboard', (c) => {
 </body>
 </html>`);
 });
+
+// Chat Premium - Full-screen conversational interface
+app.get('/chat-premium', (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat IA — Diabolus CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white h-screen flex flex-col">
+  <header class="bg-black/50 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center font-bold">⚡</div>
+      <div>
+        <h1 class="text-2xl font-bold">Diabolus Chat</h1>
+        <p class="text-xs text-gray-400">Asistente IA + Parser determinístico</p>
+      </div>
+    </div>
+    <div class="flex gap-4">
+      <a href="/dashboard" class="px-4 py-2 text-gray-400 hover:text-white transition">📊 Dashboard</a>
+    </div>
+  </header>
+
+  <div class="flex-1 flex gap-6 overflow-hidden p-6">
+    <div class="flex-1 flex flex-col">
+      <div class="flex-1 overflow-y-auto space-y-4 mb-6 pr-4">
+        <div class="flex justify-center">
+          <div class="text-center max-w-2xl space-y-4">
+            <h2 class="text-3xl font-bold">Hola, María 👋</h2>
+            <p class="text-gray-400 text-lg">Cuéntame qué necesitas registrar hoy.</p>
+            <div class="pt-4">
+              <p class="text-sm text-gray-500 mb-3">Ejemplos:</p>
+              <div class="space-y-2">
+                <div class="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer hover:border-orange-500 transition text-left">
+                  <p class="text-sm font-semibold">💰 He cobrado 4 cortes hoy, 2 tintes, 1 manicura</p>
+                </div>
+                <div class="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer hover:border-orange-500 transition text-left">
+                  <p class="text-sm font-semibold">📊 ¿Cuánto gané esta semana?</p>
+                </div>
+                <div class="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer hover:border-orange-500 transition text-left">
+                  <p class="text-sm font-semibold">👤 Cliente nuevo: Laura, 666123456</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex gap-2 overflow-x-auto pb-2">
+          <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-full text-sm whitespace-nowrap transition">💬 Procesar</button>
+          <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-full text-sm whitespace-nowrap transition">📋 Ver</button>
+          <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-full text-sm whitespace-nowrap transition">👥 Cliente</button>
+          <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-full text-sm whitespace-nowrap transition">📊 Resumen</button>
+        </div>
+        <div class="flex gap-3">
+          <input type="text" placeholder="He cobrado 450€ de María..." class="flex-1 px-6 py-4 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"/>
+          <button class="px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg font-semibold transition">✈️ Enviar</button>
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-500">
+          <p>⚡ Parser L0: Sin costo • 🧠 LLM L1-L3: Inteligente</p>
+          <p>🔐 RGPD-compliant</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-80 flex flex-col border-l border-gray-800 pl-6 space-y-6">
+      <div>
+        <h3 class="text-sm font-bold text-gray-400 mb-3">HOY</h3>
+        <div class="space-y-3">
+          <div class="bg-gray-800/50 rounded-lg p-4"><p class="text-xs text-gray-400">Ganancia</p><p class="text-2xl font-bold text-orange-400">€285</p></div>
+          <div class="bg-gray-800/50 rounded-lg p-4"><p class="text-xs text-gray-400">Transacciones</p><p class="text-2xl font-bold text-blue-400">7</p></div>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-sm font-bold text-gray-400 mb-3">HISTORIAL</h3>
+        <div class="space-y-2 max-h-40 overflow-y-auto">
+          <div class="px-4 py-3 bg-gray-800/30 border border-gray-700/50 rounded-lg text-sm"><p class="text-gray-300">He cobrado 3 servicios</p><p class="text-xs text-gray-500 mt-1">11:30 • ✓</p></div>
+          <div class="px-4 py-3 bg-gray-800/30 border border-gray-700/50 rounded-lg text-sm"><p class="text-gray-300">¿Cuánto gané ayer?</p><p class="text-xs text-gray-500 mt-1">10:15 • ✓</p></div>
+          <div class="px-4 py-3 bg-gray-800/30 border border-gray-700/50 rounded-lg text-sm"><p class="text-gray-300">Nuevo cliente: Sofía</p><p class="text-xs text-gray-500 mt-1">09:45 • ✓</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`);
+});
