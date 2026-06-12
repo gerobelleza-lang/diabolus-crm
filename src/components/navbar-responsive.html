@@ -1,0 +1,60 @@
+<!-- Responsive Navbar -->
+<style>
+  @media (max-width: 768px) {
+    #sidebar { display: none; }
+    .main-content { margin-left: 0; }
+    #mobileMenuBtn { display: block; }
+    #mobileMenu { position: fixed; left: 0; top: 0; width: 100%; height: 100vh; background: black; z-index: 50; transform: translateX(-100%); transition: transform 0.3s; }
+    #mobileMenu.active { transform: translateX(0); }
+  }
+  @media (min-width: 769px) {
+    #mobileMenuBtn { display: none; }
+    #mobileMenu { display: none; }
+  }
+</style>
+
+<!-- Mobile Menu Button -->
+<button id="mobileMenuBtn" class="fixed top-4 left-4 z-40 bg-orange-500 rounded-lg p-2 text-white md:hidden">
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+  </svg>
+</button>
+
+<!-- Mobile Menu -->
+<div id="mobileMenu" class="md:hidden flex flex-col">
+  <div class="flex items-center justify-between p-4 border-b border-gray-700">
+    <h1 class="text-xl font-bold">DIABOLUS</h1>
+    <button onclick="closeMobileMenu()" class="text-gray-400 hover:text-white text-2xl">✕</button>
+  </div>
+  <nav class="flex-1 p-4 space-y-2">
+    <a href="/dashboard" onclick="closeMobileMenu()" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">📊 Dashboard</a>
+    <a href="/transactions" onclick="closeMobileMenu()" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">💰 Transacciones</a>
+    <a href="/clients" onclick="closeMobileMenu()" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">👥 Clientes</a>
+    <a href="/reports" onclick="closeMobileMenu()" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">📈 Reportes</a>
+    <a href="/chat-premium" onclick="closeMobileMenu()" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">💬 Chat IA</a>
+  </nav>
+  <div class="p-4 border-t border-gray-800">
+    <button onclick="location.href='/logout'" class="w-full px-4 py-3 bg-red-500 hover:bg-red-600 rounded-lg font-semibold transition">🚪 Logout</button>
+  </div>
+</div>
+
+<script>
+function openMobileMenu() {
+  document.getElementById('mobileMenu').classList.add('active');
+}
+
+function closeMobileMenu() {
+  document.getElementById('mobileMenu').classList.remove('active');
+}
+
+document.getElementById('mobileMenuBtn')?.addEventListener('click', openMobileMenu);
+
+// Cerrar menu al hacer click fuera
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('mobileMenu');
+  const btn = document.getElementById('mobileMenuBtn');
+  if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+    closeMobileMenu();
+  }
+});
+</script>

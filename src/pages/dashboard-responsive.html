@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Diabolus CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @media (max-width: 640px) {
+      #sidebar { display: none; }
+      main { margin-left: 0; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      .chart-grid { grid-template-columns: 1fr; }
+      header { padding: 1rem; }
+      h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
+  <script>if(!localStorage.getItem("token"))window.location.href="/login";</script>
+  
+  <!-- Mobile Menu Button -->
+  <button id="menuBtn" class="fixed top-4 left-4 z-40 bg-orange-500 rounded-lg p-2 text-white sm:hidden">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+    </svg>
+  </button>
+
+  <!-- Sidebar -->
+  <div id="sidebar" class="fixed left-0 top-0 w-64 h-screen bg-black border-r border-gray-800 flex flex-col z-40 sm:block">
+    <div class="p-6 border-b border-gray-800">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center font-bold">⚡</div>
+          <span class="font-bold text-xl">DIABOLUS</span>
+        </div>
+        <button id="closeMenuBtn" onclick="document.getElementById('sidebar').classList.add('hidden')" class="sm:hidden text-gray-400 hover:text-white text-2xl">✕</button>
+      </div>
+    </div>
+    <nav class="flex-1 p-4 space-y-2">
+      <a href="/dashboard" class="block px-4 py-3 bg-orange-500/20 border-l-2 border-orange-500 text-orange-400">📊 Dashboard</a>
+      <a href="/transactions" class="block px-4 py-3 text-gray-400">💰 Transacciones</a>
+      <a href="/clients" class="block px-4 py-3 text-gray-400">👥 Clientes</a>
+      <a href="/reports" class="block px-4 py-3 text-gray-400">📈 Reportes</a>
+      <a href="/chat-premium" class="block px-4 py-3 text-gray-400">💬 Chat IA</a>
+    </nav>
+    <div class="p-4 border-t border-gray-800">
+      <button onclick="location.href='/logout'" class="w-full px-4 py-3 bg-red-500 rounded text-sm">🚪 Logout</button>
+    </div>
+  </div>
+
+  <main class="sm:ml-64 min-h-screen">
+    <header class="bg-black/50 border-b border-gray-800 sticky top-0 z-30">
+      <div class="px-4 sm:px-8 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-xl sm:text-2xl font-bold">Dashboard</h1>
+            <p class="text-xs sm:text-sm text-gray-400 mt-1">Hoy es <span id="fecha" class="text-orange-400 font-semibold">hoy</span></p>
+          </div>
+          <button onclick="location.href='/chat-premium'" class="px-3 sm:px-6 py-2 bg-orange-500 rounded-lg font-semibold text-sm sm:text-base">➕</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="p-4 sm:p-8">
+      <div class="stat-grid grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-3 sm:p-6">
+          <p class="text-xs sm:text-sm text-gray-400">Hoy</p>
+          <h2 class="text-lg sm:text-4xl font-bold mt-1 sm:mt-2 text-orange-400">€<span id="today">0</span></h2>
+        </div>
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-3 sm:p-6">
+          <p class="text-xs sm:text-sm text-gray-400">Semana</p>
+          <h2 class="text-lg sm:text-4xl font-bold mt-1 sm:mt-2 text-blue-400">€<span id="week">0</span></h2>
+        </div>
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-3 sm:p-6">
+          <p class="text-xs sm:text-sm text-gray-400">Mes</p>
+          <h2 class="text-lg sm:text-4xl font-bold mt-1 sm:mt-2 text-green-400">€<span id="month">0</span></h2>
+        </div>
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-3 sm:p-6">
+          <p class="text-xs sm:text-sm text-gray-400">Balance</p>
+          <h2 class="text-lg sm:text-4xl font-bold mt-1 sm:mt-2 text-purple-400">€<span id="balance">0</span></h2>
+        </div>
+      </div>
+
+      <div class="chart-grid grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6">
+          <h3 class="text-base sm:text-lg font-bold mb-4">Ingresos vs Gastos</h3>
+          <div style="position:relative;height:200px sm:height-250px"><canvas id="chart1"></canvas></div>
+        </div>
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6">
+          <h3 class="text-base sm:text-lg font-bold mb-4">Servicios</h3>
+          <div style="position:relative;height:200px sm:height-250px"><canvas id="chart2"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('menuBtn')?.addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('hidden');
+    });
+
+    document.getElementById('fecha').textContent = new Date().toLocaleDateString('es-ES', {day:'numeric', month:'long'});
+
+    const getToken = () => localStorage.getItem('token') || '';
+    const getSalonId = () => localStorage.getItem('salon_id') || '';
+
+    async function loadDashboard() {
+      try {
+        const res = await fetch('/api/dashboard', {
+          headers: {'Authorization': `Bearer ${getToken()}`, 'X-Salon-ID': getSalonId()}
+        });
+        const data = await res.json();
+        document.getElementById('today').textContent = (data.today || 0).toFixed(2);
+        document.getElementById('week').textContent = (data.week || 0).toFixed(2);
+        document.getElementById('month').textContent = (data.month || 0).toFixed(2);
+        document.getElementById('balance').textContent = (data.netBalance || 0).toFixed(2);
+        
+        const ctx1 = document.getElementById('chart1')?.getContext('2d');
+        if (ctx1) {
+          new Chart(ctx1, {type:'bar', data: {labels:['L','M','X','J','V','S','D'], datasets:[{label:'Ingresos',data:[250,300,280,320,350,370,280],backgroundColor:'#10b981'},{label:'Gastos',data:[80,120,100,90,110,130,100],backgroundColor:'#ef4444'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#9ca3af'}}}}});
+        }
+
+        const ctx2 = document.getElementById('chart2')?.getContext('2d');
+        if (ctx2) {
+          new Chart(ctx2, {type:'doughnut', data: {labels:['Corte','Tinte','Manicura','Otro'], datasets:[{data:[35,28,20,17], backgroundColor:['#f97316','#3b82f6','#8b5cf6','#ec4899'], borderColor:'#111827', borderWidth:2}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{color:'#9ca3af'}}}}});
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
