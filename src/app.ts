@@ -556,3 +556,113 @@ app.get('/chat-premium', (c) => {
 });
 
 export default app;
+
+// ===== NUEVAS RUTAS API PARA DATOS REALES =====
+
+// GET /api/dashboard — Estadísticas del dashboard
+app.get('/api/dashboard', async (c) => {
+  const { userJwt, salonId } = getAuthContext(c);
+  if (!userJwt || !salonId) return c.json({ error: 'Unauthorized' }, 401);
+
+  try {
+    const repo = createSupabaseRepo({
+      supabaseUrl: process.env.SUPABASE_URL || '',
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+      userJwt,
+      salonId,
+    });
+
+    // Obtener balance (month = mes actual)
+    const balance = await repo.getBalance('month');
+    
+    // Devolver stats
+    return c.json({
+      today: balance.today || 0,
+      week: balance.week || 0,
+      month: balance.month || 0,
+      netBalance: (balance.month || 0) - (balance.monthExpenses || 0),
+      monthExpenses: balance.monthExpenses || 0,
+    });
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch dashboard data' }, 500);
+  }
+});
+
+// GET /api/transactions — Lista de transacciones
+app.get('/api/transactions', async (c) => {
+  const { userJwt, salonId } = getAuthContext(c);
+  if (!userJwt || !salonId) return c.json({ error: 'Unauthorized' }, 401);
+
+  try {
+    const repo = createSupabaseRepo({
+      supabaseUrl: process.env.SUPABASE_URL || '',
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+      userJwt,
+      salonId,
+    });
+
+    // Por ahora devolvemos estructura esperada
+    // En producción: consultar tabla transactions
+    return c.json({
+      transactions: [],
+      total: 0,
+      income: 0,
+      expenses: 0,
+    });
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch transactions' }, 500);
+  }
+});
+
+// GET /api/clients — Lista de clientes
+app.get('/api/clients', async (c) => {
+  const { userJwt, salonId } = getAuthContext(c);
+  if (!userJwt || !salonId) return c.json({ error: 'Unauthorized' }, 401);
+
+  try {
+    const repo = createSupabaseRepo({
+      supabaseUrl: process.env.SUPABASE_URL || '',
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+      userJwt,
+      salonId,
+    });
+
+    // Buscar todos los clientes (query vacío para traer todos)
+    const clients = await repo.findClients('');
+    
+    return c.json({
+      clients,
+      total: clients.length,
+    });
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch clients' }, 500);
+  }
+});
+
+// GET /api/reports — Resumen reportes
+app.get('/api/reports', async (c) => {
+  const { userJwt, salonId } = getAuthContext(c);
+  if (!userJwt || !salonId) return c.json({ error: 'Unauthorized' }, 401);
+
+  try {
+    const repo = createSupabaseRepo({
+      supabaseUrl: process.env.SUPABASE_URL || '',
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+      userJwt,
+      salonId,
+    });
+
+    const balance = await repo.getBalance('week');
+    const auditLog = await repo.getAuditLog();
+    
+    return c.json({
+      weekIncome: balance.week || 0,
+      weekExpenses: balance.weekExpenses || 0,
+      netWeek: (balance.week || 0) - (balance.weekExpenses || 0),
+      transactionCount: auditLog.length,
+      topClients: [],
+    });
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch reports' }, 500);
+  }
+});
