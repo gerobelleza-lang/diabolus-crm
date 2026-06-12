@@ -162,3 +162,64 @@ app.get('/api/costs', (c) => {
 });
 
 export { app };
+
+// Beautiful Landing Page
+app.get('/landing', (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diabolus v40 — CRM Inteligente</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .gradient-text { background: linear-gradient(135deg, #ff4500 0%, #ff6b1a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .glow { box-shadow: 0 0 30px rgba(255, 69, 0, 0.3); }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white font-sans">
+  <header class="fixed top-0 w-full bg-black/80 backdrop-blur border-b border-gray-700 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold">⚡</div>
+        <h1 class="text-2xl font-bold">Diabolus v40</h1>
+      </div>
+      <nav class="hidden md:flex gap-8"><a href="#features" class="hover:text-orange-500">Features</a></nav>
+    </div>
+  </header>
+
+  <section class="min-h-screen flex items-center justify-center px-6 pt-20">
+    <div class="max-w-4xl mx-auto text-center space-y-8">
+      <h2 class="text-5xl md:text-7xl font-bold gradient-text">CRM Inteligente con IA</h2>
+      <p class="text-xl text-gray-400">Parser L0 + LLM L1-L3 + Supabase RLS + OpenRouter</p>
+      <div class="flex gap-4 justify-center flex-wrap">
+        <a href="/" class="px-8 py-3 bg-orange-500 rounded-lg hover:bg-orange-600 transition font-semibold glow">Chat</a>
+        <a href="/admin" class="px-8 py-3 border border-gray-600 rounded-lg hover:border-orange-500 transition">Admin</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="py-20 px-6 bg-gray-800/50">
+    <div class="max-w-6xl mx-auto"><h3 class="text-4xl font-bold text-center mb-16">Capacidades</h3>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-orange-500 transition">
+        <div class="text-3xl mb-4">🧠</div><h4 class="text-xl font-semibold mb-2">Parser L0</h4>
+        <p class="text-gray-400">Patrones determinísticos sin costo (0ms).</p>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-orange-500 transition">
+        <div class="text-3xl mb-4">⚙️</div><h4 class="text-xl font-semibold mb-2">LLM L1-L3</h4>
+        <p class="text-gray-400">OpenRouter para comandos complejos.</p>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-orange-500 transition">
+        <div class="text-3xl mb-4">🔒</div><h4 class="text-xl font-semibold mb-2">Multi-Tenant RLS</h4>
+        <p class="text-gray-400">Aislamiento por JWT + Row Level Security.</p>
+      </div>
+    </div></div>
+  </section>
+
+  <footer class="border-t border-gray-700 py-12 px-6 text-center">
+    <p class="text-gray-400">Diabolus v40.0.0 • Production Grade • <a href="https://github.com/gerobelleza-lang/diabolus-crm" class="text-orange-500 hover:underline">GitHub</a></p>
+  </footer>
+</body>
+</html>`);
+});
