@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transacciones — Diabolus CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
+  <div class="flex h-screen">
+    <div class="w-64 bg-black border-r border-gray-800 p-6 fixed left-0 top-0 h-screen">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">⚡</div>
+        <span class="font-bold text-xl">DIABOLUS</span>
+      </div>
+      <nav class="space-y-2">
+        <a href="/dashboard.html" class="block px-4 py-3 text-gray-400 hover:bg-gray-800 rounded">📊 Dashboard</a>
+        <a href="/transacciones.html" class="block px-4 py-3 bg-orange-500/20 border-l-2 border-orange-500 text-orange-400 rounded">💰 Transacciones</a>
+        <a href="/clientes.html" class="block px-4 py-3 text-gray-400 hover:bg-gray-800 rounded">👥 Clientes</a>
+        <a href="/reportes.html" class="block px-4 py-3 text-gray-400 hover:bg-gray-800 rounded">📈 Reportes</a>
+      </nav>
+      <div class="border-t border-gray-800 mt-auto pt-4">
+        <button onclick="logout()" class="w-full px-4 py-3 text-gray-400 hover:bg-gray-800 rounded">🚪 Salir</button>
+      </div>
+    </div>
+
+    <main class="ml-64 flex-1 overflow-auto p-8">
+      <h1 class="text-4xl font-bold mb-8">Transacciones</h1>
+      <div class="grid grid-cols-4 gap-6 mb-8">
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Ingresos</p><p class="text-3xl font-bold text-green-400 mt-2">€12,450</p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Gastos</p><p class="text-3xl font-bold text-red-400 mt-2">€2,340</p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Balance</p><p class="text-3xl font-bold text-blue-400 mt-2">€10,110</p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Cantidad</p><p class="text-3xl font-bold text-purple-400 mt-2">47</p></div>
+      </div>
+      <div class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-gray-700/50 border-b border-gray-700"><tr><th class="px-6 py-4 text-left">Fecha</th><th class="px-6 py-4 text-left">Tipo</th><th class="px-6 py-4 text-left">Concepto</th><th class="px-6 py-4 text-left">Monto</th><th class="px-6 py-4 text-left">Estado</th></tr></thead>
+          <tbody class="divide-y divide-gray-700">
+            <tr><td class="px-6 py-4">12 Jun</td><td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Ingreso</span></td><td class="px-6 py-4">Servicio</td><td class="px-6 py-4 font-bold text-green-400">+€45.00</td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">Pagado</span></td></tr>
+            <tr><td class="px-6 py-4">11 Jun</td><td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Ingreso</span></td><td class="px-6 py-4">Servicio</td><td class="px-6 py-4 font-bold text-green-400">+€65.00</td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">Pagado</span></td></tr>
+            <tr><td class="px-6 py-4">10 Jun</td><td class="px-6 py-4"><span class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded">Gasto</span></td><td class="px-6 py-4">Suministros</td><td class="px-6 py-4 font-bold text-red-400">-€120.00</td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">Pagado</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('token')) window.location.href = '/';
+    function logout() { localStorage.clear(); window.location.href = '/'; }
+  </script>
+</body>
+</html>
