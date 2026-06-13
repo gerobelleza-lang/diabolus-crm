@@ -1,10 +1,1109 @@
-{
-  "type": "file",
-  "name": "index.html",
-  "path": "index.html",
-  "size": 31607,
-  "sha": "4c44b6f64fa891e106b63a8da99cf1d976fce9fd",
-  "content": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>DIABOLUS CRM — Command Center</title>\n  <style>\n    * {\n      margin: 0;\n      padding: 0;\n      box-sizing: border-box;\n    }\n\n    :root {\n      --bg-deep: #020203;\n      --bg-surface: #0d0d0f;\n      --border-terminal: #1f1f24;\n      --border-active: #2f2f37;\n      --neon-glow: #00ff66;\n      --amber-alert: #ffaa00;\n      --crimson-deny: #ff3333;\n      --text-primary: #f0f0f5;\n      --text-muted: #a3a3a3;\n      --text-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;\n    }\n\n    html, body {\n      width: 100%;\n      height: 100%;\n      background-color: var(--bg-deep);\n      color: var(--text-primary);\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;\n      overflow: hidden;\n    }\n\n    /* MAIN CONTAINER */\n    .command-center {\n      display: flex;\n      flex-direction: column;\n      height: 100vh;\n      width: 100%;\n    }\n\n    /* HEADER */\n    .header {\n      background: linear-gradient(90deg, var(--bg-surface) 0%, var(--border-terminal) 100%);\n      border-bottom: 1px solid var(--border-active);\n      padding: 1rem 2rem;\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      font-family: var(--text-mono);\n      font-size: 0.9rem;\n      color: var(--text-muted);\n      box-shadow: 0 0 20px rgba(0, 255, 102, 0.1);\n    }\n\n    .header-left {\n      display: flex;\n      align-items: center;\n      gap: 2rem;\n    }\n\n    .header-logo {\n      font-size: 1.5rem;\n      font-weight: bold;\n      color: var(--neon-glow);\n      text-shadow: 0 0 10px var(--neon-glow);\n    }\n\n    .header-status {\n      display: flex;\n      gap: 1rem;\n      font-size: 0.85rem;\n    }\n\n    .status-item {\n      display: flex;\n      align-items: center;\n      gap: 0.5rem;\n    }\n\n    .status-dot {\n      width: 8px;\n      height: 8px;\n      border-radius: 50%;\n      background: var(--neon-glow);\n      box-shadow: 0 0 10px var(--neon-glow);\n      animation: pulse 2s infinite;\n    }\n\n    @keyframes pulse {\n      0%, 100% { opacity: 1; }\n      50% { opacity: 0.5; }\n    }\n\n    /* MAIN GRID */\n    .grid-main {\n      display: grid;\n      grid-template-columns: 1fr 1fr 1fr;\n      gap: 1.5rem;\n      flex: 1;\n      padding: 1.5rem 2rem;\n      overflow: hidden;\n    }\n\n    /* PANEL CARD */\n    .panel {\n      background-color: var(--bg-surface);\n      border: 1px solid var(--border-terminal);\n      border-radius: 0.5rem;\n      display: flex;\n      flex-direction: column;\n      overflow: hidden;\n      box-shadow: 0 0 30px rgba(0, 255, 102, 0.05);\n      transition: all 0.3s ease;\n    }\n\n    .panel:hover {\n      border-color: var(--border-active);\n      box-shadow: 0 0 40px rgba(0, 255, 102, 0.1);\n    }\n\n    .panel-header {\n      background: linear-gradient(90deg, var(--border-terminal) 0%, var(--border-active) 100%);\n      padding: 1rem;\n      font-family: var(--text-mono);\n      font-size: 0.95rem;\n      font-weight: bold;\n      color: var(--neon-glow);\n      border-bottom: 1px solid var(--border-active);\n      text-shadow: 0 0 10px var(--neon-glow);\n    }\n\n    .panel-content {\n      flex: 1;\n      padding: 1.5rem;\n      overflow-y: auto;\n      display: flex;\n      flex-direction: column;\n    }\n\n    /* SCROLL BAR */\n    .panel-content::-webkit-scrollbar {\n      width: 6px;\n    }\n\n    .panel-content::-webkit-scrollbar-track {\n      background: var(--bg-deep);\n    }\n\n    .panel-content::-webkit-scrollbar-thumb {\n      background: var(--border-active);\n      border-radius: 3px;\n    }\n\n    .panel-content::-webkit-scrollbar-thumb:hover {\n      background: var(--neon-glow);\n    }\n\n    /* [01] CHAT PANEL */\n    .chat-messages {\n      flex: 1;\n      margin-bottom: 1rem;\n      display: flex;\n      flex-direction: column;\n      gap: 0.75rem;\n    }\n\n    .message {\n      padding: 0.75rem 1rem;\n      border-radius: 0.4rem;\n      font-size: 0.9rem;\n      line-height: 1.4;\n      animation: slideIn 0.3s ease;\n    }\n\n    @keyframes slideIn {\n      from {\n        opacity: 0;\n        transform: translateY(10px);\n      }\n      to {\n        opacity: 1;\n        transform: translateY(0);\n      }\n    }\n\n    .message.system {\n      background-color: var(--border-terminal);\n      color: var(--text-muted);\n      border-left: 2px solid var(--amber-alert);\n      font-family: var(--text-mono);\n      font-size: 0.85rem;\n    }\n\n    .message.agent {\n      background-color: rgba(0, 255, 102, 0.1);\n      color: var(--neon-glow);\n      border-left: 2px solid var(--neon-glow);\n      text-shadow: 0 0 5px var(--neon-glow);\n    }\n\n    .message.user {\n      background-color: var(--border-active);\n      color: var(--text-primary);\n      border-left: 2px solid var(--text-primary);\n      align-self: flex-end;\n      max-width: 85%;\n    }\n\n    /* OSCILLOSCOPE */\n    .oscilloscope {\n      background-color: var(--border-terminal);\n      border: 1px solid var(--border-active);\n      border-radius: 0.4rem;\n      height: 60px;\n      margin-bottom: 1rem;\n      display: flex;\n      align-items: flex-end;\n      gap: 2px;\n      padding: 0.5rem;\n      overflow: hidden;\n    }\n\n    .oscilloscope.active {\n      box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);\n    }\n\n    .bar {\n      flex: 1;\n      background: linear-gradient(180deg, var(--neon-glow) 0%, rgba(0, 255, 102, 0.3) 100%);\n      border-radius: 2px;\n      min-height: 4px;\n      transition: height 0.05s linear;\n      box-shadow: 0 0 8px var(--neon-glow);\n    }\n\n    /* CHAT INPUT */\n    .chat-input-area {\n      display: flex;\n      gap: 0.5rem;\n    }\n\n    .chat-input-area input {\n      flex: 1;\n      background-color: var(--border-terminal);\n      border: 1px solid var(--border-active);\n      color: var(--text-primary);\n      padding: 0.75rem;\n      border-radius: 0.4rem;\n      font-family: var(--text-mono);\n      font-size: 0.9rem;\n      transition: all 0.3s ease;\n    }\n\n    .chat-input-area input:focus {\n      outline: none;\n      border-color: var(--neon-glow);\n      box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);\n    }\n\n    .chat-input-area button {\n      padding: 0.75rem 1.5rem;\n      background-color: var(--neon-glow);\n      color: var(--bg-deep);\n      border: none;\n      border-radius: 0.4rem;\n      font-family: var(--text-mono);\n      font-weight: bold;\n      cursor: pointer;\n      transition: all 0.3s ease;\n      box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);\n    }\n\n    .chat-input-area button:hover {\n      box-shadow: 0 0 25px rgba(0, 255, 102, 0.5);\n      transform: translateY(-2px);\n    }\n\n    .chat-input-area button:active {\n      transform: translateY(0);\n    }\n\n    /* [02] APPROVAL PANEL */\n    .approval-card {\n      background-color: var(--border-terminal);\n      border: 2px solid var(--amber-alert);\n      border-radius: 0.4rem;\n      padding: 1.5rem;\n      margin-bottom: 1.5rem;\n      animation: slideIn 0.5s ease;\n    }\n\n    .approval-title {\n      font-family: var(--text-mono);\n      font-size: 1.1rem;\n      font-weight: bold;\n      color: var(--amber-alert);\n      margin-bottom: 1rem;\n      text-shadow: 0 0 10px rgba(255, 170, 0, 0.3);\n    }\n\n    .approval-data {\n      display: grid;\n      grid-template-columns: 1fr 1fr;\n      gap: 1rem;\n      margin-bottom: 1.5rem;\n      font-size: 0.9rem;\n    }\n\n    .approval-item {\n      display: flex;\n      flex-direction: column;\n    }\n\n    .approval-item-label {\n      color: var(--text-muted);\n      font-family: var(--text-mono);\n      font-size: 0.8rem;\n      text-transform: uppercase;\n      margin-bottom: 0.25rem;\n    }\n\n    .approval-item-value {\n      color: var(--text-primary);\n      font-weight: bold;\n      font-size: 1.1rem;\n    }\n\n    .approval-item-value.positive {\n      color: var(--neon-glow);\n      text-shadow: 0 0 8px var(--neon-glow);\n    }\n\n    .approval-actions {\n      display: grid;\n      grid-template-columns: 1fr 1fr;\n      gap: 1rem;\n    }\n\n    .btn-approve, .btn-deny {\n      padding: 1rem;\n      border: none;\n      border-radius: 0.4rem;\n      font-family: var(--text-mono);\n      font-weight: bold;\n      cursor: pointer;\n      transition: all 0.3s ease;\n      font-size: 0.95rem;\n      text-transform: uppercase;\n    }\n\n    .btn-approve {\n      background-color: var(--neon-glow);\n      color: var(--bg-deep);\n      box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);\n    }\n\n    .btn-approve:hover {\n      box-shadow: 0 0 30px rgba(0, 255, 102, 0.6);\n      transform: translateY(-2px);\n    }\n\n    .btn-deny {\n      background-color: var(--crimson-deny);\n      color: var(--text-primary);\n      box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);\n    }\n\n    .btn-deny:hover {\n      box-shadow: 0 0 30px rgba(255, 51, 51, 0.6);\n      transform: translateY(-2px);\n    }\n\n    .approval-shortcut {\n      font-size: 0.75rem;\n      color: var(--text-muted);\n      margin-top: 0.5rem;\n      font-family: var(--text-mono);\n    }\n\n    /* CRYPTO SIGNATURE OVERLAY */\n    .crypto-overlay {\n      position: fixed;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      background: rgba(0, 0, 0, 0.9);\n      display: none;\n      align-items: center;\n      justify-content: center;\n      z-index: 9999;\n      backdrop-filter: blur(5px);\n    }\n\n    .crypto-overlay.active {\n      display: flex;\n    }\n\n    .crypto-content {\n      text-align: center;\n      animation: scaleIn 0.3s ease;\n    }\n\n    @keyframes scaleIn {\n      from {\n        transform: scale(0.5);\n        opacity: 0;\n      }\n      to {\n        transform: scale(1);\n        opacity: 1;\n      }\n    }\n\n    .crypto-spinner {\n      width: 80px;\n      height: 80px;\n      margin: 0 auto 2rem;\n      border: 3px solid var(--border-active);\n      border-top: 3px solid var(--neon-glow);\n      border-radius: 50%;\n      animation: spin 0.8s linear infinite;\n    }\n\n    @keyframes spin {\n      to { transform: rotate(360deg); }\n    }\n\n    .crypto-text {\n      color: var(--neon-glow);\n      font-family: var(--text-mono);\n      font-size: 1.2rem;\n      margin-bottom: 1rem;\n      text-shadow: 0 0 20px var(--neon-glow);\n    }\n\n    .crypto-hash {\n      color: var(--text-muted);\n      font-family: var(--text-mono);\n      font-size: 0.85rem;\n      word-break: break-all;\n      max-width: 400px;\n      margin-top: 1rem;\n    }\n\n    /* [03] SOVEREIGNTY PANEL */\n    .balance-box {\n      background: linear-gradient(135deg, var(--border-terminal) 0%, var(--border-active) 100%);\n      border: 2px solid var(--neon-glow);\n      border-radius: 0.5rem;\n      padding: 2rem;\n      text-align: center;\n      margin-bottom: 1.5rem;\n      box-shadow: 0 0 30px rgba(0, 255, 102, 0.2);\n    }\n\n    .balance-label {\n      color: var(--text-muted);\n      font-family: var(--text-mono);\n      font-size: 0.85rem;\n      text-transform: uppercase;\n      margin-bottom: 0.5rem;\n    }\n\n    .balance-value {\n      font-size: 2.5rem;\n      font-weight: bold;\n      color: var(--neon-glow);\n      text-shadow: 0 0 20px var(--neon-glow);\n      font-family: var(--text-mono);\n    }\n\n    /* STATUS INDICATORS */\n    .status-indicators {\n      display: grid;\n      grid-template-columns: 1fr 1fr;\n      gap: 1rem;\n      margin-bottom: 1.5rem;\n    }\n\n    .indicator {\n      background-color: var(--border-terminal);\n      border: 1px solid var(--border-active);\n      border-radius: 0.4rem;\n      padding: 1rem;\n      font-size: 0.9rem;\n    }\n\n    .indicator-title {\n      color: var(--text-muted);\n      font-family: var(--text-mono);\n      font-size: 0.8rem;\n      text-transform: uppercase;\n      margin-bottom: 0.5rem;\n    }\n\n    .indicator-status {\n      display: flex;\n      align-items: center;\n      gap: 0.5rem;\n      color: var(--neon-glow);\n      font-weight: bold;\n    }\n\n    .indicator-dot {\n      width: 10px;\n      height: 10px;\n      border-radius: 50%;\n      background: var(--neon-glow);\n      box-shadow: 0 0 10px var(--neon-glow);\n      animation: pulse 2s infinite;\n    }\n\n    /* HARDWARE MONITOR */\n    .hardware-monitor {\n      background-color: var(--border-terminal);\n      border: 1px solid var(--border-active);\n      border-radius: 0.4rem;\n      padding: 1rem;\n      margin-bottom: 1.5rem;\n      font-size: 0.85rem;\n    }\n\n    .hardware-title {\n      color: var(--neon-glow);\n      font-family: var(--text-mono);\n      margin-bottom: 0.75rem;\n      font-weight: bold;\n    }\n\n    .hardware-metric {\n      display: flex;\n      justify-content: space-between;\n      margin-bottom: 0.5rem;\n      color: var(--text-muted);\n    }\n\n    .hardware-value {\n      color: var(--text-primary);\n      font-family: var(--text-mono);\n      font-weight: bold;\n    }\n\n    .metric-bar {\n      height: 4px;\n      background-color: var(--border-active);\n      border-radius: 2px;\n      margin-top: 0.25rem;\n      overflow: hidden;\n    }\n\n    .metric-fill {\n      height: 100%;\n      background: linear-gradient(90deg, var(--neon-glow) 0%, var(--amber-alert) 100%);\n      transition: width 0.3s ease;\n    }\n\n    /* RECENT EMISSIONS */\n    .emissions-list {\n      font-size: 0.85rem;\n    }\n\n    .emission-item {\n      background-color: var(--border-terminal);\n      padding: 0.75rem;\n      margin-bottom: 0.5rem;\n      border-radius: 0.3rem;\n      border-left: 2px solid var(--neon-glow);\n      font-family: var(--text-mono);\n    }\n\n    .emission-id {\n      color: var(--neon-glow);\n      font-weight: bold;\n    }\n\n    .emission-hash {\n      color: var(--text-muted);\n      font-size: 0.75rem;\n      word-break: break-all;\n      margin-top: 0.25rem;\n    }\n\n    /* FOOTER: LOGS */\n    .footer-logs {\n      background-color: var(--bg-surface);\n      border-top: 1px solid var(--border-active);\n      padding: 1rem 2rem;\n      height: 120px;\n      display: flex;\n      flex-direction: column;\n      gap: 0.5rem;\n    }\n\n    .log-terminal {\n      flex: 1;\n      background-color: var(--bg-deep);\n      border: 1px solid var(--border-terminal);\n      border-radius: 0.4rem;\n      padding: 0.75rem;\n      font-family: var(--text-mono);\n      font-size: 0.75rem;\n      color: var(--text-muted);\n      overflow-y: auto;\n      line-height: 1.4;\n    }\n\n    .log-entry {\n      margin-bottom: 0.25rem;\n      animation: slideIn 0.3s ease;\n    }\n\n    .log-timestamp {\n      color: var(--neon-glow);\n    }\n\n    .log-action {\n      color: var(--text-muted);\n    }\n\n    .log-entry.success {\n      color: var(--neon-glow);\n    }\n\n    .log-entry.error {\n      color: var(--crimson-deny);\n    }\n\n    .log-entry.warning {\n      color: var(--amber-alert);\n    }\n\n    /* KEYBOARD HINTS */\n    .keyboard-hints {\n      display: flex;\n      gap: 2rem;\n      font-family: var(--text-mono);\n      font-size: 0.75rem;\n      color: var(--text-muted);\n      margin-top: 0.5rem;\n    }\n\n    .hint {\n      display: flex;\n      align-items: center;\n      gap: 0.5rem;\n    }\n\n    .hint-key {\n      background-color: var(--border-active);\n      padding: 0.25rem 0.5rem;\n      border-radius: 0.2rem;\n      color: var(--text-primary);\n    }\n\n    /* RESPONSIVE */\n    @media (max-width: 1400px) {\n      .grid-main {\n        grid-template-columns: 1fr 1fr;\n      }\n\n      .panel:nth-child(3) {\n        grid-column: 1 / -1;\n      }\n    }\n\n    @media (max-width: 1000px) {\n      .grid-main {\n        grid-template-columns: 1fr;\n      }\n\n      .panel {\n        max-height: 400px;\n      }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"command-center\">\n    <!-- HEADER -->\n    <div class=\"header\">\n      <div class=\"header-left\">\n        <div class=\"header-logo\">⚡ DIABOLUS</div>\n        <div class=\"header-status\">\n          <div class=\"status-item\">\n            <span class=\"status-dot\"></span>\n            <span>SISTEMA ACTIVO</span>\n          </div>\n          <div class=\"status-item\">\n            <span class=\"status-dot\"></span>\n            <span>VERIFACTU READY</span>\n          </div>\n          <div class=\"status-item\">\n            <span class=\"status-dot\"></span>\n            <span>OLLAMA CONECTADO</span>\n          </div>\n        </div>\n      </div>\n      <div style=\"color: var(--text-muted); font-size: 0.85rem;\">\n        v1.0-PREMIUM | [HH:MM:SS] <span id=\"headerTime\">00:00:00</span>\n      </div>\n    </div>\n\n    <!-- MAIN GRID -->\n    <div class=\"grid-main\">\n      <!-- [01] CHAT & AGENT CORE -->\n      <div class=\"panel\">\n        <div class=\"panel-header\">[01] AGENT CONVERSACIONAL</div>\n        <div class=\"panel-content\">\n          <div class=\"chat-messages\" id=\"chatMessages\">\n            <div class=\"message system\">\n              [SYS] Base de datos local iniciada. Ollama en línea.\n            </div>\n            <div class=\"message agent\">\n              🤖 Diabolus operativo. Escucho comandos de operación.\n            </div>\n            <div class=\"message system\">\n              [SYS] Micrófono listo. Presiona ESPACIO para hablar.\n            </div>\n          </div>\n\n          <div class=\"oscilloscope\" id=\"oscilloscope\">\n            <div class=\"bar\" style=\"height: 20%;\"></div>\n            <div class=\"bar\" style=\"height: 15%;\"></div>\n            <div class=\"bar\" style=\"height: 40%;\"></div>\n            <div class=\"bar\" style=\"height: 25%;\"></div>\n            <div class=\"bar\" style=\"height: 60%;\"></div>\n            <div class=\"bar\" style=\"height: 35%;\"></div>\n            <div class=\"bar\" style=\"height: 50%;\"></div>\n            <div class=\"bar\" style=\"height: 10%;\"></div>\n          </div>\n\n          <div class=\"chat-input-area\">\n            <input\n              type=\"text\"\n              id=\"commandInput\"\n              placeholder=\"Ej: 'Ingreso 150 paula tinte' o 'Gasto 80 suministros'\"\n              autocomplete=\"off\"\n            >\n            <button onclick=\"sendCommand()\">ENVIAR</button>\n          </div>\n        </div>\n      </div>\n\n      <!-- [02] APPROVAL QUEUE -->\n      <div class=\"panel\">\n        <div class=\"panel-header\">[02] COLA APROBACIÓN (2 SEG)</div>\n        <div class=\"panel-content\">\n          <div class=\"approval-card\" id=\"approvalCard\" style=\"display: none;\">\n            <div class=\"approval-title\">⚡ TRANSACCIÓN PROPUESTA</div>\n            <div class=\"approval-data\">\n              <div class=\"approval-item\">\n                <div class=\"approval-item-label\">Cliente</div>\n                <div class=\"approval-item-value\" id=\"approvalClient\">-</div>\n              </div>\n              <div class=\"approval-item\">\n                <div class=\"approval-item-label\">Monto</div>\n                <div class=\"approval-item-value positive\" id=\"approvalAmount\">€0,00</div>\n              </div>\n              <div class=\"approval-item\">\n                <div class=\"approval-item-label\">Concepto</div>\n                <div class=\"approval-item-value\" id=\"approvalConcept\">-</div>\n              </div>\n              <div class=\"approval-item\">\n                <div class=\"approval-item-label\">IVA (21%)</div>\n                <div class=\"approval-item-value\" id=\"approvalVAT\">€0,00</div>\n              </div>\n            </div>\n            <div class=\"approval-actions\">\n              <button class=\"btn-deny\" onclick=\"denyApproval()\">\n                [ESC] RECHAZAR\n              </button>\n              <button class=\"btn-approve\" onclick=\"approveApproval()\">\n                [ENTER] CONFIRMAR\n              </button>\n            </div>\n          </div>\n\n          <div style=\"text-align: center; color: var(--text-muted); margin-top: 3rem;\" id=\"emptyApproval\">\n            <div style=\"font-size: 2rem; margin-bottom: 1rem;\">⏳</div>\n            <div style=\"font-family: var(--text-mono); font-size: 0.9rem;\">\n              Esperando comando de operación...\n            </div>\n          </div>\n        </div>\n      </div>\n\n      <!-- [03] SOVEREIGNTY DASHBOARD -->\n      <div class=\"panel\">\n        <div class=\"panel-header\">[03] CUADRO SOBERANÍA</div>\n        <div class=\"panel-content\">\n          <div class=\"balance-box\">\n            <div class=\"balance-label\">💰 BALANCE DE CAJA</div>\n            <div class=\"balance-value\" id=\"balanceValue\">€7.850,00</div>\n          </div>\n\n          <div class=\"status-indicators\">\n            <div class=\"indicator\">\n              <div class=\"indicator-title\">VERIFACTU</div>\n              <div class=\"indicator-status\">\n                <span class=\"indicator-dot\"></span>\n                <span>ACTIVO 2027</span>\n              </div>\n            </div>\n            <div class=\"indicator\">\n              <div class=\"indicator-title\">LEY CREA Y CRECE</div>\n              <div class=\"indicator-status\">\n                <span class=\"indicator-dot\"></span>\n                <span>READY XML</span>\n              </div>\n            </div>\n          </div>\n\n          <div class=\"hardware-monitor\">\n            <div class=\"hardware-title\">🖥️ DIABOLUS BOX (Ollama)</div>\n            <div class=\"hardware-metric\">\n              <span>CPU</span>\n              <span class=\"hardware-value\" id=\"cpuValue\">45%</span>\n            </div>\n            <div class=\"metric-bar\">\n              <div class=\"metric-fill\" id=\"cpuBar\" style=\"width: 45%;\"></div>\n            </div>\n\n            <div class=\"hardware-metric\" style=\"margin-top: 0.75rem;\">\n              <span>GPU Temp</span>\n              <span class=\"hardware-value\" id=\"tempValue\">43°C</span>\n            </div>\n            <div class=\"metric-bar\">\n              <div class=\"metric-fill\" id=\"tempBar\" style=\"width: 43%;\"></div>\n            </div>\n\n            <div class=\"hardware-metric\" style=\"margin-top: 0.75rem;\">\n              <span>Latencia IA</span>\n              <span class=\"hardware-value\" id=\"latencyValue\">1.2s</span>\n            </div>\n            <div class=\"metric-bar\">\n              <div class=\"metric-fill\" id=\"latencyBar\" style=\"width: 40%;\"></div>\n            </div>\n          </div>\n\n          <div style=\"color: var(--text-muted); font-size: 0.8rem; font-family: var(--text-mono);\">\n            Últimas emisiones:\n          </div>\n          <div class=\"emissions-list\" id=\"emissionsList\">\n            <div class=\"emission-item\">\n              <span class=\"emission-id\">INV-2026-042</span><br>\n              <span class=\"emission-hash\">SHA256: 3f2d1e9c...</span>\n            </div>\n            <div class=\"emission-item\">\n              <span class=\"emission-id\">INV-2026-041</span><br>\n              <span class=\"emission-hash\">SHA256: 8a5b2c1d...</span>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <!-- FOOTER: SYSTEM LOGS -->\n    <div class=\"footer-logs\">\n      <div class=\"log-terminal\" id=\"logTerminal\">\n        <div class=\"log-entry\">[<span class=\"log-timestamp\">00:00:01</span>] Sistema iniciado. Versión 1.0-PREMIUM</div>\n        <div class=\"log-entry\">[<span class=\"log-timestamp\">00:00:02</span>] Clave anon de Supabase cargada</div>\n        <div class=\"log-entry\">[<span class=\"log-timestamp\">00:00:03</span>] Ollama conectado en localhost:11434</div>\n        <div class=\"log-entry success\">[<span class=\"log-timestamp\">00:00:04</span>] ✓ Todos los servicios operativos</div>\n      </div>\n      <div class=\"keyboard-hints\">\n        <div class=\"hint\"><span class=\"hint-key\">ENTER</span> Confirmar</div>\n        <div class=\"hint\"><span class=\"hint-key\">ESC</span> Rechazar</div>\n        <div class=\"hint\"><span class=\"hint-key\">SPACE</span> Micrófono</div>\n      </div>\n    </div>\n  </div>\n\n  <!-- CRYPTO SIGNATURE OVERLAY -->\n  <div class=\"crypto-overlay\" id=\"cryptoOverlay\">\n    <div class=\"crypto-content\">\n      <div class=\"crypto-spinner\"></div>\n      <div class=\"crypto-text\">GENERANDO FIRMA CRIPTOGRÁFICA</div>\n      <div style=\"color: var(--text-muted); font-family: var(--text-mono); font-size: 0.9rem; margin-bottom: 1rem;\">\n        VeriFactu SHA-256 Encadenado\n      </div>\n      <div class=\"crypto-hash\" id=\"cryptoHash\">\n        3f2d1e9c8a5b2c1d7f4e6a9b3c2d1e0f...\n      </div>\n    </div>\n  </div>\n\n  <script>\n    // STATE\n    let balance = 7850;\n    let isRecording = false;\n    let pendingApproval = null;\n\n    // INIT\n    document.addEventListener('DOMContentLoaded', () => {\n      updateTime();\n      startHardwareMonitor();\n      setupKeyboardShortcuts();\n      setInterval(updateTime, 1000);\n    });\n\n    // UPDATE TIME IN HEADER\n    function updateTime() {\n      const now = new Date();\n      const time = now.toLocaleTimeString('es-ES', { hour12: false });\n      document.getElementById('headerTime').textContent = time;\n    }\n\n    // HARDWARE MONITOR (Fluctuating)\n    function startHardwareMonitor() {\n      setInterval(() => {\n        const cpu = Math.floor(Math.random() * 60 + 20);\n        const temp = Math.floor(Math.random() * 15 + 39);\n        const latency = (Math.random() * 1.5 + 0.6).toFixed(1);\n\n        document.getElementById('cpuValue').textContent = cpu + '%';\n        document.getElementById('cpuBar').style.width = cpu + '%';\n\n        document.getElementById('tempValue').textContent = temp + '°C';\n        document.getElementById('tempBar').style.width = (temp / 50) * 100 + '%';\n\n        document.getElementById('latencyValue').textContent = latency + 's';\n        document.getElementById('latencyBar').style.width = (latency / 2.5) * 100 + '%';\n      }, 3000);\n    }\n\n    // OSCILLOSCOPE ANIMATION\n    function animateOscilloscope() {\n      const oscilloscope = document.getElementById('oscilloscope');\n      const bars = oscilloscope.querySelectorAll('.bar');\n      setInterval(() => {\n        bars.forEach(bar => {\n          const newHeight = Math.random() * 70 + 10;\n          bar.style.height = newHeight + '%';\n        });\n      }, 100);\n    }\n\n    // SEND COMMAND\n    function sendCommand() {\n      const input = document.getElementById('commandInput');\n      const command = input.value.trim();\n      if (!command) return;\n\n      addMessage(command, 'user');\n      input.value = '';\n\n      // Simulate agent processing\n      setTimeout(() => {\n        processCommand(command);\n      }, 500);\n    }\n\n    // PROCESS COMMAND\n    function processCommand(command) {\n      const lower = command.toLowerCase();\n      let amount = 0;\n      let client = 'Cliente';\n      let concept = 'Servicio';\n\n      if (lower.includes('ingreso')) {\n        const match = command.match(/(\\d+)/);\n        if (match) amount = parseInt(match[1]);\n        client = command.includes('paula') ? 'Paula García' : command.includes('maria') ? 'María López' : 'Cliente';\n        concept = command.includes('tinte') ? 'Tinte' : command.includes('corte') ? 'Corte' : 'Servicio';\n      } else if (lower.includes('gasto')) {\n        const match = command.match(/(\\d+)/);\n        if (match) amount = parseInt(match[1]);\n        concept = command.includes('tinturas') ? 'Tinturas' : command.includes('suministros') ? 'Suministros' : 'Gasto';\n      }\n\n      if (amount > 0) {\n        addMessage(`✓ Propuesta procesada. Aguardando aprobación en cola...`, 'agent');\n        showApprovalCard(client, amount, concept);\n      } else {\n        addMessage(`Intenta: \"Ingreso 150 paula tinte\" o \"Gasto 80 suministros\"`, 'agent');\n      }\n    }\n\n    // SHOW APPROVAL CARD\n    function showApprovalCard(client, amount, concept) {\n      pendingApproval = { client, amount, concept };\n\n      document.getElementById('approvalClient').textContent = client;\n      document.getElementById('approvalConcept').textContent = concept;\n      document.getElementById('approvalAmount').textContent = '€' + amount.toFixed(2);\n      document.getElementById('approvalVAT').textContent = '€' + (amount * 0.21).toFixed(2);\n\n      document.getElementById('approvalCard').style.display = 'block';\n      document.getElementById('emptyApproval').style.display = 'none';\n    }\n\n    // APPROVE\n    function approveApproval() {\n      if (!pendingApproval) return;\n\n      const overlay = document.getElementById('cryptoOverlay');\n      overlay.classList.add('active');\n\n      // Generate random hash\n      const chars = '0123456789abcdef';\n      let hash = '';\n      for (let i = 0; i < 64; i++) {\n        hash += chars[Math.floor(Math.random() * chars.length)];\n      }\n      document.getElementById('cryptoHash').textContent = hash;\n\n      // Signature animation (1200ms)\n      setTimeout(() => {\n        overlay.classList.remove('active');\n\n        balance += pendingApproval.amount;\n        document.getElementById('balanceValue').textContent = '€' + balance.toFixed(2);\n\n        addMessage(`✓ Factura confirmada. Firma digital aplicada. VeriFactu listo.`, 'agent');\n        addLog('INVOICE_SIGNED', `INV-${Date.now()}. SHA256: ${hash.substring(0, 16)}...`, 'success');\n\n        // Add to emissions\n        const emissionsList = document.getElementById('emissionsList');\n        const newEmission = document.createElement('div');\n        newEmission.className = 'emission-item';\n        newEmission.innerHTML = `<span class=\"emission-id\">INV-${Math.floor(Math.random() * 10000)}</span><br><span class=\"emission-hash\">SHA256: ${hash.substring(0, 16)}...</span>`;\n        emissionsList.insertBefore(newEmission, emissionsList.firstChild);\n\n        // Reset\n        document.getElementById('approvalCard').style.display = 'none';\n        document.getElementById('emptyApproval').style.display = 'block';\n        pendingApproval = null;\n      }, 1200);\n    }\n\n    // DENY\n    function denyApproval() {\n      if (!pendingApproval) return;\n\n      addMessage(`✗ Transacción rechazada. En espera de nuevos comandos.`, 'agent');\n      addLog('TRANSACTION_REJECTED', `Operación cancelada por usuario`, 'warning');\n\n      document.getElementById('approvalCard').style.display = 'none';\n      document.getElementById('emptyApproval').style.display = 'block';\n      pendingApproval = null;\n    }\n\n    // ADD MESSAGE TO CHAT\n    function addMessage(text, sender) {\n      const messagesDiv = document.getElementById('chatMessages');\n      const message = document.createElement('div');\n      message.className = `message ${sender}`;\n      message.textContent = text;\n      messagesDiv.appendChild(message);\n      messagesDiv.scrollTop = messagesDiv.scrollHeight;\n    }\n\n    // ADD LOG ENTRY\n    function addLog(action, detail, type = 'action') {\n      const terminal = document.getElementById('logTerminal');\n      const now = new Date();\n      const time = now.toLocaleTimeString('es-ES', { hour12: false }).substring(0, 8);\n\n      const entry = document.createElement('div');\n      entry.className = `log-entry ${type}`;\n      entry.innerHTML = `[<span class=\"log-timestamp\">${time}</span>] ${action}: ${detail}`;\n\n      terminal.appendChild(entry);\n      terminal.scrollTop = terminal.scrollHeight;\n    }\n\n    // KEYBOARD SHORTCUTS\n    function setupKeyboardShortcuts() {\n      document.addEventListener('keydown', (e) => {\n        if (e.key === 'Enter') {\n          e.preventDefault();\n          if (pendingApproval) approveApproval();\n          else sendCommand();\n        } else if (e.key === 'Escape') {\n          e.preventDefault();\n          if (pendingApproval) denyApproval();\n        } else if (e.key === ' ') {\n          e.preventDefault();\n          isRecording = !isRecording;\n          const osc = document.getElementById('oscilloscope');\n          if (isRecording) {\n            osc.classList.add('active');\n            addLog('RECORDING', 'Micrófono activo. Dictando...', 'warning');\n            animateOscilloscope();\n          } else {\n            osc.classList.remove('active');\n            addLog('RECORDING_STOP', 'Micrófono desactivado', 'action');\n          }\n        }\n      });\n    }\n\n    // INIT OSCILLOSCOPE ANIMATION\n    animateOscilloscope();\n\n    // ENTER KEY ON INPUT\n    document.getElementById('commandInput').addEventListener('keypress', (e) => {\n      if (e.key === 'Enter') {\n        e.preventDefault();\n        sendCommand();\n      }\n    });\n  </script>\n</body>\n</html>",
-  "encoding": "base64",
-  "downloadUrl": "https://raw.githubusercontent.com/gerobelleza-lang/diabolus-crm/main/index.html"
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIABOLUS CRM — Command Center</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-deep: #020203;
+      --bg-surface: #0d0d0f;
+      --border-terminal: #1f1f24;
+      --border-active: #2f2f37;
+      --neon-glow: #00ff66;
+      --amber-alert: #ffaa00;
+      --crimson-deny: #ff3333;
+      --text-primary: #f0f0f5;
+      --text-muted: #a3a3a3;
+      --text-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      overflow: hidden;
+    }
+
+    /* MAIN CONTAINER */
+    .command-center {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(90deg, var(--bg-surface) 0%, var(--border-terminal) 100%);
+      border-bottom: 1px solid var(--border-active);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--text-mono);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.1);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .header-logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--neon-glow);
+      text-shadow: 0 0 10px var(--neon-glow);
+    }
+
+    .header-status {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.85rem;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--neon-glow);
+      box-shadow: 0 0 10px var(--neon-glow);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* MAIN GRID */
+    .grid-main {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem;
+      flex: 1;
+      padding: 1.5rem 2rem;
+      overflow: hidden;
+    }
+
+    /* PANEL CARD */
+    .panel {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-terminal);
+      border-radius: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0, 255, 102, 0.05);
+      transition: all 0.3s ease;
+    }
+
+    .panel:hover {
+      border-color: var(--border-active);
+      box-shadow: 0 0 40px rgba(0, 255, 102, 0.1);
+    }
+
+    .panel-header {
+      background: linear-gradient(90deg, var(--border-terminal) 0%, var(--border-active) 100%);
+      padding: 1rem;
+      font-family: var(--text-mono);
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: var(--neon-glow);
+      border-bottom: 1px solid var(--border-active);
+      text-shadow: 0 0 10px var(--neon-glow);
+    }
+
+    .panel-content {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* SCROLL BAR */
+    .panel-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .panel-content::-webkit-scrollbar-track {
+      background: var(--bg-deep);
+    }
+
+    .panel-content::-webkit-scrollbar-thumb {
+      background: var(--border-active);
+      border-radius: 3px;
+    }
+
+    .panel-content::-webkit-scrollbar-thumb:hover {
+      background: var(--neon-glow);
+    }
+
+    /* [01] CHAT PANEL */
+    .chat-messages {
+      flex: 1;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .message {
+      padding: 0.75rem 1rem;
+      border-radius: 0.4rem;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.system {
+      background-color: var(--border-terminal);
+      color: var(--text-muted);
+      border-left: 2px solid var(--amber-alert);
+      font-family: var(--text-mono);
+      font-size: 0.85rem;
+    }
+
+    .message.agent {
+      background-color: rgba(0, 255, 102, 0.1);
+      color: var(--neon-glow);
+      border-left: 2px solid var(--neon-glow);
+      text-shadow: 0 0 5px var(--neon-glow);
+    }
+
+    .message.user {
+      background-color: var(--border-active);
+      color: var(--text-primary);
+      border-left: 2px solid var(--text-primary);
+      align-self: flex-end;
+      max-width: 85%;
+    }
+
+    /* OSCILLOSCOPE */
+    .oscilloscope {
+      background-color: var(--border-terminal);
+      border: 1px solid var(--border-active);
+      border-radius: 0.4rem;
+      height: 60px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      padding: 0.5rem;
+      overflow: hidden;
+    }
+
+    .oscilloscope.active {
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+    }
+
+    .bar {
+      flex: 1;
+      background: linear-gradient(180deg, var(--neon-glow) 0%, rgba(0, 255, 102, 0.3) 100%);
+      border-radius: 2px;
+      min-height: 4px;
+      transition: height 0.05s linear;
+      box-shadow: 0 0 8px var(--neon-glow);
+    }
+
+    /* CHAT INPUT */
+    .chat-input-area {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chat-input-area input {
+      flex: 1;
+      background-color: var(--border-terminal);
+      border: 1px solid var(--border-active);
+      color: var(--text-primary);
+      padding: 0.75rem;
+      border-radius: 0.4rem;
+      font-family: var(--text-mono);
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+
+    .chat-input-area input:focus {
+      outline: none;
+      border-color: var(--neon-glow);
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+    }
+
+    .chat-input-area button {
+      padding: 0.75rem 1.5rem;
+      background-color: var(--neon-glow);
+      color: var(--bg-deep);
+      border: none;
+      border-radius: 0.4rem;
+      font-family: var(--text-mono);
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+    }
+
+    .chat-input-area button:hover {
+      box-shadow: 0 0 25px rgba(0, 255, 102, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .chat-input-area button:active {
+      transform: translateY(0);
+    }
+
+    /* [02] APPROVAL PANEL */
+    .approval-card {
+      background-color: var(--border-terminal);
+      border: 2px solid var(--amber-alert);
+      border-radius: 0.4rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      animation: slideIn 0.5s ease;
+    }
+
+    .approval-title {
+      font-family: var(--text-mono);
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--amber-alert);
+      margin-bottom: 1rem;
+      text-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+    }
+
+    .approval-data {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .approval-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .approval-item-label {
+      color: var(--text-muted);
+      font-family: var(--text-mono);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+
+    .approval-item-value {
+      color: var(--text-primary);
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .approval-item-value.positive {
+      color: var(--neon-glow);
+      text-shadow: 0 0 8px var(--neon-glow);
+    }
+
+    .approval-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .btn-approve, .btn-deny {
+      padding: 1rem;
+      border: none;
+      border-radius: 0.4rem;
+      font-family: var(--text-mono);
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+    }
+
+    .btn-approve {
+      background-color: var(--neon-glow);
+      color: var(--bg-deep);
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+    }
+
+    .btn-approve:hover {
+      box-shadow: 0 0 30px rgba(0, 255, 102, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .btn-deny {
+      background-color: var(--crimson-deny);
+      color: var(--text-primary);
+      box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
+    }
+
+    .btn-deny:hover {
+      box-shadow: 0 0 30px rgba(255, 51, 51, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .approval-shortcut {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      font-family: var(--text-mono);
+    }
+
+    /* CRYPTO SIGNATURE OVERLAY */
+    .crypto-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      backdrop-filter: blur(5px);
+    }
+
+    .crypto-overlay.active {
+      display: flex;
+    }
+
+    .crypto-content {
+      text-align: center;
+      animation: scaleIn 0.3s ease;
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .crypto-spinner {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 2rem;
+      border: 3px solid var(--border-active);
+      border-top: 3px solid var(--neon-glow);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .crypto-text {
+      color: var(--neon-glow);
+      font-family: var(--text-mono);
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 20px var(--neon-glow);
+    }
+
+    .crypto-hash {
+      color: var(--text-muted);
+      font-family: var(--text-mono);
+      font-size: 0.85rem;
+      word-break: break-all;
+      max-width: 400px;
+      margin-top: 1rem;
+    }
+
+    /* [03] SOVEREIGNTY PANEL */
+    .balance-box {
+      background: linear-gradient(135deg, var(--border-terminal) 0%, var(--border-active) 100%);
+      border: 2px solid var(--neon-glow);
+      border-radius: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 30px rgba(0, 255, 102, 0.2);
+    }
+
+    .balance-label {
+      color: var(--text-muted);
+      font-family: var(--text-mono);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .balance-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: var(--neon-glow);
+      text-shadow: 0 0 20px var(--neon-glow);
+      font-family: var(--text-mono);
+    }
+
+    /* STATUS INDICATORS */
+    .status-indicators {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .indicator {
+      background-color: var(--border-terminal);
+      border: 1px solid var(--border-active);
+      border-radius: 0.4rem;
+      padding: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .indicator-title {
+      color: var(--text-muted);
+      font-family: var(--text-mono);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .indicator-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--neon-glow);
+      font-weight: bold;
+    }
+
+    .indicator-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--neon-glow);
+      box-shadow: 0 0 10px var(--neon-glow);
+      animation: pulse 2s infinite;
+    }
+
+    /* HARDWARE MONITOR */
+    .hardware-monitor {
+      background-color: var(--border-terminal);
+      border: 1px solid var(--border-active);
+      border-radius: 0.4rem;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+    }
+
+    .hardware-title {
+      color: var(--neon-glow);
+      font-family: var(--text-mono);
+      margin-bottom: 0.75rem;
+      font-weight: bold;
+    }
+
+    .hardware-metric {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .hardware-value {
+      color: var(--text-primary);
+      font-family: var(--text-mono);
+      font-weight: bold;
+    }
+
+    .metric-bar {
+      height: 4px;
+      background-color: var(--border-active);
+      border-radius: 2px;
+      margin-top: 0.25rem;
+      overflow: hidden;
+    }
+
+    .metric-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-glow) 0%, var(--amber-alert) 100%);
+      transition: width 0.3s ease;
+    }
+
+    /* RECENT EMISSIONS */
+    .emissions-list {
+      font-size: 0.85rem;
+    }
+
+    .emission-item {
+      background-color: var(--border-terminal);
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      border-radius: 0.3rem;
+      border-left: 2px solid var(--neon-glow);
+      font-family: var(--text-mono);
+    }
+
+    .emission-id {
+      color: var(--neon-glow);
+      font-weight: bold;
+    }
+
+    .emission-hash {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      word-break: break-all;
+      margin-top: 0.25rem;
+    }
+
+    /* FOOTER: LOGS */
+    .footer-logs {
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-active);
+      padding: 1rem 2rem;
+      height: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .log-terminal {
+      flex: 1;
+      background-color: var(--bg-deep);
+      border: 1px solid var(--border-terminal);
+      border-radius: 0.4rem;
+      padding: 0.75rem;
+      font-family: var(--text-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      overflow-y: auto;
+      line-height: 1.4;
+    }
+
+    .log-entry {
+      margin-bottom: 0.25rem;
+      animation: slideIn 0.3s ease;
+    }
+
+    .log-timestamp {
+      color: var(--neon-glow);
+    }
+
+    .log-action {
+      color: var(--text-muted);
+    }
+
+    .log-entry.success {
+      color: var(--neon-glow);
+    }
+
+    .log-entry.error {
+      color: var(--crimson-deny);
+    }
+
+    .log-entry.warning {
+      color: var(--amber-alert);
+    }
+
+    /* KEYBOARD HINTS */
+    .keyboard-hints {
+      display: flex;
+      gap: 2rem;
+      font-family: var(--text-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .hint {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .hint-key {
+      background-color: var(--border-active);
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.2rem;
+      color: var(--text-primary);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1400px) {
+      .grid-main {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .panel:nth-child(3) {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 1000px) {
+      .grid-main {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        max-height: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="command-center">
+    <!-- HEADER -->
+    <div class="header">
+      <div class="header-left">
+        <div class="header-logo">⚡ DIABOLUS</div>
+        <div class="header-status">
+          <div class="status-item">
+            <span class="status-dot"></span>
+            <span>SISTEMA ACTIVO</span>
+          </div>
+          <div class="status-item">
+            <span class="status-dot"></span>
+            <span>VERIFACTU READY</span>
+          </div>
+          <div class="status-item">
+            <span class="status-dot"></span>
+            <span>OLLAMA CONECTADO</span>
+          </div>
+        </div>
+      </div>
+      <div style="color: var(--text-muted); font-size: 0.85rem;">
+        v1.0-PREMIUM | [HH:MM:SS] <span id="headerTime">00:00:00</span>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid-main">
+      <!-- [01] CHAT & AGENT CORE -->
+      <div class="panel">
+        <div class="panel-header">[01] AGENT CONVERSACIONAL</div>
+        <div class="panel-content">
+          <div class="chat-messages" id="chatMessages">
+            <div class="message system">
+              [SYS] Base de datos local iniciada. Ollama en línea.
+            </div>
+            <div class="message agent">
+              🤖 Diabolus operativo. Escucho comandos de operación.
+            </div>
+            <div class="message system">
+              [SYS] Micrófono listo. Presiona ESPACIO para hablar.
+            </div>
+          </div>
+
+          <div class="oscilloscope" id="oscilloscope">
+            <div class="bar" style="height: 20%;"></div>
+            <div class="bar" style="height: 15%;"></div>
+            <div class="bar" style="height: 40%;"></div>
+            <div class="bar" style="height: 25%;"></div>
+            <div class="bar" style="height: 60%;"></div>
+            <div class="bar" style="height: 35%;"></div>
+            <div class="bar" style="height: 50%;"></div>
+            <div class="bar" style="height: 10%;"></div>
+          </div>
+
+          <div class="chat-input-area">
+            <input
+              type="text"
+              id="commandInput"
+              placeholder="Ej: 'Ingreso 150 paula tinte' o 'Gasto 80 suministros'"
+              autocomplete="off"
+            >
+            <button onclick="sendCommand()">ENVIAR</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- [02] APPROVAL QUEUE -->
+      <div class="panel">
+        <div class="panel-header">[02] COLA APROBACIÓN (2 SEG)</div>
+        <div class="panel-content">
+          <div class="approval-card" id="approvalCard" style="display: none;">
+            <div class="approval-title">⚡ TRANSACCIÓN PROPUESTA</div>
+            <div class="approval-data">
+              <div class="approval-item">
+                <div class="approval-item-label">Cliente</div>
+                <div class="approval-item-value" id="approvalClient">-</div>
+              </div>
+              <div class="approval-item">
+                <div class="approval-item-label">Monto</div>
+                <div class="approval-item-value positive" id="approvalAmount">€0,00</div>
+              </div>
+              <div class="approval-item">
+                <div class="approval-item-label">Concepto</div>
+                <div class="approval-item-value" id="approvalConcept">-</div>
+              </div>
+              <div class="approval-item">
+                <div class="approval-item-label">IVA (21%)</div>
+                <div class="approval-item-value" id="approvalVAT">€0,00</div>
+              </div>
+            </div>
+            <div class="approval-actions">
+              <button class="btn-deny" onclick="denyApproval()">
+                [ESC] RECHAZAR
+              </button>
+              <button class="btn-approve" onclick="approveApproval()">
+                [ENTER] CONFIRMAR
+              </button>
+            </div>
+          </div>
+
+          <div style="text-align: center; color: var(--text-muted); margin-top: 3rem;" id="emptyApproval">
+            <div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div>
+            <div style="font-family: var(--text-mono); font-size: 0.9rem;">
+              Esperando comando de operación...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- [03] SOVEREIGNTY DASHBOARD -->
+      <div class="panel">
+        <div class="panel-header">[03] CUADRO SOBERANÍA</div>
+        <div class="panel-content">
+          <div class="balance-box">
+            <div class="balance-label">💰 BALANCE DE CAJA</div>
+            <div class="balance-value" id="balanceValue">€7.850,00</div>
+          </div>
+
+          <div class="status-indicators">
+            <div class="indicator">
+              <div class="indicator-title">VERIFACTU</div>
+              <div class="indicator-status">
+                <span class="indicator-dot"></span>
+                <span>ACTIVO 2027</span>
+              </div>
+            </div>
+            <div class="indicator">
+              <div class="indicator-title">LEY CREA Y CRECE</div>
+              <div class="indicator-status">
+                <span class="indicator-dot"></span>
+                <span>READY XML</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hardware-monitor">
+            <div class="hardware-title">🖥️ DIABOLUS BOX (Ollama)</div>
+            <div class="hardware-metric">
+              <span>CPU</span>
+              <span class="hardware-value" id="cpuValue">45%</span>
+            </div>
+            <div class="metric-bar">
+              <div class="metric-fill" id="cpuBar" style="width: 45%;"></div>
+            </div>
+
+            <div class="hardware-metric" style="margin-top: 0.75rem;">
+              <span>GPU Temp</span>
+              <span class="hardware-value" id="tempValue">43°C</span>
+            </div>
+            <div class="metric-bar">
+              <div class="metric-fill" id="tempBar" style="width: 43%;"></div>
+            </div>
+
+            <div class="hardware-metric" style="margin-top: 0.75rem;">
+              <span>Latencia IA</span>
+              <span class="hardware-value" id="latencyValue">1.2s</span>
+            </div>
+            <div class="metric-bar">
+              <div class="metric-fill" id="latencyBar" style="width: 40%;"></div>
+            </div>
+          </div>
+
+          <div style="color: var(--text-muted); font-size: 0.8rem; font-family: var(--text-mono);">
+            Últimas emisiones:
+          </div>
+          <div class="emissions-list" id="emissionsList">
+            <div class="emission-item">
+              <span class="emission-id">INV-2026-042</span><br>
+              <span class="emission-hash">SHA256: 3f2d1e9c...</span>
+            </div>
+            <div class="emission-item">
+              <span class="emission-id">INV-2026-041</span><br>
+              <span class="emission-hash">SHA256: 8a5b2c1d...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER: SYSTEM LOGS -->
+    <div class="footer-logs">
+      <div class="log-terminal" id="logTerminal">
+        <div class="log-entry">[<span class="log-timestamp">00:00:01</span>] Sistema iniciado. Versión 1.0-PREMIUM</div>
+        <div class="log-entry">[<span class="log-timestamp">00:00:02</span>] Clave anon de Supabase cargada</div>
+        <div class="log-entry">[<span class="log-timestamp">00:00:03</span>] Ollama conectado en localhost:11434</div>
+        <div class="log-entry success">[<span class="log-timestamp">00:00:04</span>] ✓ Todos los servicios operativos</div>
+      </div>
+      <div class="keyboard-hints">
+        <div class="hint"><span class="hint-key">ENTER</span> Confirmar</div>
+        <div class="hint"><span class="hint-key">ESC</span> Rechazar</div>
+        <div class="hint"><span class="hint-key">SPACE</span> Micrófono</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRYPTO SIGNATURE OVERLAY -->
+  <div class="crypto-overlay" id="cryptoOverlay">
+    <div class="crypto-content">
+      <div class="crypto-spinner"></div>
+      <div class="crypto-text">GENERANDO FIRMA CRIPTOGRÁFICA</div>
+      <div style="color: var(--text-muted); font-family: var(--text-mono); font-size: 0.9rem; margin-bottom: 1rem;">
+        VeriFactu SHA-256 Encadenado
+      </div>
+      <div class="crypto-hash" id="cryptoHash">
+        3f2d1e9c8a5b2c1d7f4e6a9b3c2d1e0f...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // STATE
+    let balance = 7850;
+    let isRecording = false;
+    let pendingApproval = null;
+
+    // INIT
+    document.addEventListener('DOMContentLoaded', () => {
+      updateTime();
+      startHardwareMonitor();
+      setupKeyboardShortcuts();
+      setInterval(updateTime, 1000);
+    });
+
+    // UPDATE TIME IN HEADER
+    function updateTime() {
+      const now = new Date();
+      const time = now.toLocaleTimeString('es-ES', { hour12: false });
+      document.getElementById('headerTime').textContent = time;
+    }
+
+    // HARDWARE MONITOR (Fluctuating)
+    function startHardwareMonitor() {
+      setInterval(() => {
+        const cpu = Math.floor(Math.random() * 60 + 20);
+        const temp = Math.floor(Math.random() * 15 + 39);
+        const latency = (Math.random() * 1.5 + 0.6).toFixed(1);
+
+        document.getElementById('cpuValue').textContent = cpu + '%';
+        document.getElementById('cpuBar').style.width = cpu + '%';
+
+        document.getElementById('tempValue').textContent = temp + '°C';
+        document.getElementById('tempBar').style.width = (temp / 50) * 100 + '%';
+
+        document.getElementById('latencyValue').textContent = latency + 's';
+        document.getElementById('latencyBar').style.width = (latency / 2.5) * 100 + '%';
+      }, 3000);
+    }
+
+    // OSCILLOSCOPE ANIMATION
+    function animateOscilloscope() {
+      const oscilloscope = document.getElementById('oscilloscope');
+      const bars = oscilloscope.querySelectorAll('.bar');
+      setInterval(() => {
+        bars.forEach(bar => {
+          const newHeight = Math.random() * 70 + 10;
+          bar.style.height = newHeight + '%';
+        });
+      }, 100);
+    }
+
+    // SEND COMMAND
+    function sendCommand() {
+      const input = document.getElementById('commandInput');
+      const command = input.value.trim();
+      if (!command) return;
+
+      addMessage(command, 'user');
+      input.value = '';
+
+      // Simulate agent processing
+      setTimeout(() => {
+        processCommand(command);
+      }, 500);
+    }
+
+    // PROCESS COMMAND
+    function processCommand(command) {
+      const lower = command.toLowerCase();
+      let amount = 0;
+      let client = 'Cliente';
+      let concept = 'Servicio';
+
+      if (lower.includes('ingreso')) {
+        const match = command.match(/(\d+)/);
+        if (match) amount = parseInt(match[1]);
+        client = command.includes('paula') ? 'Paula García' : command.includes('maria') ? 'María López' : 'Cliente';
+        concept = command.includes('tinte') ? 'Tinte' : command.includes('corte') ? 'Corte' : 'Servicio';
+      } else if (lower.includes('gasto')) {
+        const match = command.match(/(\d+)/);
+        if (match) amount = parseInt(match[1]);
+        concept = command.includes('tinturas') ? 'Tinturas' : command.includes('suministros') ? 'Suministros' : 'Gasto';
+      }
+
+      if (amount > 0) {
+        addMessage(`✓ Propuesta procesada. Aguardando aprobación en cola...`, 'agent');
+        showApprovalCard(client, amount, concept);
+      } else {
+        addMessage(`Intenta: "Ingreso 150 paula tinte" o "Gasto 80 suministros"`, 'agent');
+      }
+    }
+
+    // SHOW APPROVAL CARD
+    function showApprovalCard(client, amount, concept) {
+      pendingApproval = { client, amount, concept };
+
+      document.getElementById('approvalClient').textContent = client;
+      document.getElementById('approvalConcept').textContent = concept;
+      document.getElementById('approvalAmount').textContent = '€' + amount.toFixed(2);
+      document.getElementById('approvalVAT').textContent = '€' + (amount * 0.21).toFixed(2);
+
+      document.getElementById('approvalCard').style.display = 'block';
+      document.getElementById('emptyApproval').style.display = 'none';
+    }
+
+    // APPROVE
+    function approveApproval() {
+      if (!pendingApproval) return;
+
+      const overlay = document.getElementById('cryptoOverlay');
+      overlay.classList.add('active');
+
+      // Generate random hash
+      const chars = '0123456789abcdef';
+      let hash = '';
+      for (let i = 0; i < 64; i++) {
+        hash += chars[Math.floor(Math.random() * chars.length)];
+      }
+      document.getElementById('cryptoHash').textContent = hash;
+
+      // Signature animation (1200ms)
+      setTimeout(() => {
+        overlay.classList.remove('active');
+
+        balance += pendingApproval.amount;
+        document.getElementById('balanceValue').textContent = '€' + balance.toFixed(2);
+
+        addMessage(`✓ Factura confirmada. Firma digital aplicada. VeriFactu listo.`, 'agent');
+        addLog('INVOICE_SIGNED', `INV-${Date.now()}. SHA256: ${hash.substring(0, 16)}...`, 'success');
+
+        // Add to emissions
+        const emissionsList = document.getElementById('emissionsList');
+        const newEmission = document.createElement('div');
+        newEmission.className = 'emission-item';
+        newEmission.innerHTML = `<span class="emission-id">INV-${Math.floor(Math.random() * 10000)}</span><br><span class="emission-hash">SHA256: ${hash.substring(0, 16)}...</span>`;
+        emissionsList.insertBefore(newEmission, emissionsList.firstChild);
+
+        // Reset
+        document.getElementById('approvalCard').style.display = 'none';
+        document.getElementById('emptyApproval').style.display = 'block';
+        pendingApproval = null;
+      }, 1200);
+    }
+
+    // DENY
+    function denyApproval() {
+      if (!pendingApproval) return;
+
+      addMessage(`✗ Transacción rechazada. En espera de nuevos comandos.`, 'agent');
+      addLog('TRANSACTION_REJECTED', `Operación cancelada por usuario`, 'warning');
+
+      document.getElementById('approvalCard').style.display = 'none';
+      document.getElementById('emptyApproval').style.display = 'block';
+      pendingApproval = null;
+    }
+
+    // ADD MESSAGE TO CHAT
+    function addMessage(text, sender) {
+      const messagesDiv = document.getElementById('chatMessages');
+      const message = document.createElement('div');
+      message.className = `message ${sender}`;
+      message.textContent = text;
+      messagesDiv.appendChild(message);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // ADD LOG ENTRY
+    function addLog(action, detail, type = 'action') {
+      const terminal = document.getElementById('logTerminal');
+      const now = new Date();
+      const time = now.toLocaleTimeString('es-ES', { hour12: false }).substring(0, 8);
+
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.innerHTML = `[<span class="log-timestamp">${time}</span>] ${action}: ${detail}`;
+
+      terminal.appendChild(entry);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    // KEYBOARD SHORTCUTS
+    function setupKeyboardShortcuts() {
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (pendingApproval) approveApproval();
+          else sendCommand();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          if (pendingApproval) denyApproval();
+        } else if (e.key === ' ') {
+          e.preventDefault();
+          isRecording = !isRecording;
+          const osc = document.getElementById('oscilloscope');
+          if (isRecording) {
+            osc.classList.add('active');
+            addLog('RECORDING', 'Micrófono activo. Dictando...', 'warning');
+            animateOscilloscope();
+          } else {
+            osc.classList.remove('active');
+            addLog('RECORDING_STOP', 'Micrófono desactivado', 'action');
+          }
+        }
+      });
+    }
+
+    // INIT OSCILLOSCOPE ANIMATION
+    animateOscilloscope();
+
+    // ENTER KEY ON INPUT
+    document.getElementById('commandInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendCommand();
+      }
+    });
+  </script>
+</body>
+</html>
