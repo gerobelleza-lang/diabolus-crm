@@ -1,12 +1,152 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0;url=command-center.html">
-  <title>Diabolus CRM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diabolus CRM — Login</title>
+  <link rel="stylesheet" href="css/custom.css">
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0A0E27 0%, #1A1F3A 100%);
+      padding: 2rem;
+    }
+
+    .login-box {
+      background-color: var(--bg-secondary);
+      border: 2px solid var(--primary);
+      border-radius: 1rem;
+      padding: 3rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 30px rgba(139, 21, 56, 0.3);
+    }
+
+    .login-box h1 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+      font-size: 2rem;
+    }
+
+    .login-box .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .form-group input {
+      width: 100%;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 2rem 0;
+      color: var(--text-tertiary);
+    }
+
+    .divider::before {
+      content: '';
+      display: block;
+      height: 1px;
+      background: var(--border-color);
+      margin-bottom: 1rem;
+    }
+
+    .demo-info {
+      background-color: var(--bg-tertiary);
+      border-left: 3px solid var(--gold);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-top: 2rem;
+      font-size: 0.875rem;
+    }
+
+    .demo-info strong {
+      color: var(--gold);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 3rem;
+    }
+  </style>
 </head>
 <body>
-  <p>Redirigiendo a Diabolus...</p>
-  <script>window.location.href = 'command-center.html';</script>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="logo">⚡</div>
+      <h1>DIABOLUS</h1>
+      <p class="subtitle">El negocio te obedece hablando.</p>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="tu@email.com" value="demo@diabolus.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="••••••••" value="demo1234" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary login-btn">
+          ENTRAR EN LA COFRADÍA
+        </button>
+      </form>
+
+      <div class="divider">O</div>
+
+      <button class="btn btn-secondary" style="width: 100%;" onclick="loginAsDemo()">
+        MODO DEMO (Quick Access)
+      </button>
+
+      <div class="demo-info">
+        <strong>Demo Account:</strong><br>
+        Email: demo@diabolus.com<br>
+        Pass: demo1234<br>
+        Negocio: Peluquería Infernal
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function loginAsDemo() {
+      localStorage.setItem('diabolus_auth', JSON.stringify({
+        userId: 'user_123',
+        email: 'demo@diabolus.com',
+        salonId: 'salon_456',
+        salonName: 'Peluquería Infernal',
+        token: 'mock_token_xyz'
+      }));
+      window.location.href = 'dashboard.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      loginAsDemo();
+    });
+  </script>
 </body>
 </html>
