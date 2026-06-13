@@ -31,7 +31,8 @@
             <input type="password" id="password" required class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:border-orange-500" placeholder="••••••••" />
           </div>
 
-          <button type="submit" id="submitBtn" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg font-semibold transition">
+          <button type="button" id="submitBtn" onclick="handleLogin()"
+            class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg font-semibold transition">
             Entrar
           </button>
         </form>
@@ -45,66 +46,64 @@
 
   <script>
     const SUPABASE_URL = 'https://emygbvxkhfbwyhbapaae.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODM3MjcsImV4cCI6MjA5Njg1OTcyN30.HpcYlWwggML7FGHLKerj17sLwj3CiFmYKZdL4iSV9YM'; // Actualizar con tu clave
-    
-    const { createClient } = window.supabase;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY || 'DEMO_MODE');
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODM3MjcsImV4cCI6MjA5Njg1OTcyN30.HpcYlWwggML7FGHLKerj17sLwj3CiFmYKZdL4iSV9YM';
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
+    async function handleLogin() {
+      const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       const errorMsg = document.getElementById('errorMsg');
       const submitBtn = document.getElementById('submitBtn');
 
-      try {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Entrando...';
+      if (!email || !password) {
+        errorMsg.textContent = 'Introduce email y contraseña.';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
 
-        // Intenta autenticar con Supabase
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Entrando...';
+      errorMsg.classList.add('hidden');
+
+      try {
+        // Inicializa Supabase de forma lazy
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
-          // Si falla, usa modo demo
-          console.log('Auth demo mode:', email);
-          localStorage.setItem('token', 'demo-token-' + Date.now());
-          localStorage.setItem('email', email);
-          localStorage.setItem('user', JSON.stringify({
-            email,
-            name: email.split('@')[0],
-            business: 'Mi Negocio'
-          }));
-          window.location.href = '/diabolus-crm/dashboard.html';
+          // Fallback demo: cualquier credencial entra
+          console.warn('Supabase auth fallback (demo):', error.message);
+          _saveSession('demo-token-' + Date.now(), email);
           return;
         }
 
-        // Si funciona, guarda sesión real
-        localStorage.setItem('token', data.session.access_token);
-        localStorage.setItem('email', email);
-        localStorage.setItem('user', JSON.stringify({
-          email,
-          name: email.split('@')[0],
-          business: 'Mi Negocio'
-        }));
+        // Sesión real de Supabase
+        _saveSession(data.session.access_token, email);
 
-        window.location.href = '/diabolus-crm/dashboard.html';
       } catch (err) {
         console.error('Login error:', err);
-        // Fallback a demo mode
-        localStorage.setItem('token', 'demo-token-' + Date.now());
-        localStorage.setItem('email', email);
-        localStorage.setItem('user', JSON.stringify({
-          email,
-          name: email.split('@')[0],
-          business: 'Mi Negocio'
-        }));
-        window.location.href = '/diabolus-crm/dashboard.html';
+        // Fallback demo
+        _saveSession('demo-token-' + Date.now(), email);
       }
+    }
+
+    function _saveSession(token, email) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('email', email);
+      localStorage.setItem('user', JSON.stringify({
+        email,
+        name: email.split('@')[0],
+        business: 'Mi Negocio'
+      }));
+      window.location.href = '/diabolus-crm/dashboard.html';
+    }
+
+    // También permitir Enter en el formulario
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('loginForm').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
     });
   </script>
 </body>
 </html>
-
