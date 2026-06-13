@@ -47,6 +47,8 @@
   </div>
 
   <script>
+    const API_BASE = 'https://diabolus-crm-api.vercel.app';
+
     function enterDemo() {
       localStorage.setItem('token', 'demo-' + Math.random().toString(36).slice(2));
       localStorage.setItem('email', 'demo@diabolus.local');
@@ -58,17 +60,32 @@
       window.location.href = 'dashboard.html';
     }
 
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
-      localStorage.setItem('token', 'jwt-' + Math.random().toString(36).slice(2));
-      localStorage.setItem('email', email);
-      localStorage.setItem('user', JSON.stringify({
-        email,
-        name: email.split('@')[0],
-        business: 'Mi Negocio'
-      }));
-      window.location.href = 'dashboard.html';
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+          alert('Login fallido. Intenta modo demo.');
+          return;
+        }
+
+        const data = await response.json();
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('email', email);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        console.error('Login error:', err);
+        alert('Error de conexión. Intenta modo demo.');
+      }
     });
   </script>
 </body>

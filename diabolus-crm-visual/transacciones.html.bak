@@ -52,7 +52,6 @@
     </main>
   </div>
 
-  <script src="js/config.js"></script>
   <script>
     if (!localStorage.getItem('token')) window.location.href = 'index.html';
     function logout() { localStorage.clear(); window.location.href = 'index.html'; }
