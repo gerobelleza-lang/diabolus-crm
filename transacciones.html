@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Transacciones — Diabolus CRM</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
   <div class="flex h-screen">
@@ -27,18 +28,16 @@
     <main class="ml-64 flex-1 overflow-auto p-8">
       <h1 class="text-4xl font-bold mb-8">Transacciones</h1>
       <div class="grid grid-cols-4 gap-6 mb-8">
-        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Ingresos</p><p class="text-3xl font-bold text-green-400 mt-2">€12,450</p></div>
-        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Gastos</p><p class="text-3xl font-bold text-red-400 mt-2">€2,340</p></div>
-        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Balance</p><p class="text-3xl font-bold text-blue-400 mt-2">€10,110</p></div>
-        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Cantidad</p><p class="text-3xl font-bold text-purple-400 mt-2">47</p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Ingresos</p><p class="text-3xl font-bold text-green-400 mt-2">€<span id="totalIncome">0.00</span></p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Gastos</p><p class="text-3xl font-bold text-red-400 mt-2">€<span id="totalExpenses">0.00</span></p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Balance</p><p class="text-3xl font-bold text-blue-400 mt-2">€<span id="totalBalance">0.00</span></p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Cantidad</p><p class="text-3xl font-bold text-purple-400 mt-2"><span id="totalCount">0</span></p></div>
       </div>
       <div class="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
         <table class="w-full">
           <thead class="bg-gray-700/50 border-b border-gray-700"><tr><th class="px-6 py-4 text-left">Fecha</th><th class="px-6 py-4 text-left">Tipo</th><th class="px-6 py-4 text-left">Concepto</th><th class="px-6 py-4 text-left">Monto</th><th class="px-6 py-4 text-left">Estado</th></tr></thead>
-          <tbody class="divide-y divide-gray-700">
-            <tr><td class="px-6 py-4">12 Jun</td><td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Ingreso</span></td><td class="px-6 py-4">Servicio</td><td class="px-6 py-4 font-bold text-green-400">+€45.00</td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">Pagado</span></td></tr>
-            <tr><td class="px-6 py-4">11 Jun</td><td class="px-6 py-4"><span class="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">Ingreso</span></td><td class="px-6 py-4">Servicio</td><td class="px-6 py-4 font-bold text-green-400">+€65.00</td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">Pagado</span></td></tr>
-            <tr><td class="px-6 py-4">10 Jun</td><td class="px-6 py-4"><span class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded">Gasto</span></td><td class="px-6 py-4">Suministros</td><td class="px-6 py-4 font-bold text-red-400">-€120.00</td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">Pagado</span></td></tr>
+          <tbody id="txTable" class="divide-y divide-gray-700">
+            <tr><td colspan="5" class="px-6 py-4 text-center text-gray-400">Cargando desde Supabase...</td></tr>
           </tbody>
         </table>
       </div>
@@ -46,8 +45,81 @@
   </div>
 
   <script>
+    const SUPABASE_URL = 'https://emygbvxkhfbwyhbapaae.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODM3MjcsImV4cCI6MjA5Njg1OTcyN30.HpcYlWwggML7FGHLKerj17sLwj3CiFmYKZdL4iSV9YM';
+    const { createClient } = window.supabase;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
     if (!localStorage.getItem('token')) window.location.href = '/diabolus-crm/';
     function logout() { localStorage.clear(); window.location.href = '/diabolus-crm/'; }
+
+    async function loadTransactions() {
+      try {
+        const { data: transactions, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.log('Modo demo:', error.message);
+          loadDemoTransactions();
+          return;
+        }
+
+        let income = 0, expenses = 0;
+        const tbody = document.getElementById('txTable');
+        
+        tbody.innerHTML = transactions.map(tx => {
+          const amount = parseFloat(tx.amount) || 0;
+          const isIncome = tx.type === 'income';
+          if (isIncome) income += amount; else expenses += amount;
+          
+          const date = new Date(tx.created_at).toLocaleDateString('es-ES');
+          const typeClass = isIncome ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300';
+          const typeLabel = isIncome ? 'Ingreso' : 'Gasto';
+          
+          return `
+            <tr>
+              <td class="px-6 py-4">${date}</td>
+              <td class="px-6 py-4"><span class="px-2 py-1 ${typeClass} text-xs rounded">${typeLabel}</span></td>
+              <td class="px-6 py-4">${tx.concept || 'N/A'}</td>
+              <td class="px-6 py-4 font-bold text-${isIncome ? 'green' : 'red'}-400">${isIncome ? '+' : '-'}€${amount.toFixed(2)}</td>
+              <td class="px-6 py-4"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">${tx.status || 'Pagado'}</span></td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('totalIncome').textContent = income.toFixed(2);
+        document.getElementById('totalExpenses').textContent = expenses.toFixed(2);
+        document.getElementById('totalBalance').textContent = (income - expenses).toFixed(2);
+        document.getElementById('totalCount').textContent = transactions.length;
+
+      } catch (err) {
+        console.error('Error:', err);
+        loadDemoTransactions();
+      }
+    }
+
+    function loadDemoTransactions() {
+      const demo = [
+        {date: '12 Jun', type: 'income', concept: 'Servicio', amount: 45, status: 'Pagado'},
+        {date: '11 Jun', type: 'income', concept: 'Servicio', amount: 65, status: 'Pagado'},
+        {date: '10 Jun', type: 'expense', concept: 'Suministros', amount: 120, status: 'Pagado'}
+      ];
+      
+      const tbody = document.getElementById('txTable');
+      tbody.innerHTML = demo.map(tx => `
+        <tr>
+          <td class="px-6 py-4">${tx.date}</td>
+          <td class="px-6 py-4"><span class="px-2 py-1 bg-${tx.type === 'income' ? 'green' : 'red'}-500/20 text-${tx.type === 'income' ? 'green' : 'red'}-300 text-xs rounded">${tx.type === 'income' ? 'Ingreso' : 'Gasto'}</span></td>
+          <td class="px-6 py-4">${tx.concept}</td>
+          <td class="px-6 py-4 font-bold text-${tx.type === 'income' ? 'green' : 'red'}-400">${tx.type === 'income' ? '+' : '-'}€${tx.amount}</td>
+          <td class="px-6 py-4"><span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">${tx.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    loadTransactions();
   </script>
 </body>
 </html>
