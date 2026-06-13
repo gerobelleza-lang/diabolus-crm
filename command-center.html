@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DIABOLUS CRM — Command Center</title>
+  <script src="api-client.js"></script>
   <style>
     * {
       margin: 0;
@@ -895,12 +896,29 @@
     let pendingApproval = null;
 
     // INIT
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize with API
+      await loginDemo();
+      await loadDashboardData();
+
       updateTime();
       startHardwareMonitor();
       setupKeyboardShortcuts();
       setInterval(updateTime, 1000);
     });
+
+    // Load dashboard data from API
+    async function loadDashboardData() {
+      try {
+        const stats = await getDashboardStats();
+        // Update stats in UI (if elements exist)
+        if (document.getElementById('balanceValue')) {
+          document.getElementById('balanceValue').textContent = '€' + stats.totalIncome.toFixed(2);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      }
+    }
 
     // UPDATE TIME IN HEADER
     function updateTime() {
@@ -954,35 +972,35 @@
       }, 500);
     }
 
-    // PROCESS COMMAND
-    function processCommand(command) {
-      const lower = command.toLowerCase();
-      let amount = 0;
-      let client = 'Cliente';
-      let concept = 'Servicio';
+    // PROCESS COMMAND — Connect to API
+    async function processCommand(command) {
+      try {
+        // Call backend agent
+        const response = await agentChat(command);
 
-      if (lower.includes('ingreso')) {
-        const match = command.match(/(\d+)/);
-        if (match) amount = parseInt(match[1]);
-        client = command.includes('paula') ? 'Paula García' : command.includes('maria') ? 'María López' : 'Cliente';
-        concept = command.includes('tinte') ? 'Tinte' : command.includes('corte') ? 'Corte' : 'Servicio';
-      } else if (lower.includes('gasto')) {
-        const match = command.match(/(\d+)/);
-        if (match) amount = parseInt(match[1]);
-        concept = command.includes('tinturas') ? 'Tinturas' : command.includes('suministros') ? 'Suministros' : 'Gasto';
-      }
+        // Display agent response
+        addMessage(response.message, 'agent');
 
-      if (amount > 0) {
-        addMessage(`✓ Propuesta procesada. Aguardando aprobación en cola...`, 'agent');
-        showApprovalCard(client, amount, concept);
-      } else {
-        addMessage(`Intenta: "Ingreso 150 paula tinte" o "Gasto 80 suministros"`, 'agent');
+        // Show approval card if pending
+        if (response.status === 'pending_approval') {
+          const result = response.result;
+          showApprovalCard(
+            result.clientName || 'Cliente',
+            result.amount || 0,
+            result.concept || 'Servicio',
+            response.toolUsed,
+            result
+          );
+        }
+      } catch (err) {
+        console.error('Process command error:', err);
+        addMessage('Error procesando comando. Intenta nuevamente.', 'agent');
       }
     }
 
     // SHOW APPROVAL CARD
-    function showApprovalCard(client, amount, concept) {
-      pendingApproval = { client, amount, concept };
+    function showApprovalCard(client, amount, concept, toolUsed, params) {
+      pendingApproval = { client, amount, concept, toolUsed, params };
 
       document.getElementById('approvalClient').textContent = client;
       document.getElementById('approvalConcept').textContent = concept;
@@ -993,20 +1011,23 @@
       document.getElementById('emptyApproval').style.display = 'none';
     }
 
-    // APPROVE
-    function approveApproval() {
+    // APPROVE — Execute via API
+    async function approveApproval() {
       if (!pendingApproval) return;
 
       const overlay = document.getElementById('cryptoOverlay');
       overlay.classList.add('active');
 
-      // Generate random hash
-      const chars = '0123456789abcdef';
-      let hash = '';
-      for (let i = 0; i < 64; i++) {
-        hash += chars[Math.floor(Math.random() * chars.length)];
-      }
-      document.getElementById('cryptoHash').textContent = hash;
+      try {
+        // Call backend agent execute
+        const result = await agentExecute(
+          pendingApproval.toolUsed,
+          pendingApproval.params || { amount: pendingApproval.amount }
+        );
+
+        // Generate hash from result
+        const hash = result.result?.hash || generateMockHash();
+        document.getElementById('cryptoHash').textContent = hash;
 
       // Signature animation (1200ms)
       setTimeout(() => {
@@ -1066,6 +1087,16 @@
 
       terminal.appendChild(entry);
       terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    // Helper: Generate mock hash
+    function generateMockHash() {
+      const chars = '0123456789abcdef';
+      let hash = '';
+      for (let i = 0; i < 64; i++) {
+        hash += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return hash;
     }
 
     // KEYBOARD SHORTCUTS
