@@ -33,14 +33,31 @@
           </button>
         </form>
 
-        <p class="text-center text-sm text-gray-400 mt-6">
-          Demo: cualquier email y contraseña funcionan
+        <div class="mt-4">
+          <button onclick="enterDemo()" class="w-full px-6 py-3 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 hover:border-orange-500/50 rounded-lg font-semibold transition text-gray-300 hover:text-white">
+            ⚡ Modo Demo
+          </button>
+        </div>
+
+        <p class="text-center text-xs text-gray-500 mt-4">
+          Tu negocio, bajo control.
         </p>
       </div>
     </div>
   </div>
 
   <script>
+    function enterDemo() {
+      localStorage.setItem('token', 'demo-' + Math.random().toString(36).slice(2));
+      localStorage.setItem('email', 'demo@diabolus.local');
+      localStorage.setItem('user', JSON.stringify({
+        email: 'demo@diabolus.local',
+        name: 'Demo User',
+        business: 'Mi Negocio Demo'
+      }));
+      window.location.href = 'dashboard.html';
+    }
+
     document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
@@ -51,7 +68,7 @@
         name: email.split('@')[0],
         business: 'Mi Negocio'
       }));
-      window.location.href = '/dashboard.html';
+      window.location.href = 'dashboard.html';
     });
   </script>
 </body>

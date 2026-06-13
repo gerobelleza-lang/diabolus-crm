@@ -1,0 +1,20 @@
+{
+  "name": "diabolus-crm-backend",
+  "version": "1.0.0",
+  "description": "Diabolus CRM API — Hono.js + Supabase",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/app.ts",
+    "build": "tsc --noEmit",
+    "start": "node dist/app.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "hono": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.15.0",
+    "typescript": "^5.4.0"
+  }
+}
