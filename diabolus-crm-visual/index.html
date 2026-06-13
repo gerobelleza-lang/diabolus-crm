@@ -1,109 +1,165 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#ea580c">
-  <meta name="description" content="CRM inteligente para pequeños negocios con Agent IA">
+  <meta name="theme-color" content="#8b1538">
+  <meta name="description" content="CRM inteligente con Agent IA para negocios. Diabolus.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Diabolus">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23ea580c' width='180' height='180'/><text x='90' y='90' font-size='100' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='white'>⚡</text></svg>">
-  <title>Login — Diabolus CRM</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%238b1538' width='180' height='180'/><text x='90' y='90' font-size='100' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='white'>⚡</text></svg>">
+  <title>Diabolus CRM — Login</title>
+  <link rel="stylesheet" href="css/custom.css">
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0A0E27 0%, #1A1F3A 100%);
+      padding: 2rem;
+    }
+
+    .login-box {
+      background-color: var(--bg-secondary);
+      border: 2px solid var(--primary);
+      border-radius: 1rem;
+      padding: 3rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 30px rgba(139, 21, 56, 0.3);
+    }
+
+    .login-box h1 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+      font-size: 2rem;
+    }
+
+    .login-box .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .form-group input {
+      width: 100%;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 2rem 0;
+      color: var(--text-tertiary);
+    }
+
+    .divider::before {
+      content: '';
+      display: block;
+      height: 1px;
+      background: var(--border-color);
+      margin-bottom: 1rem;
+    }
+
+    .demo-info {
+      background-color: var(--bg-tertiary);
+      border-left: 3px solid var(--gold);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-top: 2rem;
+      font-size: 0.875rem;
+    }
+
+    .demo-info strong {
+      color: var(--gold);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 3rem;
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
-  <div class="flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-md mx-auto px-4">
-      <div class="bg-gray-800/40 backdrop-blur border border-gray-700 rounded-2xl p-8 shadow-2xl">
-        <div class="flex justify-center mb-8">
-          <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center font-bold text-2xl shadow-lg">⚡</div>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="logo">⚡</div>
+      <h1>DIABOLUS</h1>
+      <p class="subtitle">El negocio te obedece hablando.</p>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="tu@email.com" value="demo@diabolus.com" required>
         </div>
 
-        <h1 class="text-3xl font-bold text-center mb-2">DIABOLUS</h1>
-        <p class="text-gray-400 text-center mb-8">CRM para pequeños negocios</p>
-
-        <form id="loginForm" class="space-y-4">
-          <div>
-            <label class="block text-sm font-semibold mb-2">Email</label>
-            <input type="email" id="email" required class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:border-orange-500" placeholder="tu@email.com" />
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold mb-2">Contraseña</label>
-            <input type="password" id="password" required class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:border-orange-500" placeholder="••••••••" />
-          </div>
-
-          <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg font-semibold transition">
-            Entrar
-          </button>
-        </form>
-
-        <div class="mt-4">
-          <button onclick="enterDemo()" class="w-full px-6 py-3 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 hover:border-orange-500/50 rounded-lg font-semibold transition text-gray-300 hover:text-white">
-            ⚡ Modo Demo
-          </button>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="••••••••" value="demo1234" required>
         </div>
 
-        <p class="text-center text-xs text-gray-500 mt-4">
-          Tu negocio, bajo control.
-        </p>
+        <button type="submit" class="btn btn-primary login-btn">
+          ENTRAR EN LA COFRADÍA
+        </button>
+      </form>
+
+      <div class="divider">O</div>
+
+      <button class="btn btn-secondary" style="width: 100%;" onclick="loginAsDemo()">
+        MODO DEMO (Quick Access)
+      </button>
+
+      <div class="demo-info">
+        <strong>Demo Account:</strong><br>
+        Email: demo@diabolus.com<br>
+        Pass: demo1234<br>
+        Negocio: Peluquería Infernal
       </div>
     </div>
   </div>
 
   <script>
-    const API_BASE = 'https://diabolus-crm-api.vercel.app';
-
-    function enterDemo() {
-      localStorage.setItem('token', 'demo-' + Math.random().toString(36).slice(2));
-      localStorage.setItem('email', 'demo@diabolus.local');
-      localStorage.setItem('user', JSON.stringify({
-        email: 'demo@diabolus.local',
-        name: 'Demo User',
-        business: 'Mi Negocio Demo'
+    function loginAsDemo() {
+      localStorage.setItem('diabolus_auth', JSON.stringify({
+        userId: 'user_123',
+        email: 'demo@diabolus.com',
+        salonId: 'salon_456',
+        salonName: 'Peluquería Infernal',
+        token: 'mock_token_xyz'
       }));
       window.location.href = 'dashboard.html';
     }
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
-      try {
-        const response = await fetch(`${API_BASE}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-
-        if (!response.ok) {
-          alert('Login fallido. Intenta modo demo.');
-          return;
-        }
-
-        const data = await response.json();
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('email', email);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        window.location.href = 'dashboard.html';
-      } catch (err) {
-        console.error('Login error:', err);
-        alert('Error de conexión. Intenta modo demo.');
-      }
+      loginAsDemo();
     });
 
     // Registrar Service Worker para PWA
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
-        .then((reg) => {
-          console.log('✅ Service Worker registrado:', reg.scope);
-        })
-        .catch((err) => {
-          console.log('Service Worker registration fallido:', err);
-        });
+        .then((reg) => console.log('✅ PWA ready'))
+        .catch((err) => console.log('SW error:', err));
     }
   </script>
 </body>
