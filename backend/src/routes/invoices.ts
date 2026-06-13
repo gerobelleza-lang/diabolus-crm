@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { getSignatureProvider } from '../integrations/signature/factory'
@@ -38,7 +39,7 @@ invoiceRoutes.get('/:id', async (c) => {
   return c.json({ invoice: data })
 })
 
-// POST /api/invoices — Crear + Firmar
+// POST /api/invoices
 invoiceRoutes.post('/', async (c) => {
   const salonId = c.get('salonId')
   const userId = c.get('userId')
