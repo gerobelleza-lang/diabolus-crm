@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login — Diabolus CRM</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
   <div class="flex items-center justify-center min-h-screen">
@@ -17,6 +18,8 @@
         <h1 class="text-3xl font-bold text-center mb-2">DIABOLUS</h1>
         <p class="text-gray-400 text-center mb-8">CRM para pequeños negocios</p>
 
+        <div id="errorMsg" class="hidden bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded mb-4 text-sm"></div>
+
         <form id="loginForm" class="space-y-4">
           <div>
             <label class="block text-sm font-semibold mb-2">Email</label>
@@ -28,30 +31,78 @@
             <input type="password" id="password" required class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:border-orange-500" placeholder="••••••••" />
           </div>
 
-          <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg font-semibold transition">
+          <button type="submit" id="submitBtn" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg font-semibold transition">
             Entrar
           </button>
         </form>
 
         <p class="text-center text-sm text-gray-400 mt-6">
-          Demo: cualquier email y contraseña funcionan
+          Demo: prueba con cualquier email/contraseña
         </p>
       </div>
     </div>
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    const SUPABASE_URL = 'https://emygbvxkhfbwyhbapaae.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODM3MjcsImV4cCI6MjA5Njg1OTcyN30.HpcYlWwggML7FGHLKerj17sLwj3CiFmYKZdL4iSV9YM'; // Actualizar con tu clave
+    
+    const { createClient } = window.supabase;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY || 'DEMO_MODE');
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
-      localStorage.setItem('token', 'jwt-' + Math.random().toString(36).slice(2));
-      localStorage.setItem('email', email);
-      localStorage.setItem('user', JSON.stringify({
-        email,
-        name: email.split('@')[0],
-        business: 'Mi Negocio'
-      }));
-      window.location.href = '/diabolus-crm/dashboard.html';
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('errorMsg');
+      const submitBtn = document.getElementById('submitBtn');
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Entrando...';
+
+        // Intenta autenticar con Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          // Si falla, usa modo demo
+          console.log('Auth demo mode:', email);
+          localStorage.setItem('token', 'demo-token-' + Date.now());
+          localStorage.setItem('email', email);
+          localStorage.setItem('user', JSON.stringify({
+            email,
+            name: email.split('@')[0],
+            business: 'Mi Negocio'
+          }));
+          window.location.href = '/diabolus-crm/dashboard.html';
+          return;
+        }
+
+        // Si funciona, guarda sesión real
+        localStorage.setItem('token', data.session.access_token);
+        localStorage.setItem('email', email);
+        localStorage.setItem('user', JSON.stringify({
+          email,
+          name: email.split('@')[0],
+          business: 'Mi Negocio'
+        }));
+
+        window.location.href = '/diabolus-crm/dashboard.html';
+      } catch (err) {
+        console.error('Login error:', err);
+        // Fallback a demo mode
+        localStorage.setItem('token', 'demo-token-' + Date.now());
+        localStorage.setItem('email', email);
+        localStorage.setItem('user', JSON.stringify({
+          email,
+          name: email.split('@')[0],
+          business: 'Mi Negocio'
+        }));
+        window.location.href = '/diabolus-crm/dashboard.html';
+      }
     });
   </script>
 </body>
