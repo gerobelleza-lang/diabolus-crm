@@ -1,0 +1,58 @@
+{
+  "name": "Diabolus CRM",
+  "short_name": "Diabolus",
+  "description": "CRM inteligente para pequeños negocios con Agent IA",
+  "start_url": "/diabolus-crm/",
+  "scope": "/diabolus-crm/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#000000",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23ea580c' width='192' height='192'/><text x='50%' y='50%' font-size='120' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='white'>⚡</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23ea580c' width='512' height='512'/><text x='50%' y='50%' font-size='300' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='white'>⚡</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23000' width='540' height='720'/><text x='270' y='360' font-size='100' text-anchor='middle' dominant-baseline='central' fill='%23ea580c'>DIABOLUS</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Abre el dashboard principal",
+      "url": "/diabolus-crm/dashboard.html",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23ea580c' width='96' height='96'/><text x='48' y='48' font-size='60' text-anchor='middle' dominant-baseline='central' fill='white'>📊</text></svg>", "sizes": "96x96" }]
+    },
+    {
+      "name": "Transacciones",
+      "short_name": "Transacciones",
+      "description": "Gestiona ingresos y gastos",
+      "url": "/diabolus-crm/transacciones.html",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23ea580c' width='96' height='96'/><text x='48' y='48' font-size='60' text-anchor='middle' dominant-baseline='central' fill='white'>💰</text></svg>", "sizes": "96x96" }]
+    },
+    {
+      "name": "Clientes",
+      "short_name": "Clientes",
+      "description": "Administra tu base de clientes",
+      "url": "/diabolus-crm/clientes.html",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23ea580c' width='96' height='96'/><text x='48' y='48' font-size='60' text-anchor='middle' dominant-baseline='central' fill='white'>👥</text></svg>", "sizes": "96x96" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

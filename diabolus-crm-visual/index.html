@@ -2,7 +2,14 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ea580c">
+  <meta name="description" content="CRM inteligente para pequeños negocios con Agent IA">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23ea580c' width='180' height='180'/><text x='90' y='90' font-size='100' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='white'>⚡</text></svg>">
   <title>Login — Diabolus CRM</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -87,6 +94,17 @@
         alert('Error de conexión. Intenta modo demo.');
       }
     });
+
+    // Registrar Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then((reg) => {
+          console.log('✅ Service Worker registrado:', reg.scope);
+        })
+        .catch((err) => {
+          console.log('Service Worker registration fallido:', err);
+        });
+    }
   </script>
 </body>
 </html>
