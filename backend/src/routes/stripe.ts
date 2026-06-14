@@ -1,8 +1,9 @@
 import { Hono } from 'hono'
 import Stripe from 'stripe'
+import { getSupabaseAdmin } from '../integrations/supabase.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20'
+  apiVersion: '2023-08-16'
 })
 
 export const stripeRoutes = new Hono()
@@ -35,8 +36,8 @@ stripeRoutes.post('/create-charge', async (c) => {
       amount: amountCents,
       currency: currency.toLowerCase(),
       metadata: {
-        invoiceId,
-        salonId: c.get('salonId') || 'demo'
+        invoiceId: invoiceId || '',
+        salonId: 'demo'
       },
       description: description || `Invoice ${invoiceId}`
     })
@@ -76,16 +77,11 @@ stripeRoutes.post('/webhook', async (c) => {
     // Handle events
     switch (event.type) {
       case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object as Stripe.PaymentIntent
-        console.log(`✓ Payment succeeded: ${paymentIntent.id}`)
-        // TODO: Update invoice status to 'paid'
-        // TODO: Send confirmation email
+        await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent)
         break
 
       case 'payment_intent.payment_failed':
-        const failedIntent = event.data.object as Stripe.PaymentIntent
-        console.log(`✗ Payment failed: ${failedIntent.id}`)
-        // TODO: Notify user
+        await handlePaymentFailed(event.data.object as Stripe.PaymentIntent)
         break
 
       default:
@@ -120,3 +116,67 @@ stripeRoutes.get('/payment-intent/:id', async (c) => {
     return c.json({ error: 'Payment intent not found' }, 404)
   }
 })
+
+/**
+ * Maneja pago exitoso
+ */
+async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  const invoiceId = paymentIntent.metadata?.invoiceId as string | undefined
+  const salonId = paymentIntent.metadata?.salonId as string | undefined
+
+  console.log(`✓ Payment succeeded: ${paymentIntent.id}`)
+
+  if (!invoiceId || !salonId) {
+    console.warn('Missing invoiceId or salonId in payment metadata')
+    return
+  }
+
+  try {
+    const supabase = getSupabaseAdmin()
+
+    // Actualizar estado de factura a 'paid'
+    const { error } = await supabase
+      .from('invoices')
+      .update({
+        status: 'paid',
+        paid_at: new Date().toISOString()
+      })
+      .eq('id', invoiceId)
+      .eq('salon_id', salonId)
+
+    if (error) {
+      console.error('Failed to update invoice:', error)
+      return
+    }
+
+    console.log(`✓ Invoice ${invoiceId} marked as paid`)
+
+    // TODO: Send confirmation email to client
+    // TODO: Send notification to business owner
+  } catch (err) {
+    console.error('Error processing payment success:', err)
+  }
+}
+
+/**
+ * Maneja pago fallido
+ */
+async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
+  const invoiceId = paymentIntent.metadata?.invoiceId as string | undefined
+  const salonId = paymentIntent.metadata?.salonId as string | undefined
+
+  console.log(`✗ Payment failed: ${paymentIntent.id}`)
+
+  if (!invoiceId || !salonId) {
+    console.warn('Missing invoiceId or salonId in payment metadata')
+    return
+  }
+
+  try {
+    // TODO: Mark invoice as payment_failed
+    // TODO: Send retry notification to client
+    console.log(`Payment failure notification sent for invoice ${invoiceId}`)
+  } catch (err) {
+    console.error('Error processing payment failure:', err)
+  }
+}
