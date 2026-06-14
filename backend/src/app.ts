@@ -8,6 +8,8 @@ import { transactionRoutes } from './routes/transactions'
 import { invoiceRoutes } from './routes/invoices'
 import { agentRoutes } from './routes/agent'
 import { stripeRoutes } from './routes/stripe'
+import { whatsappRoutes } from './routes/whatsapp'
+import { webhookRoutes } from './routes/webhooks'
 import { authMiddleware } from './middleware/auth'
 
 export function createApp() {
@@ -48,8 +50,10 @@ export function createApp() {
 
   app.route('/auth', authRoutes)
 
-  // ─── Stripe Webhook (Public, no auth required) ─────────────────────────────
+  // ─── Webhooks (Public, no auth required) ──────────────────────────────────
   app.route('/api/stripe', stripeRoutes)
+  app.route('/api/whatsapp', whatsappRoutes)
+  app.route('/webhooks', webhookRoutes)
 
   // ─── Protected Routes ──────────────────────────────────────────────────────
   app.use('/api/*', authMiddleware)
