@@ -1,11 +1,12 @@
 /**
- * Diabolus CRM — Vercel Edge Runtime Entry Point
+ * Diabolus CRM — Vercel Node.js Runtime Entry Point
  * Hono.js catch-all handler
  */
 import { handle } from 'hono/vercel'
 import { createApp } from '../src/app'
 
-export const config = { runtime: 'edge' }
+// Node.js runtime required for PDFKit (Buffer, streams)
+export const config = { runtime: 'nodejs' }
 
 const app = createApp()
 export default handle(app)
