@@ -36,19 +36,12 @@ export function createApp() {
     })
   )
 
-  // ─── Public Routes ─────────────────────────────────────────────────────────
-  app.get('/', (c) =>
-    c.json({
-      status: 'ok',
-      service: 'Diabolus CRM API',
-      version: '1.0.0',
-      timestamp: new Date().toISOString(),
-    })
-  )
+  // ─── Health & Root ─────────────────────────────────────────────────────────
   app.get('/health', (c) =>
     c.json({ status: 'ok', timestamp: new Date().toISOString() })
   )
 
+  // ─── Public Routes ─────────────────────────────────────────────────────────
   app.route('/auth', authRoutes)
 
   // ─── Webhooks (Public, no auth required) ──────────────────────────────────
