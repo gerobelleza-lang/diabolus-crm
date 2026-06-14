@@ -1,11 +1,11 @@
 {
   "name": "diabolus-crm-backend",
   "version": "1.0.0",
-  "description": "Diabolus CRM API — Hono.js + Supabase",
+  "description": "Diabolus CRM API - Hono.js + Supabase",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/app.ts",
-    "build": "echo 'Build OK — Vercel handles TS compilation'",
+    "build": "echo 'Build OK - Vercel handles TS compilation'",
     "start": "node dist/app.js",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -13,13 +13,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "hono": "^4.5.0",
-    "pdfkit": "^0.15.0",
+    "pdf-lib": "^1.17.1",
     "stripe": "^14.0.0",
     "twilio": "^5.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/pdfkit": "^0.13.9",
     "tsx": "^4.15.0",
     "typescript": "^5.4.0",
     "vitest": "^1.0.0"
