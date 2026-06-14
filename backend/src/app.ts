@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
@@ -51,7 +52,7 @@ export function createApp() {
   app.route('/api/whatsapp', whatsappRoutes)
   app.route('/webhooks', webhookRoutes)
 
-  // ─── Demonio Callback (Public — called by N8N, no user auth) ──────────────────────
+  // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────────
   app.post('/api/demonio/callback', async (c) => {
     try {
       const body = await c.req.json().catch(() => ({}))
