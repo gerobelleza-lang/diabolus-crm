@@ -8,6 +8,11 @@ type Variables = {
   userEmail: string
 }
 
+// Demo credentials (real UUIDs so FK constraints pass)
+const DEMO_USER_ID = '43c8e1f2-0724-4cff-897b-77376c094017'
+const DEMO_SALON_ID = 'e3cdcbf9-de82-44d8-81e4-e4348dce6714'
+const DEMO_EMAIL = 'admin@diabolus.local'
+
 export const authMiddleware = createMiddleware<{ Variables: Variables }>(
   async (c, next) => {
     const auth = c.req.header('Authorization')
@@ -18,11 +23,11 @@ export const authMiddleware = createMiddleware<{ Variables: Variables }>(
     const token = auth.slice(7)
     const isDev = token.startsWith('dev_') || token.startsWith('demo_')
 
-    // DEV MODE: accept any demo token
+    // DEV MODE: accept demo token with real UUIDs
     if (isDev) {
-      c.set('userId', 'dev-user')
-      c.set('salonId', 'dev-salon')
-      c.set('userEmail', 'dev@diabolus.local')
+      c.set('userId', DEMO_USER_ID)
+      c.set('salonId', DEMO_SALON_ID)
+      c.set('userEmail', DEMO_EMAIL)
       return next()
     }
 
