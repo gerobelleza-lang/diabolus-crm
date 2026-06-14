@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/app.ts",
     "build": "echo 'Build OK — Vercel handles TS compilation'",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -16,6 +18,7 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "tsx": "^4.15.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^1.0.0"
   }
 }
