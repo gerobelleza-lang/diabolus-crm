@@ -2,7 +2,6 @@
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { getSignatureProvider } from '../integrations/signature/factory'
-import { generateInvoicePDF } from '../utils/invoice-pdf'
 
 type Variables = { userId: string; salonId: string }
 
@@ -138,6 +137,8 @@ invoiceRoutes.get('/:id/pdf', async (c) => {
   if (error || !invoice) return c.json({ error: 'Invoice not found' }, 404)
 
   try {
+    // Dynamic import to avoid Edge runtime issues
+    const { generateInvoicePDF } = await import('../utils/invoice-pdf')
     const pdfBuffer = await generateInvoicePDF(invoice)
     const invoiceNum = `INV-${invoice.id.slice(0, 8).toUpperCase()}`
 
@@ -150,12 +151,12 @@ invoiceRoutes.get('/:id/pdf', async (c) => {
     })
   } catch (err) {
     console.error('[PDF] Error generando PDF:', err)
-    return c.json({ error: 'Error generating PDF' }, 500)
+    return c.json({ error: 'Error generating PDF', details: String(err) }, 500)
   }
 })
 
 // POST /api/invoices/:id/send-whatsapp
-// Genera PDF y lo envía por WhatsApp al cliente
+// Genera PDF (opcional) y lo envia por WhatsApp al cliente via Twilio
 invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
   const salonId = c.get('salonId')
   const { id } = c.req.param()
@@ -164,7 +165,7 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
   // 1. Obtener factura con datos completos
   const { data: invoice, error } = await supabase
     .from('invoices')
-    .select('*, clients(name, email, phone), salons(name, email, phone, address, nif)')
+    .select('*, clients(name, email, phone), salons(name)')
     .eq('salon_id', salonId)
     .eq('id', id)
     .single()
@@ -176,61 +177,67 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
     return c.json({ error: 'Client has no phone number. Add it in the client profile.' }, 400)
   }
 
-  // 2. Generar PDF
-  let pdfBuffer: Buffer
+  // 2. Intentar generar PDF (opcional - no bloquea si falla)
+  let pdfUrl: string | null = null
   try {
-    pdfBuffer = await generateInvoicePDF(invoice)
-  } catch (err) {
-    console.error('[PDF] Error:', err)
-    return c.json({ error: 'Error generating PDF' }, 500)
-  }
-
-  // 3. Subir PDF a Supabase Storage
-  const invoiceNum = `INV-${invoice.id.slice(0, 8).toUpperCase()}`
-  const fileName = `${salonId}/${invoiceNum}.pdf`
-
-  const { error: uploadError } = await supabase.storage
-    .from('invoices')
-    .upload(fileName, pdfBuffer, {
-      contentType: 'application/pdf',
-      upsert: true,
+    const { generateInvoicePDF } = await import('../utils/invoice-pdf')
+    const pdfBuffer = await generateInvoicePDF({
+      ...invoice,
+      amount: invoice.amount ?? invoice.total ?? 0,
     })
 
-  if (uploadError) {
-    console.error('[Storage] Error subiendo PDF:', uploadError)
-    return c.json({ error: 'Error uploading PDF to storage' }, 500)
+    const invoiceNum = `INV-${invoice.id.slice(0, 8).toUpperCase()}`
+    const fileName = `${salonId}/${invoiceNum}.pdf`
+
+    const { error: uploadError } = await supabase.storage
+      .from('invoices')
+      .upload(fileName, pdfBuffer, {
+        contentType: 'application/pdf',
+        upsert: true,
+      })
+
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName)
+      pdfUrl = urlData?.publicUrl ?? null
+
+      // Guardar URL en factura
+      await supabase.from('invoices').update({ pdf_url: pdfUrl }).eq('id', id)
+    } else {
+      console.warn('[Storage] Upload error:', uploadError.message)
+    }
+  } catch (pdfErr) {
+    console.warn('[PDF] Generation skipped (non-fatal):', String(pdfErr))
   }
 
-  // 4. Obtener URL pública
-  const { data: urlData } = supabase.storage
-    .from('invoices')
-    .getPublicUrl(fileName)
+  // 3. Preparar mensaje WhatsApp
+  const invoiceNum = `INV-${invoice.id.slice(0, 8).toUpperCase()}`
+  const invoiceDate = new Date(invoice.created_at).toLocaleDateString('es-ES')
+  const amount = invoice.amount ?? invoice.total ?? 0
 
-  const pdfUrl = urlData?.publicUrl
+  let messageBody = `🧾 *Factura de ${invoice.salons?.name || 'tu proveedor'}*\n\n` +
+    `Hola ${invoice.clients?.name},\n\n` +
+    `Te enviamos tu factura:\n` +
+    `📄 *${invoiceNum}*\n` +
+    `💰 Importe: *€${Number(amount).toFixed(2)}*\n` +
+    `📅 Fecha: ${invoiceDate}\n\n`
 
-  // 5. Enviar por WhatsApp (Twilio)
-  const twilioSid = process.env.TWILIO_ACCOUNT_SID
-  const twilioToken = process.env.TWILIO_AUTH_TOKEN
-  const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
+  if (pdfUrl) {
+    messageBody += `Descarga el PDF:\n${pdfUrl}\n\n`
+  }
+  messageBody += `_Enviado desde Diabolus CRM_`
 
-  // Limpiar teléfono: añadir +34 si no tiene prefijo
+  // 4. Limpiar telefono y enviar por Twilio
   let toPhone = clientPhone.replace(/\s/g, '')
   if (!toPhone.startsWith('+')) {
     toPhone = '+34' + toPhone
   }
   const twilioTo = `whatsapp:${toPhone}`
 
-  const invoiceDate = new Date(invoice.created_at).toLocaleDateString('es-ES')
-  const messageBody = `🧾 *Factura de ${invoice.salons?.name || 'tu proveedor'}*\n\n` +
-    `Hola ${invoice.clients?.name},\n\n` +
-    `Te adjuntamos tu factura:\n` +
-    `📄 *${invoiceNum}*\n` +
-    `💰 Importe: *€${Number(invoice.amount).toFixed(2)}*\n` +
-    `📅 Fecha: ${invoiceDate}\n\n` +
-    `Puedes descargar el PDF aquí:\n${pdfUrl}\n\n` +
-    `_Enviado desde Diabolus CRM_`
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID
+  const twilioToken = process.env.TWILIO_AUTH_TOKEN
+  const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
 
-  let whatsappResult: { status: string; messageId?: string; mock?: boolean }
+  let whatsappResult: { status: string; messageId?: string; mock?: boolean; error?: string }
 
   if (twilioSid && twilioToken) {
     try {
@@ -253,15 +260,24 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
         }
       )
 
-      const twilioData = await twilioResponse.json() as any
+      const twilioData = await twilioResponse.json()
 
       if (!twilioResponse.ok) {
         throw new Error(`Twilio error: ${twilioData?.message || JSON.stringify(twilioData)}`)
       }
 
       whatsappResult = { status: 'sent', messageId: twilioData.sid }
+
+      // Actualizar estado de la factura
+      await supabase
+        .from('invoices')
+        .update({ status: 'sent', sent_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('salon_id', salonId)
+
     } catch (twilioErr) {
       console.error('[Twilio] Error:', twilioErr)
+      whatsappResult = { status: 'error', error: String(twilioErr) }
       return c.json({ error: `WhatsApp send failed: ${twilioErr}` }, 500)
     }
   } else {
@@ -273,13 +289,6 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
       mock: true,
     }
   }
-
-  // 6. Actualizar estado de la factura
-  await supabase
-    .from('invoices')
-    .update({ status: 'sent', pdf_url: pdfUrl })
-    .eq('id', id)
-    .eq('salon_id', salonId)
 
   return c.json({
     success: true,
