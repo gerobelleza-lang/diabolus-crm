@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { getSupabaseAdmin } from '../integrations/supabase.js'
 
 export const webhookRoutes = new Hono()
 
@@ -26,17 +27,47 @@ webhookRoutes.post('/gmail', async (c) => {
     const gmailData = JSON.parse(decodedData) as {
       emailAddress?: string
       messagesAdded?: Array<{ id: string }>
+      snippet?: string
     }
 
     console.log(`📧 Gmail webhook: ${gmailData.messagesAdded?.length || 0} messages`)
 
-    // TODO: Fetch email details from Gmail API
-    // TODO: Parse invoice data (amount, vendor, date)
-    // TODO: Register as expense in Diabolus
+    // Procesar cada email
+    const processed: Array<{ id?: string; status: string; error?: string }> = []
+
+    for (const msg of gmailData.messagesAdded || []) {
+      try {
+        // Mock: usar snippet como contenido del email
+        const emailContent = gmailData.snippet || 'Invoice email'
+
+        // Parse con IA
+        const invoiceData = await parseInvoiceEmail(emailContent)
+
+        // TODO: Obtener salonId desde contexto de auth o header
+        // Por ahora, usar un valor default para testing
+        const salonId = message.attributes?.['salon_id'] || 'default-salon'
+
+        // Registrar en Supabase
+        await registerExpense(salonId, invoiceData)
+
+        processed.push({
+          id: msg.id,
+          status: 'success'
+        })
+      } catch (msgErr) {
+        console.error(`Failed to process message ${msg.id}:`, msgErr)
+        processed.push({
+          id: msg.id,
+          status: 'error',
+          error: String(msgErr)
+        })
+      }
+    }
 
     return c.json({
       status: 'success',
-      processed: gmailData.messagesAdded?.length || 0,
+      processed: processed.length,
+      results: processed,
       timestamp: new Date().toISOString()
     })
   } catch (err) {
@@ -71,49 +102,110 @@ webhookRoutes.post('/stripe', async (c) => {
 })
 
 /**
- * Parsea email de factura y extrae datos
- * (Implementación futura con Gmail API + IA)
+ * Parsea email de factura con IA y extrae datos
  */
-// async function parseInvoiceEmail(messageId: string) {
-//   const gmail = google.gmail({ version: 'v1', auth: authClient })
-//   const message = await gmail.users.messages.get({ userId: 'me', id: messageId })
-//   const payload = message.data.payload
-//
-//   // Extract headers
-//   const from = payload?.headers?.find((h: any) => h.name === 'From')?.value
-//   const subject = payload?.headers?.find((h: any) => h.name === 'Subject')?.value
-//
-//   // TODO: Use IA to parse:
-//   // - Vendor name
-//   // - Invoice number
-//   // - Amount
-//   // - Due date
-//   // - Category (tinturas, suministros, etc)
-//
-//   return {
-//     vendor: from,
-//     subject: subject,
-//     amount: 0,
-//     dueDate: new Date(),
-//     category: 'general'
-//   }
-// }
-//
-// async function registerExpense(expense: {
-//   vendor: string
-//   amount: number
-//   category: string
-//   dueDate: Date
-// }) {
-//   // Insert into Supabase transactions table
-//   // const { data, error } = await supabase
-//   //   .from('transactions')
-//   //   .insert({
-//   //     salon_id: salonId,
-//   //     type: 'expense',
-//   //     amount: expense.amount,
-//   //     concept: expense.vendor,
-//   //     category: expense.category,
-//   //     created_at: new Date()
-//   //   })
-// }
+async function parseInvoiceEmail(emailBody: string): Promise<{
+  vendor: string
+  amount: number
+  category: string
+  dueDate: Date
+  invoiceNumber?: string
+}> {
+  const openrouterKey = process.env.OPENROUTER_API_KEY
+
+  if (!openrouterKey) {
+    throw new Error('OPENROUTER_API_KEY not configured')
+  }
+
+  const systemPrompt = `You are a financial assistant that extracts invoice data from emails.
+Extract from the provided email:
+- vendor name (proveedor)
+- amount in EUR (monto numérico)
+- category (suministros, tinturas, servicios, etc)
+- due date (fecha de vencimiento, formato ISO)
+- invoice number (número de factura, si existe)
+
+Return JSON only: {"vendor":"name","amount":123.45,"category":"category","dueDate":"2026-06-30T00:00:00Z","invoiceNumber":"INV-123"}`
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${openrouterKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://diabolus-crm.vercel.app'
+    },
+    body: JSON.stringify({
+      model: 'openai/gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user',
+          content: `Parse this invoice email:\n\n${emailBody}`
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 500
+    })
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(`OpenRouter error: ${JSON.stringify(error)}`)
+  }
+
+  const result = await response.json() as {
+    choices?: Array<{ message?: { content: string } }>
+  }
+  const content = result.choices?.[0]?.message?.content || '{}'
+
+  const parsed = JSON.parse(content)
+
+  return {
+    vendor: parsed.vendor || 'Unknown',
+    amount: parseFloat(parsed.amount) || 0,
+    category: parsed.category || 'general',
+    dueDate: new Date(parsed.dueDate || new Date()),
+    invoiceNumber: parsed.invoiceNumber
+  }
+}
+
+/**
+ * Registra gasto en Supabase
+ */
+async function registerExpense(
+  salonId: string,
+  expense: {
+    vendor: string
+    amount: number
+    category: string
+    dueDate: Date
+    invoiceNumber?: string
+  }
+) {
+  try {
+    const supabase = getSupabaseAdmin()
+
+    const { error } = await supabase.from('transactions').insert([{
+      salon_id: salonId,
+      type: 'expense',
+      amount: expense.amount,
+      concept: `${expense.vendor}${expense.invoiceNumber ? ` (${expense.invoiceNumber})` : ''}`,
+      category: expense.category,
+      due_date: expense.dueDate.toISOString(),
+      created_at: new Date().toISOString()
+    }] as any)
+
+    if (error) {
+      console.error('Database error:', error)
+      throw error
+    }
+
+    console.log(`✅ Expense registered: €${expense.amount} from ${expense.vendor}`)
+  } catch (err) {
+    console.error('Failed to register expense:', err)
+    throw err
+  }
+}
