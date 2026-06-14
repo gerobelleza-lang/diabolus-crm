@@ -1,17 +1,16 @@
 import { Hono } from 'hono'
 import { parseUserInput } from '../agent/parser'
+import { routeToLLM, callOpenRouter, DIABOLUS_SYSTEM_PROMPT } from '../agent/llm-router'
 
 export const agentRoutes = new Hono()
 
 /**
  * POST /api/agent/chat
- * Procesa input natural del usuario usando Parser L0 (deterministic, sin LLM)
+ * Procesa input natural usando: L0 (deterministic) → L1-3 (LLM si es necesario)
  */
-agentRoutes.post('/chat', (c) => {
+agentRoutes.post('/chat', async (c) => {
   try {
-    const body = c.req.header('content-type')?.includes('application/json')
-      ? c.req.parsedBody
-      : null
+    const body = await c.req.json().catch(() => ({}))
 
     if (!body || typeof body !== 'object' || !('userInput' in body)) {
       return c.json({ error: 'Missing userInput' }, 400)
@@ -22,15 +21,45 @@ agentRoutes.post('/chat', (c) => {
       return c.json({ error: 'userInput must be non-empty string' }, 400)
     }
 
-    // Parse using L0 parser (deterministic, €0 cost)
+    // Step 1: L0 Parser (deterministic, €0)
     const parsed = parseUserInput(userInput)
 
-    // Generate response based on parsed intent
-    const response = generateResponse(parsed)
+    // Step 2: Decide routing
+    const routing = routeToLLM(
+      parsed.confidence,
+      userInput,
+      parsed.intent === 'create_income' || parsed.intent === 'create_expense'
+    )
+
+    // Step 3: Generate response
+    let finalResponse: string
+    if (routing.level === 'L0') {
+      // Use L0 parser response
+      finalResponse = generateL0Response(parsed)
+    } else {
+      // Use LLM
+      try {
+        const llmResponse = await callOpenRouter(
+          routing.model,
+          userInput,
+          DIABOLUS_SYSTEM_PROMPT
+        )
+        finalResponse = llmResponse
+      } catch (err) {
+        console.warn('[LLM] Error, falling back to L0:', err)
+        finalResponse = generateL0Response(parsed)
+      }
+    }
 
     return c.json({
-      status: parsed.confidence > 0.7 ? 'ready' : 'clarify',
-      message: response,
+      status: 'success',
+      message: finalResponse,
+      routing: {
+        level: routing.level,
+        model: routing.model,
+        rationale: routing.rationale,
+        estimatedCost: `€${routing.estimatedCost}`
+      },
       parsed: {
         intent: parsed.intent,
         confidence: parsed.confidence,
@@ -44,9 +73,9 @@ agentRoutes.post('/chat', (c) => {
 })
 
 /**
- * Genera respuesta amigable basada en parsed intent
+ * L0 response cuando parser es suficientemente confiable
  */
-function generateResponse(parsed: ReturnType<typeof parseUserInput>): string {
+function generateL0Response(parsed: ReturnType<typeof parseUserInput>): string {
   const { intent, data, confidence } = parsed
 
   switch (intent) {
@@ -57,16 +86,16 @@ function generateResponse(parsed: ReturnType<typeof parseUserInput>): string {
       return `✓ Gasto de €${data.amount} propuesto — ${data.concept}`
 
     case 'query_balance':
-      return `💰 ¿Quieres ver el balance de hoy? Usa GET /api/dashboard/stats`
+      return `💰 Balance de hoy — usa GET /api/dashboard/stats para detalles`
 
     case 'query_debtors':
-      return `⚠️ ¿Clientes morosos? Usa GET /api/dashboard/alerts`
+      return `⚠️ Clientes morosos — usa GET /api/dashboard/alerts`
 
     case 'query_income':
-      return `📊 Total ingresos — Usa GET /api/transactions?type=income`
+      return `📊 Total ingresos — usa GET /api/transactions?type=income`
 
     case 'query_expense':
-      return `📊 Total gastos — Usa GET /api/transactions?type=expense`
+      return `📊 Total gastos — usa GET /api/transactions?type=expense`
 
     case 'unclear':
     case 'unclear_query':
