@@ -11,6 +11,7 @@ import { stripeRoutes } from './routes/stripe'
 import { whatsappRoutes } from './routes/whatsapp'
 import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio.js'
+import { telegramRoutes } from './routes/telegram'
 import { authMiddleware } from './middleware/auth'
 
 export function createApp() {
@@ -36,19 +37,12 @@ export function createApp() {
     })
   )
 
-  // ─── Public Routes ─────────────────────────────────────────────────────────
-  app.get('/', (c) =>
-    c.json({
-      status: 'ok',
-      service: 'Diabolus CRM API',
-      version: '1.0.0',
-      timestamp: new Date().toISOString(),
-    })
-  )
+  // ─── Health & Root ─────────────────────────────────────────────────────────
   app.get('/health', (c) =>
     c.json({ status: 'ok', timestamp: new Date().toISOString() })
   )
 
+  // ─── Public Routes ─────────────────────────────────────────────────────────
   app.route('/auth', authRoutes)
 
   // ─── Webhooks (Public, no auth required) ──────────────────────────────────
@@ -64,6 +58,7 @@ export function createApp() {
   app.route('/api/invoices', invoiceRoutes)
   app.route('/api/agent', agentRoutes)
   app.route('/api/demonio', demonioRoutes)
+  app.route('/api/notifications/telegram', telegramRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) =>
