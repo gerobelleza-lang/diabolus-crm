@@ -10,6 +10,7 @@ import { agentRoutes } from './routes/agent'
 import { stripeRoutes } from './routes/stripe'
 import { whatsappRoutes } from './routes/whatsapp'
 import { webhookRoutes } from './routes/webhooks'
+import { telegramRoutes } from './routes/telegram'
 import { authMiddleware } from './middleware/auth'
 
 export function createApp() {
@@ -62,6 +63,7 @@ export function createApp() {
   app.route('/api/transactions', transactionRoutes)
   app.route('/api/invoices', invoiceRoutes)
   app.route('/api/agent', agentRoutes)
+  app.route('/api/notifications/telegram', telegramRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) =>
