@@ -7,6 +7,7 @@ import { clientRoutes } from './routes/clients'
 import { transactionRoutes } from './routes/transactions'
 import { invoiceRoutes } from './routes/invoices'
 import { agentRoutes } from './routes/agent'
+import { stripeRoutes } from './routes/stripe'
 import { authMiddleware } from './middleware/auth'
 
 export function createApp() {
@@ -46,6 +47,9 @@ export function createApp() {
   )
 
   app.route('/auth', authRoutes)
+
+  // ─── Stripe Webhook (Public, no auth required) ─────────────────────────────
+  app.route('/api/stripe', stripeRoutes)
 
   // ─── Protected Routes ──────────────────────────────────────────────────────
   app.use('/api/*', authMiddleware)
