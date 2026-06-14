@@ -13,6 +13,7 @@ import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
 import { telegramRoutes } from './routes/telegram'
 import { authMiddleware } from './middleware/auth'
+import { getSupabaseAdmin } from './integrations/supabase'
 
 export function createApp() {
   const app = new Hono()
@@ -49,6 +50,58 @@ export function createApp() {
   app.route('/api/stripe', stripeRoutes)
   app.route('/api/whatsapp', whatsappRoutes)
   app.route('/webhooks', webhookRoutes)
+
+  // ─── Demonio Callback (Public — called by N8N, no user auth) ──────────────────────
+  app.post('/api/demonio/callback', async (c) => {
+    try {
+      const body = await c.req.json().catch(() => ({}))
+      const { task_id, status, result, error, preview } = body
+
+      if (!task_id || !status) {
+        return c.json({ error: 'Missing task_id or status' }, 400)
+      }
+
+      const supabase = getSupabaseAdmin()
+
+      const { error: updateErr } = await supabase
+        .from('demonio_tasks')
+        .update({
+          status,
+          result: result ?? null,
+          error: error ?? null,
+          preview: preview ?? null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', task_id)
+
+      if (updateErr) {
+        return c.json({ error: 'Failed to update task' }, 500)
+      }
+
+      if (status === 'completed') {
+        const { data: task } = await supabase
+          .from('demonio_tasks')
+          .select('*')
+          .eq('id', task_id)
+          .single()
+
+        if (task) {
+          await supabase.from('audit_log').insert([{
+            user_id: task.user_id,
+            salon_id: task.salon_id,
+            action: `demonio_${task.action}`,
+            changes: result,
+            created_at: new Date().toISOString()
+          }])
+        }
+      }
+
+      return c.json({ received: true })
+    } catch (err) {
+      console.error('[Demonio Callback] Error:', err)
+      return c.json({ error: 'Internal error' }, 500)
+    }
+  })
 
   // ─── Protected Routes ──────────────────────────────────────────────────────
   app.use('/api/*', authMiddleware)
