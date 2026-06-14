@@ -6,6 +6,7 @@ import { dashboardRoutes } from './routes/dashboard'
 import { clientRoutes } from './routes/clients'
 import { transactionRoutes } from './routes/transactions'
 import { invoiceRoutes } from './routes/invoices'
+import { agentRoutes } from './routes/agent'
 import { authMiddleware } from './middleware/auth'
 
 export function createApp() {
@@ -52,6 +53,7 @@ export function createApp() {
   app.route('/api/clients', clientRoutes)
   app.route('/api/transactions', transactionRoutes)
   app.route('/api/invoices', invoiceRoutes)
+  app.route('/api/agent', agentRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) =>

@@ -16,6 +16,17 @@ export const authMiddleware = createMiddleware<{ Variables: Variables }>(
     }
 
     const token = auth.slice(7)
+    const isDev = token.startsWith('dev_') || token.startsWith('demo_')
+
+    // DEV MODE: accept any demo token
+    if (isDev) {
+      c.set('userId', 'dev-user')
+      c.set('salonId', 'dev-salon')
+      c.set('userEmail', 'dev@diabolus.local')
+      return next()
+    }
+
+    // PROD MODE: validate against Supabase
     const supabase = getSupabaseAdmin()
 
     const {
