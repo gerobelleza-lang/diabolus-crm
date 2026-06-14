@@ -10,7 +10,7 @@ import { agentRoutes } from './routes/agent'
 import { stripeRoutes } from './routes/stripe'
 import { whatsappRoutes } from './routes/whatsapp'
 import { webhookRoutes } from './routes/webhooks'
-import { demonioRoutes } from './routes/demonio.js'
+import { demonioRoutes } from './routes/demonio'
 import { telegramRoutes } from './routes/telegram'
 import { authMiddleware } from './middleware/auth'
 
