@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { parseUserInput } from '../agent/parser'
 import { saveTransaction } from './agent'
+import { sendReminderWhatsApp } from './invoices'
 
 const telegram = new Hono()
 const telegramBot = new Hono()
@@ -75,7 +76,7 @@ telegramBot.post('/webhook', async (c) => {
     else if (text.startsWith('/cobros')) {
       const { data: invoices } = await supabase
         .from('invoices')
-        .select('total')
+        .select('total, clients(name)')
         .in('status', ['pending', 'sent'])
 
       const count = (invoices || []).length
@@ -83,7 +84,13 @@ telegramBot.post('/webhook', async (c) => {
 
       const msg = count === 0
         ? '✅ No hay cobros pendientes registrados.'
-        : `⏳ <b>Cobros pendientes</b>\n\n📋 Facturas: <b>${count}</b>\n💶 Total pendiente: <b>${total.toFixed(2)}€</b>`
+        : (() => {
+            const lines = (invoices || []).map(i => {
+              const name = i.clients?.name || 'Sin nombre'
+              return `• ${name} — <b>${Number(i.total).toFixed(2)}€</b>`
+            })
+            return `⏳ <b>Cobros pendientes</b>\n\n${lines.join('\n')}\n───────────────\n💶 Total: <b>${total.toFixed(2)}€</b>`
+          })()
       await sendTelegramMessage(msg, chatId)
     }
 
@@ -91,9 +98,10 @@ telegramBot.post('/webhook', async (c) => {
     else if (text.startsWith('/vencidas')) {
       const { data: invoices } = await supabase
         .from('invoices')
-        .select('total, due_date')
+        .select('id, number, total, due_date, clients(name)')
         .in('status', ['pending', 'sent'])
         .lt('due_date', todayISO)
+        .order('due_date', { ascending: true })
 
       const count = (invoices || []).length
       const total = (invoices || []).reduce((s, i) => s + Number(i.total), 0)
@@ -103,9 +111,16 @@ telegramBot.post('/webhook', async (c) => {
         : (() => {
             const lines = (invoices || []).map(i => {
               const days = Math.floor((now.getTime() - new Date(i.due_date).getTime()) / 86400000)
-              return `• ${Number(i.total).toFixed(2)}€ — vencida hace <b>${days} días</b>`
+              const name = i.clients?.name || 'Sin nombre'
+              const num = i.number || i.id.slice(0, 8).toUpperCase()
+              return `🔴 <b>${name}</b> — ${Number(i.total).toFixed(2)}€\n   ${num} · hace ${days} días`
             })
-            return `🔴 <b>Facturas vencidas</b>\n\n${lines.join('\n')}\n───────────────\n💶 Total en riesgo: <b>${total.toFixed(2)}€</b>`
+            return (
+              `🔴 <b>Facturas vencidas (${count})</b>\n\n` +
+              lines.join('\n\n') +
+              `\n\n───────────────\n💶 Total en riesgo: <b>${total.toFixed(2)}€</b>\n\n` +
+              `💡 Envía un recordatorio: <code>/recordatorio [nº factura]</code>`
+            )
           })()
       await sendTelegramMessage(msg, chatId)
     }
@@ -132,10 +147,102 @@ telegramBot.post('/webhook', async (c) => {
       await sendTelegramMessage(msg, chatId)
     }
 
+    // ── /recordatorio ────────────────────────────────────────────────────────
+    else if (text.startsWith('/recordatorio')) {
+      const arg = rawText.replace(/^\/recordatorio\s*/i, '').trim()
+
+      if (!arg) {
+        // Sin argumento: mostrar facturas vencidas con sus números
+        const { data: invoices } = await supabase
+          .from('invoices')
+          .select('id, number, total, due_date, clients(name)')
+          .in('status', ['pending', 'sent'])
+          .lt('due_date', todayISO)
+          .order('due_date', { ascending: true })
+
+        if (!invoices || invoices.length === 0) {
+          await sendTelegramMessage('✅ No hay facturas vencidas para recordar.', chatId)
+        } else {
+          const lines = invoices.map(i => {
+            const name = i.clients?.name || 'Sin nombre'
+            const num = i.number || i.id.slice(0, 8).toUpperCase()
+            const days = Math.floor((now.getTime() - new Date(i.due_date).getTime()) / 86400000)
+            return `• <code>${num}</code> — ${name} — ${Number(i.total).toFixed(2)}€ (${days}d)`
+          })
+          await sendTelegramMessage(
+            `📋 <b>Facturas vencidas — elige una:</b>\n\n${lines.join('\n')}\n\n` +
+            `Usa: <code>/recordatorio [número]</code>\nEj: <code>/recordatorio ${invoices[0].number || 'FAC-001'}</code>`,
+            chatId
+          )
+        }
+      } else {
+        // Con argumento: buscar la factura por número y enviar recordatorio
+        const { data: invoice } = await supabase
+          .from('invoices')
+          .select('*, clients(name, phone), salons(name)')
+          .ilike('number', `%${arg}%`)
+          .in('status', ['pending', 'sent'])
+          .limit(1)
+          .single()
+
+        if (!invoice) {
+          await sendTelegramMessage(
+            `❌ No encontré ninguna factura pendiente con el número <b>${arg}</b>.\n\nUsa /recordatorio sin argumentos para ver la lista.`,
+            chatId
+          )
+        } else {
+          const clientName = invoice.clients?.name || 'cliente'
+          const invoiceNum = invoice.number || arg
+          const total = Number(invoice.total ?? 0)
+
+          if (!invoice.clients?.phone) {
+            await sendTelegramMessage(
+              `⚠️ <b>${clientName}</b> no tiene teléfono registrado.\nNo se puede enviar el recordatorio por WhatsApp.`,
+              chatId
+            )
+          } else {
+            // Confirmar antes de enviar
+            await sendTelegramMessage(
+              `📤 Enviando recordatorio a <b>${clientName}</b>...\n` +
+              `📄 Factura: ${invoiceNum} — 💶 ${total.toFixed(2)}€`,
+              chatId
+            )
+
+            const result = await sendReminderWhatsApp(invoice)
+
+            if (result.sent) {
+              await sendTelegramMessage(
+                `✅ <b>Recordatorio enviado</b>\n\n` +
+                `👤 ${clientName}\n📄 ${invoiceNum} — ${total.toFixed(2)}€\n📱 ${result.phone}`,
+                chatId
+              )
+            } else {
+              await sendTelegramMessage(
+                `❌ No se pudo enviar por WhatsApp.\nMotivo: ${result.error || 'Error desconocido'}`,
+                chatId
+              )
+            }
+          }
+        }
+      }
+    }
+
     // ── /ayuda o /start ──────────────────────────────────────────────────────
     else if (text.startsWith('/ayuda') || text.startsWith('/start')) {
       await sendTelegramMessage(
-        `🤖 <b>Diabolus CRM Bot</b>\n\n<b>Consultas</b>\n/balance — Ingresos, gastos y balance del mes\n/cobros — Total pendiente de cobro\n/vencidas — Facturas vencidas\n/quien — Quién te debe dinero\n\n<b>Registrar en lenguaje natural</b>\n• "Cobré 300€ de María" → guarda ingreso\n• "Gasté 80€ en materiales" → guarda gasto\n• "Me pagaron 150€ de la factura de Juan" → ingreso\n\n/ayuda — Esta ayuda`,
+        `🤖 <b>Diabolus CRM Bot</b>\n\n` +
+        `<b>Consultas</b>\n` +
+        `/balance — Ingresos, gastos y balance del mes\n` +
+        `/cobros — Pendientes de cobro con nombres\n` +
+        `/vencidas — Facturas vencidas con detalle\n` +
+        `/quien — Quién te debe dinero\n\n` +
+        `<b>Cobros inteligentes</b>\n` +
+        `/recordatorio — Lista vencidas listas para recordar\n` +
+        `/recordatorio FAC-001 — Envía WhatsApp al cliente\n\n` +
+        `<b>Registrar (lenguaje natural)</b>\n` +
+        `• "Cobré 300€ de María" → guarda ingreso\n` +
+        `• "Gasté 80€ en materiales" → guarda gasto\n\n` +
+        `/ayuda — Esta ayuda`,
         chatId
       )
     }
@@ -145,7 +252,6 @@ telegramBot.post('/webhook', async (c) => {
       const parsed = parseUserInput(rawText)
 
       if (parsed.intent === 'create_income' && parsed.data.amount > 0) {
-        // Obtener primer salon_id disponible
         const { data: salon } = await supabase.from('salons').select('id').limit(1).single()
         const salonId = salon?.id || null
 
@@ -192,7 +298,6 @@ telegramBot.post('/webhook', async (c) => {
       }
 
       else if (parsed.intent.startsWith('query_')) {
-        // Redirigir a comando equivalente
         const map: Record<string, string> = {
           query_balance: '/balance',
           query_debtors: '/cobros',
@@ -201,15 +306,9 @@ telegramBot.post('/webhook', async (c) => {
         }
         const cmd = map[parsed.intent]
         if (cmd) {
-          await sendTelegramMessage(
-            `💡 Para eso puedes usar el comando ${cmd}`,
-            chatId
-          )
+          await sendTelegramMessage(`💡 Para eso puedes usar el comando ${cmd}`, chatId)
         } else {
-          await sendTelegramMessage(
-            `No entiendo esa consulta.\n\nEscribe /ayuda para ver qué puedo hacer.`,
-            chatId
-          )
+          await sendTelegramMessage(`No entiendo esa consulta.\n\nEscribe /ayuda para ver qué puedo hacer.`, chatId)
         }
       }
 
@@ -223,10 +322,7 @@ telegramBot.post('/webhook', async (c) => {
 
     // ── Comando desconocido ──────────────────────────────────────────────────
     else {
-      await sendTelegramMessage(
-        `Comando no reconocido.\nEscribe /ayuda para ver qué puedo hacer.`,
-        chatId
-      )
+      await sendTelegramMessage(`Comando no reconocido.\nEscribe /ayuda para ver qué puedo hacer.`, chatId)
     }
 
   } catch (err) {

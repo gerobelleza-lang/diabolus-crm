@@ -215,3 +215,109 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
     return c.json({ error: 'Internal error', details: String(err) }, 500)
   }
 })
+
+// ─── Helper compartido para enviar recordatorio de cobro ──────────────────────
+async function sendReminderWhatsApp(invoice: any) {
+  const clientPhone = invoice.clients?.phone
+  if (!clientPhone) return { sent: false, error: 'Sin teléfono' }
+
+  const invoiceNum = invoice.number || `FAC-${invoice.id.slice(0, 8).toUpperCase()}`
+  const total = Number(invoice.total ?? 0)
+  const dueDate = invoice.due_date
+    ? new Date(invoice.due_date).toLocaleDateString('es-ES')
+    : 'Sin fecha'
+  const clientName = invoice.clients?.name || 'cliente'
+  const salonName = invoice.salons?.name || 'Diabolus CRM'
+
+  const reminderMessage =
+    `Hola ${clientName},\n\n` +
+    `Te recordamos que tienes una factura pendiente de pago:\n\n` +
+    `📄 Factura: ${invoiceNum}\n` +
+    `💶 Importe: ${total.toFixed(2)}€\n` +
+    `📅 Vencimiento: ${dueDate}\n\n` +
+    `Por favor, realiza el pago para evitar cargos adicionales.\n\n` +
+    `Gracias,\n${salonName}`
+
+  let toPhone = clientPhone.replace(/\s/g, '')
+  if (!toPhone.startsWith('+')) toPhone = '+34' + toPhone
+  const twilioTo = `whatsapp:${toPhone}`
+
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID
+  const twilioToken = process.env.TWILIO_AUTH_TOKEN
+  const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
+
+  if (!twilioSid || !twilioToken) {
+    return { sent: false, error: 'Sin credenciales Twilio', phone: toPhone, mock: true }
+  }
+
+  const twilioPayload = new URLSearchParams({ From: twilioFrom, To: twilioTo, Body: reminderMessage })
+  const twilioResponse = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: 'Basic ' + btoa(`${twilioSid}:${twilioToken}`),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: twilioPayload.toString(),
+    }
+  )
+  const twilioData = await twilioResponse.json()
+  if (!twilioResponse.ok) {
+    return { sent: false, error: twilioData?.message || 'Twilio error', phone: toPhone }
+  }
+  return { sent: true, phone: toPhone, sid: twilioData.sid }
+}
+
+export { sendReminderWhatsApp }
+
+// POST /api/invoices/:id/send-reminder — recordatorio de cobro
+invoiceRoutes.post('/:id/send-reminder', async (c) => {
+  try {
+    const salonId = c.get('salonId')
+    const { id } = c.req.param()
+    const supabase = getSupabaseAdmin()
+
+    const { data: invoice, error } = await supabase
+      .from('invoices')
+      .select('*, clients(name, phone), salons(name)')
+      .eq('salon_id', salonId)
+      .eq('id', id)
+      .single()
+
+    if (error || !invoice) return c.json({ error: 'Factura no encontrada' }, 404)
+    if (!['pending', 'sent', 'overdue'].includes(invoice.status)) {
+      return c.json({ error: 'Solo se pueden enviar recordatorios de facturas pendientes' }, 400)
+    }
+
+    const result = await sendReminderWhatsApp(invoice)
+    const invoiceNum = invoice.number || `FAC-${invoice.id.slice(0, 8).toUpperCase()}`
+    const total = Number(invoice.total ?? 0)
+    const clientName = invoice.clients?.name || 'cliente'
+
+    // Notificar a Miguel por Telegram
+    const botToken = process.env.TELEGRAM_BOT_TOKEN
+    const chatId = process.env.TELEGRAM_CHAT_ID
+    if (botToken && chatId) {
+      const tgMsg = result.sent
+        ? `📤 <b>Recordatorio enviado</b>\n\n👤 Cliente: <b>${clientName}</b>\n📄 Factura: ${invoiceNum}\n💶 Importe: <b>${total.toFixed(2)}€</b>\n📱 WhatsApp: ${result.phone}`
+        : `⚠️ <b>Recordatorio no enviado</b>\n\n👤 Cliente: <b>${clientName}</b>\n📄 Factura: ${invoiceNum}\n❌ Motivo: ${result.error}`
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: tgMsg, parse_mode: 'HTML' }),
+      })
+    }
+
+    return c.json({
+      success: result.sent,
+      invoice_number: invoiceNum,
+      client: clientName,
+      phone: result.phone,
+      whatsapp_sent: result.sent,
+      error: result.error || null,
+    })
+  } catch (err) {
+    return c.json({ error: 'Internal error', details: String(err) }, 500)
+  }
+})
