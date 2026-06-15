@@ -2,6 +2,8 @@
 // backend/src/routes/telegram.ts
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
+import { parseUserInput } from '../agent/parser'
+import { saveTransaction } from './agent'
 
 const telegram = new Hono()
 const telegramBot = new Hono()
@@ -32,7 +34,8 @@ telegramBot.post('/webhook', async (c) => {
   if (!message) return c.json({ ok: true })
 
   const chatId = String(message.chat?.id)
-  const text = (message.text || '').trim().toLowerCase()
+  const rawText = (message.text || '').trim()
+  const text = rawText.toLowerCase()
 
   // Seguridad: solo responder al chat autorizado (Miguel)
   const allowedChatId = process.env.TELEGRAM_CHAT_ID
@@ -47,7 +50,7 @@ telegramBot.post('/webhook', async (c) => {
   const todayISO = now.toISOString()
 
   try {
-    // /balance — ingresos, gastos y balance del mes
+    // ── /balance ────────────────────────────────────────────────────────────
     if (text.startsWith('/balance')) {
       const { data: transactions } = await supabase
         .from('transactions')
@@ -62,17 +65,13 @@ telegramBot.post('/webhook', async (c) => {
       const balance = income - expenses
       const mes = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
 
-      if (!transactions || transactions.length === 0) {
-        await sendTelegramMessage(`📊 <b>Balance — ${mes}</b>\n\nNo hay transacciones registradas este mes.`, chatId)
-      } else {
-        await sendTelegramMessage(
-          `📊 <b>Balance — ${mes}</b>\n\n💚 Ingresos: <b>${income.toFixed(2)}€</b>\n🔴 Gastos: <b>${expenses.toFixed(2)}€</b>\n───────────────\n💰 Balance neto: <b>${balance.toFixed(2)}€</b>`,
-          chatId
-        )
-      }
+      const msg = (!transactions || transactions.length === 0)
+        ? `📊 <b>Balance — ${mes}</b>\n\nNo hay transacciones registradas este mes.`
+        : `📊 <b>Balance — ${mes}</b>\n\n💚 Ingresos: <b>${income.toFixed(2)}€</b>\n🔴 Gastos: <b>${expenses.toFixed(2)}€</b>\n───────────────\n💰 Balance neto: <b>${balance.toFixed(2)}€</b>`
+      await sendTelegramMessage(msg, chatId)
     }
 
-    // /cobros — total pendiente de cobro
+    // ── /cobros ─────────────────────────────────────────────────────────────
     else if (text.startsWith('/cobros')) {
       const { data: invoices } = await supabase
         .from('invoices')
@@ -82,17 +81,13 @@ telegramBot.post('/webhook', async (c) => {
       const count = (invoices || []).length
       const total = (invoices || []).reduce((s, i) => s + Number(i.total), 0)
 
-      if (count === 0) {
-        await sendTelegramMessage('✅ No hay cobros pendientes registrados.', chatId)
-      } else {
-        await sendTelegramMessage(
-          `⏳ <b>Cobros pendientes</b>\n\n📋 Facturas: <b>${count}</b>\n💶 Total pendiente: <b>${total.toFixed(2)}€</b>`,
-          chatId
-        )
-      }
+      const msg = count === 0
+        ? '✅ No hay cobros pendientes registrados.'
+        : `⏳ <b>Cobros pendientes</b>\n\n📋 Facturas: <b>${count}</b>\n💶 Total pendiente: <b>${total.toFixed(2)}€</b>`
+      await sendTelegramMessage(msg, chatId)
     }
 
-    // /vencidas — facturas vencidas
+    // ── /vencidas ────────────────────────────────────────────────────────────
     else if (text.startsWith('/vencidas')) {
       const { data: invoices } = await supabase
         .from('invoices')
@@ -103,59 +98,137 @@ telegramBot.post('/webhook', async (c) => {
       const count = (invoices || []).length
       const total = (invoices || []).reduce((s, i) => s + Number(i.total), 0)
 
-      if (count === 0) {
-        await sendTelegramMessage('✅ No hay facturas vencidas.', chatId)
-      } else {
-        const lines = (invoices || []).map(i => {
-          const days = Math.floor((now.getTime() - new Date(i.due_date).getTime()) / 86400000)
-          return `• ${Number(i.total).toFixed(2)}€ — vencida hace <b>${days} días</b>`
-        })
-        await sendTelegramMessage(
-          `🔴 <b>Facturas vencidas</b>\n\n${lines.join('\n')}\n───────────────\n💶 Total en riesgo: <b>${total.toFixed(2)}€</b>`,
-          chatId
-        )
-      }
+      const msg = count === 0
+        ? '✅ No hay facturas vencidas.'
+        : (() => {
+            const lines = (invoices || []).map(i => {
+              const days = Math.floor((now.getTime() - new Date(i.due_date).getTime()) / 86400000)
+              return `• ${Number(i.total).toFixed(2)}€ — vencida hace <b>${days} días</b>`
+            })
+            return `🔴 <b>Facturas vencidas</b>\n\n${lines.join('\n')}\n───────────────\n💶 Total en riesgo: <b>${total.toFixed(2)}€</b>`
+          })()
+      await sendTelegramMessage(msg, chatId)
     }
 
-    // /quien — quién te debe dinero
+    // ── /quien ───────────────────────────────────────────────────────────────
     else if (text.startsWith('/quien')) {
       const { data: invoices } = await supabase
         .from('invoices')
         .select('total, due_date, clients(name)')
         .in('status', ['pending', 'sent'])
 
-      if (!invoices || invoices.length === 0) {
-        await sendTelegramMessage('✅ Nadie te debe dinero ahora mismo.', chatId)
-      } else {
-        const lines = invoices.map(i => {
-          const name = i.clients?.name || 'Sin nombre'
-          const amount = Number(i.total).toFixed(2)
-          const overdue = i.due_date && new Date(i.due_date) < now ? ' 🔴' : ''
-          return `• ${name} — <b>${amount}€</b>${overdue}`
+      const msg = (!invoices || invoices.length === 0)
+        ? '✅ Nadie te debe dinero ahora mismo.'
+        : (() => {
+            const lines = invoices.map(i => {
+              const name = i.clients?.name || 'Sin nombre'
+              const amount = Number(i.total).toFixed(2)
+              const overdue = i.due_date && new Date(i.due_date) < now ? ' 🔴' : ''
+              return `• ${name} — <b>${amount}€</b>${overdue}`
+            })
+            const totalDeuda = invoices.reduce((s, i) => s + Number(i.total), 0)
+            return `👥 <b>Quién te debe dinero</b>\n\n${lines.join('\n')}\n───────────────\n💶 Total: <b>${totalDeuda.toFixed(2)}€</b>\n\n🔴 = factura vencida`
+          })()
+      await sendTelegramMessage(msg, chatId)
+    }
+
+    // ── /ayuda o /start ──────────────────────────────────────────────────────
+    else if (text.startsWith('/ayuda') || text.startsWith('/start')) {
+      await sendTelegramMessage(
+        `🤖 <b>Diabolus CRM Bot</b>\n\n<b>Consultas</b>\n/balance — Ingresos, gastos y balance del mes\n/cobros — Total pendiente de cobro\n/vencidas — Facturas vencidas\n/quien — Quién te debe dinero\n\n<b>Registrar en lenguaje natural</b>\n• "Cobré 300€ de María" → guarda ingreso\n• "Gasté 80€ en materiales" → guarda gasto\n• "Me pagaron 150€ de la factura de Juan" → ingreso\n\n/ayuda — Esta ayuda`,
+        chatId
+      )
+    }
+
+    // ── Lenguaje natural (no es comando) ─────────────────────────────────────
+    else if (!text.startsWith('/')) {
+      const parsed = parseUserInput(rawText)
+
+      if (parsed.intent === 'create_income' && parsed.data.amount > 0) {
+        // Obtener primer salon_id disponible
+        const { data: salon } = await supabase.from('salons').select('id').limit(1).single()
+        const salonId = salon?.id || null
+
+        const description = parsed.data.clientName && parsed.data.clientName !== 'Cliente'
+          ? `${parsed.data.concept} — ${parsed.data.clientName}`
+          : parsed.data.concept
+
+        const result = await saveTransaction({
+          amount: parsed.data.amount,
+          type: 'income',
+          description,
+          salonId,
         })
-        const totalDeuda = invoices.reduce((s, i) => s + Number(i.total), 0)
+
+        if (result.ok) {
+          await sendTelegramMessage(
+            `✅ <b>Ingreso guardado</b>\n\n💶 Importe: <b>${parsed.data.amount.toFixed(2)}€</b>\n📝 Concepto: ${description}\n📅 Fecha: ${new Date().toLocaleDateString('es-ES')}\n\nYa está en tu balance del mes.`,
+            chatId
+          )
+        } else {
+          await sendTelegramMessage(`❌ No se pudo guardar el ingreso: ${result.error}`, chatId)
+        }
+      }
+
+      else if (parsed.intent === 'create_expense' && parsed.data.amount > 0) {
+        const { data: salon } = await supabase.from('salons').select('id').limit(1).single()
+        const salonId = salon?.id || null
+
+        const result = await saveTransaction({
+          amount: parsed.data.amount,
+          type: 'expense',
+          description: parsed.data.concept,
+          salonId,
+        })
+
+        if (result.ok) {
+          await sendTelegramMessage(
+            `✅ <b>Gasto guardado</b>\n\n💶 Importe: <b>${parsed.data.amount.toFixed(2)}€</b>\n📝 Concepto: ${parsed.data.concept}\n📅 Fecha: ${new Date().toLocaleDateString('es-ES')}\n\nYa está en tus gastos del mes.`,
+            chatId
+          )
+        } else {
+          await sendTelegramMessage(`❌ No se pudo guardar el gasto: ${result.error}`, chatId)
+        }
+      }
+
+      else if (parsed.intent.startsWith('query_')) {
+        // Redirigir a comando equivalente
+        const map: Record<string, string> = {
+          query_balance: '/balance',
+          query_debtors: '/cobros',
+          query_overdue: '/vencidas',
+          query_who_owes: '/quien',
+        }
+        const cmd = map[parsed.intent]
+        if (cmd) {
+          await sendTelegramMessage(
+            `💡 Para eso puedes usar el comando ${cmd}`,
+            chatId
+          )
+        } else {
+          await sendTelegramMessage(
+            `No entiendo esa consulta.\n\nEscribe /ayuda para ver qué puedo hacer.`,
+            chatId
+          )
+        }
+      }
+
+      else {
         await sendTelegramMessage(
-          `👥 <b>Quién te debe dinero</b>\n\n${lines.join('\n')}\n───────────────\n💶 Total: <b>${totalDeuda.toFixed(2)}€</b>\n\n🔴 = factura vencida`,
+          `No he entendido el importe. Prueba así:\n• "Cobré 300€ de Juan"\n• "Gasté 80€ en materiales"\n\nO escribe /ayuda para ver los comandos.`,
           chatId
         )
       }
     }
 
-    // /ayuda o /start
-    else if (text.startsWith('/ayuda') || text.startsWith('/start')) {
+    // ── Comando desconocido ──────────────────────────────────────────────────
+    else {
       await sendTelegramMessage(
-        `🤖 <b>Diabolus CRM Bot</b>\n\nComandos disponibles:\n\n/balance — Ingresos, gastos y balance del mes\n/cobros — Total pendiente de cobro\n/vencidas — Facturas vencidas\n/quien — Quién te debe dinero\n/ayuda — Esta ayuda`,
+        `Comando no reconocido.\nEscribe /ayuda para ver qué puedo hacer.`,
         chatId
       )
     }
 
-    // Comando desconocido
-    else {
-      await sendTelegramMessage(
-        `No entiendo ese comando.\n\nEscribe /ayuda para ver los disponibles.`,
-        chatId
-      )
-    }
   } catch (err) {
     console.error('[TelegramBot] Error:', err)
     await sendTelegramMessage('❌ Error interno. Inténtalo de nuevo.', chatId)
@@ -166,7 +239,6 @@ telegramBot.post('/webhook', async (c) => {
 
 // ─── Rutas de notificación (protegidas, para N8N / sistema interno) ───────────
 
-// ✅ Cobro recibido
 telegram.post('/payment-received', async (c) => {
   const { client_name, amount, invoice_id } = await c.req.json()
   const message = `✅ <b>Cobro recibido</b>\n\n👤 Cliente: ${client_name}\n💶 Importe: ${amount}€\n🧾 Factura: #${invoice_id}`
@@ -174,7 +246,6 @@ telegram.post('/payment-received', async (c) => {
   return c.json({ success: true, result })
 })
 
-// ⚠️ Factura pendiente
 telegram.post('/invoice-pending', async (c) => {
   const { client_name, amount, days_overdue, invoice_id } = await c.req.json()
   const message = `⚠️ <b>Factura pendiente</b>\n\n👤 Cliente: ${client_name}\n💶 Importe: ${amount}€\n📅 Días de retraso: ${days_overdue}\n🧾 Factura: #${invoice_id}`
@@ -182,7 +253,6 @@ telegram.post('/invoice-pending', async (c) => {
   return c.json({ success: true, result })
 })
 
-// 🆕 Nuevo cliente
 telegram.post('/new-client', async (c) => {
   const { client_name, phone, email } = await c.req.json()
   const message = `🆕 <b>Nuevo cliente registrado</b>\n\n👤 ${client_name}\n📱 ${phone || 'Sin teléfono'}\n📧 ${email || 'Sin email'}`
@@ -190,7 +260,6 @@ telegram.post('/new-client', async (c) => {
   return c.json({ success: true, result })
 })
 
-// 📊 Resumen diario
 telegram.post('/daily-summary', async (c) => {
   const { total_income, total_invoices, pending_invoices, new_clients } = await c.req.json()
   const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -199,7 +268,6 @@ telegram.post('/daily-summary', async (c) => {
   return c.json({ success: true, result })
 })
 
-// 🚨 Alerta del sistema
 telegram.post('/system-alert', async (c) => {
   const { error, context } = await c.req.json()
   const message = `🚨 <b>Alerta del sistema</b>\n\n❌ ${error}\n📍 Contexto: ${context}`

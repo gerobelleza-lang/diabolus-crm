@@ -12,10 +12,51 @@ function getSupabase() {
   return createClient(url, key)
 }
 
+// Obtener el salon_id por defecto (primer salon) — solo para fase de construcción
+async function getDefaultSalonId(): Promise<string | null> {
+  try {
+    const supabase = getSupabase()
+    const { data } = await supabase.from('salons').select('id').limit(1).single()
+    return data?.id || null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Guarda una transacción en Supabase.
+ * Retorna { ok: true } o { ok: false, error }
+ */
+export async function saveTransaction({
+  amount,
+  type,
+  description,
+  salonId,
+}: {
+  amount: number
+  type: 'income' | 'expense'
+  description: string
+  salonId: string | null
+}) {
+  const supabase = getSupabase()
+  const today = new Date().toISOString().split('T')[0]
+
+  const { error } = await supabase.from('transactions').insert({
+    amount,
+    type,
+    description,
+    date: today,
+    ...(salonId ? { salon_id: salonId } : {}),
+  })
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
 /**
  * POST /api/agent/chat
  * Procesa input natural → L0 parser + Supabase real data
- * Solo informa, nunca ejecuta acciones automáticas
+ * Solo informa para consultas; EJECUTA para ingresos/gastos
  */
 agentRoutes.post('/chat', async (c) => {
   try {
@@ -46,7 +87,6 @@ agentRoutes.post('/chat', async (c) => {
       finalResponse = await generateL0Response(parsed)
     } else {
       try {
-        // Inject real dashboard context into LLM
         const ctx = await getDashboardContext()
         const systemWithCtx = DIABOLUS_SYSTEM_PROMPT + '\n\nDatos actuales del negocio:\n' + ctx
         finalResponse = await callOpenRouter(routing.model, userInput, systemWithCtx)
@@ -78,7 +118,7 @@ agentRoutes.post('/chat', async (c) => {
 })
 
 /**
- * Contexto real del negocio para inyectar al LLM cuando necesite
+ * Contexto real del negocio para inyectar al LLM
  */
 async function getDashboardContext(): Promise<string> {
   try {
@@ -122,17 +162,48 @@ async function getDashboardContext(): Promise<string> {
 }
 
 /**
- * Respuestas L0 con datos reales de Supabase
+ * Respuestas L0 — consultas solo informan, escrituras ejecutan
  */
 async function generateL0Response(parsed: ReturnType<typeof parseUserInput>): Promise<string> {
   const { intent, data } = parsed
 
   switch (intent) {
-    case 'create_income':
-      return `✓ Ingreso de €${data.amount} propuesto — ${data.clientName} (${data.concept}). IVA: €${data.vat}`
+    case 'create_income': {
+      if (!data.amount || data.amount <= 0) {
+        return '¿Cuánto cobraste? Dime el importe exacto. Ej: "cobré 150€ de Juan"'
+      }
+      const salonId = await getDefaultSalonId()
+      const description = data.clientName && data.clientName !== 'Cliente'
+        ? `${data.concept} — ${data.clientName}`
+        : data.concept
+      const result = await saveTransaction({
+        amount: data.amount,
+        type: 'income',
+        description,
+        salonId,
+      })
+      if (!result.ok) {
+        return `❌ No se pudo guardar el ingreso: ${result.error}`
+      }
+      return `✅ Ingreso guardado\n• Importe: €${data.amount.toFixed(2)}\n• Concepto: ${description}\n• Fecha: ${new Date().toLocaleDateString('es-ES')}\n\nYa está en tu balance del mes.`
+    }
 
-    case 'create_expense':
-      return `✓ Gasto de €${data.amount} propuesto — ${data.concept}`
+    case 'create_expense': {
+      if (!data.amount || data.amount <= 0) {
+        return '¿Cuánto gastaste? Dime el importe exacto. Ej: "gasté 80€ en materiales"'
+      }
+      const salonId = await getDefaultSalonId()
+      const result = await saveTransaction({
+        amount: data.amount,
+        type: 'expense',
+        description: data.concept,
+        salonId,
+      })
+      if (!result.ok) {
+        return `❌ No se pudo guardar el gasto: ${result.error}`
+      }
+      return `✅ Gasto guardado\n• Importe: €${data.amount.toFixed(2)}\n• Concepto: ${data.concept}\n• Fecha: ${new Date().toLocaleDateString('es-ES')}\n\nYa está en tus gastos del mes.`
+    }
 
     case 'query_balance':
       return await fetchBalance()
@@ -155,7 +226,7 @@ async function generateL0Response(parsed: ReturnType<typeof parseUserInput>): Pr
     case 'unclear':
     case 'unclear_query':
     default:
-      return `Puedes preguntarme:\n• "¿Cuánto tengo?" → balance del mes\n• "¿Cuánto me deben?" → cobros pendientes\n• "¿Qué está vencido?" → facturas atrasadas\n• "¿Quién me debe?" → lista de clientes`
+      return `Puedes decirme:\n• "Cobré 300€ de Juan" → guarda ingreso\n• "Gasté 80€ en materiales" → guarda gasto\n• "¿Cuánto tengo?" → balance del mes\n• "¿Cuánto me deben?" → cobros pendientes\n• "¿Qué está vencido?" → facturas atrasadas\n• "¿Quién me debe?" → lista de clientes`
   }
 }
 
