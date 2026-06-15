@@ -9,7 +9,6 @@ import { transactionRoutes } from './routes/transactions'
 import { invoiceRoutes } from './routes/invoices'
 import { agentRoutes } from './routes/agent'
 import { stripeRoutes } from './routes/stripe'
-import { whatsappRoutes } from './routes/whatsapp'
 import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
 import { telegramRoutes } from './routes/telegram'
@@ -47,12 +46,11 @@ export function createApp() {
   // ─── Public Routes ─────────────────────────────────────────────────────────
   app.route('/auth', authRoutes)
 
-  // ─── Webhooks (Public, no auth required) ──────────────────────────────────
+  // ─── Stripe & External Webhooks (Public, no auth) ──────────────────────────
   app.route('/api/stripe', stripeRoutes)
-  app.route('/api/whatsapp', whatsappRoutes)
   app.route('/webhooks', webhookRoutes)
 
-  // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────────
+  // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
     try {
       const body = await c.req.json().catch(() => ({}))
