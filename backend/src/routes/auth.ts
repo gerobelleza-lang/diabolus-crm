@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
+import { sendWelcomeEmail } from '../integrations/email'
 
 export const authRoutes = new Hono()
 
@@ -26,7 +27,6 @@ authRoutes.post('/register', async (c) => {
 
   if (authError || !authData.user) {
     const msg = authError?.message ?? 'Error al crear usuario'
-    // Email ya registrado
     if (msg.includes('already registered')) {
       return c.json({ error: 'Este email ya está registrado' }, 409)
     }
@@ -55,6 +55,11 @@ authRoutes.post('/register', async (c) => {
     email: body.email,
     password: body.password,
   })
+
+  // Enviar email de bienvenida (fire & forget — no bloquea la respuesta)
+  sendWelcomeEmail(body.email, body.businessName).catch((err) =>
+    console.error('[Email] Error en bienvenida:', err)
+  )
 
   return c.json({
     token: signInData?.session?.access_token ?? null,

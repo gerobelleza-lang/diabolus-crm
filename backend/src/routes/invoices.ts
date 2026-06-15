@@ -2,10 +2,28 @@
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { generateInvoicePDF } from '../utils/invoice-pdf'
+import { sendInvoiceSentEmail, sendReminderSentEmail } from '../integrations/email'
 
 type Variables = { userId: string; salonId: string }
 
 export const invoiceRoutes = new Hono<{ Variables: Variables }>()
+
+// Obtiene el email del propietario de un salon
+async function getSalonOwnerEmail(salonId: string): Promise<string | null> {
+  try {
+    const supabase = getSupabaseAdmin()
+    const { data: salon } = await supabase
+      .from('salons')
+      .select('owner_id')
+      .eq('id', salonId)
+      .single()
+    if (!salon?.owner_id) return null
+    const { data } = await supabase.auth.admin.getUserById(salon.owner_id)
+    return data?.user?.email ?? null
+  } catch {
+    return null
+  }
+}
 
 // GET /api/invoices/ping
 invoiceRoutes.get('/ping', async (c) => {
@@ -14,6 +32,7 @@ invoiceRoutes.get('/ping', async (c) => {
     twilio_token: !!process.env.TWILIO_AUTH_TOKEN,
     twilio_from: process.env.TWILIO_WHATSAPP_FROM || 'not set',
     supabase_url: !!process.env.SUPABASE_URL,
+    resend: !!process.env.RESEND_API_KEY,
   }})
 })
 
@@ -201,6 +220,19 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
       .update({ status: 'sent', sent_at: new Date().toISOString(), ...(pdfUrl ? { pdf_url: pdfUrl } : {}) })
       .eq('id', id)
 
+    // Email de confirmación al propietario del salon (fire & forget)
+    getSalonOwnerEmail(salonId).then((ownerEmail) => {
+      if (ownerEmail) {
+        sendInvoiceSentEmail(
+          ownerEmail,
+          invoiceNum,
+          invoice.clients?.name || 'cliente',
+          total,
+          invoice.salons?.name || 'Diabolus CRM'
+        ).catch((e) => console.error('[Email] send-whatsapp confirmation:', e))
+      }
+    }).catch(() => {})
+
     return c.json({
       success: true,
       invoice_id: id,
@@ -294,6 +326,7 @@ invoiceRoutes.post('/:id/send-reminder', async (c) => {
     const invoiceNum = invoice.number || `FAC-${invoice.id.slice(0, 8).toUpperCase()}`
     const total = Number(invoice.total ?? 0)
     const clientName = invoice.clients?.name || 'cliente'
+    const salonName = invoice.salons?.name || 'Diabolus CRM'
 
     // Notificar a Miguel por Telegram
     const botToken = process.env.TELEGRAM_BOT_TOKEN
@@ -307,6 +340,16 @@ invoiceRoutes.post('/:id/send-reminder', async (c) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text: tgMsg, parse_mode: 'HTML' }),
       })
+    }
+
+    // Email de confirmación al propietario del salon (fire & forget)
+    if (result.sent) {
+      getSalonOwnerEmail(salonId).then((ownerEmail) => {
+        if (ownerEmail) {
+          sendReminderSentEmail(ownerEmail, invoiceNum, clientName, total, salonName)
+            .catch((e) => console.error('[Email] reminder confirmation:', e))
+        }
+      }).catch(() => {})
     }
 
     return c.json({
