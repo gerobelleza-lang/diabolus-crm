@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Gestoría — Diabolus CRM</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      min-height: 100vh;
+    }
+    .header {
+      background: #111;
+      border-bottom: 1px solid #222;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: #dc2626;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 18px; color: white;
+    }
+    .logo-text { font-size: 18px; font-weight: 700; color: #fff; }
+    .logo-sub { font-size: 12px; color: #666; margin-top: 2px; }
+    .badge {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #888;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+    .salon-header {
+      margin-bottom: 32px;
+      padding: 24px 32px;
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 12px;
+    }
+    .salon-name { font-size: 24px; font-weight: 700; color: #fff; }
+    .period-label {
+      font-size: 14px;
+      color: #666;
+      margin-top: 4px;
+    }
+    .period-dates { font-size: 13px; color: #555; margin-top: 2px; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 20px 24px;
+    }
+    .card-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .card-value { font-size: 28px; font-weight: 700; color: #fff; }
+    .card-value.green { color: #22c55e; }
+    .card-value.red { color: #ef4444; }
+    .card-value.yellow { color: #f59e0b; }
+    .section {
+      margin-bottom: 32px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1e1e1e;
+    }
+    .fiscal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .fiscal-item {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .fiscal-item .label { font-size: 13px; color: #888; }
+    .fiscal-item .value { font-size: 16px; font-weight: 600; color: #fff; }
+    .fiscal-item.highlight { border-color: #dc2626; }
+    .fiscal-item.highlight .value { color: #dc2626; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      color: #555;
+      font-weight: 500;
+      border-bottom: 1px solid #1e1e1e;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #111;
+      color: #ccc;
+    }
+    tr:hover td { background: #111; }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .status-paid { background: #052e16; color: #22c55e; }
+    .status-pending { background: #1c1100; color: #f59e0b; }
+    .status-overdue { background: #2d0a0a; color: #ef4444; }
+    .type-income { color: #22c55e; font-weight: 600; }
+    .type-expense { color: #ef4444; font-weight: 600; }
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      flex-direction: column;
+      gap: 16px;
+      color: #555;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #222;
+      border-top-color: #dc2626;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-box {
+      background: #1a0505;
+      border: 1px solid #7f1d1d;
+      border-radius: 10px;
+      padding: 32px;
+      text-align: center;
+      color: #fca5a5;
+      max-width: 400px;
+      margin: 80px auto;
+    }
+    .error-box h2 { font-size: 18px; margin-bottom: 8px; }
+    .error-box p { font-size: 14px; color: #ef4444; }
+    .footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 12px;
+      color: #333;
+      border-top: 1px solid #111;
+      margin-top: 40px;
+    }
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #dc2626;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .download-btn:hover { background: #b91c1c; }
+    .actions { margin-bottom: 24px; display: flex; gap: 12px; align-items: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">D</div>
+      <div>
+        <div class="logo-text">Diabolus CRM</div>
+        <div class="logo-sub">Portal Gestoría</div>
+      </div>
+    </div>
+    <span class="badge">Solo lectura</span>
+  </div>
+
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <span>Cargando informe...</span>
+  </div>
+
+  <div id="error" style="display:none">
+    <div class="error-box">
+      <h2>Acceso no válido</h2>
+      <p id="error-msg">El enlace ha expirado o no es válido.</p>
+    </div>
+  </div>
+
+  <div id="content" style="display:none">
+    <div class="container">
+
+      <div class="salon-header">
+        <div class="salon-name" id="salon-name"></div>
+        <div class="period-label" id="period-label"></div>
+        <div class="period-dates" id="period-dates"></div>
+      </div>
+
+      <div class="actions">
+        <a id="pdf-link" href="#" class="download-btn" target="_blank">
+          📄 Descargar informe PDF
+        </a>
+      </div>
+
+      <!-- Resumen económico -->
+      <div class="section">
+        <div class="section-title">Resumen económico</div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-label">Ingresos</div>
+            <div class="card-value green" id="income"></div>
+          </div>
+          <div class="card">
+            <div class="card-label">Gastos</div>
+            <div class="card-value red" id="expenses"></div>
+          </div>
+          <div class="card">
+            <div class="card-label">Beneficio neto</div>
+            <div class="card-value" id="net-profit"></div>
+          </div>
+          <div class="card">
+            <div class="card-label">Facturado</div>
+            <div class="card-value" id="invoiced"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estimación fiscal -->
+      <div class="section">
+        <div class="section-title">Estimación fiscal</div>
+        <div class="fiscal-grid">
+          <div class="fiscal-item">
+            <span class="label">IVA repercutido (21%)</span>
+            <span class="value" id="iva-rep"></span>
+          </div>
+          <div class="fiscal-item">
+            <span class="label">IVA soportado (21%)</span>
+            <span class="value" id="iva-sop"></span>
+          </div>
+          <div class="fiscal-item highlight">
+            <span class="label">IVA a liquidar (Mod. 303)</span>
+            <span class="value" id="iva-liq"></span>
+          </div>
+          <div class="fiscal-item highlight">
+            <span class="label">IRPF fraccionado (Mod. 130)</span>
+            <span class="value" id="irpf"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Facturas -->
+      <div class="section">
+        <div class="section-title">Facturas del trimestre (<span id="invoice-count"></span>)</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Nº Factura</th>
+              <th>Cliente</th>
+              <th>Fecha</th>
+              <th>Vencimiento</th>
+              <th>Importe</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="invoices-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Movimientos -->
+      <div class="section">
+        <div class="section-title">Movimientos del trimestre</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Concepto</th>
+              <th>Tipo</th>
+              <th>Importe</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer" id="footer" style="display:none">
+    Documento generado por Diabolus CRM · Solo lectura · <span id="generated-at"></span>
+  </div>
+
+  <script>
+    const API = 'https://diabolus-crm-api.vercel.app'
+
+    function euros(n) {
+      return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
+    }
+    function fmtDate(d) {
+      if (!d) return '—'
+      return new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    }
+
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get('token')
+
+    if (!token) {
+      document.getElementById('loading').style.display = 'none'
+      document.getElementById('error').style.display = 'block'
+      document.getElementById('error-msg').textContent = 'No se ha proporcionado un token de acceso.'
+    } else {
+      fetch(`${API}/gestor/report?token=${encodeURIComponent(token)}`)
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('loading').style.display = 'none'
+
+          if (!data.ok) {
+            document.getElementById('error').style.display = 'block'
+            document.getElementById('error-msg').textContent = data.error || 'Token inválido'
+            return
+          }
+
+          // Salon + periodo
+          document.getElementById('salon-name').textContent = data.salon
+          document.getElementById('period-label').textContent = `Informe trimestral — ${data.period.label}`
+          document.getElementById('period-dates').textContent = `${fmtDate(data.period.from)} – ${fmtDate(data.period.to)}`
+
+          // PDF link
+          const q = data.period.quarter
+          const y = data.period.year
+          document.getElementById('pdf-link').href =
+            `${API}/api/reports/trimestral?quarter=${q}&year=${y}&format=pdf&token_gestor=${encodeURIComponent(token)}`
+
+          // Resumen
+          const np = data.summary.net_profit
+          document.getElementById('income').textContent = euros(data.summary.income)
+          document.getElementById('expenses').textContent = euros(data.summary.expenses)
+          const npEl = document.getElementById('net-profit')
+          npEl.textContent = euros(np)
+          npEl.className = 'card-value ' + (np >= 0 ? 'green' : 'red')
+          document.getElementById('invoiced').textContent = euros(data.invoices.total_amount)
+
+          // Fiscal
+          document.getElementById('iva-rep').textContent = euros(data.fiscal.iva_repercutido)
+          document.getElementById('iva-sop').textContent = euros(data.fiscal.iva_soportado)
+          document.getElementById('iva-liq').textContent = euros(data.fiscal.iva_a_liquidar)
+          document.getElementById('irpf').textContent = euros(data.fiscal.irpf_fraccionado)
+
+          // Facturas
+          document.getElementById('invoice-count').textContent = data.invoices.total
+          const tbody = document.getElementById('invoices-tbody')
+          if (data.invoices.list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#444;padding:24px">Sin facturas este trimestre</td></tr>'
+          } else {
+            data.invoices.list.forEach(inv => {
+              const statusMap = { paid: 'status-paid', pending: 'status-pending', overdue: 'status-overdue' }
+              const statusLabel = { paid: 'Cobrada', pending: 'Pendiente', overdue: 'Vencida' }
+              tbody.innerHTML += `
+                <tr>
+                  <td>${inv.number || '—'}</td>
+                  <td>${inv.client}</td>
+                  <td>${fmtDate(inv.date)}</td>
+                  <td>${fmtDate(inv.due_date)}</td>
+                  <td>${euros(inv.total)}</td>
+                  <td><span class="status-badge ${statusMap[inv.status] || 'status-pending'}">${statusLabel[inv.status] || inv.status}</span></td>
+                </tr>`
+            })
+          }
+
+          // Movimientos
+          const tbodyT = document.getElementById('transactions-tbody')
+          if (data.transactions.length === 0) {
+            tbodyT.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#444;padding:24px">Sin movimientos este trimestre</td></tr>'
+          } else {
+            data.transactions.forEach(t => {
+              tbodyT.innerHTML += `
+                <tr>
+                  <td>${fmtDate(t.date)}</td>
+                  <td>${t.description || '—'}</td>
+                  <td class="type-${t.type}">${t.type === 'income' ? 'Ingreso' : 'Gasto'}</td>
+                  <td>${euros(t.amount)}</td>
+                </tr>`
+            })
+          }
+
+          // Generado en
+          document.getElementById('generated-at').textContent = fmtDate(data.generated_at)
+
+          document.getElementById('content').style.display = 'block'
+          document.getElementById('footer').style.display = 'block'
+        })
+        .catch(err => {
+          document.getElementById('loading').style.display = 'none'
+          document.getElementById('error').style.display = 'block'
+          document.getElementById('error-msg').textContent = 'Error de conexión con el servidor.'
+        })
+    }
+  </script>
+</body>
+</html>

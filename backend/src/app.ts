@@ -13,6 +13,7 @@ import { stripeRoutes } from './routes/stripe'
 import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
 import { telegramRoutes, telegramBotRoutes } from './routes/telegram'
+import { gestorRoutes, gestorPublicRoutes } from './routes/gestor'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 
@@ -53,6 +54,9 @@ export function createApp() {
 
   // ─── Telegram Bot Webhook (Public — Telegram envía mensajes aquí) ───────────
   app.route('/telegram', telegramBotRoutes)
+
+  // ─── Gestor Portal (Public — acceso con token de gestor) ───────────────────
+  app.route('/gestor', gestorPublicRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
@@ -115,6 +119,7 @@ export function createApp() {
   app.route('/api/agent', agentRoutes)
   app.route('/api/reports', reportRoutes)
   app.route('/api/demonio', demonioRoutes)
+  app.route('/api/gestor', gestorRoutes)
   app.route('/api/notifications/telegram', telegramRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
