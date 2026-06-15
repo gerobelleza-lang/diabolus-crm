@@ -99,11 +99,14 @@ function parseExpense(input: string, amounts: number[]): ParsedInput {
 function parseQuery(input: string): ParsedInput {
   const lowerInput = input.toLowerCase();
 
-  // Balance queries: ¿cuánto tengo? ¿cuál es mi saldo?
-  if (includes(lowerInput, ['balance', 'dinero', 'cuánto tengo', 'cuanto tengo', 'saldo'])) {
+  // IMPORTANT: More specific patterns first to avoid false positives
+
+  // Who owes (specific): ¿quién me debe? ¿quién me debe dinero?
+  // Must be checked BEFORE balance (which also contains 'dinero')
+  if (includes(lowerInput, ['quién', 'quien']) && includes(lowerInput, ['debe', 'deben', 'cobrar'])) {
     return {
-      intent: 'query_balance',
-      data: { type: 'balance' },
+      intent: 'query_who_owes',
+      data: { type: 'who_owes' },
       confidence: 0.9
     };
   }
@@ -117,20 +120,20 @@ function parseQuery(input: string): ParsedInput {
     };
   }
 
-  // Who owes: ¿quién me debe? ¿quién me debe dinero?
-  if (includes(lowerInput, ['quién', 'quien']) && includes(lowerInput, ['debe', 'deben', 'cobrar'])) {
+  // How much owed: ¿cuánto me deben? ¿qué me deben?
+  if (includes(lowerInput, ['me deben', 'me debe', 'pendiente', 'morosos', 'deuda'])) {
     return {
-      intent: 'query_who_owes',
-      data: { type: 'who_owes' },
+      intent: 'query_debtors',
+      data: { type: 'pending' },
       confidence: 0.9
     };
   }
 
-  // How much owed: ¿cuánto me deben? ¿qué me deben?
-  if (includes(lowerInput, ['me deben', 'me debe', 'pendiente', 'cobrar', 'morosos', 'deuda'])) {
+  // Balance queries: ¿cuánto tengo? ¿cuál es mi saldo? ¿cuánto dinero tengo?
+  if (includes(lowerInput, ['balance', 'dinero', 'cuánto tengo', 'cuanto tengo', 'saldo'])) {
     return {
-      intent: 'query_debtors',
-      data: { type: 'pending' },
+      intent: 'query_balance',
+      data: { type: 'balance' },
       confidence: 0.9
     };
   }
