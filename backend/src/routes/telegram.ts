@@ -201,7 +201,6 @@ telegramBot.post('/webhook', async (c) => {
               chatId
             )
           } else {
-            // Confirmar antes de enviar
             await sendTelegramMessage(
               `📤 Enviando recordatorio a <b>${clientName}</b>...\n` +
               `📄 Factura: ${invoiceNum} — 💶 ${total.toFixed(2)}€`,
@@ -227,6 +226,58 @@ telegramBot.post('/webhook', async (c) => {
       }
     }
 
+    // ── /reporte ─────────────────────────────────────────────────────────────
+    else if (text.startsWith('/reporte')) {
+      const nowQ = new Date()
+      const year = nowQ.getFullYear()
+      const quarter = Math.ceil((nowQ.getMonth() + 1) / 3)
+      const startMonth = (quarter - 1) * 3 + 1
+      const endMonth = quarter * 3
+      const startDate = `${year}-${String(startMonth).padStart(2, '0')}-01`
+      const lastDay = new Date(year, endMonth, 0).getDate()
+      const endDate = `${year}-${String(endMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+      const quarterNames = ['', 'T1 (Ene–Mar)', 'T2 (Abr–Jun)', 'T3 (Jul–Sep)', 'T4 (Oct–Dic)']
+
+      const { data: txData } = await supabase
+        .from('transactions')
+        .select('amount, type')
+        .gte('date', startDate)
+        .lte('date', endDate)
+
+      const { data: invData } = await supabase
+        .from('invoices')
+        .select('total, status')
+        .gte('issue_date', startDate)
+        .lte('issue_date', endDate)
+
+      const ingresos  = (txData || []).filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0)
+      const gastos    = (txData || []).filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0)
+      const beneficio = ingresos - gastos
+      const ivaLiquidar = (ingresos * 0.21) - (gastos * 0.21)
+      const irpf        = beneficio > 0 ? beneficio * 0.20 : 0
+
+      const cobradas   = (invData || []).filter(i => i.status === 'paid').length
+      const pendientes = (invData || []).filter(i => ['pending', 'sent'].includes(i.status)).length
+      const vencidas   = (invData || []).filter(i => i.status === 'overdue').length
+
+      const sign = (n: number) => n >= 0 ? '✅' : '🔴'
+
+      await sendTelegramMessage(
+        `📊 <b>Informe ${quarterNames[quarter]} ${year}</b>\n\n` +
+        `<b>Económico</b>\n` +
+        `💚 Ingresos: <b>${ingresos.toFixed(2)}€</b>\n` +
+        `🔴 Gastos: <b>${gastos.toFixed(2)}€</b>\n` +
+        `${sign(beneficio)} Beneficio neto: <b>${beneficio.toFixed(2)}€</b>\n\n` +
+        `<b>Estimación fiscal</b>\n` +
+        `🏛 IVA a liquidar (Mod. 303): <b>${ivaLiquidar.toFixed(2)}€</b>\n` +
+        `🏛 IRPF fracciones (Mod. 130): <b>${irpf.toFixed(2)}€</b>\n\n` +
+        `<b>Facturas</b>\n` +
+        `✅ Cobradas: ${cobradas}  ⏳ Pendientes: ${pendientes}  🔴 Vencidas: ${vencidas}\n\n` +
+        `<i>Datos orientativos. PDF en: /api/reports/trimestral</i>`,
+        chatId
+      )
+    }
+
     // ── /ayuda o /start ──────────────────────────────────────────────────────
     else if (text.startsWith('/ayuda') || text.startsWith('/start')) {
       await sendTelegramMessage(
@@ -235,7 +286,8 @@ telegramBot.post('/webhook', async (c) => {
         `/balance — Ingresos, gastos y balance del mes\n` +
         `/cobros — Pendientes de cobro con nombres\n` +
         `/vencidas — Facturas vencidas con detalle\n` +
-        `/quien — Quién te debe dinero\n\n` +
+        `/quien — Quién te debe dinero\n` +
+        `/reporte — Resumen trimestral + estimación fiscal\n\n` +
         `<b>Cobros inteligentes</b>\n` +
         `/recordatorio — Lista vencidas listas para recordar\n` +
         `/recordatorio FAC-001 — Envía WhatsApp al cliente\n\n` +

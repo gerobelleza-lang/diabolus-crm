@@ -8,6 +8,7 @@ import { clientRoutes } from './routes/clients'
 import { transactionRoutes } from './routes/transactions'
 import { invoiceRoutes } from './routes/invoices'
 import { agentRoutes } from './routes/agent'
+import { reportRoutes } from './routes/reports'
 import { stripeRoutes } from './routes/stripe'
 import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
@@ -112,6 +113,7 @@ export function createApp() {
   app.route('/api/transactions', transactionRoutes)
   app.route('/api/invoices', invoiceRoutes)
   app.route('/api/agent', agentRoutes)
+  app.route('/api/reports', reportRoutes)
   app.route('/api/demonio', demonioRoutes)
   app.route('/api/notifications/telegram', telegramRoutes)
 
