@@ -1,7 +1,71 @@
+// @ts-nocheck
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 
 export const authRoutes = new Hono()
+
+// POST /auth/register — Alta de nuevo tenant
+authRoutes.post('/register', async (c) => {
+  const body = await c.req.json().catch(() => null)
+  if (!body?.email || !body?.password || !body?.businessName) {
+    return c.json({ error: 'Faltan campos requeridos: email, password, businessName' }, 400)
+  }
+
+  if (body.password.length < 6) {
+    return c.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, 400)
+  }
+
+  const supabase = getSupabaseAdmin()
+
+  // Crear usuario en Supabase Auth (sin email confirmation)
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email: body.email,
+    password: body.password,
+    email_confirm: true,
+  })
+
+  if (authError || !authData.user) {
+    const msg = authError?.message ?? 'Error al crear usuario'
+    // Email ya registrado
+    if (msg.includes('already registered')) {
+      return c.json({ error: 'Este email ya está registrado' }, 409)
+    }
+    return c.json({ error: msg }, 400)
+  }
+
+  // Crear salon (negocio del tenant)
+  const { data: salon, error: salonError } = await supabase
+    .from('salons')
+    .insert([{
+      name: body.businessName,
+      owner_id: authData.user.id,
+      notify_channel: 'telegram',
+    }])
+    .select()
+    .single()
+
+  if (salonError) {
+    // Rollback: eliminar usuario creado
+    await supabase.auth.admin.deleteUser(authData.user.id)
+    return c.json({ error: 'Error al crear el negocio. Inténtalo de nuevo.' }, 500)
+  }
+
+  // Hacer login automático para devolver el token
+  const { data: signInData } = await supabase.auth.signInWithPassword({
+    email: body.email,
+    password: body.password,
+  })
+
+  return c.json({
+    token: signInData?.session?.access_token ?? null,
+    user: {
+      id: authData.user.id,
+      email: authData.user.email,
+    },
+    salon,
+    message: '¡Bienvenido a Diabolus! Tu negocio está listo.',
+  }, 201)
+})
 
 // POST /auth/login
 authRoutes.post('/login', async (c) => {
