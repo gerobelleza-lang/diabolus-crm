@@ -11,7 +11,7 @@ import { agentRoutes } from './routes/agent'
 import { stripeRoutes } from './routes/stripe'
 import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
-import { telegramRoutes } from './routes/telegram'
+import { telegramRoutes, telegramBotRoutes } from './routes/telegram'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 
@@ -49,6 +49,9 @@ export function createApp() {
   // ─── Stripe & External Webhooks (Public, no auth) ──────────────────────────
   app.route('/api/stripe', stripeRoutes)
   app.route('/webhooks', webhookRoutes)
+
+  // ─── Telegram Bot Webhook (Public — Telegram envía mensajes aquí) ───────────
+  app.route('/telegram', telegramBotRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
