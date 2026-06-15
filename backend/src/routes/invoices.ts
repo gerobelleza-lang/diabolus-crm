@@ -74,13 +74,14 @@ invoiceRoutes.post('/', async (c) => {
     .insert({
       salon_id: salonId,
       client_id: body.client_id,
-      number: body.number || `FAC-${Date.now()}`,
+      number: body.number || body.invoice_number || `FAC-${Date.now()}`,
       total: body.total || body.amount || 0,
-      status: 'draft',
+      status: body.status || 'pending',
       date: new Date().toISOString().split('T')[0],
+      due_date: body.due_date || null,
       description: body.description || '',
     })
-    .select()
+    .select('*, clients(name, email, phone)')
     .single()
   if (error) return c.json({ error: error.message }, 400)
   return c.json({ invoice: data }, 201)
@@ -95,6 +96,29 @@ invoiceRoutes.patch('/:id/status', async (c) => {
   const { data, error } = await supabase
     .from('invoices')
     .update({ status })
+    .eq('salon_id', salonId)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return c.json({ error: error.message }, 400)
+  return c.json({ invoice: data })
+})
+
+// PATCH /api/invoices/:id — actualización general
+invoiceRoutes.patch('/:id', async (c) => {
+  const salonId = c.get('salonId')
+  const { id } = c.req.param()
+  const body = await c.req.json().catch(() => ({}))
+  const supabase = getSupabaseAdmin()
+  const allowed = ['status', 'description', 'total', 'due_date', 'number', 'pdf_url']
+  const update: Record<string, any> = {}
+  for (const k of allowed) {
+    if (k in body) update[k] = body[k]
+  }
+  if (!Object.keys(update).length) return c.json({ error: 'Nothing to update' }, 400)
+  const { data, error } = await supabase
+    .from('invoices')
+    .update(update)
     .eq('salon_id', salonId)
     .eq('id', id)
     .select()
@@ -149,7 +173,6 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
     const clientPhone = invoice.clients?.phone
     if (!clientPhone) return c.json({ error: 'Client has no phone number' }, 400)
 
-    // Generar PDF
     let pdfUrl = null
     try {
       const pdfBytes = await generateInvoicePDF(invoice)
@@ -220,7 +243,6 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
       .update({ status: 'sent', sent_at: new Date().toISOString(), ...(pdfUrl ? { pdf_url: pdfUrl } : {}) })
       .eq('id', id)
 
-    // Email de confirmación al propietario del salon (fire & forget)
     getSalonOwnerEmail(salonId).then((ownerEmail) => {
       if (ownerEmail) {
         sendInvoiceSentEmail(
@@ -328,7 +350,6 @@ invoiceRoutes.post('/:id/send-reminder', async (c) => {
     const clientName = invoice.clients?.name || 'cliente'
     const salonName = invoice.salons?.name || 'Diabolus CRM'
 
-    // Notificar a Miguel por Telegram
     const botToken = process.env.TELEGRAM_BOT_TOKEN
     const chatId = process.env.TELEGRAM_CHAT_ID
     if (botToken && chatId) {
@@ -342,7 +363,6 @@ invoiceRoutes.post('/:id/send-reminder', async (c) => {
       })
     }
 
-    // Email de confirmación al propietario del salon (fire & forget)
     if (result.sent) {
       getSalonOwnerEmail(salonId).then((ownerEmail) => {
         if (ownerEmail) {

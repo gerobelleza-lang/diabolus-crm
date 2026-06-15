@@ -17,110 +17,569 @@
     .nav-item.active { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; box-shadow: 0 0 15px rgba(139, 21, 56, 0.3); }
     .nav-item span { font-size: 1.25rem; }
     .sidebar-footer { padding: 1.5rem; border-top: 1px solid var(--border-color); }
-    .sidebar-footer button { width: 100%; }
     .main-content { margin-left: 280px; flex: 1; padding: 2rem; overflow-y: auto; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
     .header h1 { margin: 0; }
+
+    /* STATS BAR */
+    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-mini { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1rem 1.25rem; }
+    .stat-mini .label { font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 0.25rem; }
+    .stat-mini .value { font-size: 1.5rem; font-weight: 700; }
+
+    /* TOOLBAR */
+    .toolbar { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; }
+    .search-box { flex: 1; padding: 0.5rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-primary); font-size: 0.875rem; }
+    .search-box:focus { outline: none; border-color: var(--primary); }
+    .search-box::placeholder { color: var(--text-tertiary); }
+
+    /* GRID */
+    .clients-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }
+    .client-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; transition: all 0.3s ease; }
+    .client-card:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(139, 21, 56, 0.15); }
+    .client-card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .client-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem; flex-shrink: 0; }
+    .client-card-header .info { flex: 1; min-width: 0; }
+    .client-card-header .info h3 { margin: 0 0 0.25rem; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .client-card-header .info p { margin: 0; font-size: 0.8rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .client-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+    .client-stat { background: var(--bg-tertiary); border-radius: 0.5rem; padding: 0.625rem; }
+    .client-stat .s-label { font-size: 0.7rem; color: var(--text-tertiary); }
+    .client-stat .s-value { font-size: 1rem; font-weight: 700; }
+    .client-stat .s-value.debt { color: #f59e0b; }
+    .client-actions { display: flex; gap: 0.5rem; }
+    .client-actions button { flex: 1; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); transition: all 0.2s; }
+    .client-actions button:hover { color: var(--text-primary); border-color: var(--primary); }
+    .client-actions .btn-primary-sm { background: var(--primary); color: white; border-color: var(--primary); }
+    .client-actions .btn-primary-sm:hover { opacity: 0.9; }
+    .client-phone { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+
+    /* TABLE VIEW */
+    .view-toggle { display: flex; gap: 0.5rem; }
+    .view-btn { padding: 0.4rem 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0.375rem; cursor: pointer; color: var(--text-secondary); font-size: 0.8rem; transition: all 0.2s; }
+    .view-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .table-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; overflow: hidden; display: none; }
+    .table-card.show { display: block; }
+    .clients-grid.hidden { display: none; }
     table { width: 100%; border-collapse: collapse; }
-    thead { background-color: var(--bg-tertiary); border-bottom: 2px solid var(--border-light); }
-    th { padding: 1rem; text-align: left; font-weight: 600; color: var(--text-secondary); }
-    td { padding: 1rem; border-bottom: 1px solid var(--border-color); }
-    tbody tr:hover { background-color: var(--bg-tertiary); }
-    .clients-table { background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; }
-    @media (max-width: 768px) { .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); } .main-content { margin-left: 0; } }
+    thead { background: var(--bg-tertiary); }
+    th { padding: 0.875rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border-color); font-size: 0.875rem; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-tertiary); }
+    .actions-cell { display: flex; gap: 0.5rem; }
+    .action-btn-sm { padding: 0.3rem 0.6rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); transition: all 0.2s; }
+    .action-btn-sm:hover { border-color: var(--primary); color: var(--text-primary); }
+    .action-btn-sm.danger:hover { border-color: #ef4444; color: #ef4444; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 1rem; padding: 2rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+    .modal h2 { margin: 0 0 1.5rem; }
+    .modal-footer { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .form-group input, .form-group textarea { width: 100%; padding: 0.625rem 0.875rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-primary); font-size: 0.875rem; box-sizing: border-box; }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .empty-state { text-align: center; padding: 3rem; color: var(--text-tertiary); }
+    .loading-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
+
+    /* DETAIL PANEL */
+    .detail-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: flex-start; justify-content: flex-end; }
+    .detail-overlay.open { display: flex; }
+    .detail-panel { background: var(--bg-secondary); border-left: 1px solid var(--border-color); width: 100%; max-width: 480px; height: 100vh; overflow-y: auto; padding: 2rem; }
+    .detail-panel h2 { margin: 0 0 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .detail-panel h2 button { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 1.5rem; }
+    .detail-invoice-row { display: flex; justify-content: space-between; align-items: center; padding: 0.875rem; border-bottom: 1px solid var(--border-color); }
+    .detail-invoice-row:last-child { border-bottom: none; }
+    .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; }
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .badge-paid { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .badge-overdue { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.875rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .lbl { color: var(--text-tertiary); }
+    .info-row .val { font-weight: 600; }
+
+    .toast { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem; border-radius: 0.75rem; font-weight: 600; font-size: 0.875rem; z-index: 2000; opacity: 0; transition: opacity 0.3s; max-width: 320px; }
+    .toast.show { opacity: 1; }
+    .toast.success { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; }
+    .toast.error { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; }
+    @media (max-width: 768px) { .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); } .main-content { margin-left: 0; } .form-row { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-  <div class="main-container">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="logo">⚡</div>
-        <h3>DIABOLUS</h3>
-      </div>
-      <nav class="sidebar-nav">
-        <a href="dashboard.html" class="nav-item"><span>📊</span>Dashboard</a>
-        <a href="agent.html" class="nav-item"><span>💬</span>Agente ⭐</a>
-        <a href="approval-queue.html" class="nav-item"><span>✅</span>Aprobaciones</a>
-        <a href="invoices.html" class="nav-item"><span>📄</span>Facturas</a>
-        <a href="clients.html" class="nav-item active"><span>👥</span>Clientes</a>
-        <a href="transactions.html" class="nav-item"><span>💰</span>Transacciones</a>
-        <a href="reports.html" class="nav-item"><span>📈</span>Reportes</a>
-      </nav>
-      <div class="sidebar-footer">
-        <button class="btn btn-secondary" style="width: 100%;" onclick="logout()">Cerrar Sesión</button>
-      </div>
-    </aside>
+<div class="main-container">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">⚡</div>
+      <h3>DIABOLUS</h3>
+      <p style="margin:0.5rem 0 0;font-size:0.75rem;color:var(--text-tertiary)" id="salonName">Cargando...</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item"><span>📊</span>Dashboard</a>
+      <a href="agent.html" class="nav-item"><span>💬</span>Agente ⭐</a>
+      <a href="approval-queue.html" class="nav-item"><span>✅</span>Aprobaciones</a>
+      <a href="invoices.html" class="nav-item"><span>📄</span>Facturas</a>
+      <a href="clients.html" class="nav-item active"><span>👥</span>Clientes</a>
+      <a href="transactions.html" class="nav-item"><span>💰</span>Transacciones</a>
+      <a href="reports.html" class="nav-item"><span>📈</span>Reportes</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-secondary" style="width:100%" onclick="logout()">Cerrar Sesión</button>
+      <p style="font-size:0.75rem;color:var(--text-tertiary);margin-top:1rem;text-align:center">v1.0 — Premium UI ✨</p>
+    </div>
+  </aside>
 
-    <main class="main-content">
-      <div class="header">
+  <main class="main-content">
+    <div class="header">
+      <div>
         <h1>👥 Clientes</h1>
-        <button class="btn btn-primary">+ Nuevo Cliente</button>
+        <p style="margin:0.25rem 0 0;color:var(--text-secondary);font-size:0.875rem" id="dateLabel"></p>
       </div>
+      <button class="btn btn-primary" onclick="openCreateModal()">+ Nuevo Cliente</button>
+    </div>
 
-      <div class="clients-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Deuda</th>
-              <th>Total Gastado</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Paula García</strong></td>
-              <td>paula@email.com</td>
-              <td>+34 600 123 456</td>
-              <td>€0,00</td>
-              <td>€1.450</td>
-              <td><span class="badge badge-success">Pagado</span></td>
-              <td><a href="#" style="color: var(--primary); cursor: pointer;">Ver →</a></td>
-            </tr>
-            <tr>
-              <td><strong>María López</strong></td>
-              <td>maria@email.com</td>
-              <td>+34 600 234 567</td>
-              <td>€75,00</td>
-              <td>€980</td>
-              <td><span class="badge badge-warning">Pendiente</span></td>
-              <td><a href="#" style="color: var(--primary); cursor: pointer;">Ver →</a></td>
-            </tr>
-            <tr>
-              <td><strong>Ana Martínez</strong></td>
-              <td>ana@email.com</td>
-              <td>+34 600 345 678</td>
-              <td>€0,00</td>
-              <td>€2.340</td>
-              <td><span class="badge badge-success">Pagado</span></td>
-              <td><a href="#" style="color: var(--primary); cursor: pointer;">Ver →</a></td>
-            </tr>
-            <tr>
-              <td><strong>José Carlos</strong></td>
-              <td>jose@email.com</td>
-              <td>+34 600 456 789</td>
-              <td>€0,00</td>
-              <td>€650</td>
-              <td><span class="badge badge-success">Pagado</span></td>
-              <td><a href="#" style="color: var(--primary); cursor: pointer;">Ver →</a></td>
-            </tr>
-            <tr>
-              <td><strong>Laura Fernández</strong></td>
-              <td>laura@email.com</td>
-              <td>+34 600 567 890</td>
-              <td>€180,00</td>
-              <td>€1.890</td>
-              <td><span class="badge badge-danger">Vencida</span></td>
-              <td><a href="#" style="color: var(--primary); cursor: pointer;">Ver →</a></td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="stat-mini">
+        <div class="label">👥 Total clientes</div>
+        <div class="value" id="statTotal">—</div>
       </div>
-    </main>
+      <div class="stat-mini">
+        <div class="label">📄 Con facturas</div>
+        <div class="value" id="statWithInvoices">—</div>
+      </div>
+      <div class="stat-mini">
+        <div class="label">💰 Deuda total</div>
+        <div class="value" style="color:#f59e0b" id="statDebt">—</div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <input class="search-box" type="text" placeholder="🔍 Buscar por nombre, email o teléfono..." id="searchInput" oninput="renderClients()">
+      <div class="view-toggle">
+        <button class="view-btn active" onclick="setView('grid', this)" title="Cuadrícula">⊞</button>
+        <button class="view-btn" onclick="setView('table', this)" title="Tabla">≡</button>
+      </div>
+    </div>
+
+    <!-- GRID VIEW -->
+    <div id="gridView" class="clients-grid">
+      <div class="loading-state" style="grid-column:1/-1">⏳ Cargando clientes...</div>
+    </div>
+
+    <!-- TABLE VIEW -->
+    <div class="table-card" id="tableView">
+      <div id="tableContainer"></div>
+    </div>
+  </main>
+</div>
+
+<!-- CREATE / EDIT MODAL -->
+<div class="modal-overlay" id="clientModal">
+  <div class="modal">
+    <h2 id="modalTitle">👤 Nuevo Cliente</h2>
+    <input type="hidden" id="editClientId">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="clientName" placeholder="Empresa o persona">
+      </div>
+      <div class="form-group">
+        <label>Teléfono (WhatsApp)</label>
+        <input type="tel" id="clientPhone" placeholder="+34 600 000 000">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="clientEmail" placeholder="cliente@email.com">
+    </div>
+    <div class="form-group">
+      <label>NIF / CIF</label>
+      <input type="text" id="clientNif" placeholder="12345678A">
+    </div>
+    <div class="form-group">
+      <label>Dirección</label>
+      <input type="text" id="clientAddress" placeholder="Calle, número, ciudad">
+    </div>
+    <div class="form-group">
+      <label>Notas</label>
+      <textarea id="clientNotes" rows="2" placeholder="Notas internas sobre el cliente..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeClientModal()">Cancelar</button>
+      <button class="btn btn-primary" id="saveClientBtn" onclick="saveClient()">Crear Cliente</button>
+    </div>
   </div>
-  <script src="js/app.js"></script>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detailPanel">
+    <h2 id="detailTitle">
+      <span></span>
+      <button onclick="closeDetailPanel()">×</button>
+    </h2>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://diabolus-crm-api.vercel.app';
+let token = localStorage.getItem('diabolus_token');
+let allClients = [];
+let allInvoices = [];
+let currentView = 'grid';
+
+if (!token) { window.location.href = 'index-login.html'; }
+
+document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+function logout() {
+  localStorage.removeItem('diabolus_token');
+  window.location.href = 'index-login.html';
+}
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast show ${type}`;
+  setTimeout(() => { el.className = 'toast'; }, 4000);
+}
+
+function fmt(n) {
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function initials(name) {
+  return (name || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
+
+async function apiGet(path) {
+  const r = await fetch(API + path, { headers: { Authorization: `Bearer ${token}` } });
+  if (r.status === 401) { logout(); return null; }
+  return r.json();
+}
+async function apiPost(path, body) {
+  const r = await fetch(API + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+async function apiPatch(path, body) {
+  const r = await fetch(API + path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+async function apiDelete(path) {
+  const r = await fetch(API + path, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+  return r.json();
+}
+
+async function loadData() {
+  try {
+    const [cliData, invData] = await Promise.all([apiGet('/api/clients'), apiGet('/api/invoices')]);
+    allClients = cliData?.clients || cliData || [];
+    allInvoices = invData?.invoices || invData || [];
+    updateStats();
+    renderClients();
+  } catch(e) {
+    document.getElementById('gridView').innerHTML = '<div class="empty-state">❌ Error al conectar con la API</div>';
+  }
+}
+
+function getClientInvoices(clientId) {
+  return allInvoices.filter(i => i.client_id === clientId);
+}
+
+function getClientDebt(clientId) {
+  return getClientInvoices(clientId)
+    .filter(i => i.status === 'pending' || i.status === 'overdue')
+    .reduce((s, i) => s + (i.total || 0), 0);
+}
+
+function updateStats() {
+  const withInvoices = allClients.filter(c => getClientInvoices(c.id).length > 0).length;
+  const totalDebt = allClients.reduce((s, c) => s + getClientDebt(c.id), 0);
+  document.getElementById('statTotal').textContent = allClients.length;
+  document.getElementById('statWithInvoices').textContent = withInvoices;
+  document.getElementById('statDebt').textContent = fmt(totalDebt);
+}
+
+function getFiltered() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  if (!q) return allClients;
+  return allClients.filter(c =>
+    (c.name || '').toLowerCase().includes(q) ||
+    (c.email || '').toLowerCase().includes(q) ||
+    (c.phone || '').toLowerCase().includes(q)
+  );
+}
+
+function setView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (view === 'grid') {
+    document.getElementById('gridView').classList.remove('hidden');
+    document.getElementById('tableView').classList.remove('show');
+  } else {
+    document.getElementById('gridView').classList.add('hidden');
+    document.getElementById('tableView').classList.add('show');
+  }
+  renderClients();
+}
+
+function renderClients() {
+  const clients = getFiltered();
+  renderGrid(clients);
+  renderTable(clients);
+}
+
+function renderGrid(clients) {
+  const container = document.getElementById('gridView');
+  if (!clients.length) {
+    container.innerHTML = '<div class="empty-state" style="grid-column:1/-1">📭 No hay clientes que mostrar</div>';
+    return;
+  }
+  container.innerHTML = clients.map(c => {
+    const debt = getClientDebt(c.id);
+    const totalInvoices = getClientInvoices(c.id).length;
+    return `<div class="client-card">
+      <div class="client-card-header">
+        <div class="client-avatar">${initials(c.name)}</div>
+        <div class="info">
+          <h3>${c.name || '—'}</h3>
+          <p>${c.email || c.nif || '—'}</p>
+        </div>
+      </div>
+      ${c.phone ? `<div class="client-phone">📱 ${c.phone}</div>` : ''}
+      <div class="client-stats">
+        <div class="client-stat">
+          <div class="s-label">Facturas</div>
+          <div class="s-value">${totalInvoices}</div>
+        </div>
+        <div class="client-stat">
+          <div class="s-label">Deuda</div>
+          <div class="s-value ${debt > 0 ? 'debt' : ''}">${fmt(debt)}</div>
+        </div>
+      </div>
+      <div class="client-actions">
+        <button onclick="openDetail('${c.id}')">📄 Ver facturas</button>
+        <button onclick="openEditModal('${c.id}')">✏️ Editar</button>
+        <button onclick="deleteClient('${c.id}', '${(c.name||'').replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTable(clients) {
+  if (!clients.length) {
+    document.getElementById('tableContainer').innerHTML = '<div class="empty-state">📭 No hay clientes</div>';
+    return;
+  }
+  const rows = clients.map(c => {
+    const debt = getClientDebt(c.id);
+    const totalInvoices = getClientInvoices(c.id).length;
+    return `<tr>
+      <td><strong>${c.name || '—'}</strong></td>
+      <td>${c.email || '—'}</td>
+      <td>${c.phone || '—'}</td>
+      <td>${totalInvoices}</td>
+      <td style="color:${debt > 0 ? '#f59e0b' : 'inherit'}">${fmt(debt)}</td>
+      <td>
+        <div class="actions-cell">
+          <button class="action-btn-sm" onclick="openDetail('${c.id}')">📄 Facturas</button>
+          <button class="action-btn-sm" onclick="openEditModal('${c.id}')">✏️</button>
+          <button class="action-btn-sm danger" onclick="deleteClient('${c.id}', '${(c.name||'').replace(/'/g,"\\'")}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tableContainer').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Nombre</th><th>Email</th><th>Teléfono</th><th>Facturas</th><th>Deuda</th><th>Acciones</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function openDetail(clientId) {
+  const client = allClients.find(c => c.id === clientId);
+  if (!client) return;
+  const invoices = getClientInvoices(clientId);
+  const totalFact = invoices.reduce((s, i) => s + (i.total || 0), 0);
+  const debt = getClientDebt(clientId);
+
+  document.getElementById('detailTitle').querySelector('span').textContent = `👤 ${client.name}`;
+
+  const invRows = invoices.length
+    ? invoices.map(i => {
+        const badgeMap = { pending: 'badge-pending', paid: 'badge-paid', overdue: 'badge-overdue' };
+        return `<div class="detail-invoice-row">
+          <div>
+            <div style="font-weight:700;font-size:0.875rem">${i.invoice_number || i.id?.slice(0,8)}</div>
+            <div style="font-size:0.75rem;color:var(--text-tertiary)">${fmtDate(i.due_date)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem">
+            <span style="font-weight:700">${fmt(i.total)}</span>
+            <span class="badge ${badgeMap[i.status] || 'badge-pending'}">${i.status === 'paid' ? '✅' : i.status === 'overdue' ? '🔴' : '⏳'}</span>
+          </div>
+        </div>`;
+      }).join('')
+    : '<p style="color:var(--text-tertiary);text-align:center;padding:1rem">Sin facturas aún</p>';
+
+  document.getElementById('detailContent').innerHTML = `
+    <div style="background:var(--bg-tertiary);border-radius:0.75rem;padding:1rem;margin-bottom:1.5rem">
+      <div class="info-row"><span class="lbl">Email</span><span class="val">${client.email || '—'}</span></div>
+      <div class="info-row"><span class="lbl">Teléfono</span><span class="val">${client.phone || '—'}</span></div>
+      <div class="info-row"><span class="lbl">NIF</span><span class="val">${client.nif || '—'}</span></div>
+      <div class="info-row"><span class="lbl">Dirección</span><span class="val">${client.address || '—'}</span></div>
+      <div class="info-row"><span class="lbl">Total facturado</span><span class="val">${fmt(totalFact)}</span></div>
+      <div class="info-row"><span class="lbl">Deuda pendiente</span><span class="val" style="color:${debt>0?'#f59e0b':'#10b981'}">${fmt(debt)}</span></div>
+    </div>
+    <h3 style="margin:0 0 1rem">📄 Facturas (${invoices.length})</h3>
+    <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:0.75rem;overflow:hidden">
+      ${invRows}
+    </div>
+    <div style="margin-top:1rem;display:flex;gap:0.75rem">
+      <a href="invoices.html" class="btn btn-primary" style="flex:1;text-align:center;text-decoration:none">+ Nueva Factura</a>
+      <button class="btn btn-secondary" onclick="openEditModal('${clientId}')">✏️ Editar</button>
+    </div>`;
+
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeDetail(e) {
+  if (e.target === document.getElementById('detailOverlay')) closeDetailPanel();
+}
+function closeDetailPanel() {
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+
+function openCreateModal() {
+  document.getElementById('editClientId').value = '';
+  document.getElementById('modalTitle').textContent = '👤 Nuevo Cliente';
+  document.getElementById('saveClientBtn').textContent = 'Crear Cliente';
+  clearForm();
+  document.getElementById('clientModal').classList.add('open');
+}
+
+function openEditModal(clientId) {
+  const c = allClients.find(cl => cl.id === clientId);
+  if (!c) return;
+  document.getElementById('editClientId').value = c.id;
+  document.getElementById('modalTitle').textContent = `✏️ Editar: ${c.name}`;
+  document.getElementById('saveClientBtn').textContent = 'Guardar Cambios';
+  document.getElementById('clientName').value = c.name || '';
+  document.getElementById('clientPhone').value = c.phone || '';
+  document.getElementById('clientEmail').value = c.email || '';
+  document.getElementById('clientNif').value = c.nif || '';
+  document.getElementById('clientAddress').value = c.address || '';
+  document.getElementById('clientNotes').value = c.notes || '';
+  document.getElementById('clientModal').classList.add('open');
+}
+
+function closeClientModal() {
+  document.getElementById('clientModal').classList.remove('open');
+  clearForm();
+}
+
+function clearForm() {
+  ['clientName','clientPhone','clientEmail','clientNif','clientAddress','clientNotes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+async function saveClient() {
+  const editId = document.getElementById('editClientId').value;
+  const name = document.getElementById('clientName').value.trim();
+  if (!name) { toast('❌ El nombre es obligatorio', 'error'); return; }
+
+  const body = {
+    name,
+    phone: document.getElementById('clientPhone').value.trim() || null,
+    email: document.getElementById('clientEmail').value.trim() || null,
+    nif: document.getElementById('clientNif').value.trim() || null,
+    address: document.getElementById('clientAddress').value.trim() || null,
+    notes: document.getElementById('clientNotes').value.trim() || null
+  };
+
+  const btn = document.getElementById('saveClientBtn');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  try {
+    let res;
+    if (editId) {
+      res = await apiPatch(`/api/clients/${editId}`, body);
+      if (res.id || res.client) {
+        const updated = res.client || res;
+        const idx = allClients.findIndex(c => c.id === editId);
+        if (idx >= 0) allClients[idx] = { ...allClients[idx], ...updated };
+        toast('✅ Cliente actualizado', 'success');
+      } else {
+        toast('❌ ' + (res.error || 'Error al actualizar'), 'error');
+      }
+    } else {
+      res = await apiPost('/api/clients', body);
+      if (res.id || res.client) {
+        allClients.unshift(res.client || res);
+        toast('✅ Cliente creado correctamente', 'success');
+      } else {
+        toast('❌ ' + (res.error || 'Error al crear'), 'error');
+      }
+    }
+    closeClientModal();
+    updateStats();
+    renderClients();
+  } catch(e) { toast('❌ Error de conexión', 'error'); }
+
+  btn.disabled = false;
+  btn.textContent = editId ? 'Guardar Cambios' : 'Crear Cliente';
+}
+
+async function deleteClient(id, name) {
+  if (!confirm(`¿Eliminar al cliente "${name}"? Esta acción no se puede deshacer.`)) return;
+  try {
+    const res = await apiDelete(`/api/clients/${id}`);
+    if (!res.error) {
+      allClients = allClients.filter(c => c.id !== id);
+      toast('🗑️ Cliente eliminado', 'success');
+      updateStats();
+      renderClients();
+    } else {
+      toast('❌ ' + (res.error || 'No se puede eliminar'), 'error');
+    }
+  } catch(e) { toast('❌ Error de conexión', 'error'); }
+}
+
+async function loadMe() {
+  try {
+    const me = await apiGet('/api/auth/me');
+    if (me?.salon?.name) document.getElementById('salonName').textContent = me.salon.name;
+  } catch(e) {}
+}
+
+loadData();
+loadMe();
+</script>
 </body>
 </html>
