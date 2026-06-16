@@ -1,13 +1,14 @@
 // @ts-nocheck
 /**
- * POST /api/agent/chat   — procesa input natural
- *   - Lecturas: respuesta directa
- *   - Escrituras/envíos: devuelve confirmation_card (NUNCA escribe sin OK del usuario)
- *
+ * POST /api/agent/chat   — procesa input natural (texto)
+ * POST /api/agent/photo  — procesa imagen de ticket/factura (visión)
  * POST /api/agent/confirm — ejecuta la acción pendiente tras OK del usuario
  * POST /api/agent/cancel  — descarta la acción pendiente
  *
- * Herramientas write/send disponibles:
+ * PRINCIPIO: ninguna escritura ni envío ocurre sin OK explícito del usuario.
+ * El gate (createPendingAction → tarjeta → executePendingAction) aplica a texto Y foto.
+ *
+ * Herramientas write/send:
  *   registrar_gasto | registrar_ingreso | crear_cliente
  *   crear_factura   | cambiar_estado_factura | enviar_recordatorio
  */
@@ -18,6 +19,7 @@ import { routeToLLM, callOpenRouter, DIABOLUS_SYSTEM_PROMPT } from '../agent/llm
 import { createClient } from '@supabase/supabase-js'
 import { createPendingAction, executePendingAction, cancelPendingAction } from '../agent/confirmation'
 import { suggestCategory } from '../agent/tools'
+import { extractFromImage } from '../agent/vision'
 
 export const agentRoutes = new Hono()
 
@@ -82,7 +84,6 @@ agentRoutes.post('/chat', async (c) => {
 
     // ── WRITE: crear_cliente ─────────────────────────────────────────────────
     if (/nuevo cliente|crear cliente|añadir cliente|agrega.{0,10}cliente|da de alta|registra.{0,15}cliente|alta.{0,10}cliente/i.test(userInput)) {
-      // Extraer nombre: "nuevo cliente Ana García", "cliente llamado Juan"
       let nombre = ''
       const mNombre = userInput.match(
         /(?:cliente|nuevo|añade|crea|registra|alta|high)\s+(?:llamad[oa]?\s+)?([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:con|teléfono|telefono|email|,|$)|\s*$)/i
@@ -96,15 +97,12 @@ agentRoutes.post('/chat', async (c) => {
         })
       }
 
-      // Extraer teléfono
       const mPhone = userInput.match(/(?:teléfono|telefono|telf?|móvil|movil|tlf)[\s:]+([+0-9\s]{7,15})/i)
       const telefono = mPhone ? mPhone[1].trim().replace(/\s/g, '') : undefined
 
-      // Extraer email
       const mEmail = userInput.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
       const email = mEmail ? mEmail[1] : undefined
 
-      // Extraer NIF
       const mNif = userInput.match(/(?:nif|cif|dni)[\s:]+([A-Z0-9]{7,9})/i)
       const nif = mNif ? mNif[1].toUpperCase() : undefined
 
@@ -114,15 +112,12 @@ agentRoutes.post('/chat', async (c) => {
 
     // ── WRITE: crear_factura ─────────────────────────────────────────────────
     if (/crea.{0,10}factura|nueva factura|factura para|hazme.{0,10}factura|factura a\s/i.test(userInput)) {
-      // Extraer nombre de cliente
       const mCliente = userInput.match(/(?:para|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:por|de|con|,|$)|\s*$)/i)
       const clienteNombre = mCliente ? mCliente[1].trim() : ''
 
-      // Extraer importe
       const mImporte = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*€?(?:\s*euros?)?/i)
       const importeNum = mImporte ? parseFloat(mImporte[1].replace(',', '.')) : 0
 
-      // Extraer concepto
       const mConcepto = userInput.match(/(?:por|concepto|servicio)[:\s]+([^,\n.]{3,60})/i)
       const concepto = mConcepto ? mConcepto[1].trim() : 'Servicios'
 
@@ -139,7 +134,6 @@ agentRoutes.post('/chat', async (c) => {
         })
       }
 
-      // Buscar cliente en BD
       const supabase = getSupabase()
       const { data: clientes } = await supabase
         .from('clients')
@@ -159,7 +153,7 @@ agentRoutes.post('/chat', async (c) => {
       const lineas = [{
         concepto,
         cantidad: 1,
-        precio_unitario: importeNum / 1.21, // base sin IVA
+        precio_unitario: importeNum / 1.21,
         iva: 21,
       }]
 
@@ -177,13 +171,11 @@ agentRoutes.post('/chat', async (c) => {
     if (/paga[dr]a|cobrad[ao]|marca.{0,20}como|cambi.{0,10}estado|factura.{0,20}(pagad|cobrad|vencid|anuld)/i.test(userInput)) {
       const supabase = getSupabase()
 
-      // Determinar nuevo estado
       let nuevoEstado = 'pagada'
-      if (/vencid/i.test(userInput))  nuevoEstado = 'vencida'
+      if (/vencid/i.test(userInput))       nuevoEstado = 'vencida'
       if (/anuld|cancel/i.test(userInput)) nuevoEstado = 'anulada'
-      if (/pendiente/i.test(userInput)) nuevoEstado = 'pendiente'
+      if (/pendiente/i.test(userInput))    nuevoEstado = 'pendiente'
 
-      // Buscar factura por número
       const mNum = userInput.match(/(?:#|factura\s+)?(\d{4}-\d{3,4})/i)
       let invoice = null
 
@@ -196,7 +188,6 @@ agentRoutes.post('/chat', async (c) => {
           .single()
         invoice = data
       } else {
-        // Buscar por nombre de cliente
         const mCliente = userInput.match(/(?:de|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s|$)/i)
         if (mCliente) {
           const nombre = mCliente[1].trim()
@@ -244,10 +235,8 @@ agentRoutes.post('/chat', async (c) => {
     if (/recordatorio|avisa.{0,10}[aá]|manda.{0,15}recorda|recuérdal|recuerdal|enviou?n?.{0,10}recorda/i.test(userInput)) {
       const supabase = getSupabase()
 
-      // Canal: WhatsApp por defecto, email si se menciona
       const canal = /email|correo|mail/i.test(userInput) ? 'email' : 'whatsapp'
 
-      // Extraer nombre de cliente
       const mCliente = userInput.match(/(?:a|para)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s|,|$)/i)
       const clienteNombre = mCliente ? mCliente[1].trim() : ''
 
@@ -258,7 +247,6 @@ agentRoutes.post('/chat', async (c) => {
         })
       }
 
-      // Buscar cliente
       const { data: clientes } = await supabase
         .from('clients')
         .select('id, name, phone, email')
@@ -275,7 +263,6 @@ agentRoutes.post('/chat', async (c) => {
 
       const cliente = clientes[0]
 
-      // Verificar que tiene el canal configurado
       if (canal === 'whatsapp' && !cliente.phone) {
         return c.json({
           status: 'needs_info',
@@ -289,7 +276,6 @@ agentRoutes.post('/chat', async (c) => {
         })
       }
 
-      // Buscar factura pendiente más reciente
       const { data: facturas } = await supabase
         .from('invoices')
         .select('id, number, total, due_date')
@@ -311,7 +297,6 @@ agentRoutes.post('/chat', async (c) => {
         ? new Date(factura.due_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
         : 'próximos días'
 
-      // Generar mensaje por defecto (el usuario puede editarlo)
       const mensaje = `Hola ${cliente.name}, te recordamos que tienes pendiente de pago la factura ${factura.number} por importe de ${formatImporteSimple(factura.total)}. Fecha límite: ${vencimiento}. ¡Gracias!`
 
       const card = await createPendingAction('enviar_recordatorio', {
@@ -357,6 +342,106 @@ agentRoutes.post('/chat', async (c) => {
   } catch (err) {
     console.error('[Agent] Error:', err)
     return c.json({ error: 'Agent error' }, 500)
+  }
+})
+
+// ─── POST /api/agent/photo ─────────────────────────────────────────────────────
+// Recibe: { image: base64, mimeType?: string }
+// Extrae datos con visión → crea acción pendiente → devuelve tarjeta (mismo gate)
+// La imagen NUNCA se guarda en servidor; la miniatura vive en el cliente.
+
+agentRoutes.post('/photo', async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}))
+    const { image, mimeType = 'image/jpeg' } = body
+
+    if (!image || typeof image !== 'string') {
+      return c.json({ error: 'Missing image (base64)' }, 400)
+    }
+
+    // Limitar tamaño: ~5MB imagen max
+    if (image.length > 7_000_000) {
+      return c.json({
+        status: 'needs_info',
+        message: 'La imagen es demasiado grande. Hazle una foto con menor resolución e inténtalo de nuevo.',
+      }, 400)
+    }
+
+    const salonId = c.get('salonId') as string
+    const userId  = c.get('userId')  as string
+
+    // ── Extracción por visión ──────────────────────────────────────────────
+    const extracted = await extractFromImage(image, mimeType)
+
+    // ── Caso: varios tickets en una foto ──────────────────────────────────
+    if (extracted.campos_dudosos.includes('multiple_tickets')) {
+      return c.json({
+        status: 'needs_info',
+        message: 'Veo varios tickets en la foto. Manda uno por foto para registrarlos correctamente.',
+        extracted,
+      })
+    }
+
+    // ── Caso: moneda extranjera ────────────────────────────────────────────
+    if (extracted.campos_dudosos.includes('moneda_extranjera')) {
+      return c.json({
+        status: 'needs_info',
+        message: 'El ticket parece estar en otra moneda. ¿Me confirmas el importe en euros y el concepto?',
+        extracted,
+      })
+    }
+
+    // ── Anti-alucinación: confianza baja o importe nulo ───────────────────
+    if (extracted.confianza === 'baja' || extracted.importe === null) {
+      let msg = 'No consigo leer bien el ticket.'
+      if (extracted.importe === null) msg += ' ¿Cuánto es el importe total?'
+      if (extracted.concepto === null) msg += ' ¿Y de qué es el gasto?'
+      msg += '\n\nO dímelo directamente: *"gasté 45€ en material"*'
+      return c.json({
+        status: 'needs_info',
+        message: msg.trim(),
+        extracted,
+      })
+    }
+
+    // ── Todo legible — construir propuesta y pasar por el gate ────────────
+    const actionType = extracted.tipo === 'ingreso' ? 'registrar_ingreso' : 'registrar_gasto'
+    const today = new Date().toISOString().split('T')[0]
+
+    const parameters =
+      extracted.tipo === 'ingreso'
+        ? {
+            importe:        extracted.importe,
+            concepto:       extracted.concepto || 'Ingreso de ticket',
+            cliente:        extracted.proveedor || undefined,
+            categoria:      extracted.categoria || 'servicios',
+            fecha:          extracted.fecha || today,
+            source:         'photo',
+            campos_dudosos: extracted.campos_dudosos,
+          }
+        : {
+            importe:          extracted.importe,
+            concepto:         extracted.concepto || 'Gasto de ticket',
+            proveedor:        extracted.proveedor || undefined,
+            es_gasto_empresa: true,
+            categoria:        extracted.categoria || suggestCategory(extracted.concepto || ''),
+            fecha:            extracted.fecha || today,
+            source:           'photo',
+            campos_dudosos:   extracted.campos_dudosos,
+          }
+
+    const card = await createPendingAction(actionType, parameters, salonId, userId)
+
+    return c.json({
+      status:         'pending_confirmation',
+      card,
+      source:         'photo',
+      campos_dudosos: extracted.campos_dudosos,
+      confianza:      extracted.confianza,
+    })
+  } catch (err) {
+    console.error('[Agent/Photo] Error:', err)
+    return c.json({ error: 'Error procesando la imagen' }, 500)
   }
 })
 
@@ -466,8 +551,9 @@ async function generateL0ReadResponse(parsed: ReturnType<typeof parseUserInput>)
     default:
       return [
         'Puedo ayudarte con:',
-        '• *"gasté 45€ en material hoy"* → registra el gasto (con confirmación)',
-        '• *"cobré 300€ de Ana por corte"* → registra el ingreso (con confirmación)',
+        '• *"gasté 45€ en material hoy"* → registra el gasto',
+        '• *"cobré 300€ de Ana por corte"* → registra el ingreso',
+        '• 📷 *Adjunta una foto* de cualquier ticket o factura',
         '• *"nuevo cliente Ana García tel 612345678"* → crea cliente',
         '• *"crea factura para Ana por 150€"* → prepara factura borrador',
         '• *"la factura de Ana está pagada"* → actualiza estado',
