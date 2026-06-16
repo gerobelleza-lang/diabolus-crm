@@ -1,8 +1,19 @@
 // @ts-nocheck
+/**
+ * POST /api/agent/chat   — procesa input natural
+ *   - Lecturas: respuesta directa
+ *   - Escrituras: devuelve confirmation_card (NUNCA escribe sin OK del usuario)
+ *
+ * POST /api/agent/confirm — ejecuta la acción pendiente tras OK del usuario
+ * POST /api/agent/cancel  — descarta la acción pendiente
+ */
+
 import { Hono } from 'hono'
 import { parseUserInput } from '../agent/parser'
 import { routeToLLM, callOpenRouter, DIABOLUS_SYSTEM_PROMPT } from '../agent/llm-router'
 import { createClient } from '@supabase/supabase-js'
+import { createPendingAction, executePendingAction, cancelPendingAction } from '../agent/confirmation'
+import { suggestCategory } from '../agent/tools'
 
 export const agentRoutes = new Hono()
 
@@ -12,52 +23,8 @@ function getSupabase() {
   return createClient(url, key)
 }
 
-// Obtener el salon_id por defecto (primer salon) — solo para fase de construcción
-async function getDefaultSalonId(): Promise<string | null> {
-  try {
-    const supabase = getSupabase()
-    const { data } = await supabase.from('salons').select('id').limit(1).single()
-    return data?.id || null
-  } catch {
-    return null
-  }
-}
+// ─── POST /api/agent/chat ──────────────────────────────────────────────────────
 
-/**
- * Guarda una transacción en Supabase.
- * Retorna { ok: true } o { ok: false, error }
- */
-export async function saveTransaction({
-  amount,
-  type,
-  description,
-  salonId,
-}: {
-  amount: number
-  type: 'income' | 'expense'
-  description: string
-  salonId: string | null
-}) {
-  const supabase = getSupabase()
-  const today = new Date().toISOString().split('T')[0]
-
-  const { error } = await supabase.from('transactions').insert({
-    amount,
-    type,
-    description,
-    date: today,
-    ...(salonId ? { salon_id: salonId } : {}),
-  })
-
-  if (error) return { ok: false, error: error.message }
-  return { ok: true }
-}
-
-/**
- * POST /api/agent/chat
- * Procesa input natural → L0 parser + Supabase real data
- * Solo informa para consultas; EJECUTA para ingresos/gastos
- */
 agentRoutes.post('/chat', async (c) => {
   try {
     const body = await c.req.json().catch(() => ({}))
@@ -71,20 +38,56 @@ agentRoutes.post('/chat', async (c) => {
       return c.json({ error: 'userInput must be non-empty string' }, 400)
     }
 
+    const salonId = c.get('salonId') as string
+    const userId  = c.get('userId')  as string
+
     // Step 1: L0 Parser (deterministic, €0)
     const parsed = parseUserInput(userInput)
 
-    // Step 2: Decide routing
-    const routing = routeToLLM(
-      parsed.confidence,
-      userInput,
-      parsed.intent === 'create_income' || parsed.intent === 'create_expense'
-    )
+    // ── WRITE intents → gate de confirmación ──────────────────────────────────
+    if (parsed.intent === 'create_income' || parsed.intent === 'create_expense') {
+      const isIncome = parsed.intent === 'create_income'
 
-    // Step 3: Generate response with real data
+      // Validar que tenemos importe
+      if (!parsed.data.amount || parsed.data.amount <= 0) {
+        return c.json({
+          status: 'needs_info',
+          message: isIncome
+            ? '¿Cuánto cobraste? Dime el importe. Ej: "cobré 150€ de Juan"'
+            : '¿Cuánto gastaste? Dime el importe. Ej: "gasté 80€ en materiales"',
+        })
+      }
+
+      const actionType = isIncome ? 'registrar_ingreso' : 'registrar_gasto'
+      const parameters = isIncome
+        ? {
+            importe:  parsed.data.amount,
+            concepto: parsed.data.concept || 'Servicio',
+            cliente:  parsed.data.clientName !== 'Cliente' ? parsed.data.clientName : undefined,
+            categoria: 'servicios',
+          }
+        : {
+            importe:          parsed.data.amount,
+            concepto:         parsed.data.concept || 'Gasto',
+            es_gasto_empresa: true,
+            categoria:        suggestCategory(parsed.data.concept || ''),
+          }
+
+      // Crea la acción pendiente en BD y devuelve la tarjeta
+      const card = await createPendingAction(actionType, parameters, salonId, userId)
+
+      return c.json({
+        status: 'pending_confirmation',
+        card,
+      })
+    }
+
+    // ── READ intents → ejecutar directamente ──────────────────────────────────
+    const routing = routeToLLM(parsed.confidence, userInput, false)
+
     let finalResponse: string
     if (routing.level === 'L0') {
-      finalResponse = await generateL0Response(parsed)
+      finalResponse = await generateL0ReadResponse(parsed)
     } else {
       try {
         const ctx = await getDashboardContext()
@@ -92,7 +95,7 @@ agentRoutes.post('/chat', async (c) => {
         finalResponse = await callOpenRouter(routing.model, userInput, systemWithCtx)
       } catch (err) {
         console.warn('[LLM] Error, falling back to L0:', err)
-        finalResponse = await generateL0Response(parsed)
+        finalResponse = await generateL0ReadResponse(parsed)
       }
     }
 
@@ -103,13 +106,8 @@ agentRoutes.post('/chat', async (c) => {
         level: routing.level,
         model: routing.model,
         rationale: routing.rationale,
-        estimatedCost: `€${routing.estimatedCost}`
+        estimatedCost: `€${routing.estimatedCost}`,
       },
-      parsed: {
-        intent: parsed.intent,
-        confidence: parsed.confidence,
-        data: parsed.data
-      }
     })
   } catch (err) {
     console.error('[Agent] Error:', err)
@@ -117,9 +115,54 @@ agentRoutes.post('/chat', async (c) => {
   }
 })
 
-/**
- * Contexto real del negocio para inyectar al LLM
- */
+// ─── POST /api/agent/confirm ───────────────────────────────────────────────────
+
+agentRoutes.post('/confirm', async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}))
+    const { pending_action_id } = body
+
+    if (!pending_action_id) {
+      return c.json({ error: 'Missing pending_action_id' }, 400)
+    }
+
+    const result = await executePendingAction(pending_action_id)
+
+    return c.json({
+      status: result.ok ? 'success' : 'error',
+      message: result.message,
+    })
+  } catch (err) {
+    console.error('[Agent/Confirm] Error:', err)
+    return c.json({ error: 'Confirm error' }, 500)
+  }
+})
+
+// ─── POST /api/agent/cancel ────────────────────────────────────────────────────
+
+agentRoutes.post('/cancel', async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}))
+    const { pending_action_id } = body
+
+    if (!pending_action_id) {
+      return c.json({ error: 'Missing pending_action_id' }, 400)
+    }
+
+    await cancelPendingAction(pending_action_id)
+
+    return c.json({
+      status: 'success',
+      message: 'Acción cancelada. No se ha guardado nada.',
+    })
+  } catch (err) {
+    console.error('[Agent/Cancel] Error:', err)
+    return c.json({ error: 'Cancel error' }, 500)
+  }
+})
+
+// ─── Context for LLM ──────────────────────────────────────────────────────────
+
 async function getDashboardContext(): Promise<string> {
   try {
     const supabase = getSupabase()
@@ -128,7 +171,7 @@ async function getDashboardContext(): Promise<string> {
 
     const [{ data: invoices }, { data: txns }] = await Promise.all([
       supabase.from('invoices').select('total, status, due_date'),
-      supabase.from('transactions').select('amount, type').gte('created_at', startOfMonth)
+      supabase.from('transactions').select('amount, type').gte('created_at', startOfMonth),
     ])
 
     let pendingAmount = 0, pendingCount = 0, overdueAmount = 0, overdueCount = 0
@@ -154,79 +197,37 @@ async function getDashboardContext(): Promise<string> {
       `- Gastos mes actual: €${expenses.toFixed(2)}`,
       `- Balance: €${(income - expenses).toFixed(2)}`,
       `- Pendiente de cobro: €${pendingAmount.toFixed(2)} (${pendingCount} facturas)`,
-      `- Vencido sin cobrar: €${overdueAmount.toFixed(2)} (${overdueCount} facturas)`
+      `- Vencido sin cobrar: €${overdueAmount.toFixed(2)} (${overdueCount} facturas)`,
     ].join('\n')
   } catch {
     return 'Datos no disponibles en este momento'
   }
 }
 
-/**
- * Respuestas L0 — consultas solo informan, escrituras ejecutan
- */
-async function generateL0Response(parsed: ReturnType<typeof parseUserInput>): Promise<string> {
-  const { intent, data } = parsed
+// ─── L0 Read responses ────────────────────────────────────────────────────────
+
+async function generateL0ReadResponse(parsed: ReturnType<typeof parseUserInput>): Promise<string> {
+  const { intent } = parsed
 
   switch (intent) {
-    case 'create_income': {
-      if (!data.amount || data.amount <= 0) {
-        return '¿Cuánto cobraste? Dime el importe exacto. Ej: "cobré 150€ de Juan"'
-      }
-      const salonId = await getDefaultSalonId()
-      const description = data.clientName && data.clientName !== 'Cliente'
-        ? `${data.concept} — ${data.clientName}`
-        : data.concept
-      const result = await saveTransaction({
-        amount: data.amount,
-        type: 'income',
-        description,
-        salonId,
-      })
-      if (!result.ok) {
-        return `❌ No se pudo guardar el ingreso: ${result.error}`
-      }
-      return `✅ Ingreso guardado\n• Importe: €${data.amount.toFixed(2)}\n• Concepto: ${description}\n• Fecha: ${new Date().toLocaleDateString('es-ES')}\n\nYa está en tu balance del mes.`
-    }
-
-    case 'create_expense': {
-      if (!data.amount || data.amount <= 0) {
-        return '¿Cuánto gastaste? Dime el importe exacto. Ej: "gasté 80€ en materiales"'
-      }
-      const salonId = await getDefaultSalonId()
-      const result = await saveTransaction({
-        amount: data.amount,
-        type: 'expense',
-        description: data.concept,
-        salonId,
-      })
-      if (!result.ok) {
-        return `❌ No se pudo guardar el gasto: ${result.error}`
-      }
-      return `✅ Gasto guardado\n• Importe: €${data.amount.toFixed(2)}\n• Concepto: ${data.concept}\n• Fecha: ${new Date().toLocaleDateString('es-ES')}\n\nYa está en tus gastos del mes.`
-    }
-
-    case 'query_balance':
-      return await fetchBalance()
-
-    case 'query_debtors':
-      return await fetchPending()
-
-    case 'query_overdue':
-      return await fetchOverdue()
-
-    case 'query_who_owes':
-      return await fetchWhoOwes()
-
-    case 'query_income':
-      return await fetchIncome()
-
-    case 'query_expense':
-      return await fetchExpenses()
-
+    case 'query_balance':   return fetchBalance()
+    case 'query_debtors':   return fetchPending()
+    case 'query_overdue':   return fetchOverdue()
+    case 'query_who_owes':  return fetchWhoOwes()
+    case 'query_income':    return fetchIncome()
+    case 'query_expense':   return fetchExpenses()
     case 'unclear':
     case 'unclear_query':
     default:
-      return `Puedes decirme:\n• "Cobré 300€ de Juan" → guarda ingreso\n• "Gasté 80€ en materiales" → guarda gasto\n• "¿Cuánto tengo?" → balance del mes\n• "¿Cuánto me deben?" → cobros pendientes\n• "¿Qué está vencido?" → facturas atrasadas\n• "¿Quién me debe?" → lista de clientes`
+      return [
+        'Puedo ayudarte con:',
+        '• *"gasté 45€ en material hoy"* → registra el gasto (con confirmación)',
+        '• *"cobré 300€ de Ana por corte"* → registra el ingreso (con confirmación)',
+        '• *"¿cuánto tengo?"* → balance del mes',
+        '• *"¿cuánto me deben?"* → cobros pendientes',
+        '• *"¿qué está vencido?"* → facturas atrasadas',
+        '• *"¿quién me debe?"* → lista de clientes',
+      ].join('\n')
   }
 }
 
@@ -235,15 +236,10 @@ async function fetchBalance(): Promise<string> {
     const supabase = getSupabase()
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-
     const { data: txns } = await supabase
-      .from('transactions')
-      .select('amount, type')
-      .gte('created_at', startOfMonth)
+      .from('transactions').select('amount, type').gte('created_at', startOfMonth)
 
-    if (!txns || txns.length === 0) {
-      return 'No hay transacciones registradas este mes.'
-    }
+    if (!txns || txns.length === 0) return 'No hay transacciones registradas este mes.'
 
     let income = 0, expenses = 0
     for (const t of txns) {
@@ -251,10 +247,9 @@ async function fetchBalance(): Promise<string> {
       else if (t.type === 'expense') expenses += t.amount || 0
     }
     const balance = income - expenses
-
     return `💰 Este mes:\n• Ingresos: €${income.toFixed(2)}\n• Gastos: €${expenses.toFixed(2)}\n• Balance: €${balance.toFixed(2)}`
   } catch {
-    return 'No se pudo consultar el balance. Inténtalo de nuevo.'
+    return 'No se pudo consultar el balance.'
   }
 }
 
@@ -262,15 +257,9 @@ async function fetchPending(): Promise<string> {
   try {
     const supabase = getSupabase()
     const { data: invoices } = await supabase
-      .from('invoices')
-      .select('total, status')
-      .in('status', ['sent', 'pending'])
-
-    if (!invoices || invoices.length === 0) {
-      return 'No hay cobros pendientes registrados.'
-    }
-
-    const total = invoices.reduce((sum, i) => sum + (i.total || 0), 0)
+      .from('invoices').select('total, status').in('status', ['sent', 'pending'])
+    if (!invoices || invoices.length === 0) return 'No hay cobros pendientes.'
+    const total = invoices.reduce((s, i) => s + (i.total || 0), 0)
     return `⏳ Pendiente de cobro:\n• Total: €${total.toFixed(2)}\n• Facturas: ${invoices.length}`
   } catch {
     return 'No se pudo consultar los cobros pendientes.'
@@ -281,24 +270,13 @@ async function fetchOverdue(): Promise<string> {
   try {
     const supabase = getSupabase()
     const now = new Date().toISOString()
-
     const { data: invoices } = await supabase
-      .from('invoices')
-      .select('total, invoice_number, due_date')
-      .in('status', ['sent', 'pending'])
-      .lt('due_date', now)
+      .from('invoices').select('total, number, due_date')
+      .in('status', ['sent', 'pending']).lt('due_date', now)
       .order('due_date', { ascending: true })
-
-    if (!invoices || invoices.length === 0) {
-      return '✅ No hay facturas vencidas.'
-    }
-
-    const total = invoices.reduce((sum, i) => sum + (i.total || 0), 0)
-    const list = invoices
-      .slice(0, 5)
-      .map(i => `  • ${i.invoice_number}: €${(i.total || 0).toFixed(2)}`)
-      .join('\n')
-
+    if (!invoices || invoices.length === 0) return '✅ No hay facturas vencidas.'
+    const total = invoices.reduce((s, i) => s + (i.total || 0), 0)
+    const list = invoices.slice(0, 5).map(i => `  • ${i.number}: €${(i.total || 0).toFixed(2)}`).join('\n')
     return `🔴 Facturas vencidas:\n• Total: €${total.toFixed(2)}\n• Facturas: ${invoices.length}\n${list}`
   } catch {
     return 'No se pudo consultar las facturas vencidas.'
@@ -308,26 +286,15 @@ async function fetchOverdue(): Promise<string> {
 async function fetchWhoOwes(): Promise<string> {
   try {
     const supabase = getSupabase()
-
     const { data: invoices } = await supabase
-      .from('invoices')
-      .select('total, invoice_number, due_date, clients(name)')
-      .in('status', ['sent', 'pending'])
-      .order('due_date', { ascending: true })
-      .limit(8)
-
-    if (!invoices || invoices.length === 0) {
-      return 'No hay cobros pendientes registrados.'
-    }
-
+      .from('invoices').select('total, number, due_date, clients(name)')
+      .in('status', ['sent', 'pending']).order('due_date', { ascending: true }).limit(8)
+    if (!invoices || invoices.length === 0) return 'No hay cobros pendientes.'
     const lines = invoices.map(i => {
       const name = (i.clients as any)?.name || 'Cliente'
-      const due = i.due_date
-        ? new Date(i.due_date).toLocaleDateString('es-ES')
-        : 'sin vencimiento'
+      const due = i.due_date ? new Date(i.due_date).toLocaleDateString('es-ES') : 'sin vencimiento'
       return `  • ${name}: €${(i.total || 0).toFixed(2)} (vence ${due})`
     })
-
     return `👥 Clientes que te deben:\n${lines.join('\n')}`
   } catch {
     return 'No se pudo consultar la lista de deudores.'
@@ -339,18 +306,10 @@ async function fetchIncome(): Promise<string> {
     const supabase = getSupabase()
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-
     const { data: txns } = await supabase
-      .from('transactions')
-      .select('amount')
-      .eq('type', 'income')
-      .gte('created_at', startOfMonth)
-
-    if (!txns || txns.length === 0) {
-      return 'No hay ingresos registrados este mes.'
-    }
-
-    const total = txns.reduce((sum, t) => sum + (t.amount || 0), 0)
+      .from('transactions').select('amount').eq('type', 'income').gte('created_at', startOfMonth)
+    if (!txns || txns.length === 0) return 'No hay ingresos registrados este mes.'
+    const total = txns.reduce((s, t) => s + (t.amount || 0), 0)
     return `📈 Ingresos este mes: €${total.toFixed(2)} (${txns.length} registros)`
   } catch {
     return 'No se pudo consultar los ingresos.'
@@ -362,18 +321,10 @@ async function fetchExpenses(): Promise<string> {
     const supabase = getSupabase()
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-
     const { data: txns } = await supabase
-      .from('transactions')
-      .select('amount')
-      .eq('type', 'expense')
-      .gte('created_at', startOfMonth)
-
-    if (!txns || txns.length === 0) {
-      return 'No hay gastos registrados este mes.'
-    }
-
-    const total = txns.reduce((sum, t) => sum + (t.amount || 0), 0)
+      .from('transactions').select('amount').eq('type', 'expense').gte('created_at', startOfMonth)
+    if (!txns || txns.length === 0) return 'No hay gastos registrados este mes.'
+    const total = txns.reduce((s, t) => s + (t.amount || 0), 0)
     return `📉 Gastos este mes: €${total.toFixed(2)} (${txns.length} registros)`
   } catch {
     return 'No se pudo consultar los gastos.'
