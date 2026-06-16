@@ -1,11 +1,11 @@
 // @ts-nocheck
 /**
  * Catálogo tipado de herramientas del agente Diabolus.
- * Cada herramienta está marcada como 'read' o 'write'.
- * Las write NUNCA se ejecutan sin pasar por el gate de confirmación.
+ * Cada herramienta está marcada como 'read', 'write' o 'send'.
+ * Las write/send NUNCA se ejecutan sin pasar por el gate de confirmación.
  */
 
-export type ToolType = 'read' | 'write'
+export type ToolType = 'read' | 'write' | 'send'
 
 export interface ToolDefinition {
   name: string
@@ -23,6 +23,26 @@ export const TOOLS: Record<string, ToolDefinition> = {
     name: 'registrar_ingreso',
     type: 'write',
     description: 'Registra un ingreso en la tesorería a partir de lenguaje natural',
+  },
+  crear_cliente: {
+    name: 'crear_cliente',
+    type: 'write',
+    description: 'Da de alta un cliente nuevo en el negocio',
+  },
+  crear_factura: {
+    name: 'crear_factura',
+    type: 'write',
+    description: 'Prepara una factura borrador para un cliente. No la emite oficialmente.',
+  },
+  cambiar_estado_factura: {
+    name: 'cambiar_estado_factura',
+    type: 'write',
+    description: 'Cambia el estado de una factura existente (pendiente, pagada, vencida, anulada)',
+  },
+  enviar_recordatorio: {
+    name: 'enviar_recordatorio',
+    type: 'send',
+    description: 'Envía un recordatorio de cobro a un cliente por WhatsApp o email',
   },
   consultar_estado: {
     name: 'consultar_estado',

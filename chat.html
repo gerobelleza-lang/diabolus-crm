@@ -21,6 +21,7 @@
       --text-muted:  #6b6b8a;
       --green:       #22c55e;
       --red:         #ef4444;
+      --orange:      #f97316;
       --card-bg:     #16162a;
       --card-border: #3b3b6b;
       --radius:      16px;
@@ -124,20 +125,34 @@
       border: 1.5px solid var(--card-border);
       border-radius: var(--radius);
       overflow: hidden;
-      max-width: 340px;
+      max-width: 360px;
       box-shadow: 0 4px 24px rgba(0,0,0,.4);
     }
     .card-header {
       background: linear-gradient(135deg, #1e0b50, #2d1060);
       padding: 12px 16px;
       border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .card-header .card-title {
-      font-size: 14px; font-weight: 700; color: #f0e8ff;
+      font-size: 14px; font-weight: 700; color: #f0e8ff; flex: 1;
     }
     .card-header .card-subtitle {
       font-size: 11px; color: #a78bfa; margin-top: 2px;
     }
+    .card-type-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card-type-write { background: rgba(34,197,94,.15); color: #86efac; border: 1px solid rgba(34,197,94,.3); }
+    .card-type-send  { background: rgba(249,115,22,.15); color: #fdba74; border: 1px solid rgba(249,115,22,.3); }
+
     .card-fields {
       padding: 12px 16px;
       display: flex;
@@ -169,6 +184,31 @@
       font-weight: 800;
       color: #fff;
     }
+
+    /* ── Preview block (para envíos send) ── */
+    .card-preview {
+      margin: 0 16px 12px;
+      background: #0f0f1e;
+      border: 1px solid rgba(249,115,22,.25);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .card-preview-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #fdba74;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .card-preview-text {
+      font-size: 13px;
+      color: #d1d5db;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     .card-actions {
       display: flex;
       gap: 0;
@@ -188,6 +228,7 @@
     .card-actions button:active { opacity: .7; }
     .btn-confirm { background: var(--green); color: #fff; border-right: 1px solid var(--card-border); }
     .btn-cancel  { background: var(--surface2); color: var(--text-muted); }
+    .btn-confirm[disabled], .btn-cancel[disabled] { opacity: .35 !important; cursor: not-allowed; }
 
     /* ── Typing indicator ── */
     #typing {
@@ -345,7 +386,7 @@
       <textarea
         id="msg-input"
         rows="1"
-        placeholder='Ej: "gasté 45€ en material hoy" · "cobré 300€ de Ana"'
+        placeholder='Ej: "gasté 45€ en material" · "nuevo cliente Ana" · "factura para Juan por 200€"'
         autocomplete="off"
         autocorrect="off"
         spellcheck="true"
@@ -370,9 +411,7 @@ const overlay = document.getElementById('auth-overlay')
 if (token) {
   overlay.classList.add('hidden')
 } else {
-  // Try demo token for dev
-  const DEV_TOKEN = 'dev_admin'
-  token = DEV_TOKEN
+  token = 'dev_admin'
   overlay.classList.add('hidden')
 }
 
@@ -382,9 +421,6 @@ const typingEl   = document.getElementById('typing')
 const inputEl    = document.getElementById('msg-input')
 const sendBtn    = document.getElementById('btn-send')
 const toastEl    = document.getElementById('toast')
-
-// ─── State ─────────────────────────────────────────────────────────────────────
-let pendingCardId = null   // pending_action_id of current card shown
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function now() {
@@ -410,6 +446,14 @@ function hideTyping() {
   typingEl.style.display = 'none'
 }
 
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 // ─── Add messages ─────────────────────────────────────────────────────────────
 
 function addUserMsg(text) {
@@ -424,7 +468,6 @@ function addUserMsg(text) {
 }
 
 function addAgentMsg(text) {
-  // Convert *bold* and simple newlines
   const html = escHtml(text)
     .replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
   const row = document.createElement('div')
@@ -437,32 +480,49 @@ function addAgentMsg(text) {
   scrollToBottom()
 }
 
-function addConfirmationCard(card) {
-  pendingCardId = card.pending_action_id
+// ─── Confirmation card ─────────────────────────────────────────────────────────
 
-  // Disable any existing card buttons
+function addConfirmationCard(card) {
+  // Desactivar tarjetas anteriores
   document.querySelectorAll('.btn-confirm, .btn-cancel').forEach(b => {
     b.disabled = true
-    b.style.opacity = '0.4'
-    b.style.cursor = 'default'
+    b.style.cursor = 'not-allowed'
   })
 
+  // Determinar tipo para el badge
+  const isSend = ['enviar_recordatorio'].includes(card.action)
+  const badgeClass = isSend ? 'card-type-send' : 'card-type-write'
+  const badgeText  = isSend ? 'ENVÍO' : 'ESCRITURA'
+
+  // Campos
   const fieldsHtml = card.fields.map(f => `
     <div class="card-field">
       <span class="field-label">${escHtml(f.label)}</span>
-      <span class="field-value ${f.label === 'Importe' ? 'importe' : ''}">${escHtml(f.value)}</span>
+      <span class="field-value ${f.label === 'Importe' || f.label === 'Total' ? 'importe' : ''}">${escHtml(f.value)}</span>
     </div>
   `).join('')
+
+  // Preview de mensaje (solo para envíos)
+  const previewHtml = card.preview ? `
+    <div class="card-preview">
+      <div class="card-preview-label">📱 Texto exacto que se enviará</div>
+      <div class="card-preview-text">${escHtml(card.preview)}</div>
+    </div>
+  ` : ''
 
   const row = document.createElement('div')
   row.className = 'msg-row agent'
   row.innerHTML = `
     <div class="card">
       <div class="card-header">
-        <div class="card-title">${escHtml(card.summary)}</div>
-        <div class="card-subtitle">Revisa los datos antes de confirmar</div>
+        <div>
+          <div class="card-title">${escHtml(card.summary)}</div>
+          <div class="card-subtitle">Revisa los datos antes de confirmar</div>
+        </div>
+        <span class="card-type-badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="card-fields">${fieldsHtml}</div>
+      ${previewHtml}
       <div class="card-actions">
         <button class="btn-confirm" data-id="${escHtml(card.pending_action_id)}">✓ Confirmar</button>
         <button class="btn-cancel"  data-id="${escHtml(card.pending_action_id)}">✕ Cancelar</button>
@@ -552,8 +612,6 @@ async function handleConfirm(e) {
     hideTyping()
     addAgentMsg(`❌ Error al confirmar: ${err.message}`)
   }
-
-  pendingCardId = null
 }
 
 // ─── Cancel action ─────────────────────────────────────────────────────────────
@@ -571,8 +629,6 @@ async function handleCancel(e) {
     hideTyping()
     addAgentMsg(`❌ Error al cancelar: ${err.message}`)
   }
-
-  pendingCardId = null
 }
 
 function disableCardButtons(btn) {
@@ -580,8 +636,8 @@ function disableCardButtons(btn) {
   if (!card) return
   card.querySelectorAll('button').forEach(b => {
     b.disabled = true
-    b.style.opacity = '0.4'
-    b.style.cursor = 'default'
+    b.style.opacity = '0.35'
+    b.style.cursor = 'not-allowed'
   })
 }
 
@@ -601,30 +657,22 @@ inputEl.addEventListener('keydown', (e) => {
 
 sendBtn.addEventListener('click', sendMessage)
 
-// ─── XSS helper ───────────────────────────────────────────────────────────────
-
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
-
 // ─── Welcome message ───────────────────────────────────────────────────────────
 
 addAgentMsg(
 `Hola 👋 Soy el agente de Diabolus.
 
-Puedo gestionar tu tesorería si me lo dices en lenguaje natural:
+Gestiona tu tesorería hablando. Ejemplos:
 
-• *"gasté 45€ en material hoy"*
-• *"cobré 300€ de Ana por corte"*
-• *"¿cuánto tengo este mes?"*
-• *"¿quién me debe?"*
+💸 *"gasté 45€ en material hoy"*
+💰 *"cobré 300€ de Ana por corte"*
+👤 *"nuevo cliente María García tel 612345678"*
+🧾 *"crea factura para Ana por 150€"*
+🔄 *"la factura de Ana está pagada"*
+📩 *"manda recordatorio a Ana"*
+📊 *"¿cuánto tengo este mes?"*
 
-Antes de guardar cualquier cosa, te mostraré un resumen para que confirmes. ✅`
-)
+Antes de guardar o enviar cualquier cosa, verás una tarjeta para confirmar. ✅`)
 
 scrollToBottom(false)
 inputEl.focus()

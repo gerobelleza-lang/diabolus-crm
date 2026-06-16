@@ -2,10 +2,14 @@
 /**
  * POST /api/agent/chat   — procesa input natural
  *   - Lecturas: respuesta directa
- *   - Escrituras: devuelve confirmation_card (NUNCA escribe sin OK del usuario)
+ *   - Escrituras/envíos: devuelve confirmation_card (NUNCA escribe sin OK del usuario)
  *
  * POST /api/agent/confirm — ejecuta la acción pendiente tras OK del usuario
  * POST /api/agent/cancel  — descarta la acción pendiente
+ *
+ * Herramientas write/send disponibles:
+ *   registrar_gasto | registrar_ingreso | crear_cliente
+ *   crear_factura   | cambiar_estado_factura | enviar_recordatorio
  */
 
 import { Hono } from 'hono'
@@ -41,14 +45,13 @@ agentRoutes.post('/chat', async (c) => {
     const salonId = c.get('salonId') as string
     const userId  = c.get('userId')  as string
 
-    // Step 1: L0 Parser (deterministic, €0)
+    // ── Paso 1: L0 Parser (determinístico, €0) ───────────────────────────────
     const parsed = parseUserInput(userInput)
 
-    // ── WRITE intents → gate de confirmación ──────────────────────────────────
+    // ── WRITE: registrar_gasto / registrar_ingreso ───────────────────────────
     if (parsed.intent === 'create_income' || parsed.intent === 'create_expense') {
       const isIncome = parsed.intent === 'create_income'
 
-      // Validar que tenemos importe
       if (!parsed.data.amount || parsed.data.amount <= 0) {
         return c.json({
           status: 'needs_info',
@@ -73,13 +76,255 @@ agentRoutes.post('/chat', async (c) => {
             categoria:        suggestCategory(parsed.data.concept || ''),
           }
 
-      // Crea la acción pendiente en BD y devuelve la tarjeta
       const card = await createPendingAction(actionType, parameters, salonId, userId)
+      return c.json({ status: 'pending_confirmation', card })
+    }
 
-      return c.json({
-        status: 'pending_confirmation',
-        card,
-      })
+    // ── WRITE: crear_cliente ─────────────────────────────────────────────────
+    if (/nuevo cliente|crear cliente|añadir cliente|agrega.{0,10}cliente|da de alta|registra.{0,15}cliente|alta.{0,10}cliente/i.test(userInput)) {
+      // Extraer nombre: "nuevo cliente Ana García", "cliente llamado Juan"
+      let nombre = ''
+      const mNombre = userInput.match(
+        /(?:cliente|nuevo|añade|crea|registra|alta|high)\s+(?:llamad[oa]?\s+)?([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:con|teléfono|telefono|email|,|$)|\s*$)/i
+      )
+      if (mNombre) nombre = mNombre[1].trim()
+
+      if (!nombre) {
+        return c.json({
+          status: 'needs_info',
+          message: '¿Cómo se llama el cliente? Ej: "nuevo cliente Ana García"',
+        })
+      }
+
+      // Extraer teléfono
+      const mPhone = userInput.match(/(?:teléfono|telefono|telf?|móvil|movil|tlf)[\s:]+([+0-9\s]{7,15})/i)
+      const telefono = mPhone ? mPhone[1].trim().replace(/\s/g, '') : undefined
+
+      // Extraer email
+      const mEmail = userInput.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
+      const email = mEmail ? mEmail[1] : undefined
+
+      // Extraer NIF
+      const mNif = userInput.match(/(?:nif|cif|dni)[\s:]+([A-Z0-9]{7,9})/i)
+      const nif = mNif ? mNif[1].toUpperCase() : undefined
+
+      const card = await createPendingAction('crear_cliente', { nombre, telefono, email, nif }, salonId, userId)
+      return c.json({ status: 'pending_confirmation', card })
+    }
+
+    // ── WRITE: crear_factura ─────────────────────────────────────────────────
+    if (/crea.{0,10}factura|nueva factura|factura para|hazme.{0,10}factura|factura a\s/i.test(userInput)) {
+      // Extraer nombre de cliente
+      const mCliente = userInput.match(/(?:para|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:por|de|con|,|$)|\s*$)/i)
+      const clienteNombre = mCliente ? mCliente[1].trim() : ''
+
+      // Extraer importe
+      const mImporte = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*€?(?:\s*euros?)?/i)
+      const importeNum = mImporte ? parseFloat(mImporte[1].replace(',', '.')) : 0
+
+      // Extraer concepto
+      const mConcepto = userInput.match(/(?:por|concepto|servicio)[:\s]+([^,\n.]{3,60})/i)
+      const concepto = mConcepto ? mConcepto[1].trim() : 'Servicios'
+
+      if (!clienteNombre) {
+        return c.json({
+          status: 'needs_info',
+          message: '¿Para qué cliente es la factura? Ej: "crea factura para Ana por 150€"',
+        })
+      }
+      if (!importeNum) {
+        return c.json({
+          status: 'needs_info',
+          message: '¿Por qué importe? Ej: "crea factura para Ana por 150€"',
+        })
+      }
+
+      // Buscar cliente en BD
+      const supabase = getSupabase()
+      const { data: clientes } = await supabase
+        .from('clients')
+        .select('id, name')
+        .eq('salon_id', salonId)
+        .ilike('name', `%${clienteNombre}%`)
+        .limit(3)
+
+      if (!clientes || clientes.length === 0) {
+        return c.json({
+          status: 'needs_info',
+          message: `No encontré al cliente "${clienteNombre}". ¿Quieres crearlo primero? Di "nuevo cliente ${clienteNombre}".`,
+        })
+      }
+
+      const cliente = clientes[0]
+      const lineas = [{
+        concepto,
+        cantidad: 1,
+        precio_unitario: importeNum / 1.21, // base sin IVA
+        iva: 21,
+      }]
+
+      const card = await createPendingAction('crear_factura', {
+        cliente_id:     cliente.id,
+        cliente_nombre: cliente.name,
+        lineas,
+        total:          importeNum,
+        fecha:          new Date().toISOString().split('T')[0],
+      }, salonId, userId)
+      return c.json({ status: 'pending_confirmation', card })
+    }
+
+    // ── WRITE: cambiar_estado_factura ────────────────────────────────────────
+    if (/paga[dr]a|cobrad[ao]|marca.{0,20}como|cambi.{0,10}estado|factura.{0,20}(pagad|cobrad|vencid|anuld)/i.test(userInput)) {
+      const supabase = getSupabase()
+
+      // Determinar nuevo estado
+      let nuevoEstado = 'pagada'
+      if (/vencid/i.test(userInput))  nuevoEstado = 'vencida'
+      if (/anuld|cancel/i.test(userInput)) nuevoEstado = 'anulada'
+      if (/pendiente/i.test(userInput)) nuevoEstado = 'pendiente'
+
+      // Buscar factura por número
+      const mNum = userInput.match(/(?:#|factura\s+)?(\d{4}-\d{3,4})/i)
+      let invoice = null
+
+      if (mNum) {
+        const { data } = await supabase
+          .from('invoices')
+          .select('id, number, total, status, clients(name)')
+          .eq('salon_id', salonId)
+          .eq('number', mNum[1])
+          .single()
+        invoice = data
+      } else {
+        // Buscar por nombre de cliente
+        const mCliente = userInput.match(/(?:de|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s|$)/i)
+        if (mCliente) {
+          const nombre = mCliente[1].trim()
+          const { data: clientes } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('salon_id', salonId)
+            .ilike('name', `%${nombre}%`)
+            .limit(1)
+
+          if (clientes && clientes.length > 0) {
+            const { data: facturas } = await supabase
+              .from('invoices')
+              .select('id, number, total, status, clients(name)')
+              .eq('salon_id', salonId)
+              .eq('client_id', clientes[0].id)
+              .in('status', ['pending', 'sent'])
+              .order('created_at', { ascending: false })
+              .limit(1)
+
+            if (facturas && facturas.length > 0) invoice = facturas[0]
+          }
+        }
+      }
+
+      if (!invoice) {
+        return c.json({
+          status: 'needs_info',
+          message: 'No encontré la factura. Dime el número (ej: "2026-001") o el nombre del cliente.',
+        })
+      }
+
+      const card = await createPendingAction('cambiar_estado_factura', {
+        factura_id:     invoice.id,
+        factura_numero: invoice.number,
+        cliente_nombre: (invoice.clients as any)?.name || '',
+        importe:        invoice.total,
+        estado_actual:  invoice.status,
+        nuevo_estado:   nuevoEstado,
+      }, salonId, userId)
+      return c.json({ status: 'pending_confirmation', card })
+    }
+
+    // ── SEND: enviar_recordatorio ────────────────────────────────────────────
+    if (/recordatorio|avisa.{0,10}[aá]|manda.{0,15}recorda|recuérdal|recuerdal|enviou?n?.{0,10}recorda/i.test(userInput)) {
+      const supabase = getSupabase()
+
+      // Canal: WhatsApp por defecto, email si se menciona
+      const canal = /email|correo|mail/i.test(userInput) ? 'email' : 'whatsapp'
+
+      // Extraer nombre de cliente
+      const mCliente = userInput.match(/(?:a|para)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s|,|$)/i)
+      const clienteNombre = mCliente ? mCliente[1].trim() : ''
+
+      if (!clienteNombre) {
+        return c.json({
+          status: 'needs_info',
+          message: '¿A qué cliente quieres mandarle el recordatorio? Ej: "manda recordatorio a Ana"',
+        })
+      }
+
+      // Buscar cliente
+      const { data: clientes } = await supabase
+        .from('clients')
+        .select('id, name, phone, email')
+        .eq('salon_id', salonId)
+        .ilike('name', `%${clienteNombre}%`)
+        .limit(1)
+
+      if (!clientes || clientes.length === 0) {
+        return c.json({
+          status: 'needs_info',
+          message: `No encontré al cliente "${clienteNombre}". Revisa el nombre.`,
+        })
+      }
+
+      const cliente = clientes[0]
+
+      // Verificar que tiene el canal configurado
+      if (canal === 'whatsapp' && !cliente.phone) {
+        return c.json({
+          status: 'needs_info',
+          message: `${cliente.name} no tiene número de WhatsApp registrado. ¿Quieres enviarlo por email?`,
+        })
+      }
+      if (canal === 'email' && !cliente.email) {
+        return c.json({
+          status: 'needs_info',
+          message: `${cliente.name} no tiene email registrado. ¿Quieres enviarlo por WhatsApp?`,
+        })
+      }
+
+      // Buscar factura pendiente más reciente
+      const { data: facturas } = await supabase
+        .from('invoices')
+        .select('id, number, total, due_date')
+        .eq('salon_id', salonId)
+        .eq('client_id', cliente.id)
+        .in('status', ['pending', 'sent'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (!facturas || facturas.length === 0) {
+        return c.json({
+          status: 'needs_info',
+          message: `${cliente.name} no tiene facturas pendientes.`,
+        })
+      }
+
+      const factura = facturas[0]
+      const vencimiento = factura.due_date
+        ? new Date(factura.due_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : 'próximos días'
+
+      // Generar mensaje por defecto (el usuario puede editarlo)
+      const mensaje = `Hola ${cliente.name}, te recordamos que tienes pendiente de pago la factura ${factura.number} por importe de ${formatImporteSimple(factura.total)}. Fecha límite: ${vencimiento}. ¡Gracias!`
+
+      const card = await createPendingAction('enviar_recordatorio', {
+        factura_id:     factura.id,
+        factura_numero: factura.number,
+        cliente_nombre: cliente.name,
+        cliente_phone:  cliente.phone  || null,
+        cliente_email:  cliente.email  || null,
+        importe:        factura.total,
+        canal,
+        mensaje,
+      }, salonId, userId)
+      return c.json({ status: 'pending_confirmation', card })
     }
 
     // ── READ intents → ejecutar directamente ──────────────────────────────────
@@ -223,10 +468,12 @@ async function generateL0ReadResponse(parsed: ReturnType<typeof parseUserInput>)
         'Puedo ayudarte con:',
         '• *"gasté 45€ en material hoy"* → registra el gasto (con confirmación)',
         '• *"cobré 300€ de Ana por corte"* → registra el ingreso (con confirmación)',
+        '• *"nuevo cliente Ana García tel 612345678"* → crea cliente',
+        '• *"crea factura para Ana por 150€"* → prepara factura borrador',
+        '• *"la factura de Ana está pagada"* → actualiza estado',
+        '• *"manda recordatorio a Ana"* → envía aviso de cobro',
         '• *"¿cuánto tengo?"* → balance del mes',
-        '• *"¿cuánto me deben?"* → cobros pendientes',
-        '• *"¿qué está vencido?"* → facturas atrasadas',
-        '• *"¿quién me debe?"* → lista de clientes',
+        '• *"¿quién me debe?"* → cobros pendientes',
       ].join('\n')
   }
 }
@@ -329,4 +576,10 @@ async function fetchExpenses(): Promise<string> {
   } catch {
     return 'No se pudo consultar los gastos.'
   }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatImporteSimple(n: number): string {
+  return `${Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
 }
