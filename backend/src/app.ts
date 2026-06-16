@@ -14,6 +14,7 @@ import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
 import { telegramRoutes, telegramBotRoutes } from './routes/telegram'
 import { gestorRoutes, gestorPublicRoutes } from './routes/gestor'
+import { whatsappRoutes } from './routes/whatsapp'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 
@@ -51,6 +52,10 @@ export function createApp() {
   // ─── Stripe & External Webhooks (Public, no auth) ──────────────────────────
   app.route('/api/stripe', stripeRoutes)
   app.route('/webhooks', webhookRoutes)
+
+  // ─── WhatsApp Webhook (Public — Twilio envía mensajes aquí) ────────────────
+  // POST /webhooks/whatsapp
+  app.route('/webhooks/whatsapp', whatsappRoutes)
 
   // ─── Telegram Bot Webhook (Public — Telegram envía mensajes aquí) ───────────
   app.route('/telegram', telegramBotRoutes)
