@@ -84,18 +84,9 @@ export async function sendInvoiceSentEmail(
       <p style="margin:0;color:#4ade80;font-size:16px;font-weight:600;">✅ Factura enviada por WhatsApp</p>
     </div>
     <table style="width:100%;border-collapse:collapse;">
-      <tr>
-        <td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Número de factura</td>
-        <td style="padding:12px 0;color:#fff;text-align:right;border-bottom:1px solid #222;font-weight:600;">${invoiceNum}</td>
-      </tr>
-      <tr>
-        <td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Cliente</td>
-        <td style="padding:12px 0;color:#fff;text-align:right;border-bottom:1px solid #222;">${clientName}</td>
-      </tr>
-      <tr>
-        <td style="padding:12px 0;color:#888;">Importe</td>
-        <td style="padding:12px 0;color:#4ade80;text-align:right;font-weight:700;font-size:20px;">${total.toFixed(2)}€</td>
-      </tr>
+      <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Número de factura</td><td style="padding:12px 0;color:#fff;text-align:right;border-bottom:1px solid #222;font-weight:600;">${invoiceNum}</td></tr>
+      <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Cliente</td><td style="padding:12px 0;color:#fff;text-align:right;border-bottom:1px solid #222;">${clientName}</td></tr>
+      <tr><td style="padding:12px 0;color:#888;">Importe</td><td style="padding:12px 0;color:#4ade80;text-align:right;font-weight:700;font-size:20px;">${total.toFixed(2)}€</td></tr>
     </table>
     <p style="color:#666;font-size:13px;margin-top:24px;line-height:1.6;">El cliente ha recibido la factura en su WhatsApp. Te avisaremos cuando realice el pago.</p>
     <p style="color:#444;font-size:12px;text-align:center;margin-top:32px;border-top:1px solid #222;padding-top:20px;">${salonName} · Diabolus CRM</p>
@@ -126,21 +117,61 @@ export async function sendReminderSentEmail(
       <p style="margin:0;color:#fbbf24;font-size:16px;font-weight:600;">📤 Recordatorio de cobro enviado</p>
     </div>
     <table style="width:100%;border-collapse:collapse;">
-      <tr>
-        <td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Factura</td>
-        <td style="padding:12px 0;color:#fff;text-align:right;border-bottom:1px solid #222;font-weight:600;">${invoiceNum}</td>
-      </tr>
-      <tr>
-        <td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Cliente</td>
-        <td style="padding:12px 0;color:#fff;text-align:right;border-bottom:1px solid #222;">${clientName}</td>
-      </tr>
-      <tr>
-        <td style="padding:12px 0;color:#888;">Importe pendiente</td>
-        <td style="padding:12px 0;color:#fbbf24;text-align:right;font-weight:700;font-size:20px;">${total.toFixed(2)}€</td>
-      </tr>
+      <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Factura</td><td style="padding:12px 0;color:#fff;text-align:right;border-bottom:1px solid #222;font-weight:600;">${invoiceNum}</td></tr>
+      <tr><td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Cliente</td><td style="padding:12px 0;color:#fff;text-align:right;border-bottom:1px solid #222;">${clientName}</td></tr>
+      <tr><td style="padding:12px 0;color:#888;">Importe pendiente</td><td style="padding:12px 0;color:#fbbf24;text-align:right;font-weight:700;font-size:20px;">${total.toFixed(2)}€</td></tr>
     </table>
     <p style="color:#666;font-size:13px;margin-top:24px;line-height:1.6;">Se ha enviado un aviso amable al cliente por WhatsApp recordándole el pago pendiente.</p>
     <p style="color:#444;font-size:12px;text-align:center;margin-top:32px;border-top:1px solid #222;padding-top:20px;">${salonName} · Diabolus CRM</p>
+  </div>
+</body>
+</html>`
+  return sendEmail(to, subject, html)
+}
+
+// ─── Email: Invitación del gestor a cliente ───────────────────────────────────
+export async function sendGestorInviteEmail(
+  to: string,
+  gestorName: string,
+  acceptUrl: string
+) {
+  const subject = `${gestorName} te invita a conectar tu negocio en Diabolus CRM`
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Invitación de gestor — Diabolus CRM</title></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:0;">
+  <div style="max-width:560px;margin:40px auto;padding:40px;background:#111;border-radius:12px;border:1px solid #222;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="font-size:22px;font-weight:800;color:#dc2626;margin:0;">🔥 DIABOLUS CRM</h1>
+      <p style="color:#555;margin:6px 0 0;font-size:13px;">Centro de mando inteligente</p>
+    </div>
+    <div style="background:#1a0a0a;border:1px solid #3d1515;border-radius:10px;padding:18px 20px;margin-bottom:24px;">
+      <p style="margin:0;color:#dc2626;font-size:15px;font-weight:600;">📨 Invitación de tu gestor</p>
+    </div>
+    <h2 style="color:#fff;font-size:18px;margin-bottom:12px;">${gestorName} quiere conectar contigo</h2>
+    <p style="color:#aaa;line-height:1.6;margin-bottom:20px;">
+      Tu gestor o asesoría <strong style="color:#fff;">${gestorName}</strong> te invita a conectar tu cuenta de Diabolus CRM.
+      Así podrá acceder a los datos que necesita para ayudarte con la gestión, de forma ordenada y sin que tengas que
+      enviarle nada manualmente.
+    </p>
+    <div style="background:#0e0e0e;border:1px solid #1e1e1e;border-radius:8px;padding:16px;margin-bottom:24px;">
+      <p style="margin:0 0 8px;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">¿Qué verá tu gestor?</p>
+      <ul style="margin:0;padding:0 0 0 18px;color:#ccc;line-height:2;">
+        <li>Resumen de ingresos y gastos por trimestre</li>
+        <li>Estado de tus facturas (cobradas, pendientes, vencidas)</li>
+        <li>Movimientos contables del período</li>
+      </ul>
+      <p style="margin:12px 0 0;color:#555;font-size:12px;">⚠️ No verá estimaciones de IVA ni datos fiscales internos.</p>
+    </div>
+    <div style="text-align:center;margin:32px 0;">
+      <a href="${acceptUrl}" style="background:#dc2626;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">Aceptar invitación →</a>
+    </div>
+    <p style="color:#555;font-size:12px;line-height:1.6;text-align:center;">
+      Válida 7 días. Si no esperabas esta invitación, ignórala — nadie tendrá acceso sin que aceptes.
+    </p>
+    <p style="color:#333;font-size:12px;text-align:center;margin-top:24px;border-top:1px solid #1e1e1e;padding-top:20px;">
+      Diabolus CRM · Tesorería que se gestiona hablando
+    </p>
   </div>
 </body>
 </html>`
