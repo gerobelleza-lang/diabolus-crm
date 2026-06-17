@@ -334,3 +334,67 @@ export async function sendClosingReviewRequestEmail(
 
   return sendEmail(to, subject, html)
 }
+
+// ─── B3: Email notificaciones de chat ─────────────────────────────────────────
+
+// Al gestor: el cliente ha enviado un mensaje
+export async function sendChatNotificationGestor(
+  gestorEmail: string,
+  gestorName: string,
+  clientName: string,
+  preview: string
+) {
+  const subject = `💬 ${clientName} te ha enviado un mensaje`
+  const previewShort = preview.length > 120 ? preview.slice(0, 117) + '…' : preview
+  const portalUrl = 'https://gerobelleza-lang.github.io/diabolus-crm/gestor.html'
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Nuevo mensaje de cliente</title></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:0;">
+  <div style="max-width:560px;margin:40px auto;padding:40px;background:#111;border-radius:12px;border:1px solid #222;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="font-size:24px;font-weight:800;color:#dc2626;margin:0;">🔥 DIABOLUS CRM</h1>
+    </div>
+    <h2 style="color:#fff;font-size:18px;margin:0 0 8px;">Nuevo mensaje de ${clientName}</h2>
+    <p style="color:#888;font-size:13px;margin:0 0 20px;">Hola ${gestorName}, tu cliente te ha escrito.</p>
+    <div style="background:#1a1a1a;border-radius:8px;padding:16px;border-left:3px solid #dc2626;margin:0 0 24px;">
+      <p style="color:#ccc;margin:0;font-style:italic;">"${previewShort}"</p>
+    </div>
+    <a href="${portalUrl}" style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">Ver mensaje en el portal →</a>
+    <p style="color:#555;font-size:12px;margin:24px 0 0;">Diabolus CRM · Respondiendo a este email no se enviará respuesta al cliente. Usa el portal.</p>
+  </div>
+</body>
+</html>`
+  return sendEmail(gestorEmail, subject, html)
+}
+
+// Al cliente: el gestor ha enviado un mensaje
+export async function sendChatNotificationClient(
+  clientEmail: string,
+  businessName: string,
+  gestorName: string,
+  preview: string
+) {
+  const subject = `📩 Tu gestor ${gestorName} te ha escrito`
+  const previewShort = preview.length > 120 ? preview.slice(0, 117) + '…' : preview
+  const dashboardUrl = 'https://gerobelleza-lang.github.io/diabolus-crm/salon-gestor-chat.html'
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Mensaje de tu gestor</title></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:0;">
+  <div style="max-width:560px;margin:40px auto;padding:40px;background:#111;border-radius:12px;border:1px solid #222;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="font-size:24px;font-weight:800;color:#dc2626;margin:0;">🔥 DIABOLUS CRM</h1>
+    </div>
+    <h2 style="color:#fff;font-size:18px;margin:0 0 8px;">Tu gestor te ha enviado un mensaje</h2>
+    <p style="color:#888;font-size:13px;margin:0 0 20px;">Hola ${businessName}, ${gestorName} te ha escrito desde el portal.</p>
+    <div style="background:#1a1a1a;border-radius:8px;padding:16px;border-left:3px solid #dc2626;margin:0 0 24px;">
+      <p style="color:#ccc;margin:0;font-style:italic;">"${previewShort}"</p>
+    </div>
+    <a href="${dashboardUrl}" style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">Ver mensaje →</a>
+    <p style="color:#555;font-size:12px;margin:24px 0 0;">Diabolus CRM · Chat privado entre tú y tu gestor.</p>
+  </div>
+</body>
+</html>`
+  return sendEmail(clientEmail, subject, html)
+}

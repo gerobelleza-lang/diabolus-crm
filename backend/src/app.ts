@@ -14,8 +14,8 @@ import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
 import { telegramRoutes, telegramBotRoutes } from './routes/telegram'
 import { gestorRoutes, gestorPublicRoutes } from './routes/gestor'
+import { chatRoutes } from './routes/chat'
 import { whatsappRoutes } from './routes/whatsapp'
-import { closingInternalRoutes, closingReviewRoutes, closingGestorRoutes } from './routes/closings'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 
@@ -54,24 +54,17 @@ export function createApp() {
   app.route('/api/stripe', stripeRoutes)
   app.route('/webhooks', webhookRoutes)
 
-  // ─── WhatsApp Webhook (Public — Twilio) ────────────────────────────────────
+  // ─── WhatsApp Webhook (Public — Twilio envía mensajes aquí) ────────────────
+  // POST /webhooks/whatsapp
   app.route('/webhooks/whatsapp', whatsappRoutes)
 
-  // ─── Telegram Bot Webhook (Public) ─────────────────────────────────────────
+  // ─── Telegram Bot Webhook (Public — Telegram envía mensajes aquí) ───────────
   app.route('/telegram', telegramBotRoutes)
 
-  // ─── Gestor Portal (gestor JWT) ─────────────────────────────────────────────
-  // Rutas de cierres ANTES de gestorPublicRoutes para que /gestor/closings/* no colisione
-  app.route('/gestor/closings', closingGestorRoutes)
+  // ─── Gestor Portal (Public — acceso con token de gestor) ───────────────────
   app.route('/gestor', gestorPublicRoutes)
 
-  // ─── Client closing review (Public — token-gated) ──────────────────────────
-  app.route('/closing', closingReviewRoutes)
-
-  // ─── Internal routes (N8N scheduler — x-internal-key required) ─────────────
-  app.route('/api/internal/closings', closingInternalRoutes)
-
-  // ─── Demonio Callback (Public — N8N webhook) ───────────────────────────────
+  // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
     try {
       const body = await c.req.json().catch(() => ({}))
@@ -133,6 +126,7 @@ export function createApp() {
   app.route('/api/reports', reportRoutes)
   app.route('/api/demonio', demonioRoutes)
   app.route('/api/gestor', gestorRoutes)
+  app.route('/api/chat', chatRoutes)
   app.route('/api/notifications/telegram', telegramRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────

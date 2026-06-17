@@ -22,7 +22,7 @@
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { SignJWT, jwtVerify } from 'jose'
-import { sendGestorInviteEmail } from '../integrations/email'
+import { sendGestorInviteEmail, sendChatNotificationClient } from '../integrations/email'
 
 export const gestorPublicRoutes = new Hono()
 export const gestorRoutes = new Hono()
@@ -494,4 +494,230 @@ gestorRoutes.post('/link', async (c) => {
 
   const baseUrl = c.req.url.includes('localhost') ? 'http://localhost:5500' : 'https://gerobelleza-lang.github.io/diabolus-crm'
   return c.json({ ok: true, token, url: `${baseUrl}/gestor.html?token=${token}`, expires_at: expiresAt.toISOString(), salon_name: salon?.name ?? 'Mi negocio' })
+})
+
+// ─── B3: Endpoints de chat — lado gestor ──────────────────────────────────────
+// Añadir al final de gestor.ts
+
+// GET /gestor/thread/:salonId — hilo gestor↔cliente
+gestorPublicRoutes.get('/thread/:salonId', async (c) => {
+  const g = await getGestorFromRequest(c)
+  if (!g) return c.json({ error: 'No autorizado' }, 401)
+
+  const salonId = c.req.param('salonId')
+  const supabase = getSupabaseAdmin()
+
+  // Aislamiento: solo hilos de sus clientes activos
+  const { data: link } = await supabase
+    .from('gestor_salon_links')
+    .select('id')
+    .eq('gestor_id', g.gestorId)
+    .eq('salon_id', salonId)
+    .eq('status', 'active')
+    .single()
+
+  if (!link) return c.json({ error: 'Cliente no vinculado o inactivo' }, 403)
+
+  const { data: messages } = await supabase
+    .from('gestor_messages')
+    .select('id, sender, content, attachment, created_at, read_at')
+    .eq('gestor_id', g.gestorId)
+    .eq('salon_id', salonId)
+    .order('created_at', { ascending: true })
+
+  const SIGNED_URL_EXPIRY = 300
+  const messagesWithUrls = await Promise.all(
+    (messages ?? []).map(async (m: any) => {
+      let attachment_url: string | null = null
+      if (m.attachment?.storage_path) {
+        const { data: signed } = await supabase.storage
+          .from('chat-attachments')
+          .createSignedUrl(m.attachment.storage_path, SIGNED_URL_EXPIRY)
+        attachment_url = signed?.signedUrl ?? null
+      }
+      return { ...m, attachment_url }
+    })
+  )
+
+  return c.json({ ok: true, messages: messagesWithUrls })
+})
+
+// POST /gestor/thread/:salonId — enviar mensaje
+const MAX_FILE_SIZE_G = 10 * 1024 * 1024
+const ALLOWED_MIMES_G = new Set([
+  'application/pdf',
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+  'text/csv', 'application/zip',
+])
+
+gestorPublicRoutes.post('/thread/:salonId', async (c) => {
+  const g = await getGestorFromRequest(c)
+  if (!g) return c.json({ error: 'No autorizado' }, 401)
+
+  const salonId = c.req.param('salonId')
+  const supabase = getSupabaseAdmin()
+
+  const { data: link } = await supabase
+    .from('gestor_salon_links')
+    .select('id')
+    .eq('gestor_id', g.gestorId)
+    .eq('salon_id', salonId)
+    .eq('status', 'active')
+    .single()
+  if (!link) return c.json({ error: 'Cliente no vinculado o inactivo' }, 403)
+
+  const contentType = c.req.header('Content-Type') ?? ''
+  let body = ''
+  let attachment: { storage_path: string; filename: string; mime: string; size: number } | null = null
+
+  if (contentType.includes('multipart/form-data')) {
+    const form = await c.req.formData()
+    body = (form.get('body') as string) ?? ''
+    const file = form.get('file') as File | null
+
+    if (file && file.size > 0) {
+      if (!ALLOWED_MIMES_G.has(file.type))
+        return c.json({ error: `Tipo no permitido: ${file.type}` }, 422)
+      if (file.size > MAX_FILE_SIZE_G)
+        return c.json({ error: 'El archivo supera 10 MB' }, 422)
+
+      const fileId = crypto.randomUUID()
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const storagePath = `${g.gestorId}/${salonId}/${fileId}/${safeName}`
+
+      const { error: uploadErr } = await supabase.storage
+        .from('chat-attachments')
+        .upload(storagePath, await file.arrayBuffer(), { contentType: file.type, upsert: false })
+
+      if (uploadErr) {
+        console.error('[Gestor Chat Upload]', uploadErr)
+        return c.json({ error: 'Error subiendo adjunto' }, 500)
+      }
+      attachment = { storage_path: storagePath, filename: file.name, mime: file.type, size: file.size }
+    }
+  } else {
+    const json = await c.req.json().catch(() => ({}))
+    body = json.body ?? ''
+  }
+
+  if (!body.trim() && !attachment)
+    return c.json({ error: 'Se requiere body o adjunto' }, 400)
+
+  const { data: msg, error: insertErr } = await supabase
+    .from('gestor_messages')
+    .insert([{
+      gestor_id: g.gestorId,
+      salon_id: salonId,
+      sender: 'gestor',
+      content: body.trim() || null,
+      attachment: attachment ?? null,
+      created_at: new Date().toISOString(),
+    }])
+    .select('id, sender, content, attachment, created_at')
+    .single()
+
+  if (insertErr) {
+    console.error('[Gestor Chat Insert]', insertErr)
+    return c.json({ error: 'Error enviando mensaje' }, 500)
+  }
+
+  // Notificar al cliente por email (fire & forget)
+  const [{ data: salon }, { data: clientProfile }] = await Promise.all([
+    supabase.from('salons').select('name, email').eq('id', salonId).single(),
+    supabase.from('users').select('email').eq('salon_id', salonId).limit(1).maybeSingle(),
+  ])
+
+  const clientEmail = salon?.email ?? clientProfile?.email
+  if (clientEmail) {
+    sendChatNotificationClient(
+      clientEmail,
+      salon?.name ?? 'Tu negocio',
+      g.name,
+      body.trim() || `[adjunto: ${attachment?.filename}]`
+    ).catch(console.error)
+  }
+
+  return c.json({ ok: true, message: msg }, 201)
+})
+
+// POST /gestor/thread/:salonId/read — marcar mensajes del cliente como leídos
+gestorPublicRoutes.post('/thread/:salonId/read', async (c) => {
+  const g = await getGestorFromRequest(c)
+  if (!g) return c.json({ error: 'No autorizado' }, 401)
+
+  const salonId = c.req.param('salonId')
+  const supabase = getSupabaseAdmin()
+
+  const { data: link } = await supabase
+    .from('gestor_salon_links').select('id')
+    .eq('gestor_id', g.gestorId).eq('salon_id', salonId).eq('status', 'active').single()
+  if (!link) return c.json({ error: 'Acceso denegado' }, 403)
+
+  await supabase
+    .from('gestor_messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('gestor_id', g.gestorId)
+    .eq('salon_id', salonId)
+    .eq('sender', 'client')
+    .is('read_at', null)
+
+  return c.json({ ok: true })
+})
+
+// GET /gestor/attachment/:msgId — URL firmada (gestor)
+gestorPublicRoutes.get('/attachment/:msgId', async (c) => {
+  const g = await getGestorFromRequest(c)
+  if (!g) return c.json({ error: 'No autorizado' }, 401)
+
+  const msgId = c.req.param('msgId')
+  const supabase = getSupabaseAdmin()
+
+  const { data: msg } = await supabase
+    .from('gestor_messages').select('gestor_id, salon_id, attachment').eq('id', msgId).single()
+
+  if (!msg) return c.json({ error: 'Mensaje no encontrado' }, 404)
+  if (msg.gestor_id !== g.gestorId) return c.json({ error: 'Acceso denegado' }, 403)
+  if (!msg.attachment?.storage_path) return c.json({ error: 'Sin adjunto' }, 404)
+
+  // Verificar vínculo activo
+  const { data: link } = await supabase
+    .from('gestor_salon_links').select('id')
+    .eq('gestor_id', g.gestorId).eq('salon_id', msg.salon_id).eq('status', 'active').single()
+  if (!link) return c.json({ error: 'Acceso denegado' }, 403)
+
+  const { data: signed } = await supabase.storage
+    .from('chat-attachments').createSignedUrl(msg.attachment.storage_path, 300)
+
+  if (!signed?.signedUrl) return c.json({ error: 'Error generando URL' }, 500)
+  return c.json({ ok: true, url: signed.signedUrl, expires_in: 300, filename: msg.attachment.filename })
+})
+
+// GET /gestor/unread — total no leídos en todos los hilos activos
+gestorPublicRoutes.get('/unread', async (c) => {
+  const g = await getGestorFromRequest(c)
+  if (!g) return c.json({ error: 'No autorizado' }, 401)
+
+  const supabase = getSupabaseAdmin()
+
+  // Solo de clientes activos
+  const { data: links } = await supabase
+    .from('gestor_salon_links').select('salon_id')
+    .eq('gestor_id', g.gestorId).eq('status', 'active')
+
+  const salonIds = (links ?? []).map((l: any) => l.salon_id)
+  if (!salonIds.length) return c.json({ ok: true, unread: 0 })
+
+  const { count } = await supabase
+    .from('gestor_messages')
+    .select('id', { count: 'exact' })
+    .eq('gestor_id', g.gestorId)
+    .in('salon_id', salonIds)
+    .eq('sender', 'client')
+    .is('read_at', null)
+
+  return c.json({ ok: true, unread: count ?? 0 })
 })
