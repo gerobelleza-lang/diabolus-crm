@@ -4,26 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Diabolus CRM — Dashboard</title>
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#8B5CF6">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Diabolus">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="diabolus-tokens.css">
   <style>
     .main-container {
       display: flex;
       min-height: 100vh;
-      background-color: var(--bg-primary);
+      background-color: var(--ink);
     }
 
-    /* SIDEBAR */
+    /* ── SIDEBAR ── */
     .sidebar {
-      width: 280px;
-      background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+      width: 260px;
+      background: var(--surface);
       border-right: 1px solid var(--border-color);
       padding: 2rem 0;
       display: flex;
@@ -33,276 +33,299 @@
       left: 0;
       top: 0;
       overflow-y: auto;
+      z-index: 10;
     }
-
     .sidebar-header {
-      padding: 0 1.5rem 2rem;
+      padding: 0 1.5rem 1.5rem;
       text-align: center;
       border-bottom: 1px solid var(--border-color);
       margin-bottom: 1.5rem;
     }
-
-    .sidebar-header .logo {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
+    .sidebar-logo {
+      font-size: 1.25rem;
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--violet);
+      letter-spacing: 0.12em;
+      margin-bottom: 0.375rem;
     }
-
-    .sidebar-header h3 {
-      margin: 0;
-      font-size: 1.125rem;
+    .sidebar-salon {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      font-family: var(--font-body);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
-
     .sidebar-nav {
       flex: 1;
-      padding: 0 1rem;
+      padding: 0 0.75rem;
     }
-
     .nav-item {
-      padding: 0.75rem 1rem;
-      margin-bottom: 0.5rem;
+      padding: 0.65rem 1rem;
+      margin-bottom: 0.2rem;
       border-radius: 0.5rem;
-      cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      transition: all 0.3s ease;
+      transition: all 0.18s;
       color: var(--text-secondary);
       text-decoration: none;
-      font-weight: 600;
+      font-weight: 500;
+      font-size: 0.875rem;
     }
-
     .nav-item:hover {
-      background-color: var(--bg-tertiary);
+      background: rgba(139, 92, 246, 0.08);
       color: var(--text-primary);
     }
-
     .nav-item.active {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-      color: white;
-      box-shadow: 0 0 15px rgba(139, 21, 56, 0.3);
+      background: rgba(139, 92, 246, 0.15);
+      color: var(--violet);
+      font-weight: 600;
     }
-
-    .nav-item span {
-      font-size: 1.25rem;
-    }
-
+    .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
     .sidebar-footer {
-      padding: 1.5rem;
+      padding: 1rem 0.75rem;
       border-top: 1px solid var(--border-color);
     }
-
-    .sidebar-footer button {
-      width: 100%;
+    .sidebar-ver {
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      margin-top: 0.5rem;
+      font-family: var(--font-mono);
     }
 
-    /* MAIN CONTENT */
+    /* ── MAIN ── */
     .main-content {
-      margin-left: 280px;
+      margin-left: 260px;
       flex: 1;
-      padding: 2rem;
-      overflow-y: auto;
+      padding: 2rem 2.5rem;
     }
 
-    /* HEADER */
-    .header {
+    /* ── PAGE HEADER ── */
+    .page-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       margin-bottom: 2rem;
       padding-bottom: 1.5rem;
       border-bottom: 1px solid var(--border-color);
     }
-
-    .header h1 {
-      margin: 0;
+    .page-header h1 {
+      margin: 0 0 0.25rem;
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: var(--text-primary);
+      font-weight: 700;
     }
-
-    .header-right {
+    .date-line {
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+    }
+    .user-chip {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
     }
-
-    .header-right .user-info {
+    .user-name-block {
       text-align: right;
     }
-
-    .header-right .user-info p {
-      margin: 0;
-      font-size: 0.875rem;
+    .user-name-block strong {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
     }
-
-    .user-avatar {
-      width: 40px;
-      height: 40px;
+    .user-name-block span {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+    }
+    .avatar {
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.35);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: bold;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: var(--violet);
+      font-family: var(--font-display);
+      flex-shrink: 0;
     }
 
-    /* STATS GRID */
+    /* ── STATS GRID ── */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      transition: all 0.3s ease;
-    }
-
-    .stat-card:hover {
-      border-color: var(--primary);
-      box-shadow: 0 0 15px rgba(139, 21, 56, 0.2);
-    }
-
-    .stat-card .label {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-      margin-bottom: 0.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .stat-card .value {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      color: var(--text-primary);
-    }
-
-    .stat-card .change {
-      font-size: 0.875rem;
-      color: var(--success);
-    }
-
-    .stat-card .change.negative {
-      color: var(--danger);
-    }
-
-    /* CHARTS */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .chart-card {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-    }
-
-    .chart-card h3 {
-      margin-top: 0;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
       margin-bottom: 1.5rem;
     }
-
-    .chart-container {
-      position: relative;
-      height: 300px;
-    }
-
-    /* RECENT TRANSACTIONS */
-    .recent-section {
-      background-color: var(--bg-secondary);
+    .stat-card {
+      background: var(--surface);
       border: 1px solid var(--border-color);
       border-radius: 0.75rem;
-      padding: 1.5rem;
+      padding: 1.125rem 1.25rem;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover {
+      border-color: rgba(139, 92, 246, 0.3);
+    }
+    .stat-card.alert {
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+    .stat-sub {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+    }
+    .stat-sub.danger { color: #f87171; }
+
+    /* ── SKELETON ── */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 0.35rem;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0 }
+      100% { background-position: -200% 0 }
     }
 
-    .recent-section h3 {
-      margin-top: 0;
-      margin-bottom: 1rem;
+    /* ── CHARTS ── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
     }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.375rem 1.5rem;
+    }
+    .section-title {
+      font-size: 0.7rem;
+      font-family: var(--font-display);
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0 0 1.25rem;
+      font-weight: 600;
+    }
+    .chart-note {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      margin-top: 0.5rem;
+      font-family: var(--font-mono);
+      opacity: 0.7;
+    }
+    .chart-container { position: relative; height: 220px; }
 
-    .transaction-item {
+    /* ── RECENT TRANSACTIONS ── */
+    .recent-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.375rem 1.5rem;
+    }
+    .recent-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem;
-      border-bottom: 1px solid var(--border-color);
-      transition: background 0.3s ease;
+      margin-bottom: 1rem;
     }
-
-    .transaction-item:last-child {
-      border-bottom: none;
+    .recent-header a {
+      font-size: 0.75rem;
+      color: var(--violet);
+      text-decoration: none;
+      font-weight: 500;
     }
-
-    .transaction-item:hover {
-      background-color: var(--bg-tertiary);
-    }
-
-    .transaction-item .left {
+    .recent-header a:hover { text-decoration: underline; }
+    .txn-list { list-style: none; margin: 0; padding: 0; }
+    .txn-item {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      flex: 1;
+      gap: 0.875rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-color);
     }
-
-    .transaction-item .icon {
-      width: 40px;
-      height: 40px;
+    .txn-item:last-child { border-bottom: none; }
+    .txn-icon {
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
+      background: rgba(139, 92, 246, 0.12);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
-      background-color: var(--bg-tertiary);
-    }
-
-    .transaction-item .info h4 {
-      margin: 0 0 0.25rem 0;
-      font-size: 0.95rem;
-    }
-
-    .transaction-item .info p {
-      margin: 0;
-      font-size: 0.8rem;
-      color: var(--text-tertiary);
-    }
-
-    .transaction-item .amount {
-      font-size: 1.25rem;
+      font-size: 0.875rem;
+      flex-shrink: 0;
+      color: var(--violet);
       font-weight: 700;
-      text-align: right;
+    }
+    .txn-icon.expense {
+      background: rgba(239, 68, 68, 0.12);
+      color: #f87171;
+    }
+    .txn-info { flex: 1; min-width: 0; }
+    .txn-desc {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .txn-meta {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      margin-top: 0.15rem;
+    }
+    .txn-amount {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .txn-amount.income { color: #4ade80; }
+    .txn-amount.expense { color: #f87171; }
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
     }
 
-    .transaction-item .amount.income {
-      color: var(--success);
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1280px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
-
-    .transaction-item .amount.expense {
-      color: var(--danger);
-    }
-
-    /* RESPONSIVE */
     @media (max-width: 1024px) {
-      .sidebar {
-        width: 240px;
-      }
-
-      .main-content {
-        margin-left: 240px;
-      }
+      .charts-grid { grid-template-columns: 1fr; }
     }
-
     @media (max-width: 768px) {
-      .main-container {
-        flex-direction: column;
-      }
-
       .sidebar {
         width: 100%;
         height: auto;
@@ -311,294 +334,354 @@
         border-bottom: 1px solid var(--border-color);
         padding: 1rem 0;
       }
-
-      .main-content {
-        margin-left: 0;
-        padding: 1rem;
-      }
-
-      .stats-grid,
-      .charts-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
+      .main-container { flex-direction: column; }
+      .main-content { margin-left: 0; padding: 1rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .page-header { flex-direction: column; gap: 1rem; }
     }
   </style>
-  <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
 <body>
   <div class="main-container">
-    <!-- SIDEBAR -->
+
+    <!-- ── SIDEBAR ── -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div class="logo">⚡</div>
-        <h3>DIABOLUS</h3>
-        <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: var(--text-tertiary);">Peluquería Infernal</p>
+        <div class="sidebar-logo">🧿 DIABOLUS</div>
+        <div class="sidebar-salon" id="salonNameSidebar">—</div>
       </div>
-
       <nav class="sidebar-nav">
         <a href="dashboard.html" class="nav-item active">
-          <span>📊</span>
-          Dashboard
+          <span class="nav-icon">📊</span> Dashboard
         </a>
-        <a href="agent.html" class="nav-item">
-          <span>💬</span>
-          Agente ⭐
-        </a>
-        <a href="approval-queue.html" class="nav-item">
-          <span>✅</span>
-          Aprobaciones
+        <a href="chat.html" class="nav-item">
+          <span class="nav-icon">💬</span> Agente
         </a>
         <a href="invoices.html" class="nav-item">
-          <span>📄</span>
-          Facturas
+          <span class="nav-icon">📄</span> Facturas
         </a>
         <a href="clients.html" class="nav-item">
-          <span>👥</span>
-          Clientes
+          <span class="nav-icon">👥</span> Clientes
         </a>
         <a href="transactions.html" class="nav-item">
-          <span>💰</span>
-          Transacciones
+          <span class="nav-icon">💰</span> Transacciones
         </a>
         <a href="reports.html" class="nav-item">
-          <span>📈</span>
-          Reportes
+          <span class="nav-icon">📈</span> Reportes
         </a>
       </nav>
-
       <div class="sidebar-footer">
-        <button class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;" onclick="logout()">
-          Cerrar Sesión
+        <button class="btn btn-secondary" style="width:100%;" onclick="logout()">
+          Cerrar sesión
         </button>
-        <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 1rem; text-align: center;">
-          v1.0 — Premium UI ✨
-        </p>
+        <div class="sidebar-ver">Diabolus CRM v2.0</div>
       </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
+    <!-- ── MAIN ── -->
     <main class="main-content">
+
       <!-- HEADER -->
-      <div class="header">
+      <div class="page-header">
         <div>
-          <h1>📊 Dashboard</h1>
-          <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary);">Viernes, 13 de junio 2026</p>
+          <h1>Dashboard</h1>
+          <div class="date-line" id="dateDisplay">—</div>
         </div>
-        <div class="header-right">
-          <div class="user-info">
-            <p style="font-weight: 600;">María García</p>
-            <p>Propietaria</p>
+        <div class="user-chip">
+          <div class="user-name-block">
+            <strong id="userEmailDisplay">—</strong>
+            <span id="salonNameHeader">—</span>
           </div>
-          <div class="user-avatar">MG</div>
+          <div class="avatar" id="userAvatar">?</div>
         </div>
       </div>
 
       <!-- STATS GRID -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="label">💰 Ingresos HOY</div>
-          <div class="value">€450</div>
-          <div class="change">↑ +12% vs ayer</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="label">📊 Ingresos SEMANA</div>
-          <div class="value">€2,850</div>
-          <div class="change">↑ +8% vs semana pasada</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="label">📈 Ingresos MES</div>
-          <div class="value">€11,200</div>
-          <div class="change">↑ +15% vs mes pasado</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="label">💸 Gastos MES</div>
-          <div class="value">€3,400</div>
-          <div class="change negative">↑ +5% vs mes pasado</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="label">📋 Balance NETO</div>
-          <div class="value">€7,800</div>
-          <div class="change">+€450 hoy</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="label">👥 Clientes ACTIVOS</div>
-          <div class="value">42</div>
-          <div class="change">+3 nuevos esta semana</div>
-        </div>
+      <div class="stats-grid" id="statsGrid">
+        <!-- 8 skeleton cards -->
+        <div class="stat-card"><div class="stat-label skeleton" style="width:70%;height:.7rem;margin-bottom:.6rem;"></div><div class="stat-value skeleton" style="width:80%;height:1.6rem;margin-bottom:.4rem;"></div><div class="stat-sub skeleton" style="width:50%;height:.7rem;"></div></div>
+        <div class="stat-card"><div class="stat-label skeleton" style="width:70%;height:.7rem;margin-bottom:.6rem;"></div><div class="stat-value skeleton" style="width:80%;height:1.6rem;margin-bottom:.4rem;"></div><div class="stat-sub skeleton" style="width:50%;height:.7rem;"></div></div>
+        <div class="stat-card"><div class="stat-label skeleton" style="width:70%;height:.7rem;margin-bottom:.6rem;"></div><div class="stat-value skeleton" style="width:80%;height:1.6rem;margin-bottom:.4rem;"></div><div class="stat-sub skeleton" style="width:50%;height:.7rem;"></div></div>
+        <div class="stat-card"><div class="stat-label skeleton" style="width:70%;height:.7rem;margin-bottom:.6rem;"></div><div class="stat-value skeleton" style="width:80%;height:1.6rem;margin-bottom:.4rem;"></div><div class="stat-sub skeleton" style="width:50%;height:.7rem;"></div></div>
+        <div class="stat-card"><div class="stat-label skeleton" style="width:70%;height:.7rem;margin-bottom:.6rem;"></div><div class="stat-value skeleton" style="width:80%;height:1.6rem;margin-bottom:.4rem;"></div><div class="stat-sub skeleton" style="width:50%;height:.7rem;"></div></div>
+        <div class="stat-card"><div class="stat-label skeleton" style="width:70%;height:.7rem;margin-bottom:.6rem;"></div><div class="stat-value skeleton" style="width:80%;height:1.6rem;margin-bottom:.4rem;"></div><div class="stat-sub skeleton" style="width:50%;height:.7rem;"></div></div>
+        <div class="stat-card"><div class="stat-label skeleton" style="width:70%;height:.7rem;margin-bottom:.6rem;"></div><div class="stat-value skeleton" style="width:80%;height:1.6rem;margin-bottom:.4rem;"></div><div class="stat-sub skeleton" style="width:50%;height:.7rem;"></div></div>
+        <div class="stat-card"><div class="stat-label skeleton" style="width:70%;height:.7rem;margin-bottom:.6rem;"></div><div class="stat-value skeleton" style="width:80%;height:1.6rem;margin-bottom:.4rem;"></div><div class="stat-sub skeleton" style="width:50%;height:.7rem;"></div></div>
       </div>
 
       <!-- CHARTS -->
       <div class="charts-grid">
         <div class="chart-card">
-          <h3>Ingresos últimos 7 días</h3>
+          <p class="section-title">Actividad — últimos 7 días</p>
           <div class="chart-container">
             <canvas id="ingresoChart"></canvas>
           </div>
+          <p class="chart-note">Calculado a partir de los últimos movimientos registrados</p>
         </div>
-
         <div class="chart-card">
-          <h3>Categorías de Gasto</h3>
+          <p class="section-title">Ingresos por categoría</p>
           <div class="chart-container">
-            <canvas id="gastosChart"></canvas>
+            <canvas id="catChart"></canvas>
           </div>
         </div>
       </div>
 
       <!-- RECENT TRANSACTIONS -->
-      <div class="recent-section">
-        <h3>Últimas Transacciones</h3>
-
-        <div class="transaction-item">
-          <div class="left">
-            <div class="icon">✂️</div>
-            <div class="info">
-              <h4>Corte + Barba</h4>
-              <p>Paula García</p>
+      <div class="recent-card">
+        <div class="recent-header">
+          <p class="section-title" style="margin:0;">Últimos movimientos</p>
+          <a href="transactions.html">Ver todos →</a>
+        </div>
+        <ul class="txn-list" id="txnList">
+          <li class="txn-item">
+            <div class="txn-icon skeleton" style="background:rgba(255,255,255,0.05);">&nbsp;</div>
+            <div class="txn-info">
+              <div class="skeleton" style="width:55%;height:.85rem;margin-bottom:.3rem;"></div>
+              <div class="skeleton" style="width:35%;height:.7rem;"></div>
             </div>
-          </div>
-          <div class="amount income">+€30</div>
-        </div>
-
-        <div class="transaction-item">
-          <div class="left">
-            <div class="icon">💅</div>
-            <div class="info">
-              <h4>Tinte completo</h4>
-              <p>María López</p>
+          </li>
+          <li class="txn-item">
+            <div class="txn-icon skeleton" style="background:rgba(255,255,255,0.05);">&nbsp;</div>
+            <div class="txn-info">
+              <div class="skeleton" style="width:55%;height:.85rem;margin-bottom:.3rem;"></div>
+              <div class="skeleton" style="width:35%;height:.7rem;"></div>
             </div>
-          </div>
-          <div class="amount income">+€75</div>
-        </div>
-
-        <div class="transaction-item">
-          <div class="left">
-            <div class="icon">📦</div>
-            <div class="info">
-              <h4>Compra tinturas</h4>
-              <p>Distribuidor</p>
-            </div>
-          </div>
-          <div class="amount expense">-€120</div>
-        </div>
-
-        <div class="transaction-item">
-          <div class="left">
-            <div class="icon">💇</div>
-            <div class="info">
-              <h4>Corte + Peinado</h4>
-              <p>Ana Martínez</p>
-            </div>
-          </div>
-          <div class="amount income">+€45</div>
-        </div>
-
-        <div class="transaction-item">
-          <div class="left">
-            <div class="icon">📧</div>
-            <div class="info">
-              <h4>Pago renta</h4>
-              <p>Casero</p>
-            </div>
-          </div>
-          <div class="amount expense">-€280</div>
-        </div>
-
-        <div style="text-align: center; margin-top: 1rem;">
-          <a href="transactions.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Ver todas las transacciones →</a>
-        </div>
+          </li>
+        </ul>
       </div>
+
     </main>
   </div>
 
   <script src="js/app.js"></script>
   <script>
-    // Chart 1: Ingresos últimos 7 días
-    const ingresoCtx = document.getElementById('ingresoChart').getContext('2d');
-    new Chart(ingresoCtx, {
-      type: 'line',
-      data: {
-        labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-        datasets: [{
-          label: 'Ingresos',
-          data: [250, 320, 280, 410, 450, 520, 390],
-          borderColor: 'var(--primary)',
-          backgroundColor: 'rgba(139, 21, 56, 0.1)',
-          borderWidth: 3,
-          fill: true,
-          tension: 0.4,
-          pointBackgroundColor: 'var(--primary)',
-          pointBorderColor: 'white',
-          pointBorderWidth: 2,
-          pointRadius: 5
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { color: 'var(--text-secondary)' },
-            grid: { color: 'var(--border-color)' }
-          },
-          x: {
-            ticks: { color: 'var(--text-secondary)' },
-            grid: { color: 'var(--border-color)' }
-          }
-        }
-      }
-    });
+    const API = 'https://diabolus-crm-api.vercel.app'
 
-    // Chart 2: Gastos por categoría
-    const gastosCtx = document.getElementById('gastosChart').getContext('2d');
-    new Chart(gastosCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Suministros', 'Alquiler', 'Servicios', 'Otros'],
-        datasets: [{
-          data: [450, 1200, 800, 950],
-          backgroundColor: [
-            'var(--primary)',
-            'var(--primary-light)',
-            'var(--gold)',
-            'rgba(139, 21, 56, 0.5)'
+    // ── Auth guard ──
+    const auth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null')
+    if (!auth?.token) window.location.href = 'index-login.html'
+
+    function logout() {
+      localStorage.removeItem('diabolus_auth')
+      window.location.href = 'index-login.html'
+    }
+
+    // ── Populate static UI from localStorage ──
+    const salonName = auth?.salonName || auth?.salonname || 'Mi negocio'
+    const email     = auth?.email || ''
+    const initials  = email.slice(0, 2).toUpperCase() || 'U'
+
+    document.getElementById('salonNameSidebar').textContent = salonName
+    document.getElementById('salonNameHeader').textContent  = salonName
+    document.getElementById('userEmailDisplay').textContent = email
+    document.getElementById('userAvatar').textContent       = initials
+
+    // ── Date ──
+    const now = new Date()
+    document.getElementById('dateDisplay').textContent =
+      now.toLocaleDateString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+
+    // ── Utils ──
+    const eur = (n) =>
+      new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(n ?? 0)
+
+    // ── Load dashboard data ──
+    async function loadDashboard() {
+      const headers = { 'Authorization': `Bearer ${auth.token}` }
+
+      let stats, txns = []
+
+      try {
+        const [statsRes, txnRes] = await Promise.all([
+          fetch(`${API}/api/dashboard/stats`,              { headers }),
+          fetch(`${API}/api/dashboard/recent-transactions`, { headers }),
+        ])
+
+        if (statsRes.status === 401) { logout(); return }
+
+        if (!statsRes.ok) throw new Error(`stats ${statsRes.status}`)
+
+        stats = await statsRes.json()
+        if (txnRes.ok) {
+          const txnBody = await txnRes.json()
+          txns = txnBody.transactions ?? []
+        }
+      } catch (err) {
+        console.error('Dashboard load error:', err)
+        document.getElementById('statsGrid').innerHTML =
+          `<p style="color:#f87171;padding:1rem;grid-column:1/-1;">
+            Error al cargar los datos. <a href="" style="color:var(--violet)">Reintentar</a>
+          </p>`
+        return
+      }
+
+      renderStats(stats)
+      renderTransactions(txns)
+      renderCharts(txns)
+    }
+
+    function renderStats(s) {
+      const cards = [
+        { label:'💰 Ingresos HOY',        value: eur(s.today),           sub: '',                          alert: false },
+        { label:'📊 Ingresos SEMANA',      value: eur(s.week),            sub: '',                          alert: false },
+        { label:'📈 Ingresos MES',         value: eur(s.month),           sub: '',                          alert: false },
+        { label:'💸 Gastos MES',           value: eur(s.expenses),        sub: '',                          alert: false },
+        { label:'📋 Balance NETO',         value: eur(s.balance),         sub: s.balance < 0 ? '⚠ Negativo' : '✓ Positivo', alert: s.balance < 0 },
+        { label:'👥 Clientes',             value: s.totalClients ?? 0,    sub: '',                          alert: false },
+        { label:'🕐 Por cobrar',           value: eur(s.pending_amount),  sub: `${s.pending_count} factura${s.pending_count !== 1 ? 's' : ''}`, alert: false },
+        { label:'⚠️ Vencidas',             value: eur(s.overdue_amount),  sub: `${s.overdue_count} factura${s.overdue_count !== 1 ? 's' : ''}`, alert: s.overdue_count > 0 },
+      ]
+      document.getElementById('statsGrid').innerHTML = cards.map(c => `
+        <div class="stat-card${c.alert ? ' alert' : ''}">
+          <div class="stat-label">${c.label}</div>
+          <div class="stat-value">${c.value}</div>
+          ${c.sub ? `<div class="stat-sub${c.alert ? ' danger' : ''}">${c.sub}</div>` : ''}
+        </div>
+      `).join('')
+    }
+
+    function renderTransactions(txns) {
+      const list = document.getElementById('txnList')
+      if (!txns.length) {
+        list.innerHTML = '<li class="empty-state">Todavía no hay movimientos registrados.</li>'
+        return
+      }
+      list.innerHTML = txns.slice(0, 8).map(t => {
+        const isIncome  = t.type === 'income'
+        const clientStr = t.clients?.name ?? ''
+        const desc      = t.description || clientStr || 'Movimiento'
+        const meta      = [
+          clientStr && clientStr !== desc ? clientStr : null,
+          new Date(t.created_at || t.date).toLocaleDateString('es-ES', { day:'numeric', month:'short' }),
+          t.category ?? null,
+        ].filter(Boolean).join(' · ')
+        const sign = isIncome ? '+' : '-'
+        return `
+          <li class="txn-item">
+            <div class="txn-icon ${isIncome ? '' : 'expense'}">${isIncome ? '↑' : '↓'}</div>
+            <div class="txn-info">
+              <div class="txn-desc">${desc}</div>
+              <div class="txn-meta">${meta}</div>
+            </div>
+            <div class="txn-amount ${isIncome ? 'income' : 'expense'}">${sign}${eur(Math.abs(t.amount))}</div>
+          </li>
+        `
+      }).join('')
+    }
+
+    function renderCharts(txns) {
+      // ── Bar chart: 7-day activity ──
+      const days = []
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        const dayKey = d.toISOString().slice(0, 10)
+        const label  = d.toLocaleDateString('es-ES', { weekday: 'short' })
+        const income  = txns.filter(t => t.type === 'income'  && (t.created_at || t.date || '').slice(0,10) === dayKey).reduce((a,t) => a + Number(t.amount), 0)
+        const expense = txns.filter(t => t.type === 'expense' && (t.created_at || t.date || '').slice(0,10) === dayKey).reduce((a,t) => a + Number(t.amount), 0)
+        days.push({ label, income, expense })
+      }
+
+      const barCtx = document.getElementById('ingresoChart').getContext('2d')
+      new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: days.map(d => d.label),
+          datasets: [
+            {
+              label: 'Ingresos',
+              data: days.map(d => d.income),
+              backgroundColor: 'rgba(139, 92, 246, 0.7)',
+              borderRadius: 5,
+              borderSkipped: false,
+            },
+            {
+              label: 'Gastos',
+              data: days.map(d => d.expense),
+              backgroundColor: 'rgba(239, 68, 68, 0.45)',
+              borderRadius: 5,
+              borderSkipped: false,
+            },
           ]
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: { color: 'var(--text-secondary)' }
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: 'rgba(255,255,255,0.45)', font: { size: 11 } } }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: 'rgba(255,255,255,0.35)', callback: v => '€'+v },
+              grid:  { color: 'rgba(255,255,255,0.05)' },
+            },
+            x: {
+              ticks: { color: 'rgba(255,255,255,0.35)' },
+              grid:  { display: false },
+            }
           }
         }
-      }
-    });
-  </script>
-  <script>
-    // PWA — registro del Service Worker
+      })
+
+      // ── Donut chart: income by category ──
+      const catMap = {}
+      txns.filter(t => t.type === 'income').forEach(t => {
+        const cat = t.category || 'Sin categoría'
+        catMap[cat] = (catMap[cat] || 0) + Number(t.amount)
+      })
+      const catLabels = Object.keys(catMap)
+      const catValues = Object.values(catMap)
+      const palette   = [
+        'rgba(139,92,246,0.8)',
+        'rgba(227,190,122,0.8)',
+        'rgba(99,102,241,0.8)',
+        'rgba(52,211,153,0.8)',
+        'rgba(251,146,60,0.8)',
+        'rgba(236,72,153,0.8)',
+      ]
+
+      const donutCtx = document.getElementById('catChart').getContext('2d')
+      new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+          labels:   catLabels.length ? catLabels : ['Sin datos'],
+          datasets: [{
+            data:            catValues.length ? catValues : [1],
+            backgroundColor: catLabels.length ? palette.slice(0, catLabels.length) : ['rgba(255,255,255,0.08)'],
+            borderWidth: 0,
+            hoverOffset: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color:      'rgba(255,255,255,0.45)',
+                font:       { size: 11 },
+                padding:    12,
+                boxWidth:   10,
+                boxHeight:  10,
+              }
+            }
+          }
+        }
+      })
+    }
+
+    loadDashboard()
+
+    // ── PWA ──
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-          console.log('[SW] registrado:', reg.scope);
-        }).catch(err => {
-          console.warn('[SW] error al registrar:', err);
-        });
-      });
+        navigator.serviceWorker.register('/sw.js')
+          .then(r => console.log('[SW] ok:', r.scope))
+          .catch(e => console.warn('[SW] error:', e))
+      })
     }
   </script>
 </body>
