@@ -42,12 +42,8 @@
       margin-bottom: 1.5rem;
     }
     .sidebar-logo {
-      font-size: 1.25rem;
-      font-family: var(--font-display);
-      font-weight: 700;
-      color: var(--violet);
-      letter-spacing: 0.12em;
-      margin-bottom: 0.375rem;
+      margin-bottom: 0.5rem;
+      padding: 0 0.5rem;
     }
     .sidebar-salon {
       font-size: 0.75rem;
@@ -362,7 +358,36 @@
     <!-- ── SIDEBAR ── -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div class="sidebar-logo">🧿 DIABOLUS</div>
+        <div class="sidebar-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220" style="width:100%;max-width:200px;display:block;margin:0 auto;" aria-label="Diabolus">
+  <defs>
+    <filter id="gf-s" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="12" result="b1"/>
+      <feGaussianBlur stdDeviation="5"  result="b2"/>
+      <feGaussianBlur stdDeviation="2"  result="b3"/>
+      <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="b3"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="gf-g" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="sd" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".85"/>
+    </filter>
+    <linearGradient id="gv" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#E0D0FF"/>
+      <stop offset="40%"  stop-color="#C4B5FD"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <text x="350" y="160" font-family="Georgia,'Times New Roman',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#1a0033" stroke-width="18" filter="url(#sd)" transform="skewX(-18)">Diabolus</text>
+  <text x="350" y="160" font-family="Georgia,'Times New Roman',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#6D28D9" stroke-width="8" filter="url(#gf-s)" transform="skewX(-18)" opacity=".6">Diabolus</text>
+  <text x="350" y="160" font-family="Georgia,'Times New Roman',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#8B5CF6" stroke-width="3" filter="url(#gf-s)" transform="skewX(-18)" opacity=".9">Diabolus</text>
+  <text x="350" y="160" font-family="Georgia,'Times New Roman',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="url(#gv)" stroke="#C4B5FD" stroke-width=".4" transform="skewX(-18)">Diabolus</text>
+  <line x1="30" y1="178" x2="620" y2="168" stroke="#E3BE7A" stroke-width="1.2" stroke-linecap="round" filter="url(#gf-g)" opacity=".85"/>
+  <path d="M610 168 Q640 162 655 155" stroke="#E3BE7A" stroke-width=".9" fill="none" stroke-linecap="round" filter="url(#gf-g)" opacity=".7"/>
+</svg>
+      </div>
         <div class="sidebar-salon" id="salonNameSidebar">—</div>
       </div>
       <nav class="sidebar-nav">
