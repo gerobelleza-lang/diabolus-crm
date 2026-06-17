@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#8b1538">
+  <meta name="description" content="CRM inteligente con Agent IA para negocios. Diabolus.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="manifest" href="manifest.json">
+  <title>Diabolus CRM — Login</title>
+  
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0A0E27 0%, #1A1F3A 100%);
+      padding: 2rem;
+    }
+
+    .login-box {
+      background-color: var(--bg-secondary);
+      border: 2px solid var(--primary);
+      border-radius: 1rem;
+      padding: 3rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 30px rgba(139, 21, 56, 0.3);
+    }
+
+    .login-box h1 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+      font-size: 2rem;
+    }
+
+    .login-box .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .form-group input {
+      width: 100%;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 1.5rem 0;
+      color: var(--text-tertiary);
+      font-size: 0.875rem;
+    }
+
+    .demo-info {
+      background-color: var(--bg-tertiary);
+      border-left: 3px solid var(--gold);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+    }
+
+    .demo-info strong {
+      color: var(--gold);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 3rem;
+    }
+
+    .register-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--text-tertiary);
+    }
+
+    .register-link a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .register-link a:hover { text-decoration: underline; }
+
+    .alert-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+  </style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="logo">⚡</div>
+      <h1>DIABOLUS</h1>
+      <p class="subtitle">El negocio te obedece hablando.</p>
+
+      <div class="alert-error" id="alertError"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="tu@email.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary login-btn" id="loginBtn">
+          ENTRAR
+        </button>
+      </form>
+
+      <div class="divider">— o —</div>
+
+      <button class="btn btn-secondary" style="width: 100%;" onclick="loginAsDemo()">
+        MODO DEMO (Quick Access)
+      </button>
+
+      <div class="register-link">
+        ¿No tienes cuenta? <a href="register.html">Regístrate gratis</a>
+      </div>
+
+      <div class="demo-info">
+        <strong>Demo Account:</strong><br>
+        Email: demo@diabolus.com<br>
+        Pass: demo1234<br>
+        Negocio: Peluquería Infernal
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'https://diabolus-crm-api.vercel.app'
+
+    function loginAsDemo() {
+      localStorage.setItem('diabolus_auth', JSON.stringify({
+        userId: 'user_123',
+        email: 'demo@diabolus.com',
+        salonId: 'salon_456',
+        salonName: 'Peluquería Infernal',
+        token: 'mock_token_xyz'
+      }))
+      window.location.href = 'dashboard.html'
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const email = document.getElementById('email').value.trim()
+      const password = document.getElementById('password').value
+      const btn = document.getElementById('loginBtn')
+      const alertEl = document.getElementById('alertError')
+
+      btn.disabled = true
+      btn.textContent = 'Entrando...'
+      alertEl.style.display = 'none'
+
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          alertEl.textContent = data.error || 'Credenciales incorrectas'
+          alertEl.style.display = 'block'
+          btn.disabled = false
+          btn.textContent = 'ENTRAR'
+          return
+        }
+
+        localStorage.setItem('diabolus_auth', JSON.stringify({
+          userId: data.user.id,
+          email: data.user.email,
+          salonId: data.salon?.id ?? null,
+          salonName: data.salon?.name ?? 'Mi negocio',
+          token: data.token,
+        }))
+
+        window.location.href = 'dashboard.html'
+
+      } catch (err) {
+        alertEl.textContent = 'Error de conexión'
+        alertEl.style.display = 'block'
+        btn.disabled = false
+        btn.textContent = 'ENTRAR'
+      }
+    })
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('✅ PWA ready'))
+        .catch((err) => console.log('SW error:', err))
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comisiones — Diabolus Gestor</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<style>
+  :root {
+    --bg: #0d0d0f; --surface: #18181b; --border: #2a2a30;
+    --text: #e4e4e7; --muted: #71717a; --accent: #8b5cf6;
+    --green: #22c55e; --red: #ef4444; --amber: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+  .logo { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .nav-links { display: flex; gap: 16px; margin-left: auto; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .nav-links a:hover, .nav-links a.active { color: var(--text); }
+  .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .stat-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 700; }
+  .stat-note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .accent { color: var(--accent); }
+  .section-title { font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  th { text-align: left; padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+  td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(139,92,246,.04); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: rgba(34,197,94,.15); color: var(--green); }
+  .badge-amber { background: rgba(245,158,11,.15); color: var(--amber); }
+  .pending-tarifa { color: var(--muted); font-style: italic; }
+  .export-btn { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: border-color .2s; }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .export-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .info-banner { background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.25); border-radius: 10px; padding: 14px 18px; margin-bottom: 28px; font-size: 13px; color: var(--muted); }
+  .info-banner strong { color: var(--accent); }
+  .month-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .month-selector label { font-size: 13px; color: var(--muted); }
+  .month-selector input { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; width: fit-content; }
+  .tab { padding: 8px 18px; border-radius: 8px; font-size: 14px; cursor: pointer; color: var(--muted); border: none; background: none; }
+  .tab.active { background: var(--accent); color: #fff; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  #loading { text-align: center; padding: 40px; color: var(--muted); }
+  #error-msg { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: var(--red); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: none; }
+</style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
+</head>
+<body>
+<div class="header">
+  <div class="logo">🧿 Diabolus</div>
+  <nav class="nav-links">
+    <a href="gestor.html">Dashboard</a>
+    <a href="gestor-commissions.html" class="active">Comisiones</a>
+    <a href="#" id="logoutBtn">Salir</a>
+  </nav>
+</div>
+<div class="main">
+  <h1>Panel de Comisiones</h1>
+  <p class="subtitle">Comisiones devengadas por cliente activo — informativo, sin pago activo aún</p>
+
+  <div class="info-banner">
+    <strong>ℹ️ Fase informativa:</strong> Este panel muestra lo que devengas por cada cliente activo.
+    El pago real se activará en Fase 6 cuando se configure la facturación. La tarifa (€/mes × %) se fija per cliente.
+  </div>
+
+  <div id="error-msg"></div>
+  <div id="loading">Cargando comisiones…</div>
+
+  <div id="panel" style="display:none">
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('activos')">Clientes activos</button>
+      <button class="tab" onclick="switchTab('historial')">Ledger histórico</button>
+    </div>
+
+    <div id="tab-activos" class="tab-content active">
+      <div class="section-title">Clientes activos y devengo</div>
+      <div id="exportMonth" class="month-selector" style="margin-bottom:16px"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Activo desde</th>
+            <th>Meses activos</th>
+            <th>Precio/mes</th>
+            <th>% Comisión</th>
+            <th>Devengado/mes</th>
+            <th>Devengado total</th>
+            <th>Exportar</th>
+          </tr>
+        </thead>
+        <tbody id="clientsBody"></tbody>
+      </table>
+    </div>
+
+    <div id="tab-historial" class="tab-content">
+      <div class="section-title">Ledger de devengo mensual (auditable)</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Año</th>
+            <th>Mes</th>
+            <th>Meses activos</th>
+            <th>Rate aplicado</th>
+            <th>Precio aplicado</th>
+            <th>Importe devengado</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://diabolus-crm-api.vercel.app'
+const token = localStorage.getItem('gestorToken')
+if (!token) location.href = 'gestor.html'
+
+document.getElementById('logoutBtn').onclick = () => {
+  localStorage.removeItem('gestorToken')
+  location.href = 'gestor.html'
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['activos','historial']
+    t.classList.toggle('active', names[i] === name)
+  })
+  document.querySelectorAll('.tab-content').forEach(tc => {
+    tc.classList.toggle('active', tc.id === `tab-${name}`)
+  })
+  if (name === 'historial' && !window._ledgerLoaded) loadLedger()
+}
+
+async function apiGet(path) {
+  const r = await fetch(API + path, { headers: { Authorization: `Bearer ${token}` } })
+  if (!r.ok) throw new Error(`HTTP ${r.status}`)
+  return r.json()
+}
+
+async function generateExportToken(salonId, month, format) {
+  const r = await fetch(`${API}/gestor/export/token`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ salonId, month, format })
+  })
+  const data = await r.json()
+  if (!r.ok) throw new Error(data.error || 'Error')
+  return data.downloadUrl
+}
+
+async function downloadExport(salonId, month, format) {
+  try {
+    const url = await generateExportToken(salonId, month, format)
+    window.open(url, '_blank')
+  } catch (e) {
+    alert('Error al generar exportación: ' + e.message)
+  }
+}
+
+function getDefaultMonth() {
+  const d = new Date()
+  d.setMonth(d.getMonth() - 1)
+  return d.toISOString().slice(0, 7)
+}
+
+const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+
+async function loadPanel() {
+  try {
+    const data = await apiGet('/gestor/commissions/panel')
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('panel').style.display = 'block'
+
+    // Stats
+    const r = data.resumen
+    const statsGrid = document.getElementById('statsGrid')
+    statsGrid.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-label">Clientes activos</div>
+        <div class="stat-value accent">${r.total_activos}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total devengado</div>
+        <div class="stat-value">${r.total_devengado.toFixed(2)} €</div>
+        <div class="stat-note">Acumulado desde inicio</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sin tarifa fijada</div>
+        <div class="stat-value" style="color:var(--amber)">${r.pendientes_tarifa}</div>
+        <div class="stat-note">Pendientes de configurar</div>
+      </div>
+    `
+
+    // Table
+    const defaultMonth = getDefaultMonth()
+    const tbody = document.getElementById('clientsBody')
+    tbody.innerHTML = data.clientes.map(c => `
+      <tr>
+        <td><strong>${c.salon_name}</strong></td>
+        <td>${new Date(c.active_since).toLocaleDateString('es-ES')}</td>
+        <td>${c.months_active} mes${c.months_active !== 1 ? 'es' : ''}</td>
+        <td>${c.precio_mantenimiento != null ? c.precio_mantenimiento.toFixed(2) + ' €' : '<span class="pending-tarifa">—</span>'}</td>
+        <td>${c.commission_rate != null ? (c.commission_rate * 100).toFixed(1) + '%' : '<span class="pending-tarifa">—</span>'}</td>
+        <td>${c.devengado_mensual != null ? '<strong>' + c.devengado_mensual.toFixed(2) + ' €</strong>' : '<span class="badge badge-amber">Pendiente tarifa</span>'}</td>
+        <td>${c.devengado_total != null ? c.devengado_total.toFixed(2) + ' €' : '—'}</td>
+        <td>
+          <div class="export-group">
+            <button class="export-btn" onclick="downloadExport('${c.salon_id}','${defaultMonth}','csv')">CSV</button>
+            <button class="export-btn" onclick="downloadExport('${c.salon_id}','${defaultMonth}','xlsx')">XLSX</button>
+            <button class="export-btn" onclick="downloadExport('${c.salon_id}','${defaultMonth}','pdf')">PDF</button>
+          </div>
+        </td>
+      </tr>
+    `).join('')
+
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none'
+    const err = document.getElementById('error-msg')
+    err.style.display = 'block'
+    err.textContent = 'Error al cargar: ' + e.message
+  }
+}
+
+async function loadLedger() {
+  window._ledgerLoaded = true
+  try {
+    const data = await apiGet('/gestor/commissions/history')
+    const tbody = document.getElementById('ledgerBody')
+    if (!data.ledger.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px">Sin registros aún — el ledger se rellena al cierre de cada mes.</td></tr>'
+      return
+    }
+    tbody.innerHTML = data.ledger.map(r => `
+      <tr>
+        <td>${r.salons?.name ?? '—'}</td>
+        <td>${r.year}</td>
+        <td>${MESES[r.month - 1]}</td>
+        <td>${r.months_active}</td>
+        <td>${r.rate_applied != null ? (r.rate_applied * 100).toFixed(1) + '%' : '—'}</td>
+        <td>${r.precio_mantenimiento != null ? r.precio_mantenimiento.toFixed(2) + ' €' : '—'}</td>
+        <td>${r.amount_eur != null ? '<strong>' + r.amount_eur.toFixed(2) + ' €</strong>' : '<span class="badge badge-amber">Sin tarifa</span>'}</td>
+      </tr>
+    `).join('')
+  } catch (e) {
+    document.getElementById('ledgerBody').innerHTML = `<tr><td colspan="7" style="color:var(--red)">Error: ${e.message}</td></tr>`
+  }
+}
+
+loadPanel()
+</script>
+  <script>
+    // PWA — registro del Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[SW] registrado:', reg.scope);
+        }).catch(err => {
+          console.warn('[SW] error al registrar:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

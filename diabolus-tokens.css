@@ -1,0 +1,286 @@
+/*
+ * diabolus-tokens.css — Sistema de diseño Diabolus v1
+ * Single source of truth para tokens de color, tipografía y componentes.
+ * Cargado DESPUÉS del <style> de cada página para que este :root gane en cascade.
+ *
+ * Paleta: "Berenjena & oro" — no es negro + morado de plantilla.
+ * El 🧿 (nazar) protege el dinero. El oro es el valor.
+ */
+
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+/* ══════════════════════════════════════════════
+   TOKENS DIABOLUS
+══════════════════════════════════════════════ */
+:root {
+  /* Paleta base */
+  --ink:        #15101F;   /* berenjena casi negra — no #000 */
+  --surface:    #211A33;   /* tarjetas, paneles */
+  --surface-2:  #2A2140;   /* un escalón más claro */
+  --violet:     #8B5CF6;   /* interactivo, foco, marca */
+  --violet-d:   #6D28D9;   /* estados pulsados */
+  --gold:       #E3BE7A;   /* FIRMA: importes, el ojo, valor */
+  --text:       #F4F1FB;   /* texto principal (blanco tintado violeta) */
+  --muted:      #A39FB5;   /* texto secundario */
+
+  /* Semánticos */
+  --success:    #34D399;   /* confirmar, éxito */
+  --warning:    #F59E0B;   /* envío, pendiente */
+  --danger:     #F87171;   /* cancelar, error */
+
+  /* Bordes */
+  --border-default: rgba(139, 92, 246, .18);
+  --border-strong:  rgba(139, 92, 246, .32);
+
+  /* Radios */
+  --r-card: 14px;
+  --r-btn:   8px;
+
+  /* Tipografía */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body:    'Hanken Grotesk', 'Inter', system-ui, sans-serif;
+  --font-mono:    'IBM Plex Mono', 'Cascadia Code', 'Fira Code', monospace;
+
+  /* Sombras */
+  --shadow-card: 0 4px 32px rgba(0,0,0,.5), 0 0 0 1px rgba(139,92,246,.12);
+  --shadow-btn:  0 2px 12px rgba(139,92,246,.4);
+
+  /* ── Aliases legacy: chat.html ── */
+  --bg:           var(--ink);
+  --surface2:     var(--surface-2);
+  --border:       var(--border-default);
+  --accent:       var(--violet);
+  --accent-glow:  #a78bfa;
+  --user-bubble:  rgba(139,92,246,.14);
+  --user-text:    var(--text);
+  --agent-bubble: var(--surface);
+  --agent-text:   var(--text);
+  --text-muted:   var(--muted);
+  --green:        var(--success);
+  --red:          var(--danger);
+  --orange:       var(--warning);
+  --yellow:       var(--gold);
+  --card-bg:      var(--surface);
+  --card-border:  var(--border-strong);
+  --radius:       var(--r-card);
+  --font:         var(--font-body);
+
+  /* ── Aliases legacy: dashboard.html y otros ── */
+  --bg-primary:    var(--ink);
+  --bg-secondary:  var(--surface);
+  --bg-tertiary:   var(--surface-2);
+  --border-color:  var(--border-default);
+  --primary:       var(--violet);
+  --primary-light: #a78bfa;
+  --text-primary:  var(--text);
+  --text-secondary: var(--muted);
+
+  /* ── Aliases legacy: gestor.html, closings, etc. ── */
+  --bg-dark:      var(--ink);
+  --bg-card:      var(--surface);
+  --color-accent: var(--violet);
+  --color-text:   var(--text);
+  --color-muted:  var(--muted);
+  --color-border: var(--border-default);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger:  var(--danger);
+}
+
+/* ══════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--ink);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings — display font */
+h1, h2, h3,
+.page-title, .section-title, .card-title,
+.stat-label, .kpi-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* ══════════════════════════════════════════════
+   UTILIDAD: IMPORTES Y MONO
+   Importes en IBM Plex Mono oro tabular — siempre.
+══════════════════════════════════════════════ */
+.amount,
+.mono,
+.importe,
+[data-amount],
+.stat-value,
+.kpi-value {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  letter-spacing: -0.02em;
+}
+
+/* ══════════════════════════════════════════════
+   TARJETA DE CONFIRMACIÓN — pieza más cuidada
+══════════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  max-width: 360px;
+  overflow: hidden;
+}
+
+/* Cabecera: el daemon presenta su propuesta */
+.card-header {
+  background: linear-gradient(135deg,
+    rgba(139,92,246,.22) 0%,
+    rgba(109,40,217,.32) 100%
+  );
+  border-bottom: 1px solid var(--border-strong);
+  padding: 14px 18px;
+  gap: 10px;
+}
+
+.card-header .card-title {
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.card-header .card-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* El importe: grande, mono, oro — el dato más importante */
+.card-field .field-value.importe {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold) !important;
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.03em;
+}
+
+.card-field .field-label {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Botones de acción — jerarquía inequívoca */
+.card-actions {
+  border-top: 1px solid var(--border-strong);
+  display: flex;
+}
+
+.card-actions button {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 13px 16px;
+  transition: filter .15s, background .15s, color .15s;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  border: none;
+  flex: 1;
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #059669, var(--success));
+  color: #fff;
+  border-right: 1px solid var(--border-strong) !important;
+}
+.btn-confirm:hover:not([disabled]) { filter: brightness(1.12); }
+.btn-confirm:active:not([disabled]) { filter: brightness(0.92); }
+
+.btn-cancel {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.btn-cancel:hover:not([disabled]) {
+  background: rgba(248,113,113,.1);
+  color: var(--danger);
+}
+
+.btn-confirm[disabled],
+.btn-cancel[disabled] { opacity: .3 !important; cursor: not-allowed; }
+
+/* Campos dudosos */
+.card-field.dudoso .field-label,
+.card-field.dudoso .field-value {
+  color: var(--warning) !important;
+}
+
+/* ══════════════════════════════════════════════
+   FOCO (accesibilidad AA)
+══════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ══════════════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════════════ */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border-default); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--violet); }
+
+/* ══════════════════════════════════════════════
+   ANIMACIONES — orquestadas y sobrias
+   Respeta prefers-reduced-motion.
+══════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+  .bubble {
+    animation: d-bubbleIn 0.18s ease-out both;
+  }
+  .card {
+    animation: d-cardDrop 0.24s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  }
+  .msg-row {
+    animation: d-bubbleIn 0.18s ease-out both;
+  }
+}
+
+@keyframes d-bubbleIn {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+@keyframes d-cardDrop {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* ══════════════════════════════════════════════
+   ESTADOS OFFLINE (PWA)
+══════════════════════════════════════════════ */
+.offline-banner {
+  background: rgba(248,113,113,.12);
+  border: 1px solid rgba(248,113,113,.3);
+  color: var(--danger);
+  border-radius: var(--r-btn);
+  padding: 8px 14px;
+  font-size: 13px;
+  text-align: center;
+}

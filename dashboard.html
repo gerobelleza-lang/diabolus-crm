@@ -1,226 +1,605 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — Diabolus CRM</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Diabolus CRM — Dashboard</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .main-container {
+      display: flex;
+      min-height: 100vh;
+      background-color: var(--bg-primary);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 280px;
+      background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+      border-right: 1px solid var(--border-color);
+      padding: 2rem 0;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      left: 0;
+      top: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 0 1.5rem 2rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1.5rem;
+    }
+
+    .sidebar-header .logo {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .sidebar-header h3 {
+      margin: 0;
+      font-size: 1.125rem;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 0 1rem;
+    }
+
+    .nav-item {
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.3s ease;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .nav-item:hover {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      box-shadow: 0 0 15px rgba(139, 21, 56, 0.3);
+    }
+
+    .nav-item span {
+      font-size: 1.25rem;
+    }
+
+    .sidebar-footer {
+      padding: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .sidebar-footer button {
+      width: 100%;
+    }
+
+    /* MAIN CONTENT */
+    .main-content {
+      margin-left: 280px;
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    /* HEADER */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header h1 {
+      margin: 0;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header-right .user-info {
+      text-align: right;
+    }
+
+    .header-right .user-info p {
+      margin: 0;
+      font-size: 0.875rem;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(139, 21, 56, 0.2);
+    }
+
+    .stat-card .label {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .stat-card .change {
+      font-size: 0.875rem;
+      color: var(--success);
+    }
+
+    .stat-card .change.negative {
+      color: var(--danger);
+    }
+
+    /* CHARTS */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+    }
+
+    .chart-card h3 {
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+
+    /* RECENT TRANSACTIONS */
+    .recent-section {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+    }
+
+    .recent-section h3 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+
+    .transaction-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      transition: background 0.3s ease;
+    }
+
+    .transaction-item:last-child {
+      border-bottom: none;
+    }
+
+    .transaction-item:hover {
+      background-color: var(--bg-tertiary);
+    }
+
+    .transaction-item .left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+    }
+
+    .transaction-item .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      background-color: var(--bg-tertiary);
+    }
+
+    .transaction-item .info h4 {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.95rem;
+    }
+
+    .transaction-item .info p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+    }
+
+    .transaction-item .amount {
+      font-size: 1.25rem;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .transaction-item .amount.income {
+      color: var(--success);
+    }
+
+    .transaction-item .amount.expense {
+      color: var(--danger);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 240px;
+      }
+
+      .main-content {
+        margin-left: 240px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 0;
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 1rem;
+      }
+
+      .stats-grid,
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
-<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
-  <div class="flex h-screen">
-    <div class="w-64 bg-black border-r border-gray-800 flex flex-col fixed left-0 top-0 h-screen">
-      <div class="p-6 border-b border-gray-800">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center font-bold">⚡</div>
-          <span class="font-bold text-xl">DIABOLUS</span>
-        </div>
+<body>
+  <div class="main-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">⚡</div>
+        <h3>DIABOLUS</h3>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: var(--text-tertiary);">Peluquería Infernal</p>
       </div>
 
-      <nav class="flex-1 p-4 space-y-2">
-        <a href="/diabolus-crm/dashboard.html" class="block px-4 py-3 bg-orange-500/20 border-l-2 border-orange-500 text-orange-400 rounded">📊 Dashboard</a>
-        <a href="/diabolus-crm/transacciones.html" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">💰 Transacciones</a>
-        <a href="/diabolus-crm/clientes.html" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">👥 Clientes</a>
-        <a href="/diabolus-crm/reportes.html" class="block px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition">📈 Reportes</a>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item active">
+          <span>📊</span>
+          Dashboard
+        </a>
+        <a href="agent.html" class="nav-item">
+          <span>💬</span>
+          Agente ⭐
+        </a>
+        <a href="approval-queue.html" class="nav-item">
+          <span>✅</span>
+          Aprobaciones
+        </a>
+        <a href="invoices.html" class="nav-item">
+          <span>📄</span>
+          Facturas
+        </a>
+        <a href="clients.html" class="nav-item">
+          <span>👥</span>
+          Clientes
+        </a>
+        <a href="transactions.html" class="nav-item">
+          <span>💰</span>
+          Transacciones
+        </a>
+        <a href="reports.html" class="nav-item">
+          <span>📈</span>
+          Reportes
+        </a>
       </nav>
 
-      <div class="p-4 border-t border-gray-800">
-        <div class="flex items-center gap-3 px-4 py-3 bg-gray-800 rounded mb-3">
-          <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center font-bold text-sm">👤</div>
-          <div>
-            <p class="text-sm font-semibold" id="userName">Usuario</p>
-            <p class="text-xs text-gray-400" id="userEmail">email@example.com</p>
-          </div>
-        </div>
-        <button onclick="logout()" class="w-full px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition text-center text-sm">🚪 Salir</button>
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;" onclick="logout()">
+          Cerrar Sesión
+        </button>
+        <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 1rem; text-align: center;">
+          v1.0 — Premium UI ✨
+        </p>
       </div>
-    </div>
+    </aside>
 
-    <main class="ml-64 flex-1 overflow-auto">
-      <div class="p-8">
-        <div class="mb-8">
-          <h1 class="text-4xl font-bold mb-2">Dashboard</h1>
-          <p class="text-gray-400">Conectado a Supabase en vivo</p>
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <!-- HEADER -->
+      <div class="header">
+        <div>
+          <h1>📊 Dashboard</h1>
+          <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary);">Viernes, 13 de junio 2026</p>
+        </div>
+        <div class="header-right">
+          <div class="user-info">
+            <p style="font-weight: 600;">María García</p>
+            <p>Propietaria</p>
+          </div>
+          <div class="user-avatar">MG</div>
+        </div>
+      </div>
+
+      <!-- STATS GRID -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">💰 Ingresos HOY</div>
+          <div class="value">€450</div>
+          <div class="change">↑ +12% vs ayer</div>
         </div>
 
-        <div class="grid grid-cols-4 gap-6 mb-8">
-          <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-orange-500/30 transition">
-            <p class="text-gray-400 text-sm mb-2">Ganancia hoy</p>
-            <p class="text-4xl font-bold text-orange-400">€<span id="statToday">0.00</span></p>
-            <p class="text-xs text-gray-500 mt-2">↑ +12%</p>
-          </div>
+        <div class="stat-card">
+          <div class="label">📊 Ingresos SEMANA</div>
+          <div class="value">€2,850</div>
+          <div class="change">↑ +8% vs semana pasada</div>
+        </div>
 
-          <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-blue-500/30 transition">
-            <p class="text-gray-400 text-sm mb-2">Esta semana</p>
-            <p class="text-4xl font-bold text-blue-400">€<span id="statWeek">0.00</span></p>
-            <p class="text-xs text-gray-500 mt-2">7 días</p>
-          </div>
+        <div class="stat-card">
+          <div class="label">📈 Ingresos MES</div>
+          <div class="value">€11,200</div>
+          <div class="change">↑ +15% vs mes pasado</div>
+        </div>
 
-          <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-green-500/30 transition">
-            <p class="text-gray-400 text-sm mb-2">Este mes</p>
-            <p class="text-4xl font-bold text-green-400">€<span id="statMonth">0.00</span></p>
-            <p class="text-xs text-gray-500 mt-2">30 días</p>
-          </div>
+        <div class="stat-card">
+          <div class="label">💸 Gastos MES</div>
+          <div class="value">€3,400</div>
+          <div class="change negative">↑ +5% vs mes pasado</div>
+        </div>
 
-          <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-purple-500/30 transition">
-            <p class="text-gray-400 text-sm mb-2">Balance neto</p>
-            <p class="text-4xl font-bold text-purple-400">€<span id="statBalance">0.00</span></p>
-            <p class="text-xs text-gray-500 mt-2">Neto</p>
+        <div class="stat-card">
+          <div class="label">📋 Balance NETO</div>
+          <div class="value">€7,800</div>
+          <div class="change">+€450 hoy</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="label">👥 Clientes ACTIVOS</div>
+          <div class="value">42</div>
+          <div class="change">+3 nuevos esta semana</div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Ingresos últimos 7 días</h3>
+          <div class="chart-container">
+            <canvas id="ingresoChart"></canvas>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-8 mb-8">
-          <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <h3 class="text-lg font-bold mb-4">Ingresos vs Gastos (7 días)</h3>
-            <div style="position: relative; height: 250px;">
-              <canvas id="chartIncome"></canvas>
+        <div class="chart-card">
+          <h3>Categorías de Gasto</h3>
+          <div class="chart-container">
+            <canvas id="gastosChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT TRANSACTIONS -->
+      <div class="recent-section">
+        <h3>Últimas Transacciones</h3>
+
+        <div class="transaction-item">
+          <div class="left">
+            <div class="icon">✂️</div>
+            <div class="info">
+              <h4>Corte + Barba</h4>
+              <p>Paula García</p>
             </div>
           </div>
-
-          <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-            <h3 class="text-lg font-bold mb-4">Servicios</h3>
-            <div style="position: relative; height: 250px;">
-              <canvas id="chartServices"></canvas>
-            </div>
-          </div>
+          <div class="amount income">+€30</div>
         </div>
 
-        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-          <h3 class="text-lg font-bold mb-4">Clientes recientes</h3>
-          <table class="w-full">
-            <thead class="border-b border-gray-700">
-              <tr>
-                <th class="px-6 py-3 text-left text-sm font-semibold">Nombre</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold">Email</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold">Último servicio</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold">Monto</th>
-              </tr>
-            </thead>
-            <tbody id="clientsTable" class="divide-y divide-gray-700">
-              <tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">Cargando desde Supabase...</td></tr>
-            </tbody>
-          </table>
+        <div class="transaction-item">
+          <div class="left">
+            <div class="icon">💅</div>
+            <div class="info">
+              <h4>Tinte completo</h4>
+              <p>María López</p>
+            </div>
+          </div>
+          <div class="amount income">+€75</div>
+        </div>
+
+        <div class="transaction-item">
+          <div class="left">
+            <div class="icon">📦</div>
+            <div class="info">
+              <h4>Compra tinturas</h4>
+              <p>Distribuidor</p>
+            </div>
+          </div>
+          <div class="amount expense">-€120</div>
+        </div>
+
+        <div class="transaction-item">
+          <div class="left">
+            <div class="icon">💇</div>
+            <div class="info">
+              <h4>Corte + Peinado</h4>
+              <p>Ana Martínez</p>
+            </div>
+          </div>
+          <div class="amount income">+€45</div>
+        </div>
+
+        <div class="transaction-item">
+          <div class="left">
+            <div class="icon">📧</div>
+            <div class="info">
+              <h4>Pago renta</h4>
+              <p>Casero</p>
+            </div>
+          </div>
+          <div class="amount expense">-€280</div>
+        </div>
+
+        <div style="text-align: center; margin-top: 1rem;">
+          <a href="transactions.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Ver todas las transacciones →</a>
         </div>
       </div>
     </main>
   </div>
 
+  <script src="js/app.js"></script>
   <script>
-    const SUPABASE_URL = 'https://emygbvxkhfbwyhbapaae.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODM3MjcsImV4cCI6MjA5Njg1OTcyN30.HpcYlWwggML7FGHLKerj17sLwj3CiFmYKZdL4iSV9YM';
-    
-    const { createClient } = window.supabase;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    if (!localStorage.getItem('token')) {
-      window.location.href = '/diabolus-crm/';
-    }
-
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    document.getElementById('userName').textContent = user.name || 'Usuario';
-    document.getElementById('userEmail').textContent = user.email || '';
-
-    function logout() {
-      localStorage.clear();
-      window.location.href = '/diabolus-crm/';
-    }
-
-    async function loadDashboard() {
-      try {
-        // Intenta cargar datos de Supabase
-        const { data: transactions, error } = await supabase
-          .from('transactions')
-          .select('*')
-          .limit(10);
-
-        if (error) {
-          console.log('Modo demo (tabla transactions no existe):', error.message);
-          loadDemoData();
-          return;
+    // Chart 1: Ingresos últimos 7 días
+    const ingresoCtx = document.getElementById('ingresoChart').getContext('2d');
+    new Chart(ingresoCtx, {
+      type: 'line',
+      data: {
+        labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+        datasets: [{
+          label: 'Ingresos',
+          data: [250, 320, 280, 410, 450, 520, 390],
+          borderColor: 'var(--primary)',
+          backgroundColor: 'rgba(139, 21, 56, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: 'var(--primary)',
+          pointBorderColor: 'white',
+          pointBorderWidth: 2,
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: 'var(--text-secondary)' },
+            grid: { color: 'var(--border-color)' }
+          },
+          x: {
+            ticks: { color: 'var(--text-secondary)' },
+            grid: { color: 'var(--border-color)' }
+          }
         }
-
-        // Si hay datos reales, procesa
-        let today = 0, week = 0, month = 0;
-        const now = new Date();
-        
-        transactions.forEach(tx => {
-          const txDate = new Date(tx.created_at);
-          const daysAgo = Math.floor((now - txDate) / (1000 * 60 * 60 * 24));
-          const amount = parseFloat(tx.amount) || 0;
-          
-          if (daysAgo === 0) today += amount;
-          if (daysAgo <= 7) week += amount;
-          if (daysAgo <= 30) month += amount;
-        });
-
-        document.getElementById('statToday').textContent = today.toFixed(2);
-        document.getElementById('statWeek').textContent = week.toFixed(2);
-        document.getElementById('statMonth').textContent = month.toFixed(2);
-        document.getElementById('statBalance').textContent = month.toFixed(2);
-
-      } catch (err) {
-        console.error('Error:', err);
-        loadDemoData();
       }
+    });
 
-      initCharts();
-    }
-
-    function loadDemoData() {
-      // Datos demo si Supabase no responde
-      document.getElementById('statToday').textContent = (Math.random() * 500).toFixed(2);
-      document.getElementById('statWeek').textContent = (Math.random() * 3500).toFixed(2);
-      document.getElementById('statMonth').textContent = (Math.random() * 15000).toFixed(2);
-      document.getElementById('statBalance').textContent = (Math.random() * 10000).toFixed(2);
-
-      const clients = [
-        {name: 'María García', email: 'maria@example.com', service: 'Corte', amount: '€45.00'},
-        {name: 'Juan López', email: 'juan@example.com', service: 'Tinte', amount: '€65.00'},
-        {name: 'Ana Martínez', email: 'ana@example.com', service: 'Manicura', amount: '€35.00'}
-      ];
-
-      document.getElementById('clientsTable').innerHTML = clients.map(c => `
-        <tr class="hover:bg-gray-700/20 transition">
-          <td class="px-6 py-4"><span class="font-semibold">${c.name}</span></td>
-          <td class="px-6 py-4 text-sm text-gray-400">${c.email}</td>
-          <td class="px-6 py-4 text-sm">${c.service}</td>
-          <td class="px-6 py-4 font-semibold text-orange-400">${c.amount}</td>
-        </tr>
-      `).join('');
-    }
-
-    function initCharts() {
-      const ctxIncome = document.getElementById('chartIncome').getContext('2d');
-      new Chart(ctxIncome, {
-        type: 'bar',
-        data: {
-          labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-          datasets: [
-            {label: 'Ingresos', data: [450, 520, 380, 610, 450, 520, 280], backgroundColor: '#10b981'},
-            {label: 'Gastos', data: [120, 150, 100, 130, 110, 140, 90], backgroundColor: '#ef4444'}
+    // Chart 2: Gastos por categoría
+    const gastosCtx = document.getElementById('gastosChart').getContext('2d');
+    new Chart(gastosCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Suministros', 'Alquiler', 'Servicios', 'Otros'],
+        datasets: [{
+          data: [450, 1200, 800, 950],
+          backgroundColor: [
+            'var(--primary)',
+            'var(--primary-light)',
+            'var(--gold)',
+            'rgba(139, 21, 56, 0.5)'
           ]
-        },
-        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {labels: {color: '#9ca3af'}}}, scales: {y: {ticks: {color: '#9ca3af'}, grid: {color: '#374151'}}, x: {ticks: {color: '#9ca3af'}}}}
-      });
-
-      const ctxServices = document.getElementById('chartServices').getContext('2d');
-      new Chart(ctxServices, {
-        type: 'doughnut',
-        data: {
-          labels: ['Corte', 'Tinte', 'Manicura', 'Pedicura', 'Otros'],
-          datasets: [{
-            data: [35, 25, 20, 15, 5],
-            backgroundColor: ['#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'],
-            borderColor: '#111827',
-            borderWidth: 2
-          }]
-        },
-        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom', labels: {color: '#9ca3af'}}}}
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: 'var(--text-secondary)' }
+          }
+        }
+      }
+    });
+  </script>
+  <script>
+    // PWA — registro del Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[SW] registrado:', reg.scope);
+        }).catch(err => {
+          console.warn('[SW] error al registrar:', err);
+        });
       });
     }
-
-    document.addEventListener('DOMContentLoaded', loadDashboard);
   </script>
 </body>
 </html>

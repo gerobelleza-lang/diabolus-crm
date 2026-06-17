@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#8b1538">
+<title>Diabolus — Bienvenido</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<style>
+  :root {
+    --primary: #8b1538;
+    --primary-hover: #a01a42;
+    --gold: #f4c430;
+    --bg-main: #0A0E27;
+    --bg-secondary: #12162e;
+    --bg-tertiary: #1a1f3a;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --border-color: #2d3748;
+    --success: #10b981;
+    --warning: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, #0A0E27 0%, #1A1F3A 100%);
+  }
+
+  /* ── Progress bar ─────────────────────────────────────────── */
+  .progress-wrap {
+    width: 100%;
+    max-width: 540px;
+    margin-bottom: 2rem;
+  }
+  .step-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: .5rem;
+    font-size: .75rem;
+    color: var(--text-tertiary);
+  }
+  .step-labels span.active { color: var(--gold); font-weight: 600; }
+  .step-labels span.done   { color: var(--success); }
+  .progress-bar {
+    height: 4px;
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--gold));
+    border-radius: 2px;
+    transition: width .4s ease;
+  }
+
+  /* ── Card ─────────────────────────────────────────────────── */
+  .card {
+    background: var(--bg-secondary);
+    border: 2px solid var(--primary);
+    border-radius: 1.25rem;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 540px;
+    box-shadow: 0 0 50px rgba(139,21,56,.25);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: 1.8rem;
+  }
+  .brand-symbol { font-size: 1.8rem; }
+  .brand-name { font-size: 1.1rem; font-weight: 700; color: var(--gold); letter-spacing: .04em; }
+
+  /* Step header */
+  .step-indicator {
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--primary);
+    margin-bottom: .5rem;
+  }
+  h2 { font-size: 1.55rem; font-weight: 700; margin-bottom: .4rem; }
+  .subtitle { color: var(--text-secondary); font-size: .92rem; line-height: 1.5; margin-bottom: 1.8rem; }
+
+  /* Gestor badge */
+  .gestor-badge {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    background: rgba(16,185,129,.08);
+    border: 1px solid rgba(16,185,129,.3);
+    border-radius: .6rem;
+    padding: .7rem 1rem;
+    margin-bottom: 1.4rem;
+    font-size: .85rem;
+    color: var(--success);
+  }
+  .gestor-badge .icon { font-size: 1.1rem; }
+
+  /* Form */
+  label { display: block; font-size: .82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: .35rem; }
+  input[type=text], input[type=email], input[type=password] {
+    width: 100%;
+    padding: .75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1.5px solid var(--border-color);
+    border-radius: .6rem;
+    color: var(--text-primary);
+    font-size: .95rem;
+    outline: none;
+    transition: border-color .2s;
+    margin-bottom: 1.1rem;
+  }
+  input:focus { border-color: var(--primary); }
+  input::placeholder { color: var(--text-tertiary); }
+
+  /* Buttons */
+  .btn-primary {
+    width: 100%;
+    padding: .85rem 1.5rem;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: .7rem;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+  }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-skip {
+    width: 100%;
+    padding: .7rem;
+    background: transparent;
+    border: 1.5px solid var(--border-color);
+    border-radius: .7rem;
+    color: var(--text-secondary);
+    font-size: .88rem;
+    cursor: pointer;
+    margin-top: .8rem;
+    transition: border-color .2s, color .2s;
+  }
+  .btn-skip:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+
+  /* Logo upload */
+  .logo-upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: .8rem;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    margin-bottom: 1.2rem;
+    position: relative;
+  }
+  .logo-upload-area:hover { border-color: var(--primary); background: rgba(139,21,56,.05); }
+  .logo-upload-area.has-file { border-color: var(--success); border-style: solid; background: rgba(16,185,129,.04); }
+  .logo-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .logo-preview { width: 80px; height: 80px; object-fit: contain; border-radius: .5rem; margin: 0 auto .8rem; display: block; }
+  .logo-upload-icon { font-size: 2.5rem; margin-bottom: .6rem; }
+  .logo-upload-text { font-size: .88rem; color: var(--text-secondary); }
+  .logo-upload-subtext { font-size: .75rem; color: var(--text-tertiary); margin-top: .3rem; }
+
+  /* Channel options */
+  .channel-options { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1.4rem; }
+  .channel-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: .8rem;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .channel-option:hover { border-color: var(--primary); background: rgba(139,21,56,.05); }
+  .channel-option.selected { border-color: var(--gold); background: rgba(244,196,48,.05); }
+  .channel-option .ch-icon { font-size: 1.8rem; flex-shrink: 0; }
+  .channel-option .ch-info { flex: 1; }
+  .channel-option .ch-name { font-weight: 600; font-size: .92rem; }
+  .channel-option .ch-desc { font-size: .78rem; color: var(--text-secondary); margin-top: .2rem; }
+  .channel-option .ch-badge {
+    font-size: .7rem; font-weight: 600;
+    background: var(--primary);
+    color: #fff;
+    padding: .15rem .5rem;
+    border-radius: 99px;
+  }
+
+  /* Chat step */
+  .chat-demo {
+    background: var(--bg-tertiary);
+    border-radius: .8rem;
+    padding: 1.2rem;
+    margin-bottom: 1.2rem;
+    min-height: 200px;
+    max-height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+  }
+  .msg { max-width: 85%; }
+  .msg.agent { align-self: flex-start; }
+  .msg.user  { align-self: flex-end; }
+  .msg-bubble {
+    padding: .65rem .9rem;
+    border-radius: .9rem;
+    font-size: .88rem;
+    line-height: 1.45;
+  }
+  .msg.agent .msg-bubble {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: .2rem;
+  }
+  .msg.user .msg-bubble {
+    background: var(--primary);
+    color: #fff;
+    border-bottom-right-radius: .2rem;
+  }
+  /* Confirmation card */
+  .confirm-card {
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--gold);
+    border-radius: .8rem;
+    padding: 1rem 1.1rem;
+    font-size: .85rem;
+    align-self: flex-start;
+    max-width: 90%;
+  }
+  .confirm-card .cc-title { font-weight: 700; color: var(--gold); margin-bottom: .5rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+  .confirm-card .cc-row { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .25rem; color: var(--text-secondary); }
+  .confirm-card .cc-row span:last-child { color: var(--text-primary); font-weight: 600; }
+  .confirm-card .cc-btns { display: flex; gap: .6rem; margin-top: .8rem; }
+  .confirm-card .cc-ok {
+    flex: 1; padding: .5rem; background: var(--success); color: #fff;
+    border: none; border-radius: .5rem; font-size: .82rem; font-weight: 600; cursor: pointer;
+  }
+  .confirm-card .cc-cancel {
+    flex: 1; padding: .5rem; background: transparent; color: var(--text-secondary);
+    border: 1px solid var(--border-color); border-radius: .5rem; font-size: .82rem; cursor: pointer;
+  }
+
+  .chat-input-row { display: flex; gap: .6rem; }
+  .chat-input-row input {
+    flex: 1; margin-bottom: 0;
+    background: var(--bg-tertiary);
+    border: 1.5px solid var(--border-color);
+    border-radius: .6rem;
+    color: var(--text-primary);
+    padding: .65rem .9rem;
+    font-size: .9rem;
+    outline: none;
+  }
+  .chat-input-row input:focus { border-color: var(--primary); }
+  .chat-input-row button {
+    padding: .65rem 1rem;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: .6rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .chat-input-row button:hover { background: var(--primary-hover); }
+  .chat-input-row button:disabled { opacity: .5; cursor: not-allowed; }
+
+  .hint-text { font-size: .78rem; color: var(--text-tertiary); text-align: center; margin-top: .6rem; }
+
+  /* Success */
+  .success-icon { font-size: 3.5rem; text-align: center; margin-bottom: 1rem; }
+  .success-title { font-size: 1.6rem; font-weight: 700; text-align: center; margin-bottom: .6rem; }
+  .success-sub { color: var(--text-secondary); text-align: center; font-size: .92rem; margin-bottom: 2rem; }
+
+  /* Error */
+  .error-msg { color: #f87171; font-size: .82rem; margin-top: -.6rem; margin-bottom: .8rem; }
+  .loading { opacity: .6; pointer-events: none; }
+
+  /* Hidden */
+  .step { display: none; }
+  .step.active { display: block; }
+
+  /* Telegram deep-link */
+  .tg-link {
+    display: flex; align-items: center; gap: .8rem;
+    padding: .9rem 1.1rem;
+    background: rgba(36,161,222,.08);
+    border: 1.5px solid rgba(36,161,222,.35);
+    border-radius: .8rem;
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: .9rem;
+    margin-bottom: 1.2rem;
+    transition: background .2s;
+  }
+  .tg-link:hover { background: rgba(36,161,222,.15); }
+  .tg-link .tg-icon { font-size: 1.6rem; }
+</style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
+</head>
+<body>
+<div class="page">
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="step-labels">
+      <span id="lbl1">1. Tu negocio</span>
+      <span id="lbl2">2. Logo</span>
+      <span id="lbl3">3. Canal</span>
+      <span id="lbl4">4. Primera acción</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:25%"></div></div>
+  </div>
+
+  <div class="card" id="mainCard">
+    <div class="brand">
+      <span class="brand-symbol">🧿</span>
+      <span class="brand-name">DIABOLUS</span>
+    </div>
+
+    <!-- ── STEP 1: Negocio ─────────────────────────────────── -->
+    <div class="step active" id="step1">
+      <div class="step-indicator">Paso 1 de 4</div>
+      <h2>Tu negocio</h2>
+      <p class="subtitle">Solo necesitamos dos datos. Son los que irán en tus facturas.</p>
+
+      <div id="gestorBadge" style="display:none;" class="gestor-badge">
+        <span class="icon">✅</span>
+        <span>Tu gestor <strong id="gestorName"></strong> ya está conectado a tu cuenta.</span>
+      </div>
+
+      <label for="nif">NIF / CIF *</label>
+      <input type="text" id="nif" placeholder="B12345678" maxlength="10" autocomplete="off">
+
+      <label for="nombreFiscal">Nombre o razón social *</label>
+      <input type="text" id="nombreFiscal" placeholder="Mi Empresa S.L.">
+
+      <div class="error-msg" id="errStep1"></div>
+      <button class="btn-primary" id="btnStep1" onclick="saveStep1()">Continuar →</button>
+    </div>
+
+    <!-- ── STEP 2: Logo ────────────────────────────────────── -->
+    <div class="step" id="step2">
+      <div class="step-indicator">Paso 2 de 4</div>
+      <h2>Tu logo</h2>
+      <p class="subtitle">Aparecerá en las facturas y en los informes para tu gestor. Puedes añadirlo más tarde.</p>
+
+      <div class="logo-upload-area" id="logoArea">
+        <input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" onchange="previewLogo(event)">
+        <img id="logoPreview" class="logo-preview" style="display:none">
+        <div id="logoPlaceholder">
+          <div class="logo-upload-icon">🖼️</div>
+          <div class="logo-upload-text">Haz clic o arrastra tu logo aquí</div>
+          <div class="logo-upload-subtext">JPG, PNG, WEBP, SVG · máx. 2 MB</div>
+        </div>
+      </div>
+
+      <div class="error-msg" id="errStep2"></div>
+      <button class="btn-primary" id="btnStep2" onclick="uploadLogo()">Subir logo →</button>
+      <button class="btn-skip" onclick="skipStep()">Saltar por ahora</button>
+    </div>
+
+    <!-- ── STEP 3: Canal ──────────────────────────────────── -->
+    <div class="step" id="step3">
+      <div class="step-indicator">Paso 3 de 4</div>
+      <h2>Tu canal de mando</h2>
+      <p class="subtitle">Elige cómo quieres hablarle a tu negocio. Puedes cambiarlo después.</p>
+
+      <div class="channel-options">
+        <div class="channel-option selected" id="chWeb" onclick="selectChannel('web')">
+          <span class="ch-icon">💻</span>
+          <div class="ch-info">
+            <div class="ch-name">Chat web</div>
+            <div class="ch-desc">Usa el panel de Diabolus directamente en el navegador</div>
+          </div>
+        </div>
+        <a href="https://t.me/diaboluscrm_bot" target="_blank" class="channel-option" id="chTelegram" onclick="selectChannel('telegram')">
+          <span class="ch-icon">✈️</span>
+          <div class="ch-info">
+            <div class="ch-name">Telegram</div>
+            <div class="ch-desc">Habla con tu negocio desde Telegram — el canal recomendado</div>
+          </div>
+          <span class="ch-badge">Recomendado</span>
+        </a>
+        <div class="channel-option" id="chWhatsapp" onclick="selectChannel('whatsapp')">
+          <span class="ch-icon">💬</span>
+          <div class="ch-info">
+            <div class="ch-name">WhatsApp</div>
+            <div class="ch-desc">Conecta tu número de WhatsApp (disponible en el lanzamiento)</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="telegramInstructions" style="display:none;">
+        <a href="https://t.me/diaboluscrm_bot" target="_blank" class="tg-link">
+          <span class="tg-icon">✈️</span>
+          <span>Abrir @diaboluscrm_bot y enviar /start</span>
+        </a>
+        <p class="hint-text">El bot te vinculará automáticamente. Vuelve aquí cuando hayas enviado /start.</p>
+      </div>
+
+      <button class="btn-primary" id="btnStep3" onclick="continueStep3()">Continuar →</button>
+      <button class="btn-skip" onclick="skipStep()">Saltar por ahora</button>
+    </div>
+
+    <!-- ── STEP 4: Primera acción ──────────────────────────── -->
+    <div class="step" id="step4">
+      <div class="step-indicator">Paso 4 de 4 · El momento clave</div>
+      <h2>Registra tu primer movimiento</h2>
+      <p class="subtitle">Dile a Diabolus algo que hayas gastado o cobrado. Habla con naturalidad.</p>
+
+      <div class="chat-demo" id="chatDemo">
+        <div class="msg agent">
+          <div class="msg-bubble">¡Hola! 👋 Soy tu agente. Cuéntame qué ha pasado hoy en tu negocio — un ingreso, un gasto, lo que sea.</div>
+        </div>
+        <div class="msg agent" id="suggestionMsg" style="display:none;">
+          <div class="msg-bubble">💡 Prueba: <em>"gasté 20€ en material de oficina"</em></div>
+        </div>
+      </div>
+
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Ej: gasté 50 en gasolina..." maxlength="300"
+          onkeydown="if(event.key==='Enter')sendChat()">
+        <button id="btnSend" onclick="sendChat()">➤</button>
+      </div>
+      <p class="hint-text" id="chatHint">O <a href="chat.html" style="color:var(--gold);text-decoration:none;" onclick="skipOnboarding()">entra al chat</a> y hazlo desde allí</p>
+    </div>
+
+    <!-- ── STEP 5: Completado ──────────────────────────────── -->
+    <div class="step" id="step5">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">¡Todo listo!</div>
+      <p class="success-sub">Tu negocio está configurado. Empieza a hablar con él ahora mismo.</p>
+      <button class="btn-primary" onclick="goToChat()">Entrar al panel →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://diabolus-crm-api.vercel.app'
+let TOKEN = ''
+let SALON_ID = ''
+let selectedChannel = 'web'
+let onboardingStep = 1
+let confirmActionId = null
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+async function init() {
+  TOKEN = localStorage.getItem('diabolus_token') || ''
+  if (!TOKEN) { window.location.href = 'register.html'; return }
+
+  // Cargar estado
+  const status = await apiFetch('GET', '/api/onboarding/status')
+  if (!status || status.error) { window.location.href = 'register.html'; return }
+
+  SALON_ID = status.salon.id
+
+  if (status.onboarding_completed) {
+    // Ya completado — ir al chat
+    window.location.href = 'chat.html'
+    return
+  }
+
+  // Mostrar badge de gestor si viene pre-vinculado
+  if (status.gestor) {
+    document.getElementById('gestorBadge').style.display = 'flex'
+    document.getElementById('gestorName').textContent = status.gestor.name
+  }
+
+  // Pre-rellenar NIF/nombre si ya existen
+  if (status.salon.nif) document.getElementById('nif').value = status.salon.nif
+  if (status.salon.nombre_fiscal) document.getElementById('nombreFiscal').value = status.salon.nombre_fiscal
+
+  onboardingStep = status.onboarding_step || 1
+  showStep(onboardingStep)
+}
+
+// ─── Navigation ────────────────────────────────────────────────────────────
+function showStep(n) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('step' + i)
+    if (el) el.classList.toggle('active', i === n)
+  }
+  const labels = ['lbl1','lbl2','lbl3','lbl4']
+  labels.forEach((id, idx) => {
+    const el = document.getElementById(id)
+    const stepNum = idx + 1
+    el.classList.remove('active','done')
+    if (stepNum === n) el.classList.add('active')
+    else if (stepNum < n) el.classList.add('done')
+  })
+  const pct = Math.min(Math.round((n - 1) / 4 * 100), 100)
+  document.getElementById('progressFill').style.width = pct + '%'
+
+  // Mostrar sugerencia en el chat después de 1.5s
+  if (n === 4) {
+    setTimeout(() => {
+      document.getElementById('suggestionMsg').style.display = 'block'
+    }, 1500)
+  }
+}
+
+// ─── Step 1 ────────────────────────────────────────────────────────────────
+async function saveStep1() {
+  const nif = document.getElementById('nif').value.trim().toUpperCase()
+  const nombre = document.getElementById('nombreFiscal').value.trim()
+  const errEl = document.getElementById('errStep1')
+  errEl.textContent = ''
+
+  if (!nif) { errEl.textContent = 'El NIF/CIF es obligatorio'; return }
+  if (!nombre) { errEl.textContent = 'El nombre fiscal es obligatorio'; return }
+
+  const btn = document.getElementById('btnStep1')
+  btn.disabled = true; btn.textContent = 'Guardando…'
+
+  const res = await apiFetch('PATCH', '/api/onboarding/step1', { nif, nombre_fiscal: nombre })
+  btn.disabled = false; btn.textContent = 'Continuar →'
+
+  if (res?.error) { errEl.textContent = res.error; return }
+  onboardingStep = 2
+  showStep(2)
+}
+
+// ─── Step 2 (Logo) ─────────────────────────────────────────────────────────
+function previewLogo(evt) {
+  const file = evt.target.files[0]
+  if (!file) return
+  const preview = document.getElementById('logoPreview')
+  const placeholder = document.getElementById('logoPlaceholder')
+  const area = document.getElementById('logoArea')
+  const reader = new FileReader()
+  reader.onload = e => {
+    preview.src = e.target.result
+    preview.style.display = 'block'
+    placeholder.style.display = 'none'
+    area.classList.add('has-file')
+  }
+  reader.readAsDataURL(file)
+}
+
+async function uploadLogo() {
+  const file = document.getElementById('logoFile').files[0]
+  if (!file) { skipStep(); return }
+
+  const errEl = document.getElementById('errStep2')
+  errEl.textContent = ''
+  if (file.size > 2 * 1024 * 1024) { errEl.textContent = 'El logo no puede superar 2 MB'; return }
+
+  const btn = document.getElementById('btnStep2')
+  btn.disabled = true; btn.textContent = 'Subiendo…'
+
+  const fd = new FormData()
+  fd.append('logo', file)
+
+  const res = await fetch(`${API}/api/onboarding/logo`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${TOKEN}` },
+    body: fd,
+  }).then(r => r.json()).catch(() => null)
+
+  btn.disabled = false; btn.textContent = 'Subir logo →'
+
+  if (res?.error) { errEl.textContent = res.error; return }
+  onboardingStep = 3
+  showStep(3)
+}
+
+// ─── Step 3 (Canal) ────────────────────────────────────────────────────────
+function selectChannel(ch) {
+  selectedChannel = ch
+  ;['chWeb','chTelegram','chWhatsapp'].forEach(id => {
+    document.getElementById(id).classList.remove('selected')
+  })
+  const map = { web: 'chWeb', telegram: 'chTelegram', whatsapp: 'chWhatsapp' }
+  document.getElementById(map[ch]).classList.add('selected')
+
+  document.getElementById('telegramInstructions').style.display =
+    (ch === 'telegram') ? 'block' : 'none'
+}
+
+async function continueStep3() {
+  onboardingStep = 4
+  await apiFetch('POST', '/api/onboarding/skip') // avanza el step en la DB
+  showStep(4)
+}
+
+// ─── Step 4 (Chat) ─────────────────────────────────────────────────────────
+async function sendChat() {
+  const input = document.getElementById('chatInput')
+  const text = input.value.trim()
+  if (!text) return
+
+  const btn = document.getElementById('btnSend')
+  btn.disabled = true
+  appendMsg('user', text)
+  input.value = ''
+
+  // Llamar al agente real
+  const res = await apiFetch('POST', '/api/agent/chat', { message: text, salon_id: SALON_ID })
+  btn.disabled = false
+
+  if (!res) {
+    appendMsg('agent', '⚠️ Error de conexión. Inténtalo de nuevo.')
+    return
+  }
+
+  if (res.type === 'confirmation_required' || res.confirmation_card || res.requires_confirmation) {
+    // Tarjeta de confirmación
+    const card = res.confirmation_card || res
+    confirmActionId = res.action_id || res.id || null
+    showConfirmCard(card)
+  } else if (res.message || res.reply || res.response) {
+    appendMsg('agent', res.message || res.reply || res.response)
+    // Si fue confirmación exitosa → completar onboarding
+    if (res.confirmed || res.success) {
+      await completeOnboarding()
+    }
+  } else {
+    appendMsg('agent', JSON.stringify(res).substring(0, 200))
+  }
+
+  scrollChat()
+}
+
+function appendMsg(role, text) {
+  const demo = document.getElementById('chatDemo')
+  const div = document.createElement('div')
+  div.className = 'msg ' + role
+  div.innerHTML = `<div class="msg-bubble">${escHtml(text)}</div>`
+  demo.appendChild(div)
+  scrollChat()
+}
+
+function showConfirmCard(card) {
+  const demo = document.getElementById('chatDemo')
+  const amount = card.amount || card.importe || ''
+  const concept = card.concept || card.concepto || card.description || ''
+  const type = card.type || card.tipo || ''
+
+  const div = document.createElement('div')
+  div.className = 'confirm-card'
+  div.innerHTML = `
+    <div class="cc-title">✋ Confirmar registro</div>
+    ${amount ? `<div class="cc-row"><span>Importe</span><span>${escHtml(String(amount))}</span></div>` : ''}
+    ${concept ? `<div class="cc-row"><span>Concepto</span><span>${escHtml(String(concept))}</span></div>` : ''}
+    ${type ? `<div class="cc-row"><span>Tipo</span><span>${escHtml(String(type))}</span></div>` : ''}
+    <div class="cc-btns">
+      <button class="cc-ok" onclick="confirmAction(this)">✓ Confirmar</button>
+      <button class="cc-cancel" onclick="cancelAction(this)">Cancelar</button>
+    </div>
+  `
+  demo.appendChild(div)
+  scrollChat()
+}
+
+async function confirmAction(btn) {
+  btn.closest('.confirm-card').querySelector('.cc-btns').innerHTML = '<span style="color:var(--text-tertiary);font-size:.8rem;">Confirmando…</span>'
+  const res = await apiFetch('POST', '/api/agent/confirm', { action_id: confirmActionId })
+  if (res?.error) {
+    appendMsg('agent', '⚠️ ' + res.error)
+    return
+  }
+  appendMsg('agent', '✅ ¡Registrado! Así de fácil. Diabolus ya tiene tu primer movimiento.')
+  await completeOnboarding()
+}
+
+async function cancelAction(btn) {
+  btn.closest('.confirm-card').querySelector('.cc-btns').innerHTML = '<span style="color:var(--text-tertiary);font-size:.8rem;">Cancelado</span>'
+  appendMsg('agent', 'Entendido, lo descarto. Cuéntame otro movimiento cuando quieras.')
+}
+
+async function completeOnboarding() {
+  await apiFetch('POST', '/api/onboarding/complete')
+  setTimeout(() => {
+    showStep(5)
+  }, 1200)
+}
+
+async function skipOnboarding() {
+  await apiFetch('POST', '/api/onboarding/complete')
+}
+
+function scrollChat() {
+  const demo = document.getElementById('chatDemo')
+  demo.scrollTop = demo.scrollHeight
+}
+
+// ─── Skip step ────────────────────────────────────────────────────────────
+async function skipStep() {
+  const res = await apiFetch('POST', '/api/onboarding/skip')
+  if (res?.error) { console.warn('skip error', res.error); return }
+  onboardingStep = (res?.next_step) || (onboardingStep + 1)
+  showStep(onboardingStep)
+}
+
+// ─── Finish ───────────────────────────────────────────────────────────────
+function goToChat() {
+  window.location.href = 'chat.html'
+}
+
+// ─── API helper ───────────────────────────────────────────────────────────
+async function apiFetch(method, path, body) {
+  try {
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+    }
+    if (body) opts.body = JSON.stringify(body)
+    const r = await fetch(API + path, opts)
+    return await r.json()
+  } catch { return null }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+init()
+</script>
+  <script>
+    // PWA — registro del Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[SW] registrado:', reg.scope);
+        }).catch(err => {
+          console.warn('[SW] error al registrar:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
