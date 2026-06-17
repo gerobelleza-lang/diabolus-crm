@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#8b1538">
 <title>Diabolus — Bienvenido</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#7c3aed">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <style>
   :root {
     --primary: #8b1538;
@@ -734,5 +741,17 @@ function escHtml(s) {
 
 init()
 </script>
+  <script>
+    // PWA — registro del Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[SW] registrado:', reg.scope);
+        }).catch(err => {
+          console.warn('[SW] error al registrar:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>

@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Diabolus CRM — Aceptar invitación del gestor</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#7c3aed">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -208,5 +215,17 @@ document.getElementById('login-form').onsubmit = async (e) => {
 
 init()
 </script>
+  <script>
+    // PWA — registro del Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[SW] registrado:', reg.scope);
+        }).catch(err => {
+          console.warn('[SW] error al registrar:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
