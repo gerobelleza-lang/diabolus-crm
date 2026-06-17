@@ -177,3 +177,160 @@ export async function sendGestorInviteEmail(
 </html>`
   return sendEmail(to, subject, html)
 }
+
+// ─── Email: Cierre mensual al gestor ─────────────────────────────────────────
+// ⚠️ No incluye IVA — regla de producto
+export async function sendMonthlyClosingEmail(
+  to: string,
+  gestorName: string,
+  data: any,
+  closingId: string | null
+) {
+  const { period, summary, invoices, expenses_by_category, has_movements, salon_name } = data
+  const portalUrl = `https://gerobelleza-lang.github.io/diabolus-crm/gestor.html`
+
+  const categoryRows = (expenses_by_category ?? [])
+    .slice(0, 8)
+    .map((c: any) => `
+      <tr>
+        <td style="padding:8px 0;color:#aaa;border-bottom:1px solid #1a1a1a;text-transform:capitalize;">${c.category}</td>
+        <td style="padding:8px 0;color:#fff;text-align:right;border-bottom:1px solid #1a1a1a;font-weight:600;">${(c.amount as number).toFixed(2)}€</td>
+      </tr>`).join('')
+
+  const invoiceStatusLabel: Record<string,string> = { paid:'Cobrada', pending:'Pendiente', overdue:'Vencida' }
+  const invoiceStatusColor: Record<string,string> = { paid:'#4ade80', pending:'#fbbf24', overdue:'#f87171' }
+
+  const invoiceRows = (invoices?.list ?? [])
+    .slice(0, 10)
+    .map((i: any) => `
+      <tr>
+        <td style="padding:8px 6px;border-bottom:1px solid #1a1a1a;font-weight:600;color:#fff;">${i.number || '—'}</td>
+        <td style="padding:8px 6px;border-bottom:1px solid #1a1a1a;color:#ccc;">${i.client}</td>
+        <td style="padding:8px 6px;border-bottom:1px solid #1a1a1a;font-weight:600;color:#4ade80;">${(i.total as number)?.toFixed(2)}€</td>
+        <td style="padding:8px 6px;border-bottom:1px solid #1a1a1a;color:${invoiceStatusColor[i.status]||'#aaa'}">${invoiceStatusLabel[i.status]||i.status}</td>
+      </tr>`).join('')
+
+  const saldoColor = summary?.saldo >= 0 ? '#4ade80' : '#f87171'
+
+  const noMovementsBlock = !has_movements ? `
+    <div style="background:#1a1a1a;border-radius:8px;padding:20px;text-align:center;margin:24px 0;">
+      <p style="color:#666;font-size:14px;">No hay movimientos registrados en este periodo.</p>
+    </div>` : ''
+
+  const summaryBlock = has_movements ? `
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr>
+        <td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Ingresos</td>
+        <td style="padding:12px 0;color:#4ade80;text-align:right;border-bottom:1px solid #222;font-weight:700;font-size:18px;">${summary.income.toFixed(2)}€</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;color:#888;border-bottom:1px solid #222;">Gastos</td>
+        <td style="padding:12px 0;color:#f87171;text-align:right;border-bottom:1px solid #222;font-weight:700;font-size:18px;">${summary.expenses.toFixed(2)}€</td>
+      </tr>
+      <tr>
+        <td style="padding:14px 0;color:#fff;font-weight:700;">Saldo neto</td>
+        <td style="padding:14px 0;text-align:right;font-weight:800;font-size:22px;color:${saldoColor};">${summary.saldo.toFixed(2)}€</td>
+      </tr>
+    </table>` : ''
+
+  const catBlock = has_movements && expenses_by_category?.length ? `
+    <div style="margin:24px 0;">
+      <p style="color:#555;font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Gastos por categoría</p>
+      <table style="width:100%;border-collapse:collapse;">${categoryRows}</table>
+    </div>` : ''
+
+  const invBlock = has_movements && invoices?.total > 0 ? `
+    <div style="margin:24px 0;">
+      <p style="color:#555;font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+        Facturas emitidas — ${invoices.total} total
+        <span style="margin-left:12px;color:#4ade80">${invoices.paid} cobradas</span>
+        <span style="margin-left:8px;color:#fbbf24">${invoices.pending} pendientes</span>
+        ${invoices.overdue ? `<span style="margin-left:8px;color:#f87171">${invoices.overdue} vencidas</span>` : ''}
+      </p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr style="color:#555;"><th style="padding:6px;text-align:left;font-weight:400;">Nº</th><th style="padding:6px;text-align:left;font-weight:400;">Cliente</th><th style="padding:6px;font-weight:400;">Importe</th><th style="padding:6px;font-weight:400;">Estado</th></tr>
+        ${invoiceRows}
+      </table>
+      ${invoices.total > 10 ? `<p style="color:#555;font-size:12px;text-align:center;margin-top:8px;">+ ${invoices.total - 10} facturas más en el portal</p>` : ''}
+    </div>` : ''
+
+  const subject = has_movements
+    ? `📊 Cierre de ${period.label} — ${salon_name}`
+    : `📋 Sin movimientos en ${period.label} — ${salon_name}`
+
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:0;">
+  <div style="max-width:600px;margin:40px auto;padding:40px;background:#111;border-radius:12px;border:1px solid #222;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="font-size:22px;font-weight:800;color:#dc2626;margin:0;">🔥 DIABOLUS CRM</h1>
+      <p style="color:#555;margin:6px 0 0;font-size:13px;">Entrega mensual automática</p>
+    </div>
+    <div style="background:#0d1117;border:1px solid #1e3a5f;border-radius:8px;padding:14px 16px;margin-bottom:20px;">
+      <p style="margin:0;color:#93c5fd;font-size:14px;">📊 <strong>${period.label}</strong> · ${salon_name}</p>
+      <p style="margin:4px 0 0;color:#555;font-size:12px;">Periodo: ${period.from} → ${period.to}</p>
+    </div>
+    <p style="color:#aaa;line-height:1.6;margin-bottom:8px;">Hola ${gestorName}, aquí tienes el cierre del mes de <strong style="color:#fff;">${period.label}</strong> de tu cliente <strong style="color:#fff;">${salon_name}</strong>.</p>
+    ${noMovementsBlock}
+    ${summaryBlock}
+    ${catBlock}
+    ${invBlock}
+    <div style="text-align:center;margin:32px 0 24px;">
+      <a href="${portalUrl}" style="background:#dc2626;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:14px;display:inline-block;">Ver detalle completo en el portal →</a>
+    </div>
+    <p style="color:#333;font-size:11px;text-align:center;border-top:1px solid #1e1e1e;padding-top:16px;margin-top:8px;">
+      Diabolus CRM · Este informe no incluye estimaciones de IVA
+    </p>
+  </div>
+</body></html>`
+
+  return sendEmail(to, subject, html)
+}
+
+// ─── Email: Solicitud de revisión al cliente ──────────────────────────────────
+export async function sendClosingReviewRequestEmail(
+  to: string,
+  salonName: string,
+  gestorName: string,
+  periodLabel: string,
+  reviewUrl: string
+) {
+  const subject = `${gestorName} quiere enviarte el cierre de ${periodLabel} — dale el visto bueno`
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:0;">
+  <div style="max-width:560px;margin:40px auto;padding:40px;background:#111;border-radius:12px;border:1px solid #222;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="font-size:22px;font-weight:800;color:#dc2626;margin:0;">🔥 DIABOLUS CRM</h1>
+    </div>
+    <div style="background:#1a0f00;border:1px solid #78350f;border-radius:8px;padding:14px 16px;margin-bottom:20px;">
+      <p style="margin:0;color:#fbbf24;font-size:15px;font-weight:600;">📋 Cierre de ${periodLabel} listo para revisión</p>
+    </div>
+    <h2 style="color:#fff;font-size:18px;margin-bottom:12px;">Aprueba el cierre antes de que se envíe</h2>
+    <p style="color:#aaa;line-height:1.6;margin-bottom:20px;">
+      Tu gestor <strong style="color:#fff;">${gestorName}</strong> ha preparado el resumen contable de <strong style="color:#fff;">${periodLabel}</strong> para <strong style="color:#fff;">${salonName}</strong>.<br><br>
+      Como tienes activada la revisión previa, necesitas darle el visto bueno antes de que llegue a tu gestor. Revísalo y pulsa "Aprobar".
+    </p>
+    <div style="background:#0e0e0e;border:1px solid #1e1e1e;border-radius:8px;padding:14px 16px;margin-bottom:24px;">
+      <p style="margin:0 0 8px;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Qué incluye el cierre</p>
+      <ul style="margin:0;padding:0 0 0 18px;color:#ccc;line-height:2;">
+        <li>Ingresos y gastos del mes</li>
+        <li>Gastos desglosados por categoría</li>
+        <li>Facturas emitidas y su estado</li>
+      </ul>
+      <p style="margin:10px 0 0;color:#555;font-size:12px;">⚠️ No incluye estimaciones de IVA.</p>
+    </div>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${reviewUrl}" style="background:#dc2626;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;display:inline-block;">Revisar y aprobar →</a>
+    </div>
+    <p style="color:#555;font-size:12px;text-align:center;line-height:1.6;">
+      Enlace válido 7 días. Si no haces nada, el cierre no se enviará automáticamente.
+    </p>
+    <p style="color:#333;font-size:12px;text-align:center;margin-top:24px;border-top:1px solid #1e1e1e;padding-top:16px;">
+      Diabolus CRM · Tesorería que se gestiona hablando
+    </p>
+  </div>
+</body></html>`
+
+  return sendEmail(to, subject, html)
+}
