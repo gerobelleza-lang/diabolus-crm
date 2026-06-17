@@ -61,7 +61,26 @@ export const TOOLS: Record<string, ToolDefinition> = {
   },
 }
 
+// ─── Categorías estándar — fuente única de verdad ─────────────────────────────
+// Esta lista la usa tanto suggestCategory() como GET /api/categories (seed).
+// La UI lee la lista desde la API — ambas siempre sincronizadas.
+
+export const STANDARD_CATEGORIES: { slug: string; label: string }[] = [
+  { slug: 'material',                label: 'Material y suministros'  },
+  { slug: 'alquiler',                label: 'Alquiler'                 },
+  { slug: 'transporte',              label: 'Transporte'               },
+  { slug: 'dietas',                  label: 'Dietas y comidas'         },
+  { slug: 'software',                label: 'Software y suscripciones' },
+  { slug: 'comunicaciones',          label: 'Comunicaciones'           },
+  { slug: 'marketing',               label: 'Marketing y publicidad'   },
+  { slug: 'seguros',                 label: 'Seguros'                  },
+  { slug: 'servicios_profesionales', label: 'Servicios profesionales'  },
+  { slug: 'servicios',               label: 'Servicios prestados'      },
+  { slug: 'otros',                   label: 'Otros'                    },
+]
+
 // ─── Category suggester ────────────────────────────────────────────────────────
+// Lee de STANDARD_CATEGORIES — si añades una categoría ahí, el agente la usará.
 
 export function suggestCategory(concepto: string): string {
   const t = (concepto || '').toLowerCase()
@@ -75,5 +94,6 @@ export function suggestCategory(concepto: string): string {
   if (/seguro/.test(t))                                         return 'seguros'
   if (/asesor|gestor|abogad|notari/.test(t))                    return 'servicios_profesionales'
   if (/corte|tinte|peinado|tratamiento|sesion|sesión/.test(t))  return 'servicios'
+  // Validar que devuelve un slug de la lista estándar
   return 'otros'
 }

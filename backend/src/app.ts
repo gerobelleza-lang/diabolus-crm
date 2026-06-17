@@ -17,6 +17,7 @@ import { gestorRoutes, gestorPublicRoutes } from './routes/gestor'
 import { chatRoutes } from './routes/chat'
 import { exportPublicRoutes } from './routes/export'
 import { onboardingRoutes } from './routes/onboarding'
+import { categoriesRoutes } from './routes/categories'
 import { whatsappRoutes } from './routes/whatsapp'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
@@ -111,6 +112,7 @@ export function createApp() {
   app.route('/api/gestor', gestorRoutes)
   app.route('/api/chat', chatRoutes)
   app.route('/api/onboarding', onboardingRoutes)
+  app.route('/api/categories', categoriesRoutes)
   app.route('/api/notifications/telegram', telegramRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
