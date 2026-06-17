@@ -547,3 +547,69 @@ exportPublicRoutes.get('/download', async (c) => {
   return c.json({ error: 'Formato no soportado' }, 400)
 })
 
+
+// ─── accrueCommissions — llamada por el trigger mensual ───────────────────────
+/**
+ * Devenga comisiones para todos los gestores con tarifa activa.
+ * Periodo = mes anterior al momento de llamada.
+ * Idempotente: upsert con UNIQUE (gestor_id, salon_id, year, month).
+ */
+export async function accrueCommissions(supabase: any): Promise<{ accrued: number; skipped: number }> {
+  const now   = new Date()
+  const year  = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+  const month = now.getMonth() === 0 ? 12 : now.getMonth()   // mes anterior (1-indexed)
+
+  const dateFrom = `${year}-${String(month).padStart(2, '0')}-01`
+  const dateTo   = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`
+
+  // Todos los links activos con alguna tarifa configurada
+  const { data: links, error: linksErr } = await supabase
+    .from('gestor_salon_links')
+    .select('gestor_id, salon_id, commission_rate, precio_mantenimiento')
+    .eq('status', 'active')
+
+  if (linksErr || !links?.length) return { accrued: 0, skipped: 0 }
+
+  let accrued = 0
+  let skipped = 0
+
+  for (const link of links) {
+    const hasTarifa = link.commission_rate != null || link.precio_mantenimiento != null
+    if (!hasTarifa) { skipped++; continue }
+
+    // Ingresos confirmados del salón en el periodo
+    const { data: txs } = await supabase
+      .from('transactions')
+      .select('amount')
+      .eq('salon_id', link.salon_id)
+      .eq('type', 'income')
+      .gte('date', dateFrom)
+      .lte('date', dateTo + 'T23:59:59')
+
+    const totalIncome = (txs || []).reduce((s: number, t: any) => s + (parseFloat(t.amount) || 0), 0)
+
+    const commissionFromRate = link.commission_rate != null
+      ? (totalIncome * link.commission_rate) / 100
+      : 0
+    const maintenance = parseFloat(link.precio_mantenimiento ?? '0') || 0
+    const amount = Math.round((commissionFromRate + maintenance) * 100) / 100
+
+    // Upsert idempotente
+    const { error: upsertErr } = await supabase
+      .from('commission_ledger')
+      .upsert({
+        gestor_id:    link.gestor_id,
+        salon_id:     link.salon_id,
+        year,
+        month,
+        amount,
+        status:       'pending',
+        accrued_at:   new Date().toISOString(),
+      }, { onConflict: 'gestor_id,salon_id,year,month', ignoreDuplicates: false })
+
+    if (!upsertErr) accrued++
+    else { console.error('[accrueCommissions] upsert error:', upsertErr); skipped++ }
+  }
+
+  return { accrued, skipped }
+}
