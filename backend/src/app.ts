@@ -15,9 +15,11 @@ import { demonioRoutes } from './routes/demonio'
 import { telegramRoutes, telegramBotRoutes } from './routes/telegram'
 import { gestorRoutes, gestorPublicRoutes } from './routes/gestor'
 import { chatRoutes } from './routes/chat'
+import { exportPublicRoutes } from './routes/export'
 import { whatsappRoutes } from './routes/whatsapp'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
+import { accrueCommissions } from './routes/export'
 
 export function createApp() {
   const app = new Hono()
@@ -53,13 +55,11 @@ export function createApp() {
   // ─── Stripe & External Webhooks (Public, no auth) ──────────────────────────
   app.route('/api/stripe', stripeRoutes)
   app.route('/webhooks', webhookRoutes)
-
-  // ─── WhatsApp Webhook (Public — Twilio envía mensajes aquí) ────────────────
-  // POST /webhooks/whatsapp
   app.route('/webhooks/whatsapp', whatsappRoutes)
-
-  // ─── Telegram Bot Webhook (Public — Telegram envía mensajes aquí) ───────────
   app.route('/telegram', telegramBotRoutes)
+
+  // ─── Export Downloads (Public — validado por token firmado 15 min) ─────────
+  app.route('/api/export', exportPublicRoutes)
 
   // ─── Gestor Portal (Public — acceso con token de gestor) ───────────────────
   app.route('/gestor', gestorPublicRoutes)
@@ -69,50 +69,32 @@ export function createApp() {
     try {
       const body = await c.req.json().catch(() => ({}))
       const { task_id, status, result, error, preview } = body
-
-      if (!task_id || !status) {
-        return c.json({ error: 'Missing task_id or status' }, 400)
-      }
-
+      if (!task_id || !status) return c.json({ error: 'Missing task_id or status' }, 400)
       const supabase = getSupabaseAdmin()
-
       const { error: updateErr } = await supabase
         .from('demonio_tasks')
-        .update({
-          status,
-          result: result ?? null,
-          error: error ?? null,
-          preview: preview ?? null,
-          updated_at: new Date().toISOString()
-        })
+        .update({ status, result: result ?? null, error: error ?? null, preview: preview ?? null, updated_at: new Date().toISOString() })
         .eq('id', task_id)
-
-      if (updateErr) {
-        return c.json({ error: 'Failed to update task' }, 500)
-      }
-
+      if (updateErr) return c.json({ error: 'Failed to update task' }, 500)
       if (status === 'completed') {
-        const { data: task } = await supabase
-          .from('demonio_tasks')
-          .select('*')
-          .eq('id', task_id)
-          .single()
-
-        if (task) {
-          await supabase.from('audit_log').insert([{
-            user_id: task.user_id,
-            salon_id: task.salon_id,
-            action: `demonio_${task.action}`,
-            changes: result,
-            created_at: new Date().toISOString()
-          }])
-        }
+        const { data: task } = await supabase.from('demonio_tasks').select('*').eq('id', task_id).single()
+        if (task) await supabase.from('audit_log').insert([{ user_id: task.user_id, salon_id: task.salon_id, action: `demonio_${task.action}`, changes: result, created_at: new Date().toISOString() }])
       }
-
       return c.json({ received: true })
     } catch (err) {
       console.error('[Demonio Callback] Error:', err)
       return c.json({ error: 'Internal error' }, 500)
+    }
+  })
+
+  // ─── Internal: Commissions Accrue (called by monthly trigger) ─────────────
+  app.post('/api/internal/commissions/accrue', async (c) => {
+    try {
+      const supabase = getSupabaseAdmin()
+      const result = await accrueCommissions(supabase)
+      return c.json({ ok: true, ...result })
+    } catch (err: any) {
+      return c.json({ error: err.message }, 500)
     }
   })
 
@@ -130,9 +112,7 @@ export function createApp() {
   app.route('/api/notifications/telegram', telegramRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
-  app.notFound((c) =>
-    c.json({ error: 'Not Found', path: c.req.path }, 404)
-  )
+  app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))
   app.onError((err, c) => {
     console.error(`[ERROR] ${err.message}`, err)
     return c.json({ error: err.message || 'Internal Server Error' }, 500)

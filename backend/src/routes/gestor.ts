@@ -721,3 +721,110 @@ gestorPublicRoutes.get('/unread', async (c) => {
 
   return c.json({ ok: true, unread: count ?? 0 })
 })
+
+// ─── B4 Pieza 2: Comisiones devengadas ───────────────────────────────────────
+// Panel informativo — sin payout (Fase 6)
+
+gestorPublicRoutes.get('/commissions/panel', async (c) => {
+  const gestorId = c.get('gestorId') as string
+  if (!gestorId) return c.json({ error: 'No autorizado' }, 401)
+
+  const supabase = getSupabaseAdmin()
+  const { data: links, error } = await supabase
+    .from('gestor_salon_links')
+    .select('id, salon_id, created_at, commission_rate, precio_mantenimiento, salons(name)')
+    .eq('gestor_id', gestorId)
+    .eq('status', 'active')
+    .order('created_at')
+
+  if (error) return c.json({ error: 'Error al cargar clientes' }, 500)
+
+  const now = new Date()
+  const rows = (links || []).map((link: any) => {
+    const activeSince = new Date(link.created_at)
+    const monthsActive = Math.max(
+      (now.getFullYear() - activeSince.getFullYear()) * 12
+      + now.getMonth() - activeSince.getMonth()
+      + (now.getDate() >= activeSince.getDate() ? 0 : -1),
+      0
+    )
+    const hasTarifa = link.commission_rate != null && link.precio_mantenimiento != null
+    const devengadoMes = hasTarifa
+      ? Math.round(Number(link.precio_mantenimiento) * Number(link.commission_rate) * 100) / 100
+      : null
+    const devengadoTotal = hasTarifa ? Math.round(devengadoMes! * monthsActive * 100) / 100 : null
+    return {
+      salon_id: link.salon_id,
+      salon_name: link.salons?.name ?? '—',
+      active_since: link.created_at,
+      months_active: monthsActive,
+      commission_rate: link.commission_rate,
+      precio_mantenimiento: link.precio_mantenimiento,
+      devengado_mensual: devengadoMes,
+      devengado_total: devengadoTotal,
+      tarifa_fijada: hasTarifa,
+    }
+  })
+
+  const totalDevengado = rows
+    .filter((r: any) => r.devengado_total !== null)
+    .reduce((s: number, r: any) => s + r.devengado_total!, 0)
+
+  return c.json({
+    clientes: rows,
+    resumen: {
+      total_activos: rows.length,
+      total_devengado: Math.round(totalDevengado * 100) / 100,
+      pendientes_tarifa: rows.filter((r: any) => !r.tarifa_fijada).length,
+      nota: 'Los pagos se activarán en Fase 6 (Stripe). Este panel es informativo.',
+    },
+  })
+})
+
+gestorPublicRoutes.get('/commissions/history', async (c) => {
+  const gestorId = c.get('gestorId') as string
+  if (!gestorId) return c.json({ error: 'No autorizado' }, 401)
+
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase
+    .from('commission_ledger')
+    .select('*, salons(name)')
+    .eq('gestor_id', gestorId)
+    .order('year', { ascending: false })
+    .order('month', { ascending: false })
+    .limit(120)
+
+  if (error) return c.json({ error: 'Error al cargar historial' }, 500)
+  return c.json({ ledger: data || [] })
+})
+
+// ─── B4: Export token endpoint ────────────────────────────────────────────────
+gestorPublicRoutes.post('/export/token', async (c) => {
+  const gestorId = c.get('gestorId') as string
+  if (!gestorId) return c.json({ error: 'No autorizado' }, 401)
+
+  const body = await c.req.json().catch(() => ({}))
+  const { salonId, month, format } = body
+
+  if (!salonId || !month || !format) return c.json({ error: 'Faltan parámetros' }, 400)
+  if (!['csv', 'xlsx', 'pdf'].includes(format)) return c.json({ error: 'Formato inválido' }, 400)
+  if (!/^\d{4}-\d{2}$/.test(month)) return c.json({ error: 'Mes inválido (YYYY-MM)' }, 400)
+
+  const supabase = getSupabaseAdmin()
+  const { data: link } = await supabase
+    .from('gestor_salon_links')
+    .select('id')
+    .eq('gestor_id', gestorId)
+    .eq('salon_id', salonId)
+    .eq('status', 'active')
+    .single()
+
+  if (!link) return c.json({ error: 'Cliente no vinculado o inactivo' }, 403)
+
+  const token = await new SignJWT({ gestorId, salonId, month, format, type: 'diabolus_export_v1' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('15m')
+    .sign(JWT_SECRET)
+
+  return c.json({ downloadUrl: `https://diabolus-crm-api.vercel.app/api/export/download?token=${token}` })
+})
