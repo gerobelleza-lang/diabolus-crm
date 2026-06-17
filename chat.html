@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Diabolus · Agente</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#7c3aed">
+  <meta name="theme-color" content="#8B5CF6">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,28 +15,28 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:          #0b0b12;
-      --surface:     #13131f;
-      --surface2:    #1c1c2e;
-      --border:      #2a2a40;
-      --accent:      #7c3aed;
+      --bg:          #15101F;
+      --surface:     #211A33;
+      --surface2:    #2A2140;
+      --border:      rgba(139,92,246,.18);
+      --accent:      #8B5CF6;
       --accent-glow: #9d5cff;
-      --user-bubble: #1a1040;
+      --user-bubble: rgba(139,92,246,.14);
       --user-text:   #e0d9ff;
-      --agent-bubble:#1c1c2e;
+      --agent-bubble:#211A33;
       --agent-text:  #e8e8f0;
-      --text-muted:  #6b6b8a;
+      --text-muted:  #A39FB5;
       --green:       #22c55e;
       --red:         #ef4444;
       --orange:      #f97316;
       --yellow:      #eab308;
-      --card-bg:     #16162a;
-      --card-border: #3b3b6b;
+      --card-bg:     #211A33;
+      --card-border: rgba(139,92,246,.32);
       --radius:      16px;
-      --font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font:        'Hanken Grotesk', 'Inter', system-ui, sans-serif;
     }
 
-    html, body { height: 100%; background: var(--bg); color: var(--agent-text); font-family: var(--font); }
+    html, body { height: 100%; background: var(--ink, var(--bg)); color: var(--agent-text); font-family: var(--font); }
 
     /* ── Layout ── */
     #app {
@@ -168,7 +168,7 @@
     }
 
     .card-header {
-      background: linear-gradient(135deg, #1e0b50, #2d1060);
+      background: linear-gradient(135deg, rgba(139,92,246,.22), rgba(109,40,217,.32));
       padding: 12px 16px;
       border-bottom: 1px solid var(--card-border);
       display: flex;
@@ -252,7 +252,7 @@
     /* ── Preview block (para envíos send) ── */
     .card-preview {
       margin: 0 16px 12px;
-      background: #0f0f1e;
+      background: rgba(139,92,246,.06);
       border: 1px solid rgba(249,115,22,.25);
       border-radius: 10px;
       padding: 10px 12px;
@@ -428,7 +428,7 @@
     /* ── Auth overlay ── */
     #auth-overlay {
       position: fixed; inset: 0;
-      background: var(--bg);
+      background: var(--ink, var(--bg));
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -467,6 +467,7 @@
       white-space: nowrap;
     }
   </style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
 <body>
 

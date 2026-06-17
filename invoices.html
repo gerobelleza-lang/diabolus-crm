@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Diabolus CRM — Facturas</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#7c3aed">
+  <meta name="theme-color" content="#8B5CF6">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Diabolus">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <link rel="stylesheet" href="css/custom.css">
+  
   <style>
     .main-container { display: flex; min-height: 100vh; background-color: var(--bg-primary); }
     .sidebar { width: 280px; background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border-right: 1px solid var(--border-color); padding: 2rem 0; display: flex; flex-direction: column; position: fixed; height: 100vh; left: 0; top: 0; overflow-y: auto; }
@@ -92,6 +92,7 @@
     .badge-overdue { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
     @media (max-width: 768px) { .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); } .main-content { margin-left: 0; } .form-row { grid-template-columns: 1fr; } .actions { flex-direction: column; } }
   </style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
 <body>
 <div class="main-container">
