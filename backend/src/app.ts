@@ -15,6 +15,7 @@ import { demonioRoutes } from './routes/demonio'
 import { telegramRoutes, telegramBotRoutes } from './routes/telegram'
 import { gestorRoutes, gestorPublicRoutes } from './routes/gestor'
 import { whatsappRoutes } from './routes/whatsapp'
+import { closingInternalRoutes, closingReviewRoutes, closingGestorRoutes } from './routes/closings'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 
@@ -53,17 +54,24 @@ export function createApp() {
   app.route('/api/stripe', stripeRoutes)
   app.route('/webhooks', webhookRoutes)
 
-  // ─── WhatsApp Webhook (Public — Twilio envía mensajes aquí) ────────────────
-  // POST /webhooks/whatsapp
+  // ─── WhatsApp Webhook (Public — Twilio) ────────────────────────────────────
   app.route('/webhooks/whatsapp', whatsappRoutes)
 
-  // ─── Telegram Bot Webhook (Public — Telegram envía mensajes aquí) ───────────
+  // ─── Telegram Bot Webhook (Public) ─────────────────────────────────────────
   app.route('/telegram', telegramBotRoutes)
 
-  // ─── Gestor Portal (Public — acceso con token de gestor) ───────────────────
+  // ─── Gestor Portal (gestor JWT) ─────────────────────────────────────────────
+  // Rutas de cierres ANTES de gestorPublicRoutes para que /gestor/closings/* no colisione
+  app.route('/gestor/closings', closingGestorRoutes)
   app.route('/gestor', gestorPublicRoutes)
 
-  // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
+  // ─── Client closing review (Public — token-gated) ──────────────────────────
+  app.route('/closing', closingReviewRoutes)
+
+  // ─── Internal routes (N8N scheduler — x-internal-key required) ─────────────
+  app.route('/api/internal/closings', closingInternalRoutes)
+
+  // ─── Demonio Callback (Public — N8N webhook) ───────────────────────────────
   app.post('/api/demonio/callback', async (c) => {
     try {
       const body = await c.req.json().catch(() => ({}))
