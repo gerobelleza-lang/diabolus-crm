@@ -26,9 +26,12 @@ function getSupabase() {
   )
 }
 
-function today(): string {
-  return new Date().toISOString().split('T')[0]
+function todayMadrid(): string {
+  // Siempre usar zona horaria de Madrid para que medianoche no dé el día anterior
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
 }
+// backward compat
+function today(): string { return todayMadrid() }
 
 function formatDate(dateStr?: string): string {
   const d = dateStr ? new Date(dateStr) : new Date()
@@ -256,13 +259,14 @@ export async function executePendingAction(
   }
 
   if (result.ok) {
-    // Audit log
+    // Audit log (columnas reales: tool_name, payload, result, confirmed, level)
     await supabase.from('audit_log').insert({
-      salon_id: action.salon_id,
-      user_id:  action.user_id,
-      action:   `agent_${action.action_type}`,
-      changes:  action.parameters,
-      created_at: new Date().toISOString(),
+      salon_id:  action.salon_id,
+      tool_name: `agent_${action.action_type}`,
+      payload:   action.parameters,
+      result:    { ok: result.ok, message: result.message },
+      confirmed: true,
+      level:     1,
     })
   } else {
     // Si falló, revertir a pending para que el usuario pueda reintentar
@@ -302,12 +306,12 @@ async function executeGasto(
   const desc      = p.proveedor ? `${p.concepto} (${p.proveedor})` : p.concepto
 
   const { error } = await supabase.from('transactions').insert({
-    amount:      p.importe,
-    type:        'expense',
-    description: desc,
-    date:        p.fecha || today(),
-    category:    categoria,
-    salon_id:    salonId,
+    amount:   p.importe,
+    type:     'expense',
+    concept:  desc,
+    date:     p.fecha || todayMadrid(),
+    category: categoria,
+    salon_id: salonId,
   })
 
   if (error) return { ok: false, message: `Error al guardar: ${error.message}` }
@@ -326,12 +330,12 @@ async function executeIngreso(
   const desc      = p.cliente ? `${p.concepto} — ${p.cliente}` : p.concepto
 
   const { error } = await supabase.from('transactions').insert({
-    amount:      p.importe,
-    type:        'income',
-    description: desc,
-    date:        p.fecha || today(),
-    category:    categoria,
-    salon_id:    salonId,
+    amount:   p.importe,
+    type:     'income',
+    concept:  desc,
+    date:     p.fecha || todayMadrid(),
+    category: categoria,
+    salon_id: salonId,
   })
 
   if (error) return { ok: false, message: `Error al guardar: ${error.message}` }

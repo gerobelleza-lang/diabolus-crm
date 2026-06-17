@@ -153,7 +153,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     }
 
     const actionType  = extracted.tipo === 'ingreso' ? 'registrar_ingreso' : 'registrar_gasto'
-    const todayStr    = new Date().toISOString().split('T')[0]
+    const todayStr    = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
     const parameters  = extracted.tipo === 'ingreso'
       ? {
           importe:        extracted.importe,
@@ -268,7 +268,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       cliente_nombre: cliente.name,
       lineas,
       total:          importeNum,
-      fecha:          new Date().toISOString().split('T')[0],
+      fecha:          new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }),
     }, tenantId, userId)
     return { card }
   }
