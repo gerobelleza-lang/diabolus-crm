@@ -34,8 +34,10 @@ function todayMadrid(): string {
 function today(): string { return todayMadrid() }
 
 function formatDate(dateStr?: string): string {
+  // Siempre formatear en zona Madrid para evitar off-by-one en servidor US East (iad1)
+  // new Date("2026-06-18") = UTC midnight → en UTC-4 serían las 20h del día 17
   const d = dateStr ? new Date(dateStr) : new Date()
-  return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Madrid' })
 }
 
 function formatImporte(n: number): string {
