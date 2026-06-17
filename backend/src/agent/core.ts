@@ -238,7 +238,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
   }
 
   // ── crear_factura ────────────────────────────────────────────────────────
-  if (/crea.{0,10}factura|nueva factura|factura para|hazme.{0,10}factura|factura a\s/i.test(userInput)) {
+  if (/crea.{0,10}factura|nueva factura|factura para|hazme.{0,10}factura|factura a\s|apunta.{0,10}factura|registra.{0,10}factura|hacer.{0,10}factura|pon.{0,10}factura|mete.{0,10}factura|generar?.{0,10}factura/i.test(userInput)) {
     const mCliente  = userInput.match(/(?:para|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:por|de|con|,|$)|\s*$)/i)
     const mImporte  = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*€?(?:\s*euros?)?/i)
     const mConcepto = userInput.match(/(?:por|concepto|servicio)[:\s]+([^,\n.]{3,60})/i)
