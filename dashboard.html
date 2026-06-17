@@ -168,16 +168,19 @@
     }
     .stat-card {
       background: var(--surface);
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(139, 92, 246, 0.45);
       border-radius: 0.75rem;
       padding: 1.125rem 1.25rem;
-      transition: border-color 0.2s;
+      transition: border-color 0.22s, box-shadow 0.22s;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.18), inset 0 0 6px rgba(139, 92, 246, 0.04);
     }
     .stat-card:hover {
-      border-color: rgba(139, 92, 246, 0.3);
+      border-color: rgba(139, 92, 246, 0.85);
+      box-shadow: 0 0 22px rgba(139, 92, 246, 0.45), inset 0 0 12px rgba(139, 92, 246, 0.07);
     }
     .stat-card.alert {
-      border-color: rgba(239, 68, 68, 0.35);
+      border-color: rgba(239, 68, 68, 0.55);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.25), inset 0 0 6px rgba(239, 68, 68, 0.05);
     }
     .stat-label {
       font-size: 0.7rem;
@@ -221,9 +224,15 @@
     }
     .chart-card {
       background: var(--surface);
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(139, 92, 246, 0.4);
       border-radius: 0.75rem;
       padding: 1.375rem 1.5rem;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.15), inset 0 0 6px rgba(139, 92, 246, 0.03);
+      transition: border-color 0.22s, box-shadow 0.22s;
+    }
+    .chart-card:hover {
+      border-color: rgba(139, 92, 246, 0.75);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.38), inset 0 0 10px rgba(139, 92, 246, 0.06);
     }
     .section-title {
       font-size: 0.7rem;
@@ -246,9 +255,15 @@
     /* ── RECENT TRANSACTIONS ── */
     .recent-card {
       background: var(--surface);
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(139, 92, 246, 0.4);
       border-radius: 0.75rem;
       padding: 1.375rem 1.5rem;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.15), inset 0 0 6px rgba(139, 92, 246, 0.03);
+      transition: border-color 0.22s, box-shadow 0.22s;
+    }
+    .recent-card:hover {
+      border-color: rgba(139, 92, 246, 0.7);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.35), inset 0 0 10px rgba(139, 92, 246, 0.06);
     }
     .recent-header {
       display: flex;
