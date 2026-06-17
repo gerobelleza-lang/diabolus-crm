@@ -289,7 +289,12 @@
         const res = await fetch(`${API}/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ businessName, email, password }),
+          body: JSON.stringify({
+            businessName,
+            email,
+            password,
+            gestor_invite_token: new URLSearchParams(window.location.search).get('gestor_token') || undefined,
+          }),
         })
 
         const data = await res.json()
@@ -308,11 +313,13 @@
           salonName: data.salon?.name ?? businessName,
           token: data.token,
         }))
+        // Token también como clave independiente (usado por onboarding y chat)
+        localStorage.setItem('diabolus_token', data.token)
 
-        showSuccess('¡Cuenta creada! Entrando en tu centro de mando...')
+        showSuccess('¡Cuenta creada! Configurando tu negocio...')
 
         setTimeout(() => {
-          window.location.href = 'dashboard.html'
+          window.location.href = 'onboarding.html'
         }, 1200)
 
       } catch (err) {
