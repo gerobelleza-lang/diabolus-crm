@@ -8,8 +8,38 @@ export interface ParsedInput {
   confidence: number;
 }
 
-const INCOME_KEYWORDS = ['ingreso', 'cobré', 'cobré', 'income', 'revenue', 'ganancia', 'entrada', 'recibí', 'recibi', 'me pagaron', 'me han pagado'];
-const EXPENSE_KEYWORDS = ['gasto', 'gasté', 'gasté', 'expense', 'pago', 'pagué', 'pagué', 'salida', 'compré', 'compre', 'he pagado', 'he gastado'];
+const INCOME_KEYWORDS = [
+  // Sustantivos directos (no ambiguos)
+  'ingreso', 'ingresos', 'cobro', 'cobros', 'ganancia', 'ganancias',
+  'income', 'revenue',
+  // Verbos acción pasada
+  'cobré', 'recibí', 'recibi', 'me pagaron', 'me han pagado', 'me abonaron',
+  'ingresé', 'ingrese', 'facturé', 'facture', 'vendí', 'vendi',
+  // Verbos imperativo / presente narrativo — solo si van acompañados de "ingreso/cobro"
+  'apunta ingreso', 'apunta un ingreso', 'anota ingreso', 'anota un ingreso',
+  'mete ingreso', 'mete un ingreso', 'registra ingreso', 'registra un ingreso',
+  'pon ingreso', 'pon un ingreso', 'añade ingreso', 'agrega ingreso',
+  'crea ingreso', 'nuevo ingreso', 'alta ingreso',
+  // Contexto negocio
+  'cliente pagó', 'cliente me pagó', 'cobrado', 'servicio cobrado',
+  'he cobrado', 'ha cobrado',
+];
+const EXPENSE_KEYWORDS = [
+  // Sustantivos directos
+  'gasto', 'gastos', 'compra', 'compras', 'salida', 'salidas',
+  'expense', 'desembolso',
+  // Verbos acción pasada
+  'gasté', 'pagué', 'compré', 'compre', 'aboné',
+  'he pagado', 'he gastado', 'he comprado', 'he abonado',
+  'desembolsé', 'invertí',
+  // Verbos imperativo / presente narrativo — solo si van acompañados de "gasto/pago"
+  'apunta gasto', 'apunta un gasto', 'anota gasto', 'anota un gasto',
+  'mete gasto', 'mete un gasto', 'registra gasto', 'registra un gasto',
+  'pon gasto', 'pon un gasto', 'añade gasto', 'agrega gasto',
+  'crea gasto', 'nuevo gasto', 'alta gasto',
+  // pago/pagos como sustantivo de gasto (nunca como cobro)
+  'hice un pago', 'realicé un pago', 'pagué a',
+];
 const QUERY_KEYWORDS = ['¿', 'que', 'qué', 'como', 'cómo', 'cuál', 'cual', '?'];
 
 export function parseUserInput(input: string): ParsedInput {
@@ -64,10 +94,20 @@ function parseIncome(input: string, amounts: number[]): ParsedInput {
     }
   }
 
-  // Si no hay concepto de servicios, intentar extraerlo del texto
+  // Si no hay concepto de servicios, extraer del texto de forma flexible
   if (concept === 'Servicio') {
-    const enMatch = input.match(/(?:en|por)\s+([a-záéíóúñA-ZÁÉÍÓÚÑ]+(?:\s+[a-záéíóúñA-ZÁÉÍÓÚÑ]+)?)/i);
-    if (enMatch) concept = enMatch[1].charAt(0).toUpperCase() + enMatch[1].slice(1);
+    // 1. Buscar tras "por" o "de"
+    const porMatch = input.match(/(?:por|de)\s+([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{2,40}?)(?:\s*[,.]|$)/i)
+    if (porMatch) {
+      concept = porMatch[1].trim().charAt(0).toUpperCase() + porMatch[1].trim().slice(1)
+    } else {
+      // 2. Texto libre después del importe (ej: "75 euros venta peluqueria")
+      const afterAmt = input.replace(/^[\s\S]*?\d+(?:[.,]\d+)?\s*(?:€|euros?)?\s*/i, '').trim()
+      const stripped = afterAmt.replace(/^(crea|apunta|anota|mete|pon|registra|nuevo|alta|ingreso|gasto|cobro|cobré|recibí)\s*/gi, '').trim()
+      if (stripped && stripped.length > 2) {
+        concept = stripped.charAt(0).toUpperCase() + stripped.slice(1)
+      }
+    }
   }
 
   const vat = amount ? amount * 0.21 : 0;
@@ -99,8 +139,16 @@ function parseExpense(input: string, amounts: number[]): ParsedInput {
 
   // Intentar extraer concepto del texto si no está en la lista
   if (concept === 'Gasto') {
-    const enMatch = input.match(/(?:en|por)\s+([a-záéíóúñA-ZÁÉÍÓÚÑ]+(?:\s+[a-záéíóúñA-ZÁÉÍÓÚÑ]+)?)/i);
-    if (enMatch) concept = enMatch[1].charAt(0).toUpperCase() + enMatch[1].slice(1);
+    const porMatch = input.match(/(?:en|por)\s+([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{2,40}?)(?:\s*[,.]|$)/i)
+    if (porMatch) {
+      concept = porMatch[1].trim().charAt(0).toUpperCase() + porMatch[1].trim().slice(1)
+    } else {
+      const afterAmt = input.replace(/^[\s\S]*?\d+(?:[.,]\d+)?\s*(?:€|euros?)?\s*/i, '').trim()
+      const stripped = afterAmt.replace(/^(crea|apunta|anota|mete|pon|registra|nuevo|alta|ingreso|gasto|cobro|gasté|pagué)\s*/gi, '').trim()
+      if (stripped && stripped.length > 2) {
+        concept = stripped.charAt(0).toUpperCase() + stripped.slice(1)
+      }
+    }
   }
 
   return {
