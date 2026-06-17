@@ -18,7 +18,7 @@ export const exportPublicRoutes = new Hono()
 export const exportGestorRoutes = new Hono()
 
 const JWT_SECRET = new TextEncoder().encode(
-  Deno?.env?.get?.('JWT_SECRET') ?? process.env.JWT_SECRET ?? ''
+  process.env.JWT_SECRET ?? ''
 )
 const EXPORT_TOKEN_TYPE = 'diabolus_export_v1'
 

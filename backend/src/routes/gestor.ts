@@ -28,7 +28,7 @@ export const gestorPublicRoutes = new Hono()
 export const gestorRoutes = new Hono()
 
 const JWT_SECRET = new TextEncoder().encode(
-  Deno?.env?.get?.('JWT_SECRET') ?? process.env.JWT_SECRET ?? ''
+  process.env.JWT_SECRET ?? ''
 )
 
 const INVITE_EXPIRY_HOURS = 168 // 7 días
