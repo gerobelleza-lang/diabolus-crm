@@ -2,7 +2,7 @@
 // Estrategia: Cache-first para el app shell; Network-only para /api/*
 // Offline: muestra offline.html honesto, sin simular acciones.
 
-const CACHE_NAME = 'diabolus-shell-v1';
+const CACHE_NAME = 'diabolus-shell-v2';
 
 // App shell — lo que se precarga al instalar el SW
 const SHELL_URLS = [
