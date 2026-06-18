@@ -37,9 +37,7 @@
       transition: all .2s;
     }
     .btn-sm:hover { color: var(--text); border-color: var(--accent); }
-    .btn-primary {
-      background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700;
-    }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
     .btn-primary:hover { background: var(--accent-glow); }
 
     /* ── NAV ── */
@@ -62,7 +60,7 @@
     .hero {
       background: linear-gradient(135deg, rgba(139,92,246,.12), rgba(227,190,122,.07));
       border: 1px solid rgba(139,92,246,.25);
-      border-radius: 18px; padding: 28px 32px; margin-bottom: 28px;
+      border-radius: 18px; padding: 28px 32px; margin-bottom: 24px;
       display: flex; align-items: center; gap: 24px;
     }
     .hero-icon { font-size: 48px; line-height: 1; }
@@ -75,50 +73,151 @@
     }
     .badge.gold { background: rgba(227,190,122,.12); color: var(--gold); border-color: rgba(227,190,122,.3); }
 
-    /* ── STAMP AREA ── */
-    .stamp-card {
-      background: var(--surface); border: 2px dashed rgba(139,92,246,.35);
-      border-radius: var(--radius); padding: 28px; margin-bottom: 28px;
-      transition: border-color .2s;
+    /* ── MODULE TABS ── */
+    .mod-tabs {
+      display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
     }
-    .stamp-card:hover { border-color: var(--accent); }
-    .stamp-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+    .mod-tab {
+      padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 11px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+      cursor: pointer; transition: all .2s;
+    }
+    .mod-tab:hover { color: var(--text); border-color: var(--accent); }
+    .mod-tab.active {
+      background: rgba(139,92,246,.15); color: var(--accent);
+      border-color: rgba(139,92,246,.5);
+    }
 
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+    }
+    .card-dashed {
+      border: 2px dashed rgba(139,92,246,.35);
+    }
+    .card-dashed:hover { border-color: var(--accent); }
+    .card h2 { font-size: 16px; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+
+    /* ── STEPS ── */
+    .steps-header {
+      display: flex; gap: 0; margin-bottom: 28px; border-radius: 11px; overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .step-pill {
+      flex: 1; text-align: center; padding: 10px 8px;
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      background: var(--surface2); border-right: 1px solid var(--border);
+      transition: all .3s;
+    }
+    .step-pill:last-child { border-right: none; }
+    .step-pill.active { background: rgba(139,92,246,.18); color: var(--accent); }
+    .step-pill.done { background: rgba(34,197,94,.1); color: var(--green); }
+
+    /* ── FORMS ── */
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     .form-row.full { grid-template-columns: 1fr; }
+    .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
     label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
-    input, select {
+    input, select, textarea {
       background: var(--surface2); border: 1px solid var(--border); border-radius: 9px;
       padding: 10px 14px; color: var(--text); font-size: 14px; font-family: var(--font);
-      outline: none; transition: border-color .2s;
+      outline: none; transition: border-color .2s; resize: vertical;
     }
-    input:focus, select:focus { border-color: var(--accent); }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
     select option { background: var(--surface2); }
+    textarea { min-height: 80px; }
 
+    /* ── TEMPLATE GRID ── */
+    .template-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px;
+      margin-bottom: 20px;
+    }
+    .template-card {
+      background: var(--surface2); border: 2px solid var(--border);
+      border-radius: 12px; padding: 16px 12px; text-align: center;
+      cursor: pointer; transition: all .2s;
+    }
+    .template-card:hover { border-color: rgba(139,92,246,.5); }
+    .template-card.selected { border-color: var(--accent); background: rgba(139,92,246,.1); }
+    .template-card .tpl-icon { font-size: 28px; margin-bottom: 8px; }
+    .template-card .tpl-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .template-card .tpl-desc { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    /* ── SIGNATURE PAD ── */
+    .sig-container {
+      position: relative; border-radius: 12px; overflow: hidden;
+      border: 2px solid rgba(139,92,246,.35); background: #fff;
+      margin-bottom: 14px;
+    }
+    .sig-container:hover { border-color: var(--accent); }
+    #sig-canvas {
+      display: block; width: 100%; height: 200px; cursor: crosshair;
+      touch-action: none;
+    }
+    .sig-hint {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      pointer-events: none; transition: opacity .3s;
+    }
+    .sig-hint-inner {
+      text-align: center; color: #aaa;
+    }
+    .sig-hint-inner .icon { font-size: 28px; display: block; margin-bottom: 6px; }
+    .sig-hint-inner span { font-size: 13px; }
+    .sig-actions { display: flex; gap: 8px; margin-bottom: 16px; }
+    .btn-sig {
+      padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 9px;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 6px;
+    }
+    .btn-sig:hover { color: var(--text); border-color: var(--accent); }
+    .btn-sig.danger { border-color: rgba(239,68,68,.3); color: var(--red); }
+    .btn-sig.danger:hover { background: rgba(239,68,68,.1); }
+
+    /* ── MAIN CTA ── */
+    .btn-main {
+      width: 100%; padding: 13px; font-size: 15px; font-weight: 700;
+      background: linear-gradient(135deg, #8B5CF6, #7c3aed); color: #fff;
+      border: none; border-radius: 11px; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 8px;
+    }
+    .btn-main:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(139,92,246,.35); }
+    .btn-main:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-main.gold { background: linear-gradient(135deg, #E3BE7A, #c9a55a); color: #15101F; }
+    .btn-main.gold:hover { box-shadow: 0 8px 24px rgba(227,190,122,.3); }
+
+    /* ── NAV BUTTONS ── */
+    .step-nav { display: flex; gap: 10px; margin-top: 8px; }
+    .btn-back {
+      padding: 11px 20px; font-size: 14px; font-weight: 600; border-radius: 11px;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-back:hover { color: var(--text); border-color: var(--accent); }
+    .btn-next {
+      flex: 1; padding: 11px; font-size: 14px; font-weight: 700;
+      background: linear-gradient(135deg, #8B5CF6, #7c3aed); color: #fff;
+      border: none; border-radius: 11px; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(139,92,246,.35); }
+    .btn-next:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── DROP ZONE ── */
     .drop-zone {
       background: var(--surface2); border: 1px dashed var(--border);
       border-radius: 10px; padding: 28px; text-align: center; cursor: pointer;
       transition: all .2s; position: relative;
     }
-    .drop-zone:hover, .drop-zone.drag-over {
-      border-color: var(--accent); background: rgba(139,92,246,.06);
-    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: rgba(139,92,246,.06); }
     .drop-zone input[type=file] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: none;
     }
     .drop-zone .drop-icon { font-size: 32px; margin-bottom: 8px; }
     .drop-zone p { font-size: 13px; color: var(--muted); }
     .drop-zone .file-chosen { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 6px; }
-
-    .btn-stamp {
-      margin-top: 16px; width: 100%; padding: 13px; font-size: 15px; font-weight: 700;
-      background: linear-gradient(135deg, #8B5CF6, #7c3aed); color: #fff;
-      border: none; border-radius: 11px; cursor: pointer; transition: all .2s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .btn-stamp:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(139,92,246,.35); }
-    .btn-stamp:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
 
     /* ── CERTIFICATE RESULT ── */
     .certificate-result {
@@ -151,37 +250,30 @@
     .btn-cert.copy:hover { background: rgba(227,190,122,.15); }
     .btn-cert.share { border-color: rgba(139,92,246,.4); color: var(--accent); background: rgba(139,92,246,.08); }
     .btn-cert.share:hover { background: rgba(139,92,246,.15); }
+    .btn-cert.download { border-color: rgba(34,197,94,.4); color: var(--green); background: rgba(34,197,94,.08); }
+    .btn-cert.download:hover { background: rgba(34,197,94,.15); }
 
     /* ── DOCUMENT LIST ── */
-    .section-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 14px;
-    }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .section-header h2 { font-size: 16px; font-weight: 700; }
     .doc-list { display: flex; flex-direction: column; gap: 10px; }
     .doc-item {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 16px 18px;
-      display: flex; align-items: center; gap: 14px;
-      transition: border-color .2s;
+      display: flex; align-items: center; gap: 14px; transition: border-color .2s;
     }
     .doc-item:hover { border-color: rgba(139,92,246,.35); }
     .doc-icon { font-size: 24px; }
-    .doc-info { flex: 1; }
+    .doc-info { flex: 1; min-width: 0; }
     .doc-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
-    .doc-hash {
-      font-family: var(--mono); font-size: 11px; color: var(--muted);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;
-    }
+    .doc-hash { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
     .doc-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
     .doc-badge {
       font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
       background: rgba(34,197,94,.12); color: var(--green); border: 1px solid rgba(34,197,94,.25);
       white-space: nowrap;
     }
-    .doc-badge.level2 {
-      background: rgba(227,190,122,.12); color: var(--gold); border-color: rgba(227,190,122,.25);
-    }
+    .doc-badge.level2 { background: rgba(227,190,122,.12); color: var(--gold); border-color: rgba(227,190,122,.25); }
     .doc-actions { display: flex; gap: 8px; }
     .btn-icon {
       width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
@@ -189,6 +281,18 @@
       color: var(--muted); cursor: pointer; font-size: 15px; transition: all .2s;
     }
     .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── PREVIEW SECTION ── */
+    .preview-box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-bottom: 16px;
+      font-size: 13px; color: var(--muted); line-height: 1.7;
+    }
+    .preview-box .preview-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 10px; text-align: center; }
+    .preview-row { display: flex; gap: 8px; margin-bottom: 5px; }
+    .preview-row .pk { color: var(--muted); min-width: 110px; font-size: 12px; }
+    .preview-row .pv { color: var(--text); font-weight: 500; }
+    .preview-sep { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
     /* ── EMPTY ── */
     .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
@@ -218,8 +322,11 @@
     @media (max-width: 600px) {
       .hero { flex-direction: column; gap: 12px; padding: 20px; }
       .form-row { grid-template-columns: 1fr; }
+      .form-row.three { grid-template-columns: 1fr; }
       .cert-meta { grid-template-columns: 1fr; }
       .doc-hash { max-width: 160px; }
+      .steps-header .step-pill { font-size: 10px; padding: 8px 4px; }
+      #sig-canvas { height: 160px; }
     }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -229,7 +336,7 @@
 
 <header>
   <div class="logo">D<span>·</span></div>
-  <span class="header-title">⚖️ Documentos legales</span>
+  <span class="header-title">⚖️ Documentos & Contratos</span>
   <div class="header-actions">
     <a href="verify.html" class="btn-sm">🔍 Verificar</a>
     <a href="dashboard.html" class="btn-sm">⬡ Dashboard</a>
@@ -252,90 +359,331 @@
   <div class="hero">
     <div class="hero-icon">⛓️</div>
     <div>
-      <h1>Sellado de tiempo SHA-256</h1>
-      <p>Cada documento recibe una huella digital única e inalterable con marca temporal. Prueba legal de que el documento existía en ese momento exacto, sin posibilidad de manipulación.</p>
+      <h1>Documentos legales sellados</h1>
+      <p>Crea contratos, fírmalos con dedo o ratón y séllalos con SHA-256. Prueba legal inmutable de que el documento existía y fue firmado en ese momento exacto.</p>
       <div class="hero-badges">
-        <span class="badge">⚡ Nivel 1 — SHA-256</span>
+        <span class="badge">✍️ Firma manuscrita digital</span>
+        <span class="badge">⛓️ Nivel 1 — SHA-256</span>
         <span class="badge gold">🔐 Nivel 2 — Firmafiy (próximamente)</span>
       </div>
     </div>
   </div>
 
-  <!-- STAMP AREA -->
-  <div class="stamp-card">
-    <h2>📄 Sellar nuevo documento</h2>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Nombre del documento</label>
-        <input type="text" id="doc-name" placeholder="Contrato servicios cliente X" />
-      </div>
-      <div class="form-group">
-        <label>Tipo de documento</label>
-        <select id="doc-type">
-          <option value="contrato">Contrato de servicios</option>
-          <option value="presupuesto">Presupuesto aceptado</option>
-          <option value="nda">NDA / Confidencialidad</option>
-          <option value="encargo">Carta de encargo</option>
-          <option value="cesion">Cesión de derechos</option>
-          <option value="pagare">Acuerdo de pago</option>
-          <option value="general">Otro</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Drop zone -->
-    <div class="drop-zone" id="drop-zone">
-      <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.png,.jpg" />
-      <div class="drop-icon">📎</div>
-      <p>Arrastra el archivo aquí o haz clic para seleccionar</p>
-      <p style="font-size:11px;margin-top:4px;">PDF, Word, imagen — cualquier archivo</p>
-      <p class="file-chosen" id="file-chosen" style="display:none"></p>
-    </div>
-
-    <button class="btn-stamp" id="btn-stamp" disabled>
-      <span id="stamp-btn-text">⛓️ Sellar con SHA-256</span>
-      <div class="spinner" id="stamp-spinner" style="display:none"></div>
-    </button>
+  <!-- MODULE TABS -->
+  <div class="mod-tabs">
+    <button class="mod-tab active" onclick="switchTab('crear')">📝 Crear y firmar contrato</button>
+    <button class="mod-tab" onclick="switchTab('sellar')">📎 Sellar archivo existente</button>
   </div>
 
-  <!-- CERTIFICATE RESULT -->
-  <div class="certificate-result" id="cert-result">
-    <div class="cert-header">
-      <span class="check">✅</span>
-      <div>
-        <h3>Documento sellado correctamente</h3>
-        <p>Guardado en el registro inmutable de Diabolus</p>
-      </div>
-    </div>
-    <div class="cert-hash">
-      <div class="label">Huella SHA-256</div>
-      <span id="cert-hash-value"></span>
-    </div>
-    <div class="cert-meta">
-      <div class="cert-field">
-        <div class="key">Fecha y hora (Madrid)</div>
-        <div class="val" id="cert-date"></div>
-      </div>
-      <div class="cert-field">
-        <div class="key">Tipo</div>
-        <div class="val" id="cert-type"></div>
-      </div>
-      <div class="cert-field">
-        <div class="key">ID de certificado</div>
-        <div class="val" id="cert-id" style="font-family:var(--mono);font-size:11px"></div>
-      </div>
-      <div class="cert-field">
-        <div class="key">Nivel</div>
-        <div class="val">Sellado de tiempo SHA-256</div>
-      </div>
-    </div>
-    <div class="cert-actions">
-      <button class="btn-cert copy" id="btn-copy-hash">📋 Copiar hash</button>
-      <button class="btn-cert share" id="btn-copy-url">🔗 Copiar URL verificación</button>
-    </div>
-  </div>
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB: CREAR Y FIRMAR CONTRATO                           -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="tab-crear">
 
-  <!-- DOCUMENT LIST -->
+    <!-- STEPS INDICATOR -->
+    <div class="steps-header">
+      <div class="step-pill active" id="step-pill-1">1 · Plantilla</div>
+      <div class="step-pill" id="step-pill-2">2 · Datos</div>
+      <div class="step-pill" id="step-pill-3">3 · Firmar</div>
+      <div class="step-pill" id="step-pill-4">4 · Certificado</div>
+    </div>
+
+    <!-- STEP 1: TEMPLATE -->
+    <div id="step-1" class="card">
+      <h2>Elige el tipo de contrato</h2>
+      <div class="template-grid">
+        <div class="template-card selected" data-tpl="servicios" onclick="selectTemplate(this)">
+          <div class="tpl-icon">📝</div>
+          <div class="tpl-name">Prestación de servicios</div>
+          <div class="tpl-desc">El más habitual</div>
+        </div>
+        <div class="template-card" data-tpl="presupuesto" onclick="selectTemplate(this)">
+          <div class="tpl-icon">💰</div>
+          <div class="tpl-name">Presupuesto aceptado</div>
+          <div class="tpl-desc">Con firma de aceptación</div>
+        </div>
+        <div class="template-card" data-tpl="nda" onclick="selectTemplate(this)">
+          <div class="tpl-icon">🔏</div>
+          <div class="tpl-name">NDA</div>
+          <div class="tpl-desc">Confidencialidad</div>
+        </div>
+        <div class="template-card" data-tpl="encargo" onclick="selectTemplate(this)">
+          <div class="tpl-icon">📋</div>
+          <div class="tpl-name">Carta de encargo</div>
+          <div class="tpl-desc">Inicio de trabajo</div>
+        </div>
+        <div class="template-card" data-tpl="pago" onclick="selectTemplate(this)">
+          <div class="tpl-icon">💸</div>
+          <div class="tpl-name">Acuerdo de pago</div>
+          <div class="tpl-desc">Fraccionado / aplazado</div>
+        </div>
+        <div class="template-card" data-tpl="cesion" onclick="selectTemplate(this)">
+          <div class="tpl-icon">©️</div>
+          <div class="tpl-name">Cesión de derechos</div>
+          <div class="tpl-desc">Propiedad intelectual</div>
+        </div>
+      </div>
+      <button class="btn-next" id="btn-next-1" onclick="goStep(2)">Continuar →</button>
+    </div>
+
+    <!-- STEP 2: DATOS -->
+    <div id="step-2" class="card" style="display:none">
+      <h2 id="step2-title">📝 Datos del contrato</h2>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre del documento</label>
+          <input type="text" id="c-doc-name" placeholder="Ej: Contrato María García — Jun 2026" />
+        </div>
+        <div class="form-group">
+          <label>Fecha del contrato</label>
+          <input type="date" id="c-fecha" />
+        </div>
+      </div>
+
+      <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:14px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">PARTE A — PROVEEDOR (TÚ)</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre / Razón social</label>
+            <input type="text" id="c-prov-nombre" placeholder="Tu nombre o empresa" />
+          </div>
+          <div class="form-group">
+            <label>NIF / CIF</label>
+            <input type="text" id="c-prov-nif" placeholder="12345678A" />
+          </div>
+        </div>
+      </div>
+
+      <div style="background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:10px;padding:14px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px;">PARTE B — CLIENTE</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre completo</label>
+            <input type="text" id="c-cli-nombre" placeholder="Nombre del cliente" />
+          </div>
+          <div class="form-group">
+            <label>DNI / NIF</label>
+            <input type="text" id="c-cli-nif" placeholder="87654321B" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="c-cli-email" placeholder="cliente@email.com" />
+          </div>
+          <div class="form-group">
+            <label>Teléfono (opcional)</label>
+            <input type="tel" id="c-cli-tel" placeholder="+34 600 000 000" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label id="c-objeto-label">Descripción del servicio</label>
+          <textarea id="c-objeto" placeholder="Describe detalladamente el servicio o trabajo a realizar..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-row three" id="c-importe-row">
+        <div class="form-group">
+          <label>Importe (€)</label>
+          <input type="number" id="c-importe" placeholder="0.00" step="0.01" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Forma de pago</label>
+          <select id="c-pago">
+            <option>Al contado</option>
+            <option>Transferencia bancaria</option>
+            <option>50% anticipo + 50% entrega</option>
+            <option>Fraccionado (ver condiciones)</option>
+            <option>A convenir</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Plazo entrega / vigencia</label>
+          <input type="text" id="c-plazo" placeholder="Ej: 30 días / 1 año" />
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Condiciones adicionales (opcional)</label>
+          <textarea id="c-condiciones" placeholder="Condiciones especiales, penalizaciones, exclusividad, etc." style="min-height:60px;"></textarea>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="goStep(1)">← Atrás</button>
+        <button class="btn-next" onclick="goStep(3)">Continuar → Firmar</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: FIRMA -->
+    <div id="step-3" class="card" style="display:none">
+      <h2>✍️ Firma del cliente</h2>
+
+      <!-- Preview compacto -->
+      <div class="preview-box" id="contract-preview">
+        <div class="preview-title" id="prev-title">Contrato de prestación de servicios</div>
+        <div class="preview-row"><span class="pk">Proveedor:</span><span class="pv" id="prev-prov">—</span></div>
+        <div class="preview-row"><span class="pk">Cliente:</span><span class="pv" id="prev-cli">—</span></div>
+        <hr class="preview-sep">
+        <div class="preview-row"><span class="pk">Objeto:</span><span class="pv" id="prev-objeto" style="white-space:pre-wrap;">—</span></div>
+        <div class="preview-row" id="prev-importe-row"><span class="pk">Importe:</span><span class="pv" id="prev-importe">—</span></div>
+        <div class="preview-row"><span class="pk">Fecha:</span><span class="pv" id="prev-fecha">—</span></div>
+      </div>
+
+      <!-- Signature pad -->
+      <label style="margin-bottom:8px;display:block;">Firma aquí (dedo en móvil / ratón en portátil)</label>
+      <div class="sig-container">
+        <canvas id="sig-canvas"></canvas>
+        <div class="sig-hint" id="sig-hint">
+          <div class="sig-hint-inner">
+            <span class="icon">✍️</span>
+            <span>Dibuja tu firma aquí</span>
+          </div>
+        </div>
+      </div>
+      <div class="sig-actions">
+        <button class="btn-sig danger" onclick="clearSignature()">🗑️ Limpiar firma</button>
+        <button class="btn-sig" id="btn-sig-status" style="color:var(--muted);cursor:default;border:none;">Firma vacía</button>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="goStep(2)">← Atrás</button>
+        <button class="btn-next" id="btn-generar" onclick="generarYSellar()" disabled>⛓️ Generar PDF y sellar</button>
+      </div>
+
+      <!-- Loading state -->
+      <div id="gen-loading" style="display:none;text-align:center;padding:20px;color:var(--muted);">
+        <div class="spinner" style="margin:0 auto 12px;border-top-color:var(--accent);border-color:rgba(139,92,246,.2);"></div>
+        <div id="gen-status">Generando PDF...</div>
+      </div>
+    </div>
+
+    <!-- STEP 4: CERTIFICADO -->
+    <div id="step-4" style="display:none">
+      <div class="certificate-result" id="cert-result-crear" style="display:block;">
+        <div class="cert-header">
+          <span class="check">✅</span>
+          <div>
+            <h3>Contrato firmado y sellado</h3>
+            <p>El documento tiene validez probatoria con sello SHA-256</p>
+          </div>
+        </div>
+        <div class="cert-hash">
+          <div class="label">Huella SHA-256</div>
+          <span id="cert-hash-crear"></span>
+        </div>
+        <div class="cert-meta">
+          <div class="cert-field">
+            <div class="key">Fecha y hora (Madrid)</div>
+            <div class="val" id="cert-date-crear"></div>
+          </div>
+          <div class="cert-field">
+            <div class="key">Tipo</div>
+            <div class="val" id="cert-type-crear"></div>
+          </div>
+          <div class="cert-field">
+            <div class="key">ID de certificado</div>
+            <div class="val" id="cert-id-crear" style="font-family:var(--mono);font-size:11px"></div>
+          </div>
+          <div class="cert-field">
+            <div class="key">Nivel</div>
+            <div class="val">Sellado de tiempo SHA-256</div>
+          </div>
+        </div>
+        <div class="cert-actions">
+          <button class="btn-cert copy" id="btn-copy-hash-crear">📋 Copiar hash</button>
+          <button class="btn-cert share" id="btn-copy-url-crear">🔗 Copiar URL verificación</button>
+          <button class="btn-cert download" id="btn-download-pdf">⬇️ Descargar PDF</button>
+        </div>
+      </div>
+      <button class="btn-main" onclick="resetCrear()" style="max-width:340px;margin:0 auto 28px;">➕ Crear otro contrato</button>
+    </div>
+
+  </div><!-- /tab-crear -->
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB: SELLAR ARCHIVO EXISTENTE                          -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="tab-sellar" style="display:none">
+    <div class="card card-dashed">
+      <h2>📎 Sellar documento existente</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre del documento</label>
+          <input type="text" id="doc-name" placeholder="Contrato servicios cliente X" />
+        </div>
+        <div class="form-group">
+          <label>Tipo de documento</label>
+          <select id="doc-type">
+            <option value="contrato">Contrato de servicios</option>
+            <option value="presupuesto">Presupuesto aceptado</option>
+            <option value="nda">NDA / Confidencialidad</option>
+            <option value="encargo">Carta de encargo</option>
+            <option value="cesion">Cesión de derechos</option>
+            <option value="pagare">Acuerdo de pago</option>
+            <option value="general">Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.png,.jpg" />
+        <div class="drop-icon">📎</div>
+        <p>Arrastra el archivo aquí o haz clic para seleccionar</p>
+        <p style="font-size:11px;margin-top:4px;">PDF, Word, imagen — cualquier archivo</p>
+        <p class="file-chosen" id="file-chosen" style="display:none"></p>
+      </div>
+      <button class="btn-main" id="btn-stamp" disabled style="margin-top:16px;">
+        <span id="stamp-btn-text">⛓️ Sellar con SHA-256</span>
+        <div class="spinner" id="stamp-spinner" style="display:none"></div>
+      </button>
+    </div>
+
+    <!-- CERTIFICATE RESULT (sellar) -->
+    <div class="certificate-result" id="cert-result-sellar">
+      <div class="cert-header">
+        <span class="check">✅</span>
+        <div>
+          <h3>Documento sellado correctamente</h3>
+          <p>Guardado en el registro inmutable de Diabolus</p>
+        </div>
+      </div>
+      <div class="cert-hash">
+        <div class="label">Huella SHA-256</div>
+        <span id="cert-hash-sellar"></span>
+      </div>
+      <div class="cert-meta">
+        <div class="cert-field">
+          <div class="key">Fecha y hora (Madrid)</div>
+          <div class="val" id="cert-date-sellar"></div>
+        </div>
+        <div class="cert-field">
+          <div class="key">Tipo</div>
+          <div class="val" id="cert-type-sellar"></div>
+        </div>
+        <div class="cert-field">
+          <div class="key">ID de certificado</div>
+          <div class="val" id="cert-id-sellar" style="font-family:var(--mono);font-size:11px"></div>
+        </div>
+        <div class="cert-field">
+          <div class="key">Nivel</div>
+          <div class="val">Sellado de tiempo SHA-256</div>
+        </div>
+      </div>
+      <div class="cert-actions">
+        <button class="btn-cert copy" id="btn-copy-hash-sellar">📋 Copiar hash</button>
+        <button class="btn-cert share" id="btn-copy-url-sellar">🔗 Copiar URL verificación</button>
+      </div>
+    </div>
+  </div><!-- /tab-sellar -->
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- DOCUMENT LIST                                          -->
+  <!-- ═══════════════════════════════════════════════════════ -->
   <div class="section-header">
     <h2>📋 Documentos sellados</h2>
     <button class="btn-sm" onclick="loadDocuments()">↺ Actualizar</button>
@@ -351,178 +699,624 @@
 
 <div id="toast"></div>
 
+<!-- LIBS -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
 <script>
-  const API = 'https://diabolus-crm-api.vercel.app';
+// @ts-nocheck
+const API = 'https://diabolus-crm-api.vercel.app';
 
-  function getAuth() {
-    const stored = localStorage.getItem('diabolus_auth');
-    if (!stored) { window.location.href = 'index-login.html'; return null; }
-    return JSON.parse(stored);
-  }
+function getAuth() {
+  const stored = localStorage.getItem('diabolus_auth');
+  if (!stored) { window.location.href = 'index-login.html'; return null; }
+  return JSON.parse(stored);
+}
 
-  // ── File handling ──────────────────────────────────────────
-  let selectedFile = null;
-
-  const dropZone = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
-  const fileChosen = document.getElementById('file-chosen');
-  const btnStamp = document.getElementById('btn-stamp');
-
-  fileInput.addEventListener('change', e => {
-    if (e.target.files[0]) setFile(e.target.files[0]);
+// ══════════════════════════════════════════════
+// MODULE TABS
+// ══════════════════════════════════════════════
+function switchTab(tab) {
+  document.getElementById('tab-crear').style.display = tab === 'crear' ? 'block' : 'none';
+  document.getElementById('tab-sellar').style.display = tab === 'sellar' ? 'block' : 'none';
+  document.querySelectorAll('.mod-tab').forEach((el, i) => {
+    el.classList.toggle('active', (i === 0 && tab === 'crear') || (i === 1 && tab === 'sellar'));
   });
+}
 
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault(); dropZone.classList.remove('drag-over');
-    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
-  });
+// ══════════════════════════════════════════════
+// STEP WIZARD
+// ══════════════════════════════════════════════
+let currentStep = 1;
+let selectedTpl = 'servicios';
+let signaturePad = null;
+let lastPdfBase64 = null;
+let lastCertData = null;
 
-  function setFile(file) {
-    selectedFile = file;
-    fileChosen.textContent = `✅ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
-    fileChosen.style.display = 'block';
-    btnStamp.disabled = false;
+const tplTitles = {
+  servicios: 'Contrato de prestación de servicios',
+  presupuesto: 'Presupuesto aceptado',
+  nda: 'Acuerdo de confidencialidad (NDA)',
+  encargo: 'Carta de encargo profesional',
+  pago: 'Acuerdo de pago',
+  cesion: 'Cesión de derechos de propiedad intelectual',
+};
+
+function selectTemplate(el) {
+  document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTpl = el.dataset.tpl;
+}
+
+function goStep(n) {
+  // Validate before going forward
+  if (n === 3) {
+    if (!validateStep2()) return;
+    updatePreview();
   }
 
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // ── Stamp ──────────────────────────────────────────────────
-  btnStamp.addEventListener('click', async () => {
-    const auth = getAuth();
-    if (!auth || !selectedFile) return;
-
-    const docName = document.getElementById('doc-name').value.trim() || selectedFile.name;
-    const docType = document.getElementById('doc-type').value;
-
-    btnStamp.disabled = true;
-    document.getElementById('stamp-btn-text').style.display = 'none';
-    document.getElementById('stamp-spinner').style.display = 'block';
-
-    try {
-      const b64 = await fileToBase64(selectedFile);
-      const res = await fetch(`${API}/api/documents/stamp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
-        body: JSON.stringify({
-          document_name: docName,
-          document_base64: b64,
-          document_type: docType,
-          salon_id: auth.salon_id,
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      showCertificate(data);
-      toast('✅ Documento sellado correctamente', 'success');
-      loadDocuments();
-    } catch (err) {
-      toast('❌ ' + err.message, 'error');
-    } finally {
-      btnStamp.disabled = false;
-      document.getElementById('stamp-btn-text').style.display = 'inline';
-      document.getElementById('stamp-spinner').style.display = 'none';
+  // Show/hide steps
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step-' + i) || document.getElementById('step-' + i);
+    if (i === 4) {
+      document.getElementById('step-4').style.display = i === n ? 'block' : 'none';
+    } else {
+      const s = document.getElementById('step-' + i);
+      if (s) s.style.display = i === n ? 'block' : 'none';
     }
+  }
+
+  // Pills
+  for (let i = 1; i <= 4; i++) {
+    const pill = document.getElementById('step-pill-' + i);
+    pill.classList.remove('active', 'done');
+    if (i < n) pill.classList.add('done');
+    if (i === n) pill.classList.add('active');
+  }
+
+  currentStep = n;
+
+  // Init signature pad on step 3
+  if (n === 3) initSignaturePad();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function validateStep2() {
+  const nombre = document.getElementById('c-doc-name').value.trim();
+  const provNombre = document.getElementById('c-prov-nombre').value.trim();
+  const cliNombre = document.getElementById('c-cli-nombre').value.trim();
+  const objeto = document.getElementById('c-objeto').value.trim();
+
+  if (!provNombre) { toast('❌ Añade el nombre del proveedor', 'error'); return false; }
+  if (!cliNombre) { toast('❌ Añade el nombre del cliente', 'error'); return false; }
+  if (!objeto) { toast('❌ Describe el objeto del contrato', 'error'); return false; }
+  return true;
+}
+
+function updatePreview() {
+  const tpl = tplTitles[selectedTpl] || 'Documento';
+  document.getElementById('prev-title').textContent = tpl;
+  document.getElementById('step2-title').textContent = '📝 ' + tpl;
+
+  const prov = document.getElementById('c-prov-nombre').value.trim();
+  const provNif = document.getElementById('c-prov-nif').value.trim();
+  const cli = document.getElementById('c-cli-nombre').value.trim();
+  const cliNif = document.getElementById('c-cli-nif').value.trim();
+  const objeto = document.getElementById('c-objeto').value.trim();
+  const importe = document.getElementById('c-importe').value;
+  const fecha = document.getElementById('c-fecha').value;
+
+  document.getElementById('prev-prov').textContent = prov + (provNif ? ` — ${provNif}` : '');
+  document.getElementById('prev-cli').textContent = cli + (cliNif ? ` — DNI/NIF: ${cliNif}` : '');
+  document.getElementById('prev-objeto').textContent = objeto.length > 120 ? objeto.slice(0, 120) + '...' : objeto;
+  document.getElementById('prev-importe').textContent = importe ? `${parseFloat(importe).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €` : 'A convenir';
+  document.getElementById('prev-fecha').textContent = fecha ? new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('es-ES');
+}
+
+// ══════════════════════════════════════════════
+// SIGNATURE PAD
+// ══════════════════════════════════════════════
+function initSignaturePad() {
+  if (signaturePad) return; // Already initialized
+
+  const canvas = document.getElementById('sig-canvas');
+  const container = canvas.parentElement;
+
+  // Set canvas size to match container
+  function resizeCanvas() {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = container.offsetWidth * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    canvas.getContext('2d').scale(ratio, ratio);
+    if (signaturePad) signaturePad.clear();
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  signaturePad = new SignaturePad(canvas, {
+    backgroundColor: 'rgb(255, 255, 255)',
+    penColor: '#1a1a2e',
+    minWidth: 1.5,
+    maxWidth: 3.5,
   });
 
-  function showCertificate(data) {
-    document.getElementById('cert-result').style.display = 'block';
-    document.getElementById('cert-hash-value').textContent = data.hash;
-    document.getElementById('cert-date').textContent = data.stamped_at_madrid;
-    document.getElementById('cert-type').textContent = data.document_type;
-    document.getElementById('cert-id').textContent = data.certificate_id;
-    document.getElementById('cert-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  signaturePad.addEventListener('beginStroke', () => {
+    document.getElementById('sig-hint').style.opacity = '0';
+  });
 
-    document.getElementById('btn-copy-hash').onclick = () => {
+  signaturePad.addEventListener('afterUpdateStroke', () => {
+    const isEmpty = signaturePad.isEmpty();
+    document.getElementById('btn-generar').disabled = isEmpty;
+    document.getElementById('btn-sig-status').textContent = isEmpty ? 'Firma vacía' : '✅ Firma lista';
+    document.getElementById('btn-sig-status').style.color = isEmpty ? 'var(--muted)' : 'var(--green)';
+  });
+}
+
+function clearSignature() {
+  if (signaturePad) {
+    signaturePad.clear();
+    document.getElementById('sig-hint').style.opacity = '1';
+    document.getElementById('btn-generar').disabled = true;
+    document.getElementById('btn-sig-status').textContent = 'Firma vacía';
+    document.getElementById('btn-sig-status').style.color = 'var(--muted)';
+  }
+}
+
+// ══════════════════════════════════════════════
+// GENERATE PDF + STAMP
+// ══════════════════════════════════════════════
+async function generarYSellar() {
+  const auth = getAuth();
+  if (!auth) return;
+  if (!signaturePad || signaturePad.isEmpty()) {
+    toast('❌ Firma el documento antes de continuar', 'error');
+    return;
+  }
+
+  document.getElementById('btn-generar').disabled = true;
+  document.getElementById('gen-loading').style.display = 'block';
+  document.getElementById('gen-status').textContent = 'Generando PDF firmado...';
+
+  try {
+    // Get form data
+    const docName = document.getElementById('c-doc-name').value.trim() ||
+      (tplTitles[selectedTpl] + ' — ' + document.getElementById('c-cli-nombre').value.trim());
+    const tplTitle = tplTitles[selectedTpl] || 'Documento';
+    const provNombre = document.getElementById('c-prov-nombre').value.trim();
+    const provNif = document.getElementById('c-prov-nif').value.trim();
+    const cliNombre = document.getElementById('c-cli-nombre').value.trim();
+    const cliNif = document.getElementById('c-cli-nif').value.trim();
+    const cliEmail = document.getElementById('c-cli-email').value.trim();
+    const objeto = document.getElementById('c-objeto').value.trim();
+    const importe = document.getElementById('c-importe').value;
+    const pago = document.getElementById('c-pago').value;
+    const plazo = document.getElementById('c-plazo').value.trim();
+    const condiciones = document.getElementById('c-condiciones').value.trim();
+    const fechaInput = document.getElementById('c-fecha').value;
+    const fechaStr = fechaInput
+      ? new Date(fechaInput + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+      : new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    // Get signature image
+    const sigDataURL = signaturePad.toDataURL('image/png');
+
+    // Generate PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const W = 210, margin = 20, lineH = 7;
+    let y = 20;
+
+    // ── Header bar ──
+    doc.setFillColor(21, 16, 31);
+    doc.rect(0, 0, W, 18, 'F');
+    doc.setTextColor(139, 92, 246);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DIABOLUS CRM', margin, 12);
+    doc.setTextColor(227, 190, 122);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Documento con sellado de tiempo SHA-256', W - margin, 12, { align: 'right' });
+
+    y = 32;
+
+    // ── Title ──
+    doc.setTextColor(21, 16, 31);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(tplTitle.toUpperCase(), W / 2, y, { align: 'center' });
+    y += 4;
+    doc.setDrawColor(139, 92, 246);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, W - margin, y);
+    y += 10;
+
+    // ── Date ──
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Fecha de formalización: ${fechaStr}`, W - margin, y, { align: 'right' });
+    y += 10;
+
+    // ── Parties ──
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(21, 16, 31);
+    doc.text('PARTES INTERVINIENTES', margin, y);
+    y += 7;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(80, 50, 150);
+    doc.text('PARTE A — PROVEEDOR:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 30, 30);
+    doc.text(`${provNombre}${provNif ? '  ·  NIF/CIF: ' + provNif : ''}`, margin + 55, y);
+    y += lineH;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(20, 120, 60);
+    doc.text('PARTE B — CLIENTE:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 30, 30);
+    doc.text(`${cliNombre}${cliNif ? '  ·  DNI/NIF: ' + cliNif : ''}${cliEmail ? '  ·  ' + cliEmail : ''}`, margin + 55, y);
+    y += lineH + 4;
+
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y, W - margin, y);
+    y += 8;
+
+    // ── Object ──
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(21, 16, 31);
+    doc.setFontSize(10);
+    doc.text('OBJETO DEL CONTRATO', margin, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(40, 40, 40);
+    const objetoLines = doc.splitTextToSize(objeto, W - margin * 2);
+    doc.text(objetoLines, margin, y);
+    y += objetoLines.length * 6 + 6;
+
+    // ── Importe ──
+    if (importe) {
+      doc.line(margin, y, W - margin, y);
+      y += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(21, 16, 31);
+      doc.text('CONTRAPRESTACIÓN ECONÓMICA', margin, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40, 40, 40);
+      doc.text(`Importe: ${parseFloat(importe).toLocaleString('es-ES', { minimumFractionDigits: 2 })} € (IVA no incluido, según factura)`, margin, y);
+      y += lineH;
+      doc.text(`Forma de pago: ${pago}`, margin, y);
+      y += lineH;
+      if (plazo) { doc.text(`Plazo / Vigencia: ${plazo}`, margin, y); y += lineH; }
+      y += 2;
+    }
+
+    // ── Condiciones ──
+    if (condiciones) {
+      doc.line(margin, y, W - margin, y);
+      y += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(21, 16, 31);
+      doc.text('CONDICIONES ADICIONALES', margin, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40, 40, 40);
+      const condLines = doc.splitTextToSize(condiciones, W - margin * 2);
+      doc.text(condLines, margin, y);
+      y += condLines.length * 6 + 6;
+    }
+
+    // ── Legal clause ──
+    doc.line(margin, y, W - margin, y);
+    y += 8;
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(90, 90, 90);
+    const clausula = 'Ambas partes, de mutuo acuerdo, suscriben el presente documento, reconociendo haber leído y comprendido su contenido, aceptando todas las condiciones establecidas. Este documento ha sido generado y sellado digitalmente mediante Diabolus CRM, con huella SHA-256 como prueba de existencia e integridad.';
+    const clausulaLines = doc.splitTextToSize(clausula, W - margin * 2);
+    doc.text(clausulaLines, margin, y);
+    y += clausulaLines.length * 5 + 10;
+
+    // ── Signature ──
+    const sigY = Math.max(y, 220);
+    if (sigY + 50 > 280) {
+      doc.addPage();
+      y = 20;
+    } else {
+      y = sigY;
+    }
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(21, 16, 31);
+    doc.text('FIRMA DEL CLIENTE', W / 2 - 30, y);
+    y += 3;
+
+    // Signature image
+    try {
+      doc.addImage(sigDataURL, 'PNG', W / 2 - 35, y, 70, 28);
+    } catch(e) {}
+    y += 32;
+
+    doc.setDrawColor(21, 16, 31);
+    doc.setLineWidth(0.4);
+    doc.line(W / 2 - 35, y, W / 2 + 35, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    doc.text(cliNombre + (cliNif ? ` — DNI/NIF: ${cliNif}` : ''), W / 2, y, { align: 'center' });
+    y += 5;
+    doc.text(fechaStr, W / 2, y, { align: 'center' });
+
+    // ── Footer ──
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFillColor(21, 16, 31);
+      doc.rect(0, 287, W, 10, 'F');
+      doc.setTextColor(139, 92, 246);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Sellado con SHA-256 · Diabolus CRM · diabolus.es', W / 2, 293, { align: 'center' });
+    }
+
+    // Get base64
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+    lastPdfBase64 = pdfBase64;
+
+    // Store for download
+    window._lastPdfDoc = doc;
+    window._lastPdfName = docName;
+
+    // ── Stamp ──
+    document.getElementById('gen-status').textContent = 'Sellando con SHA-256...';
+
+    const res = await fetch(`${API}/api/documents/stamp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth.token}`
+      },
+      body: JSON.stringify({
+        document_name: docName,
+        document_base64: pdfBase64,
+        document_type: selectedTpl,
+        salon_id: auth.salon_id,
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al sellar');
+
+    lastCertData = data;
+
+    // Show certificate
+    document.getElementById('cert-hash-crear').textContent = data.hash;
+    document.getElementById('cert-date-crear').textContent = data.stamped_at_madrid;
+    document.getElementById('cert-type-crear').textContent = tplTitles[data.document_type] || data.document_type;
+    document.getElementById('cert-id-crear').textContent = data.certificate_id;
+
+    document.getElementById('btn-copy-hash-crear').onclick = () => {
       navigator.clipboard.writeText(data.hash);
       toast('📋 Hash copiado', 'success');
     };
-    document.getElementById('btn-copy-url').onclick = () => {
+    document.getElementById('btn-copy-url-crear').onclick = () => {
       navigator.clipboard.writeText(data.verify_url);
       toast('🔗 URL copiada', 'success');
     };
+    document.getElementById('btn-download-pdf').onclick = () => {
+      window._lastPdfDoc.save((window._lastPdfName || 'contrato') + '.pdf');
+      toast('⬇️ PDF descargado', 'success');
+    };
+
+    goStep(4);
+    loadDocuments();
+    toast('✅ Contrato firmado y sellado', 'success');
+
+  } catch (err) {
+    toast('❌ ' + err.message, 'error');
+    document.getElementById('btn-generar').disabled = false;
+  } finally {
+    document.getElementById('gen-loading').style.display = 'none';
   }
+}
 
-  // ── Load documents ─────────────────────────────────────────
-  async function loadDocuments() {
-    const auth = getAuth();
-    if (!auth) return;
+function resetCrear() {
+  goStep(1);
+  signaturePad = null;
+  document.getElementById('c-doc-name').value = '';
+  document.getElementById('c-prov-nombre').value = '';
+  document.getElementById('c-prov-nif').value = '';
+  document.getElementById('c-cli-nombre').value = '';
+  document.getElementById('c-cli-nif').value = '';
+  document.getElementById('c-cli-email').value = '';
+  document.getElementById('c-cli-tel').value = '';
+  document.getElementById('c-objeto').value = '';
+  document.getElementById('c-importe').value = '';
+  document.getElementById('c-condiciones').value = '';
+  // Reset date
+  document.getElementById('c-fecha').value = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+}
 
-    const list = document.getElementById('doc-list');
-    list.innerHTML = '<div class="empty"><div class="icon" style="font-size:24px;animation:spin .7s linear infinite">↻</div><p>Cargando...</p></div>';
+// ══════════════════════════════════════════════
+// SELLAR ARCHIVO EXISTENTE
+// ══════════════════════════════════════════════
+let selectedFile = null;
 
-    try {
-      const res = await fetch(`${API}/api/documents?salon_id=${auth.salon_id}`, {
-        headers: { 'Authorization': `Bearer ${auth.token}` }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const fileChosen = document.getElementById('file-chosen');
+const btnStamp = document.getElementById('btn-stamp');
 
-      const docs = data.documents || [];
-      if (!docs.length) {
-        list.innerHTML = '<div class="empty"><div class="icon">📄</div><p>Aún no has sellado ningún documento.<br>Sube el primero arriba.</p></div>';
-        return;
-      }
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) setFile(e.target.files[0]);
+});
 
-      const typeLabels = {
-        contrato: '📝 Contrato', presupuesto: '💰 Presupuesto', nda: '🔏 NDA',
-        encargo: '📋 Encargo', cesion: '©️ Cesión', pagare: '💸 Pago', general: '📄 Documento'
-      };
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
 
-      list.innerHTML = docs.map(doc => `
-        <div class="doc-item">
-          <div class="doc-icon">${typeLabels[doc.document_type]?.split(' ')[0] || '📄'}</div>
-          <div class="doc-info">
-            <div class="doc-name">${doc.document_name}</div>
-            <div class="doc-hash">SHA-256: ${doc.sha256_hash}</div>
-            <div class="doc-meta">${new Date(doc.stamped_at).toLocaleString('es-ES',{timeZone:'Europe/Madrid'})} · ${typeLabels[doc.document_type] || doc.document_type}</div>
-          </div>
-          <span class="doc-badge ${doc.level === 2 ? 'level2' : ''}">
-            ${doc.level === 1 ? '⛓️ Sellado' : '✍️ Firmafiy'}
-          </span>
-          <div class="doc-actions">
-            <button class="btn-icon" title="Copiar hash" onclick="copyHash('${doc.sha256_hash}')">📋</button>
-            <button class="btn-icon" title="Ver verificación" onclick="openVerify('${doc.sha256_hash}')">🔍</button>
-          </div>
-        </div>
-      `).join('');
-    } catch (err) {
-      list.innerHTML = `<div class="empty"><p>Error cargando documentos: ${err.message}</p></div>`;
+function setFile(file) {
+  selectedFile = file;
+  fileChosen.textContent = `✅ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+  fileChosen.style.display = 'block';
+  btnStamp.disabled = false;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+btnStamp.addEventListener('click', async () => {
+  const auth = getAuth();
+  if (!auth || !selectedFile) return;
+
+  const docName = document.getElementById('doc-name').value.trim() || selectedFile.name;
+  const docType = document.getElementById('doc-type').value;
+
+  btnStamp.disabled = true;
+  document.getElementById('stamp-btn-text').style.display = 'none';
+  document.getElementById('stamp-spinner').style.display = 'block';
+
+  try {
+    const b64 = await fileToBase64(selectedFile);
+    const res = await fetch(`${API}/api/documents/stamp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth.token}`
+      },
+      body: JSON.stringify({
+        document_name: docName,
+        document_base64: b64,
+        document_type: docType,
+        salon_id: auth.salon_id,
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    // Show certificate
+    const cert = document.getElementById('cert-result-sellar');
+    cert.style.display = 'block';
+    document.getElementById('cert-hash-sellar').textContent = data.hash;
+    document.getElementById('cert-date-sellar').textContent = data.stamped_at_madrid;
+    document.getElementById('cert-type-sellar').textContent = data.document_type;
+    document.getElementById('cert-id-sellar').textContent = data.certificate_id;
+
+    document.getElementById('btn-copy-hash-sellar').onclick = () => {
+      navigator.clipboard.writeText(data.hash);
+      toast('📋 Hash copiado', 'success');
+    };
+    document.getElementById('btn-copy-url-sellar').onclick = () => {
+      navigator.clipboard.writeText(data.verify_url);
+      toast('🔗 URL copiada', 'success');
+    };
+
+    cert.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast('✅ Documento sellado correctamente', 'success');
+    loadDocuments();
+  } catch (err) {
+    toast('❌ ' + err.message, 'error');
+  } finally {
+    btnStamp.disabled = false;
+    document.getElementById('stamp-btn-text').style.display = 'inline';
+    document.getElementById('stamp-spinner').style.display = 'none';
+  }
+});
+
+// ══════════════════════════════════════════════
+// DOCUMENT LIST
+// ══════════════════════════════════════════════
+async function loadDocuments() {
+  const auth = getAuth();
+  if (!auth) return;
+
+  const list = document.getElementById('doc-list');
+  list.innerHTML = '<div class="empty"><div class="icon" style="font-size:24px;animation:spin .7s linear infinite">↻</div><p>Cargando...</p></div>';
+
+  try {
+    const res = await fetch(`${API}/api/documents?salon_id=${auth.salon_id}`, {
+      headers: { 'Authorization': `Bearer ${auth.token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    const docs = data.documents || [];
+    if (!docs.length) {
+      list.innerHTML = '<div class="empty"><div class="icon">📄</div><p>Aún no has sellado ningún documento.<br>Crea y firma tu primer contrato arriba.</p></div>';
+      return;
     }
-  }
 
-  function copyHash(hash) {
-    navigator.clipboard.writeText(hash);
-    toast('📋 Hash copiado', 'success');
-  }
+    const typeLabels = {
+      contrato: '📝 Contrato', presupuesto: '💰 Presupuesto', nda: '🔏 NDA',
+      encargo: '📋 Encargo', cesion: '©️ Cesión', pagare: '💸 Pago', general: '📄 Documento',
+      servicios: '📝 Servicios', pago: '💸 Pago',
+    };
 
-  function openVerify(hash) {
-    window.open(`verify.html?hash=${hash}`, '_blank');
+    list.innerHTML = docs.map(doc => `
+      <div class="doc-item">
+        <div class="doc-icon">${(typeLabels[doc.document_type] || '📄').split(' ')[0]}</div>
+        <div class="doc-info">
+          <div class="doc-name">${doc.document_name}</div>
+          <div class="doc-hash">SHA-256: ${doc.sha256_hash}</div>
+          <div class="doc-meta">${new Date(doc.stamped_at).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })} · ${typeLabels[doc.document_type] || doc.document_type}</div>
+        </div>
+        <span class="doc-badge ${doc.level === 2 ? 'level2' : ''}">
+          ${doc.level === 1 ? '⛓️ Sellado' : '✍️ Firmafiy'}
+        </span>
+        <div class="doc-actions">
+          <button class="btn-icon" title="Copiar hash" onclick="copyHash('${doc.sha256_hash}')">📋</button>
+          <button class="btn-icon" title="Ver verificación" onclick="openVerify('${doc.sha256_hash}')">🔍</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    list.innerHTML = `<div class="empty"><p>Error cargando documentos: ${err.message}</p></div>`;
   }
+}
 
-  // ── Toast ──────────────────────────────────────────────────
-  function toast(msg, type = '') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'show ' + type;
-    setTimeout(() => t.className = '', 3000);
-  }
+function copyHash(hash) {
+  navigator.clipboard.writeText(hash);
+  toast('📋 Hash copiado', 'success');
+}
 
-  // ── Init ───────────────────────────────────────────────────
-  getAuth();
-  loadDocuments();
+function openVerify(hash) {
+  window.open(`verify.html?hash=${hash}`, '_blank');
+}
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 3500);
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+getAuth();
+// Set today's date in the contract date field
+document.getElementById('c-fecha').value = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+loadDocuments();
 </script>
 </body>
 </html>
