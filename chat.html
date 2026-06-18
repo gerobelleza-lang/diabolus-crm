@@ -14,6 +14,9 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ══════════════════════════════════════════
+       TEMA BASE — Berenjena & oro (default)
+    ══════════════════════════════════════════ */
     :root {
       --bg:          #15101F;
       --surface:     #211A33;
@@ -34,11 +37,115 @@
       --card-border: rgba(139,92,246,.32);
       --radius:      16px;
       --font:        'Hanken Grotesk', 'Inter', system-ui, sans-serif;
+      --font-mono:   'IBM Plex Mono', 'Courier New', monospace;
+      --scanline-opacity: 0;
+      --glow-text:   none;
+      --cursor-style: auto;
     }
 
-    html, body { height: 100%; background: var(--ink, var(--bg)); color: var(--agent-text); font-family: var(--font); }
+    /* ══════════════════════════════════════════
+       TEMA CYBERPUNK — Neón verde / cyan
+    ══════════════════════════════════════════ */
+    html.cyberpunk {
+      --bg:          #010b06;
+      --surface:     #001a0e;
+      --surface2:    #002b15;
+      --border:      rgba(0,255,65,.22);
+      --accent:      #00ff41;
+      --accent-glow: #00ff41;
+      --user-bubble: rgba(0,255,65,.08);
+      --user-text:   #00ff41;
+      --agent-bubble:#001a0e;
+      --agent-text:  #b0ffd4;
+      --text-muted:  #1a7a3a;
+      --green:       #00ff41;
+      --red:         #ff003c;
+      --orange:      #ff8c00;
+      --yellow:      #ffe100;
+      --card-bg:     #001a0e;
+      --card-border: rgba(0,255,65,.35);
+      --font:        'IBM Plex Mono', 'Courier New', monospace;
+      --font-mono:   'IBM Plex Mono', 'Courier New', monospace;
+      --scanline-opacity: 0.04;
+      --glow-text:   0 0 8px rgba(0,255,65,.6);
+    }
 
-    /* ── Layout ── */
+    html.cyberpunk body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,var(--scanline-opacity)) 2px,
+        rgba(0,0,0,var(--scanline-opacity)) 4px
+      );
+    }
+
+    html.cyberpunk header h1 {
+      text-shadow: var(--glow-text);
+      letter-spacing: 2px;
+    }
+
+    html.cyberpunk .bubble {
+      text-shadow: var(--glow-text);
+    }
+
+    html.cyberpunk #msg-input {
+      caret-color: var(--accent);
+    }
+
+    html.cyberpunk #btn-send {
+      background: linear-gradient(135deg, #00ff41, #007a20);
+      box-shadow: 0 0 16px rgba(0,255,65,.5);
+    }
+
+    html.cyberpunk .btn-confirm {
+      background: #00ff41;
+      color: #001a0e;
+      text-shadow: none;
+    }
+
+    html.cyberpunk #cyber-toggle {
+      border-color: var(--accent);
+      color: var(--accent);
+      text-shadow: var(--glow-text);
+    }
+
+    html.cyberpunk .cmd-menu {
+      border-color: rgba(0,255,65,.4);
+    }
+
+    html.cyberpunk .cmd-item:hover,
+    html.cyberpunk .cmd-item.active {
+      background: rgba(0,255,65,.1);
+    }
+
+    html.cyberpunk .cmd-shortcut {
+      color: #00ff41;
+      text-shadow: 0 0 6px rgba(0,255,65,.5);
+    }
+
+    /* Glitch en el título */
+    html.cyberpunk .header-info h1 {
+      animation: glitch 4s infinite;
+    }
+
+    @keyframes glitch {
+      0%, 90%, 100% { text-shadow: var(--glow-text); }
+      92%  { text-shadow: -2px 0 #ff003c, 2px 0 #00d4ff; }
+      94%  { text-shadow: 2px 0 #ff003c, -2px 0 #00d4ff; }
+      96%  { text-shadow: var(--glow-text); }
+    }
+
+    /* ══════════════════════════════════════════
+       LAYOUT
+    ══════════════════════════════════════════ */
+    html, body { height: 100%; background: var(--bg); color: var(--agent-text); font-family: var(--font); }
+
     #app {
       display: flex;
       flex-direction: column;
@@ -68,9 +175,20 @@
       font-size: 20px;
       flex-shrink: 0;
     }
+    html.cyberpunk .logo-wrap {
+      background: transparent;
+      border: 1px solid var(--accent);
+      box-shadow: 0 0 12px rgba(0,255,65,.4);
+    }
     .header-info { flex: 1; }
     .header-info h1 { font-size: 16px; font-weight: 700; color: #f0f0ff; letter-spacing: 0.3px; }
+    html.cyberpunk .header-info h1 { color: var(--accent); }
     .header-info p  { font-size: 12px; color: var(--green); margin-top: 1px; }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .header-actions a {
       font-size: 12px; color: var(--text-muted);
       text-decoration: none; border: 1px solid var(--border);
@@ -78,6 +196,24 @@
       transition: color .2s, border-color .2s;
     }
     .header-actions a:hover { color: var(--accent-glow); border-color: var(--accent); }
+
+    /* Toggle cyberpunk */
+    #cyber-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    #cyber-toggle:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
 
     /* ── Messages area ── */
     #messages {
@@ -115,6 +251,9 @@
       border-bottom-right-radius: 4px;
       border: 1px solid rgba(124,58,237,.35);
     }
+    html.cyberpunk .msg-row.user .bubble {
+      border-color: rgba(0,255,65,.3);
+    }
     .msg-row.agent .bubble {
       background: var(--agent-bubble);
       color: var(--agent-text);
@@ -122,7 +261,7 @@
       border: 1px solid var(--border);
     }
 
-    /* ── Photo bubble (mensaje del usuario con foto) ── */
+    /* ── Photo bubble ── */
     .photo-bubble {
       border-radius: var(--radius);
       overflow: hidden;
@@ -156,8 +295,10 @@
       max-width: 360px;
       box-shadow: 0 4px 24px rgba(0,0,0,.4);
     }
+    html.cyberpunk .card {
+      box-shadow: 0 0 20px rgba(0,255,65,.15);
+    }
 
-    /* Miniatura de foto dentro de la tarjeta */
     .card-photo-thumb {
       width: 100%;
       max-height: 140px;
@@ -175,12 +316,17 @@
       align-items: center;
       gap: 8px;
     }
+    html.cyberpunk .card-header {
+      background: linear-gradient(135deg, rgba(0,255,65,.08), rgba(0,100,40,.15));
+    }
     .card-header .card-title {
       font-size: 14px; font-weight: 700; color: #f0e8ff; flex: 1;
     }
+    html.cyberpunk .card-header .card-title { color: var(--accent); }
     .card-header .card-subtitle {
       font-size: 11px; color: #a78bfa; margin-top: 2px;
     }
+    html.cyberpunk .card-header .card-subtitle { color: var(--text-muted); }
     .card-type-badge {
       font-size: 10px;
       font-weight: 600;
@@ -193,7 +339,6 @@
     .card-type-send  { background: rgba(249,115,22,.15); color: #fdba74; border: 1px solid rgba(249,115,22,.3); }
     .card-type-photo { background: rgba(139,92,246,.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,.3); }
 
-    /* Alerta de confianza media */
     .card-confidence-warning {
       margin: 0 16px 10px;
       padding: 7px 10px;
@@ -238,7 +383,10 @@
       font-weight: 800;
       color: #fff;
     }
-    /* Campo dudoso: resaltado amarillo */
+    html.cyberpunk .card-field .field-value.importe {
+      color: var(--accent);
+      text-shadow: var(--glow-text);
+    }
     .card-field.dudoso .field-label { color: #fde047; }
     .card-field.dudoso .field-value {
       color: #fde047;
@@ -249,7 +397,6 @@
       font-size: 11px;
     }
 
-    /* ── Preview block (para envíos send) ── */
     .card-preview {
       margin: 0 16px 12px;
       background: rgba(139,92,246,.06);
@@ -291,6 +438,7 @@
     .card-actions button:hover { opacity: .85; }
     .card-actions button:active { opacity: .7; }
     .btn-confirm { background: var(--green); color: #fff; border-right: 1px solid var(--card-border); }
+    html.cyberpunk .btn-confirm { color: #001a0e; }
     .btn-cancel  { background: var(--surface2); color: var(--text-muted); }
     .btn-confirm[disabled], .btn-cancel[disabled] { opacity: .35 !important; cursor: not-allowed; }
 
@@ -324,7 +472,7 @@
       30%            { transform: translateY(-5px); }
     }
 
-    /* ── Photo preview en input (antes de enviar) ── */
+    /* ── Photo preview bar ── */
     #photo-preview-bar {
       display: none;
       align-items: center;
@@ -356,6 +504,81 @@
     }
     #btn-remove-photo:hover { color: var(--red); }
 
+    /* ══════════════════════════════════════════
+       MENÚ DE COMANDOS /
+    ══════════════════════════════════════════ */
+    .cmd-menu {
+      position: absolute;
+      bottom: 100%;
+      left: 14px;
+      right: 14px;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 -8px 32px rgba(0,0,0,.5);
+      z-index: 20;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .cmd-menu-header {
+      padding: 8px 14px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .cmd-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background .15s;
+      border-bottom: 1px solid var(--border);
+    }
+    .cmd-item:last-child { border-bottom: none; }
+    .cmd-item:hover,
+    .cmd-item.active {
+      background: rgba(139,92,246,.12);
+    }
+    .cmd-icon {
+      font-size: 18px;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .cmd-info { flex: 1; }
+    .cmd-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--agent-text);
+      font-family: var(--font-mono);
+    }
+    .cmd-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+    .cmd-shortcut {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      background: rgba(139,92,246,.12);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(139,92,246,.2);
+      white-space: nowrap;
+    }
+
+    /* Wrapper relativo para el menú */
+    #input-area-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
     /* ── Input bar ── */
     #input-bar {
       display: flex;
@@ -364,7 +587,6 @@
       padding: 12px 14px;
       background: var(--surface);
       border-top: 1px solid var(--border);
-      flex-shrink: 0;
     }
     #input-wrap {
       flex: 1;
@@ -379,7 +601,6 @@
     }
     #input-wrap:focus-within { border-color: var(--accent); }
 
-    /* Botón clip (adjuntar foto) */
     #btn-attach {
       background: none;
       border: none;
@@ -407,7 +628,12 @@
       max-height: 120px;
       line-height: 1.5;
     }
+    html.cyberpunk #msg-input {
+      color: var(--accent);
+      font-family: var(--font-mono);
+    }
     #msg-input::placeholder { color: var(--text-muted); }
+
     #btn-send {
       width: 44px; height: 44px;
       background: linear-gradient(135deg, var(--accent), #3b0fa0);
@@ -424,11 +650,12 @@
     #btn-send:hover  { transform: scale(1.07); }
     #btn-send:active { transform: scale(.95); opacity: .9; }
     #btn-send svg { width: 20px; height: 20px; fill: #fff; }
+    html.cyberpunk #btn-send svg { fill: #001a0e; }
 
     /* ── Auth overlay ── */
     #auth-overlay {
       position: fixed; inset: 0;
-      background: var(--ink, var(--bg));
+      background: var(--bg);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -471,7 +698,7 @@
 </head>
 <body>
 
-<!-- Auth overlay (shown if no token) -->
+<!-- Auth overlay -->
 <div id="auth-overlay">
   <div class="logo-wrap" style="width:56px;height:56px;font-size:28px">🧿</div>
   <h2>Diabolus · Agente</h2>
@@ -484,24 +711,23 @@
   <header>
     <div class="logo-wrap">🧿</div>
     <div class="header-info">
-      <h1>Agente Diabolus</h1>
+      <h1 id="header-title">Agente Diabolus</h1>
       <p id="status-text">● en línea</p>
     </div>
     <div class="header-actions">
-      <a href="index.html">Dashboard →</a>
+      <button id="cyber-toggle" title="Activar modo cyberpunk">⚡ CYBER</button>
+      <a href="dashboard.html">← Dashboard</a>
     </div>
   </header>
 
-  <div id="messages">
-    <!-- Welcome message inserted by JS -->
-  </div>
+  <div id="messages"></div>
 
   <div id="typing">
     <span></span><span></span><span></span>
     <span class="typing-label" id="typing-label">escribiendo…</span>
   </div>
 
-  <!-- Photo preview bar (visible cuando hay foto seleccionada) -->
+  <!-- Photo preview bar -->
   <div id="photo-preview-bar">
     <img id="photo-thumb-preview" src="" alt="Preview" />
     <div id="photo-preview-info">
@@ -511,26 +737,31 @@
     <button id="btn-remove-photo" title="Quitar foto">✕</button>
   </div>
 
-  <div id="input-bar">
-    <div id="input-wrap">
-      <!-- Botón adjuntar foto -->
-      <button id="btn-attach" title="Adjuntar foto de ticket o factura" aria-label="Adjuntar foto">
-        📎
-      </button>
-      <input type="file" id="file-input" accept="image/*" capture="environment" />
-
-      <textarea
-        id="msg-input"
-        rows="1"
-        placeholder='Escribe o adjunta una foto de un ticket 📎'
-        autocomplete="off"
-        autocorrect="off"
-        spellcheck="true"
-      ></textarea>
+  <!-- Input area (relativo para el menú) -->
+  <div id="input-area-wrap">
+    <!-- Menú de comandos / -->
+    <div class="cmd-menu" id="cmd-menu" style="display:none">
+      <div class="cmd-menu-header">⌨ Comandos rápidos</div>
+      <!-- Generado por JS -->
     </div>
-    <button id="btn-send" aria-label="Enviar">
-      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-    </button>
+
+    <div id="input-bar">
+      <div id="input-wrap">
+        <button id="btn-attach" title="Adjuntar foto" aria-label="Adjuntar foto">📎</button>
+        <input type="file" id="file-input" accept="image/*" capture="environment" />
+        <textarea
+          id="msg-input"
+          rows="1"
+          placeholder='Escribe, adjunta foto, o escribe / para comandos'
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="true"
+        ></textarea>
+      </div>
+      <button id="btn-send" aria-label="Enviar">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -539,38 +770,233 @@
 <script>
 // ─── Config ────────────────────────────────────────────────────────────────────
 const API = 'https://diabolus-crm-api.vercel.app'
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024  // 5 MB
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 let _auth = null
 try { _auth = JSON.parse(localStorage.getItem('diabolus_auth')) } catch(e) {}
 let token = _auth?.token || null
 const overlay = document.getElementById('auth-overlay')
-if (token) {
-  overlay.classList.add('hidden')
-} else {
-  overlay.classList.remove('hidden')
-}
+if (token) overlay.classList.add('hidden')
+else overlay.classList.remove('hidden')
 
 // ─── DOM refs ──────────────────────────────────────────────────────────────────
-const messagesEl       = document.getElementById('messages')
-const typingEl         = document.getElementById('typing')
-const typingLabelEl    = document.getElementById('typing-label')
-const inputEl          = document.getElementById('msg-input')
-const sendBtn          = document.getElementById('btn-send')
-const toastEl          = document.getElementById('toast')
-const attachBtn        = document.getElementById('btn-attach')
-const fileInputEl      = document.getElementById('file-input')
-const photoPreviewBar  = document.getElementById('photo-preview-bar')
-const photoThumbEl     = document.getElementById('photo-thumb-preview')
-const photoNameEl      = document.getElementById('photo-preview-name')
-const photoSizeEl      = document.getElementById('photo-preview-size')
-const removePhotoBtn   = document.getElementById('btn-remove-photo')
+const messagesEl      = document.getElementById('messages')
+const typingEl        = document.getElementById('typing')
+const typingLabelEl   = document.getElementById('typing-label')
+const inputEl         = document.getElementById('msg-input')
+const sendBtn         = document.getElementById('btn-send')
+const toastEl         = document.getElementById('toast')
+const attachBtn       = document.getElementById('btn-attach')
+const fileInputEl     = document.getElementById('file-input')
+const photoPreviewBar = document.getElementById('photo-preview-bar')
+const photoThumbEl    = document.getElementById('photo-thumb-preview')
+const photoNameEl     = document.getElementById('photo-preview-name')
+const photoSizeEl     = document.getElementById('photo-preview-size')
+const removePhotoBtn  = document.getElementById('btn-remove-photo')
+const cyberToggle     = document.getElementById('cyber-toggle')
+const cmdMenu         = document.getElementById('cmd-menu')
 
-// Estado de foto pendiente
-let pendingPhoto = null  // { file: File, objectUrl: string, base64: string, mimeType: string }
+let pendingPhoto = null
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// MODO CYBERPUNK
+// ══════════════════════════════════════════════════════════════════════
+let isCyber = localStorage.getItem('diabolus_cyber') === '1'
+
+function applyCyber(on) {
+  document.documentElement.classList.toggle('cyberpunk', on)
+  cyberToggle.textContent = on ? '🔴 EXIT' : '⚡ CYBER'
+  cyberToggle.title = on ? 'Desactivar modo cyberpunk' : 'Activar modo cyberpunk'
+  if (on) {
+    document.getElementById('status-text').textContent = '▶ SISTEMA ACTIVO'
+  } else {
+    document.getElementById('status-text').textContent = '● en línea'
+  }
+  localStorage.setItem('diabolus_cyber', on ? '1' : '0')
+}
+
+applyCyber(isCyber)
+
+cyberToggle.addEventListener('click', () => {
+  isCyber = !isCyber
+  applyCyber(isCyber)
+  if (isCyber) {
+    addAgentMsg('> MODO CYBERPUNK ACTIVADO\n> Tesorería que se gestiona hablando.\n> Todos los sistemas en línea. 🟢')
+  } else {
+    addAgentMsg('Volvemos al modo estándar. 👋')
+  }
+})
+
+// ══════════════════════════════════════════════════════════════════════
+// COMANDOS /
+// ══════════════════════════════════════════════════════════════════════
+const COMMANDS = [
+  { cmd: '/ingreso',    icon: '💰', desc: 'Registrar un ingreso',              example: '/ingreso 500 corte Ana',      shortcut: '/i' },
+  { cmd: '/gasto',      icon: '💸', desc: 'Registrar un gasto',                example: '/gasto 45 material peluquería', shortcut: '/g' },
+  { cmd: '/factura',    icon: '🧾', desc: 'Crear una factura',                  example: '/factura 300 para Ana',       shortcut: '/f' },
+  { cmd: '/resumen',    icon: '📊', desc: 'Ver resumen del mes',                example: '/resumen',                    shortcut: '/r' },
+  { cmd: '/cobros',     icon: '🔔', desc: 'Ver facturas pendientes de cobro',   example: '/cobros',                     shortcut: '/c' },
+  { cmd: '/clientes',   icon: '👤', desc: 'Ver o buscar clientes',              example: '/clientes María',             shortcut: '/cl' },
+  { cmd: '/cyberpunk',  icon: '⚡', desc: 'Activar/desactivar modo cyberpunk',  example: '/cyberpunk',                  shortcut: '/cy' },
+  { cmd: '/ayuda',      icon: '❓', desc: 'Ver todos los comandos',             example: '/ayuda',                      shortcut: '/?' },
+]
+
+let cmdActiveIndex = -1
+let filteredCmds = []
+
+function buildCmdMenu(filter = '') {
+  const lower = filter.toLowerCase()
+  filteredCmds = COMMANDS.filter(c =>
+    c.cmd.includes(lower) || c.desc.toLowerCase().includes(lower)
+  )
+  cmdMenu.innerHTML = '<div class="cmd-menu-header">⌨ Comandos rápidos — ↑↓ navegar · Enter ejecutar</div>'
+  filteredCmds.forEach((c, i) => {
+    const item = document.createElement('div')
+    item.className = 'cmd-item'
+    item.dataset.index = i
+    item.innerHTML = `
+      <span class="cmd-icon">${c.icon}</span>
+      <div class="cmd-info">
+        <div class="cmd-name">${c.cmd}</div>
+        <div class="cmd-desc">${c.desc}</div>
+      </div>
+      <span class="cmd-shortcut">${c.shortcut}</span>
+    `
+    item.addEventListener('mousedown', (e) => {
+      e.preventDefault()
+      selectCommand(i)
+    })
+    cmdMenu.appendChild(item)
+  })
+  cmdActiveIndex = -1
+}
+
+function showCmdMenu(filter = '') {
+  buildCmdMenu(filter)
+  if (filteredCmds.length > 0) {
+    cmdMenu.style.display = 'block'
+  } else {
+    cmdMenu.style.display = 'none'
+  }
+}
+
+function hideCmdMenu() {
+  cmdMenu.style.display = 'none'
+  cmdActiveIndex = -1
+}
+
+function selectCommand(index) {
+  const c = filteredCmds[index]
+  if (!c) return
+  // Si es un comando simple (sin args), ejecutar directo
+  if (['/resumen', '/cobros', '/cyberpunk', '/ayuda', '/clientes'].includes(c.cmd)) {
+    inputEl.value = c.cmd
+    hideCmdMenu()
+    inputEl.focus()
+  } else {
+    // Poner el ejemplo en el input para que el usuario complete
+    inputEl.value = c.cmd + ' '
+    hideCmdMenu()
+    inputEl.focus()
+    // Resize
+    inputEl.style.height = 'auto'
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px'
+  }
+}
+
+function setActiveCmd(index) {
+  cmdActiveIndex = index
+  cmdMenu.querySelectorAll('.cmd-item').forEach((el, i) => {
+    el.classList.toggle('active', i === index)
+  })
+  if (index >= 0) {
+    const el = cmdMenu.querySelectorAll('.cmd-item')[index]
+    el?.scrollIntoView({ block: 'nearest' })
+  }
+}
+
+// ─── Input: detectar / y navegar menú ───────────────────────────────
+inputEl.addEventListener('input', () => {
+  // Auto-resize
+  inputEl.style.height = 'auto'
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px'
+
+  const val = inputEl.value
+  if (val.startsWith('/')) {
+    showCmdMenu(val)
+  } else {
+    hideCmdMenu()
+  }
+})
+
+inputEl.addEventListener('keydown', (e) => {
+  const menuVisible = cmdMenu.style.display !== 'none'
+
+  if (menuVisible) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveCmd(Math.min(cmdActiveIndex + 1, filteredCmds.length - 1))
+      return
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveCmd(Math.max(cmdActiveIndex - 1, 0))
+      return
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      if (cmdActiveIndex >= 0) selectCommand(cmdActiveIndex)
+      else if (filteredCmds.length === 1) selectCommand(0)
+      return
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      hideCmdMenu()
+      return
+    }
+  }
+
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    if (menuVisible && cmdActiveIndex >= 0) {
+      selectCommand(cmdActiveIndex)
+    } else {
+      hideCmdMenu()
+      sendMessage()
+    }
+  }
+})
+
+// Cerrar menú si click fuera
+document.addEventListener('click', (e) => {
+  if (!cmdMenu.contains(e.target) && e.target !== inputEl) {
+    hideCmdMenu()
+  }
+})
+
+// ─── Intercept comandos especiales ───────────────────────────────────
+function interceptLocalCommand(text) {
+  const t = text.trim().toLowerCase()
+  if (t === '/cyberpunk' || t === '/cy') {
+    isCyber = !isCyber
+    applyCyber(isCyber)
+    if (isCyber) addAgentMsg('> MODO CYBERPUNK ACTIVADO\n> Tesorería que se gestiona hablando.\n> Todos los sistemas en línea. 🟢')
+    else addAgentMsg('Volvemos al modo estándar. 👋')
+    return true
+  }
+  if (t === '/ayuda' || t === '/?') {
+    addUserMsg(text)
+    const lines = COMMANDS.map(c => `${c.icon} ${c.cmd} — ${c.desc}\n   Ejemplo: ${c.example}`).join('\n\n')
+    addAgentMsg(`Comandos disponibles:\n\n${lines}\n\n💡 También puedes escribir en lenguaje natural: "gasté 45€ en material"`)
+    return true
+  }
+  return false
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════════
 function now() {
   return new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
 }
@@ -590,9 +1016,7 @@ function setTyping(label = 'escribiendo…') {
   typingEl.style.display = 'flex'
   scrollToBottom()
 }
-function hideTyping() {
-  typingEl.style.display = 'none'
-}
+function hideTyping() { typingEl.style.display = 'none' }
 
 function escHtml(str) {
   return String(str)
@@ -608,56 +1032,34 @@ function formatBytes(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
-// ─── File → base64 ────────────────────────────────────────────────────────────
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = () => {
-      // Quitar prefijo "data:image/jpeg;base64,"
-      const result = reader.result
-      const base64 = result.split(',')[1]
-      resolve(base64)
-    }
+    reader.onload = () => { resolve(reader.result.split(',')[1]) }
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
 }
 
-// ─── Attach photo ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// FOTO
+// ══════════════════════════════════════════════════════════════════════
 attachBtn.addEventListener('click', () => fileInputEl.click())
 
 fileInputEl.addEventListener('change', async (e) => {
   const file = e.target.files?.[0]
   if (!file) return
-
-  if (!file.type.startsWith('image/')) {
-    showToast('Solo se aceptan imágenes (JPG, PNG, HEIC…)')
-    return
-  }
-
-  if (file.size > MAX_IMAGE_BYTES) {
-    showToast(`La imagen pesa ${formatBytes(file.size)}. Máximo 5 MB.`)
-    fileInputEl.value = ''
-    return
-  }
+  if (!file.type.startsWith('image/')) { showToast('Solo se aceptan imágenes (JPG, PNG, HEIC…)'); return }
+  if (file.size > MAX_IMAGE_BYTES) { showToast(`La imagen pesa ${formatBytes(file.size)}. Máximo 5 MB.`); fileInputEl.value = ''; return }
 
   const objectUrl = URL.createObjectURL(file)
-  const base64    = await fileToBase64(file)
+  const base64 = await fileToBase64(file)
+  pendingPhoto = { file, objectUrl, base64, mimeType: file.type || 'image/jpeg' }
 
-  pendingPhoto = {
-    file,
-    objectUrl,
-    base64,
-    mimeType: file.type || 'image/jpeg',
-  }
-
-  // Mostrar preview bar
   photoThumbEl.src = objectUrl
   photoNameEl.textContent = file.name
   photoSizeEl.textContent = formatBytes(file.size)
   photoPreviewBar.classList.add('visible')
-
-  // Limpiar input de archivo para permitir reseleccionar el mismo
   fileInputEl.value = ''
   inputEl.focus()
 })
@@ -672,15 +1074,13 @@ function clearPendingPhoto() {
   fileInputEl.value = ''
 }
 
-// ─── Add messages ─────────────────────────────────────────────────────────────
-
+// ══════════════════════════════════════════════════════════════════════
+// MENSAJES
+// ══════════════════════════════════════════════════════════════════════
 function addUserMsg(text) {
   const row = document.createElement('div')
   row.className = 'msg-row user'
-  row.innerHTML = `
-    <div class="bubble">${escHtml(text)}</div>
-    <span class="msg-time">${now()}</span>
-  `
+  row.innerHTML = `<div class="bubble">${escHtml(text)}</div><span class="msg-time">${now()}</span>`
   messagesEl.appendChild(row)
   scrollToBottom()
 }
@@ -700,68 +1100,44 @@ function addUserPhoto(objectUrl, fileName) {
 }
 
 function addAgentMsg(text) {
-  const html = escHtml(text)
-    .replace(/\\*([^*]+)\\*/g, '<strong>$1</strong>')
+  const html = escHtml(text).replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
   const row = document.createElement('div')
   row.className = 'msg-row agent'
-  row.innerHTML = `
-    <div class="bubble">${html}</div>
-    <span class="msg-time">${now()}</span>
-  `
+  row.innerHTML = `<div class="bubble">${html}</div><span class="msg-time">${now()}</span>`
   messagesEl.appendChild(row)
   scrollToBottom()
 }
 
-// ─── Confirmation card ─────────────────────────────────────────────────────────
-
+// ── Confirmation card ─────────────────────────────────────────────────
 function addConfirmationCard(card, opts = {}) {
-  // Desactivar tarjetas anteriores
   document.querySelectorAll('.btn-confirm, .btn-cancel').forEach(b => {
-    b.disabled = true
-    b.style.cursor = 'not-allowed'
+    b.disabled = true; b.style.cursor = 'not-allowed'
   })
 
   const { thumbUrl, camposDudosos = [], confianza, isPhoto } = opts
-
-  // Tipo para el badge
   const isSend = ['enviar_recordatorio'].includes(card.action)
   const badgeClass = isPhoto ? 'card-type-photo' : (isSend ? 'card-type-send' : 'card-type-write')
   const badgeText  = isPhoto ? '📷 FOTO' : (isSend ? 'ENVÍO' : 'ESCRITURA')
 
-  // Miniatura de la foto (solo para tarjetas de foto)
-  const thumbHtml = thumbUrl
-    ? `<img class="card-photo-thumb" src="${escHtml(thumbUrl)}" alt="Ticket escaneado" />`
-    : ''
-
-  // Alerta si confianza media
+  const thumbHtml = thumbUrl ? `<img class="card-photo-thumb" src="${escHtml(thumbUrl)}" alt="Ticket" />` : ''
   const warningHtml = (isPhoto && confianza === 'media')
-    ? `<div class="card-confidence-warning">
-        ⚠️ Algunos campos pueden no ser exactos — revísalos antes de confirmar.
-       </div>`
-    : ''
+    ? `<div class="card-confidence-warning">⚠️ Algunos campos pueden no ser exactos — revísalos antes de confirmar.</div>` : ''
 
-  // Campos (con dudosos resaltados)
   const fieldsHtml = card.fields.map(f => {
-    const labelLower = f.label.toLowerCase()
-    const isDudoso = camposDudosos.some(d =>
-      labelLower.includes(d.toLowerCase()) ||
-      d.toLowerCase().includes(labelLower)
+    const isDudoso = (camposDudosos || []).some(d =>
+      f.label.toLowerCase().includes(d.toLowerCase()) || d.toLowerCase().includes(f.label.toLowerCase())
     )
-    return `
-      <div class="card-field${isDudoso ? ' dudoso' : ''}">
-        <span class="field-label">${escHtml(f.label)}</span>
-        <span class="field-value ${f.label === 'Importe' || f.label === 'Total' ? 'importe' : ''}">${escHtml(f.value)}</span>
-      </div>
-    `
+    return `<div class="card-field${isDudoso ? ' dudoso' : ''}">
+      <span class="field-label">${escHtml(f.label)}</span>
+      <span class="field-value ${f.label === 'Importe' || f.label === 'Total' ? 'importe' : ''}">${escHtml(f.value)}</span>
+    </div>`
   }).join('')
 
-  // Preview mensaje (solo envíos)
   const previewHtml = card.preview ? `
     <div class="card-preview">
       <div class="card-preview-label">📱 Texto exacto que se enviará</div>
       <div class="card-preview-text">${escHtml(card.preview)}</div>
-    </div>
-  ` : ''
+    </div>` : ''
 
   const row = document.createElement('div')
   row.className = 'msg-row agent'
@@ -785,23 +1161,19 @@ function addConfirmationCard(card, opts = {}) {
     </div>
     <span class="msg-time">${now()} · Caduca en 10 min</span>
   `
-
   row.querySelector('.btn-confirm').addEventListener('click', handleConfirm)
   row.querySelector('.btn-cancel').addEventListener('click', handleCancel)
-
   messagesEl.appendChild(row)
   scrollToBottom()
 }
 
-// ─── API calls ─────────────────────────────────────────────────────────────────
-
+// ══════════════════════════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════════════════════════
 async function apiPost(path, body) {
   const res = await fetch(`${API}${path}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(body),
   })
   if (!res.ok) {
@@ -811,34 +1183,34 @@ async function apiPost(path, body) {
   return res.json()
 }
 
-// ─── Send message (texto o foto) ───────────────────────────────────────────────
-
+// ── Send ──────────────────────────────────────────────────────────────
 async function sendMessage() {
-  const text    = inputEl.value.trim()
+  const text = inputEl.value.trim()
   const hasPhoto = pendingPhoto !== null
-
   if (!text && !hasPhoto) return
+
+  // Interceptar comandos locales
+  if (text && !hasPhoto && interceptLocalCommand(text)) {
+    inputEl.value = ''
+    inputEl.style.height = 'auto'
+    sendBtn.disabled = false
+    return
+  }
 
   sendBtn.disabled = true
   inputEl.value = ''
   inputEl.style.height = 'auto'
 
-  if (hasPhoto) {
-    await sendPhoto(text)
-  } else {
-    await sendText(text)
-  }
+  if (hasPhoto) await sendPhoto(text)
+  else await sendText(text)
 
   sendBtn.disabled = false
   inputEl.focus()
 }
 
-// ── Envío de texto ────────────────────────────────────────────────────────────
-
 async function sendText(text) {
   addUserMsg(text)
   setTyping('escribiendo…')
-
   try {
     const data = await apiPost('/api/agent/chat', { userInput: text })
     hideTyping()
@@ -850,34 +1222,18 @@ async function sendText(text) {
   }
 }
 
-// ── Envío de foto ─────────────────────────────────────────────────────────────
-
 async function sendPhoto(extraText) {
   const photo = pendingPhoto
-  const thumbUrl = photo.objectUrl  // guardar antes de limpiar
-
+  const thumbUrl = photo.objectUrl
   addUserPhoto(photo.objectUrl, photo.file.name)
   if (extraText) addUserMsg(extraText)
-
   clearPendingPhoto()
   setTyping('leyendo el ticket…')
-
   try {
-    const data = await apiPost('/api/agent/photo', {
-      image:    photo.base64,
-      mimeType: photo.mimeType,
-    })
+    const data = await apiPost('/api/agent/photo', { image: photo.base64, mimeType: photo.mimeType })
     hideTyping()
-    handleAgentResponse(data, {
-      thumbUrl,
-      isPhoto:       true,
-      camposDudosos: data.campos_dudosos || [],
-      confianza:     data.confianza,
-    })
-    // Liberar ObjectURL si no se usa en tarjeta (si no hay card, liberar ya)
-    if (data.status !== 'pending_confirmation') {
-      URL.revokeObjectURL(thumbUrl)
-    }
+    handleAgentResponse(data, { thumbUrl, isPhoto: true, camposDudosos: data.campos_dudosos || [], confianza: data.confianza })
+    if (data.status !== 'pending_confirmation') URL.revokeObjectURL(thumbUrl)
   } catch (err) {
     hideTyping()
     URL.revokeObjectURL(thumbUrl)
@@ -886,49 +1242,30 @@ async function sendPhoto(extraText) {
   }
 }
 
-// ── Handler de respuesta del agente ──────────────────────────────────────────
-
 function handleAgentResponse(data, cardOpts) {
-  if (data.status === 'pending_confirmation' && data.card) {
-    addConfirmationCard(data.card, cardOpts)
-  } else if (data.status === 'needs_info') {
-    addAgentMsg(data.message)
-  } else if (data.message) {
-    addAgentMsg(data.message)
-  } else {
-    addAgentMsg('Recibido, pero no entendí la respuesta del servidor.')
-  }
+  if (data.status === 'pending_confirmation' && data.card) addConfirmationCard(data.card, cardOpts)
+  else if (data.message) addAgentMsg(data.message)
+  else addAgentMsg('Recibido, pero no entendí la respuesta del servidor.')
 }
-
-// ─── Confirm action ────────────────────────────────────────────────────────────
 
 async function handleConfirm(e) {
   const id = e.currentTarget.dataset.id
   disableCardButtons(e.currentTarget)
   setTyping('ejecutando…')
-
   try {
     const data = await apiPost('/api/agent/confirm', { pending_action_id: id })
     hideTyping()
-
-    if (data.status === 'success') {
-      addAgentMsg(data.message || '✅ Hecho.')
-    } else {
-      addAgentMsg(`⚠️ ${data.message || 'No se pudo ejecutar.'}`)
-    }
+    addAgentMsg(data.status === 'success' ? (data.message || '✅ Hecho.') : `⚠️ ${data.message || 'No se pudo ejecutar.'}`)
   } catch (err) {
     hideTyping()
     addAgentMsg(`❌ Error al confirmar: ${err.message}`)
   }
 }
 
-// ─── Cancel action ─────────────────────────────────────────────────────────────
-
 async function handleCancel(e) {
   const id = e.currentTarget.dataset.id
   disableCardButtons(e.currentTarget)
   setTyping('cancelando…')
-
   try {
     await apiPost('/api/agent/cancel', { pending_action_id: id })
     hideTyping()
@@ -942,61 +1279,37 @@ async function handleCancel(e) {
 function disableCardButtons(btn) {
   const card = btn.closest('.card')
   if (!card) return
-  card.querySelectorAll('button').forEach(b => {
-    b.disabled = true
-    b.style.opacity = '0.35'
-    b.style.cursor = 'not-allowed'
-  })
+  card.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.35'; b.style.cursor = 'not-allowed' })
 }
-
-// ─── Input auto-resize ─────────────────────────────────────────────────────────
-
-inputEl.addEventListener('input', () => {
-  inputEl.style.height = 'auto'
-  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px'
-})
-
-inputEl.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
-    sendMessage()
-  }
-})
 
 sendBtn.addEventListener('click', sendMessage)
 
-// ─── Welcome message ───────────────────────────────────────────────────────────
-
+// ── Welcome ───────────────────────────────────────────────────────────
 addAgentMsg(
 `Hola 👋 Soy el agente de Diabolus.
 
-Gestiona tu tesorería hablando — o adjuntando una foto. Ejemplos:
+Gestiona tu tesorería hablando — o adjuntando una foto. Escribe */* para ver comandos rápidos.
 
-📷 *Clip → foto de un ticket* → lo registro automáticamente (con confirmación)
-💸 *"gasté 45€ en material hoy"*
-💰 *"cobré 300€ de Ana por corte"*
-👤 *"nuevo cliente María García tel 612345678"*
-🧾 *"crea factura para Ana por 150€"*
-🔄 *"la factura de Ana está pagada"*
-📩 *"manda recordatorio a Ana"*
-📊 *"¿cuánto tengo este mes?"*
+📷 *Clip → foto de un ticket* → lo registro automáticamente
+💸 */gasto 45 material peluquería*
+💰 */ingreso 300 Ana corte*
+🧾 */factura 150 para María*
+📊 */resumen*
+🔔 */cobros*
+⚡ */cyberpunk* — activa el modo oscuro
 
-Antes de guardar o enviar cualquier cosa, verás una tarjeta para confirmar. ✅`)
+Antes de guardar cualquier cosa, verás una tarjeta para confirmar. ✅`)
 
 scrollToBottom(false)
 inputEl.focus()
 </script>
-  <script>
-    // PWA — registro del Service Worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-          console.log('[SW] registrado:', reg.scope);
-        }).catch(err => {
-          console.warn('[SW] error al registrar:', err);
-        });
-      });
-    }
-  </script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    })
+  }
+</script>
 </body>
 </html>
