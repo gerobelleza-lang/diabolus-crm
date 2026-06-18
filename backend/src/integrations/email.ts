@@ -2,7 +2,7 @@
 // Email transaccional via Resend (Edge-compatible — pure fetch)
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Diabolus CRM <noreply@diaboluscrm.com>'
+const FROM_EMAIL = process.env.FROM_EMAIL || 'Diabolus CRM <noreply@diabolus.es>'
 
 async function sendEmail(to: string, subject: string, html: string): Promise<{ sent: boolean; error?: string }> {
   if (!RESEND_API_KEY) {
