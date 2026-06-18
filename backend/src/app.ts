@@ -20,6 +20,7 @@ import { onboardingRoutes } from './routes/onboarding'
 import { categoriesRoutes } from './routes/categories'
 import { whatsappRoutes } from './routes/whatsapp'
 import { documentsRoutes, documentsPublicRoutes } from './routes/documents'
+import { supportRoutes } from './routes/support'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 import { accrueCommissions } from './routes/export'
@@ -69,6 +70,9 @@ export function createApp() {
 
   // ─── Documents Verify (Public — cualquiera puede verificar un hash) ────────
   app.route('/api/documents/verify', documentsPublicRoutes)
+
+  // ─── Support Email Agent (Public — llamado por n8n con secret header) ──────
+  app.route('/api/support', supportRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
