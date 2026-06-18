@@ -88,7 +88,33 @@ supportRoutes.post('/email', async (c) => {
   }
 
   const body = await c.req.json().catch(() => ({}))
-  const { from_email, from_name, subject, body: emailBody, message_id } = body
+
+  // Accept both Hostinger native format and legacy mapped format
+  let from_email: string, from_name: string, subject: string, emailBody: string, message_id: string
+
+  if (body.event === 'message.received' && body.data) {
+    // Hostinger native: { event, data: { from, subject, plainBody, messageId, ... } }
+    const d = body.data
+    const fromRaw: string = d.from || ''
+    const fromMatch = fromRaw.match(/^(.+?)\s*<([^>]+)>$/)
+    if (fromMatch) {
+      from_name = fromMatch[1].trim()
+      from_email = fromMatch[2].trim()
+    } else {
+      from_email = fromRaw.trim()
+      from_name = ''
+    }
+    subject = d.subject || '(sin asunto)'
+    emailBody = d.plainBody || d.plainHtml || ''
+    message_id = d.messageId || ''
+  } else {
+    // Legacy mapped format: { from_email, from_name, subject, body, message_id }
+    from_email = body.from_email || ''
+    from_name = body.from_name || ''
+    subject = body.subject || ''
+    emailBody = body.body || ''
+    message_id = body.message_id || ''
+  }
 
   if (!from_email || !subject || !emailBody) {
     return c.json({ error: 'Missing required fields: from_email, subject, body' }, 400)
