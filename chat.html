@@ -197,6 +197,31 @@
     }
     .header-actions a:hover { color: var(--accent-glow); border-color: var(--accent); }
 
+    /* Botón Dashboard destacado */
+    .btn-dashboard {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f0f0ff !important;
+      background: rgba(139,92,246,.18);
+      border: 1px solid rgba(139,92,246,.45) !important;
+      padding: 6px 12px !important;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: background .2s, border-color .2s !important;
+    }
+    .btn-dashboard:hover {
+      background: rgba(139,92,246,.32) !important;
+      border-color: var(--accent) !important;
+      color: #fff !important;
+    }
+    html.cyberpunk .btn-dashboard {
+      color: var(--accent) !important;
+      background: rgba(0,255,65,.08) !important;
+      border-color: rgba(0,255,65,.35) !important;
+    }
+
     /* Toggle cyberpunk */
     #cyber-toggle {
       background: none;
@@ -716,7 +741,7 @@
     </div>
     <div class="header-actions">
       <button id="cyber-toggle" title="Activar modo cyberpunk">⚡ CYBER</button>
-      <a href="dashboard.html">← Dashboard</a>
+      <a href="dashboard.html" class="btn-dashboard">⬡ Dashboard</a>
     </div>
   </header>
 
