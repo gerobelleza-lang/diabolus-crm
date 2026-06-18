@@ -710,7 +710,10 @@ const API = 'https://diabolus-crm-api.vercel.app';
 function getAuth() {
   const stored = localStorage.getItem('diabolus_auth');
   if (!stored) { window.location.href = 'index-login.html'; return null; }
-  return JSON.parse(stored);
+  const auth = JSON.parse(stored);
+  // Normalize: salonId (camelCase) → salon_id (snake_case)
+  if (!auth.salon_id && auth.salonId) auth.salon_id = auth.salonId;
+  return auth;
 }
 
 // ══════════════════════════════════════════════
