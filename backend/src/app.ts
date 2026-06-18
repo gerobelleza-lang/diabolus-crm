@@ -19,6 +19,7 @@ import { exportPublicRoutes } from './routes/export'
 import { onboardingRoutes } from './routes/onboarding'
 import { categoriesRoutes } from './routes/categories'
 import { whatsappRoutes } from './routes/whatsapp'
+import { documentsRoutes, documentsPublicRoutes } from './routes/documents'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 import { accrueCommissions } from './routes/export'
@@ -65,6 +66,9 @@ export function createApp() {
 
   // ─── Gestor Portal (Public — acceso con token de gestor) ───────────────────
   app.route('/gestor', gestorPublicRoutes)
+
+  // ─── Documents Verify (Public — cualquiera puede verificar un hash) ────────
+  app.route('/api/documents/verify', documentsPublicRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
@@ -114,6 +118,7 @@ export function createApp() {
   app.route('/api/onboarding', onboardingRoutes)
   app.route('/api/categories', categoriesRoutes)
   app.route('/api/notifications/telegram', telegramRoutes)
+  app.route('/api/documents', documentsRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))

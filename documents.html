@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diabolus · Documentos</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #15101F; --surface: #211A33; --surface2: #2A2140;
+      --border: rgba(139,92,246,.18); --accent: #8B5CF6; --accent-glow: #9d5cff;
+      --gold: #E3BE7A; --text: #e8e8f0; --muted: #A39FB5;
+      --green: #22c55e; --red: #ef4444; --orange: #f97316;
+      --radius: 14px; --font: 'Hanken Grotesk','Inter',system-ui,sans-serif;
+      --mono: 'IBM Plex Mono','Courier New',monospace;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+    /* ── HEADER ── */
+    header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+    .logo span { color: var(--gold); }
+    .header-title { flex: 1; font-size: 15px; font-weight: 600; color: var(--text); }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-sm {
+      font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 9px;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+      transition: all .2s;
+    }
+    .btn-sm:hover { color: var(--text); border-color: var(--accent); }
+    .btn-primary {
+      background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700;
+    }
+    .btn-primary:hover { background: var(--accent-glow); }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 20px; display: flex; gap: 4px; overflow-x: auto;
+    }
+    nav a {
+      font-size: 13px; font-weight: 500; color: var(--muted); text-decoration: none;
+      padding: 10px 14px; border-bottom: 2px solid transparent; white-space: nowrap;
+      transition: all .2s;
+    }
+    nav a:hover { color: var(--text); }
+    nav a.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+
+    /* ── MAIN ── */
+    main { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, rgba(139,92,246,.12), rgba(227,190,122,.07));
+      border: 1px solid rgba(139,92,246,.25);
+      border-radius: 18px; padding: 28px 32px; margin-bottom: 28px;
+      display: flex; align-items: center; gap: 24px;
+    }
+    .hero-icon { font-size: 48px; line-height: 1; }
+    .hero h1 { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .hero p { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 520px; }
+    .hero-badges { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .badge {
+      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+      background: rgba(139,92,246,.15); color: var(--accent); border: 1px solid rgba(139,92,246,.3);
+    }
+    .badge.gold { background: rgba(227,190,122,.12); color: var(--gold); border-color: rgba(227,190,122,.3); }
+
+    /* ── STAMP AREA ── */
+    .stamp-card {
+      background: var(--surface); border: 2px dashed rgba(139,92,246,.35);
+      border-radius: var(--radius); padding: 28px; margin-bottom: 28px;
+      transition: border-color .2s;
+    }
+    .stamp-card:hover { border-color: var(--accent); }
+    .stamp-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    input, select {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 9px;
+      padding: 10px 14px; color: var(--text); font-size: 14px; font-family: var(--font);
+      outline: none; transition: border-color .2s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    select option { background: var(--surface2); }
+
+    .drop-zone {
+      background: var(--surface2); border: 1px dashed var(--border);
+      border-radius: 10px; padding: 28px; text-align: center; cursor: pointer;
+      transition: all .2s; position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent); background: rgba(139,92,246,.06);
+    }
+    .drop-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: none;
+    }
+    .drop-zone .drop-icon { font-size: 32px; margin-bottom: 8px; }
+    .drop-zone p { font-size: 13px; color: var(--muted); }
+    .drop-zone .file-chosen { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 6px; }
+
+    .btn-stamp {
+      margin-top: 16px; width: 100%; padding: 13px; font-size: 15px; font-weight: 700;
+      background: linear-gradient(135deg, #8B5CF6, #7c3aed); color: #fff;
+      border: none; border-radius: 11px; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-stamp:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(139,92,246,.35); }
+    .btn-stamp:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── CERTIFICATE RESULT ── */
+    .certificate-result {
+      background: linear-gradient(135deg, rgba(34,197,94,.08), rgba(34,197,94,.03));
+      border: 1px solid rgba(34,197,94,.3); border-radius: var(--radius);
+      padding: 24px; margin-bottom: 28px; display: none;
+    }
+    .cert-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .cert-header .check { font-size: 28px; }
+    .cert-header h3 { font-size: 17px; font-weight: 700; color: var(--green); }
+    .cert-header p { font-size: 13px; color: var(--muted); }
+    .cert-hash {
+      font-family: var(--mono); font-size: 12px; color: var(--gold);
+      background: rgba(227,190,122,.08); border: 1px solid rgba(227,190,122,.2);
+      border-radius: 8px; padding: 12px 14px; word-break: break-all;
+      margin-bottom: 12px; letter-spacing: .5px;
+    }
+    .cert-hash .label { font-family: var(--font); font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .cert-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .cert-field { background: rgba(255,255,255,.04); border-radius: 8px; padding: 10px 12px; }
+    .cert-field .key { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+    .cert-field .val { font-size: 14px; color: var(--text); font-weight: 600; margin-top: 2px; }
+    .cert-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-cert {
+      padding: 9px 16px; font-size: 13px; font-weight: 600; border-radius: 9px;
+      cursor: pointer; border: 1px solid; transition: all .2s; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-cert.copy { border-color: rgba(227,190,122,.4); color: var(--gold); background: rgba(227,190,122,.08); }
+    .btn-cert.copy:hover { background: rgba(227,190,122,.15); }
+    .btn-cert.share { border-color: rgba(139,92,246,.4); color: var(--accent); background: rgba(139,92,246,.08); }
+    .btn-cert.share:hover { background: rgba(139,92,246,.15); }
+
+    /* ── DOCUMENT LIST ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-header h2 { font-size: 16px; font-weight: 700; }
+    .doc-list { display: flex; flex-direction: column; gap: 10px; }
+    .doc-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 18px;
+      display: flex; align-items: center; gap: 14px;
+      transition: border-color .2s;
+    }
+    .doc-item:hover { border-color: rgba(139,92,246,.35); }
+    .doc-icon { font-size: 24px; }
+    .doc-info { flex: 1; }
+    .doc-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .doc-hash {
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;
+    }
+    .doc-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .doc-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
+      background: rgba(34,197,94,.12); color: var(--green); border: 1px solid rgba(34,197,94,.25);
+      white-space: nowrap;
+    }
+    .doc-badge.level2 {
+      background: rgba(227,190,122,.12); color: var(--gold); border-color: rgba(227,190,122,.25);
+    }
+    .doc-actions { display: flex; gap: 8px; }
+    .btn-icon {
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      border-radius: 9px; border: 1px solid var(--border); background: transparent;
+      color: var(--muted); cursor: pointer; font-size: 15px; transition: all .2s;
+    }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── EMPTY ── */
+    .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .empty .icon { font-size: 48px; margin-bottom: 12px; opacity: .5; }
+    .empty p { font-size: 14px; line-height: 1.6; }
+
+    /* ── LOADING ── */
+    .spinner {
+      width: 20px; height: 20px; border: 2px solid rgba(255,255,255,.2);
+      border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 600;
+      color: var(--text); box-shadow: 0 8px 32px rgba(0,0,0,.4);
+      opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999;
+      max-width: 360px; text-align: center;
+    }
+    #toast.show { opacity: 1; }
+    #toast.success { border-color: rgba(34,197,94,.4); color: var(--green); }
+    #toast.error { border-color: rgba(239,68,68,.4); color: var(--red); }
+
+    @media (max-width: 600px) {
+      .hero { flex-direction: column; gap: 12px; padding: 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .cert-meta { grid-template-columns: 1fr; }
+      .doc-hash { max-width: 160px; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <div class="logo">D<span>·</span></div>
+  <span class="header-title">⚖️ Documentos legales</span>
+  <div class="header-actions">
+    <a href="verify.html" class="btn-sm">🔍 Verificar</a>
+    <a href="dashboard.html" class="btn-sm">⬡ Dashboard</a>
+    <a href="chat.html" class="btn-sm">💬 Agente</a>
+  </div>
+</header>
+
+<nav>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="transactions.html">Movimientos</a>
+  <a href="invoices.html">Facturas</a>
+  <a href="clients.html">Clientes</a>
+  <a href="reports.html">Informes</a>
+  <a href="documents.html" class="active">Documentos</a>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-icon">⛓️</div>
+    <div>
+      <h1>Sellado de tiempo SHA-256</h1>
+      <p>Cada documento recibe una huella digital única e inalterable con marca temporal. Prueba legal de que el documento existía en ese momento exacto, sin posibilidad de manipulación.</p>
+      <div class="hero-badges">
+        <span class="badge">⚡ Nivel 1 — SHA-256</span>
+        <span class="badge gold">🔐 Nivel 2 — Firmafiy (próximamente)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAMP AREA -->
+  <div class="stamp-card">
+    <h2>📄 Sellar nuevo documento</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre del documento</label>
+        <input type="text" id="doc-name" placeholder="Contrato servicios cliente X" />
+      </div>
+      <div class="form-group">
+        <label>Tipo de documento</label>
+        <select id="doc-type">
+          <option value="contrato">Contrato de servicios</option>
+          <option value="presupuesto">Presupuesto aceptado</option>
+          <option value="nda">NDA / Confidencialidad</option>
+          <option value="encargo">Carta de encargo</option>
+          <option value="cesion">Cesión de derechos</option>
+          <option value="pagare">Acuerdo de pago</option>
+          <option value="general">Otro</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.png,.jpg" />
+      <div class="drop-icon">📎</div>
+      <p>Arrastra el archivo aquí o haz clic para seleccionar</p>
+      <p style="font-size:11px;margin-top:4px;">PDF, Word, imagen — cualquier archivo</p>
+      <p class="file-chosen" id="file-chosen" style="display:none"></p>
+    </div>
+
+    <button class="btn-stamp" id="btn-stamp" disabled>
+      <span id="stamp-btn-text">⛓️ Sellar con SHA-256</span>
+      <div class="spinner" id="stamp-spinner" style="display:none"></div>
+    </button>
+  </div>
+
+  <!-- CERTIFICATE RESULT -->
+  <div class="certificate-result" id="cert-result">
+    <div class="cert-header">
+      <span class="check">✅</span>
+      <div>
+        <h3>Documento sellado correctamente</h3>
+        <p>Guardado en el registro inmutable de Diabolus</p>
+      </div>
+    </div>
+    <div class="cert-hash">
+      <div class="label">Huella SHA-256</div>
+      <span id="cert-hash-value"></span>
+    </div>
+    <div class="cert-meta">
+      <div class="cert-field">
+        <div class="key">Fecha y hora (Madrid)</div>
+        <div class="val" id="cert-date"></div>
+      </div>
+      <div class="cert-field">
+        <div class="key">Tipo</div>
+        <div class="val" id="cert-type"></div>
+      </div>
+      <div class="cert-field">
+        <div class="key">ID de certificado</div>
+        <div class="val" id="cert-id" style="font-family:var(--mono);font-size:11px"></div>
+      </div>
+      <div class="cert-field">
+        <div class="key">Nivel</div>
+        <div class="val">Sellado de tiempo SHA-256</div>
+      </div>
+    </div>
+    <div class="cert-actions">
+      <button class="btn-cert copy" id="btn-copy-hash">📋 Copiar hash</button>
+      <button class="btn-cert share" id="btn-copy-url">🔗 Copiar URL verificación</button>
+    </div>
+  </div>
+
+  <!-- DOCUMENT LIST -->
+  <div class="section-header">
+    <h2>📋 Documentos sellados</h2>
+    <button class="btn-sm" onclick="loadDocuments()">↺ Actualizar</button>
+  </div>
+  <div class="doc-list" id="doc-list">
+    <div class="empty">
+      <div class="icon">📄</div>
+      <p>Cargando documentos...</p>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+  const API = 'https://diabolus-crm-api.vercel.app';
+
+  function getAuth() {
+    const stored = localStorage.getItem('diabolus_auth');
+    if (!stored) { window.location.href = 'index-login.html'; return null; }
+    return JSON.parse(stored);
+  }
+
+  // ── File handling ──────────────────────────────────────────
+  let selectedFile = null;
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const fileChosen = document.getElementById('file-chosen');
+  const btnStamp = document.getElementById('btn-stamp');
+
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) setFile(e.target.files[0]);
+  });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+
+  function setFile(file) {
+    selectedFile = file;
+    fileChosen.textContent = `✅ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    fileChosen.style.display = 'block';
+    btnStamp.disabled = false;
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── Stamp ──────────────────────────────────────────────────
+  btnStamp.addEventListener('click', async () => {
+    const auth = getAuth();
+    if (!auth || !selectedFile) return;
+
+    const docName = document.getElementById('doc-name').value.trim() || selectedFile.name;
+    const docType = document.getElementById('doc-type').value;
+
+    btnStamp.disabled = true;
+    document.getElementById('stamp-btn-text').style.display = 'none';
+    document.getElementById('stamp-spinner').style.display = 'block';
+
+    try {
+      const b64 = await fileToBase64(selectedFile);
+      const res = await fetch(`${API}/api/documents/stamp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`
+        },
+        body: JSON.stringify({
+          document_name: docName,
+          document_base64: b64,
+          document_type: docType,
+          salon_id: auth.salon_id,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      showCertificate(data);
+      toast('✅ Documento sellado correctamente', 'success');
+      loadDocuments();
+    } catch (err) {
+      toast('❌ ' + err.message, 'error');
+    } finally {
+      btnStamp.disabled = false;
+      document.getElementById('stamp-btn-text').style.display = 'inline';
+      document.getElementById('stamp-spinner').style.display = 'none';
+    }
+  });
+
+  function showCertificate(data) {
+    document.getElementById('cert-result').style.display = 'block';
+    document.getElementById('cert-hash-value').textContent = data.hash;
+    document.getElementById('cert-date').textContent = data.stamped_at_madrid;
+    document.getElementById('cert-type').textContent = data.document_type;
+    document.getElementById('cert-id').textContent = data.certificate_id;
+    document.getElementById('cert-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    document.getElementById('btn-copy-hash').onclick = () => {
+      navigator.clipboard.writeText(data.hash);
+      toast('📋 Hash copiado', 'success');
+    };
+    document.getElementById('btn-copy-url').onclick = () => {
+      navigator.clipboard.writeText(data.verify_url);
+      toast('🔗 URL copiada', 'success');
+    };
+  }
+
+  // ── Load documents ─────────────────────────────────────────
+  async function loadDocuments() {
+    const auth = getAuth();
+    if (!auth) return;
+
+    const list = document.getElementById('doc-list');
+    list.innerHTML = '<div class="empty"><div class="icon" style="font-size:24px;animation:spin .7s linear infinite">↻</div><p>Cargando...</p></div>';
+
+    try {
+      const res = await fetch(`${API}/api/documents?salon_id=${auth.salon_id}`, {
+        headers: { 'Authorization': `Bearer ${auth.token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      const docs = data.documents || [];
+      if (!docs.length) {
+        list.innerHTML = '<div class="empty"><div class="icon">📄</div><p>Aún no has sellado ningún documento.<br>Sube el primero arriba.</p></div>';
+        return;
+      }
+
+      const typeLabels = {
+        contrato: '📝 Contrato', presupuesto: '💰 Presupuesto', nda: '🔏 NDA',
+        encargo: '📋 Encargo', cesion: '©️ Cesión', pagare: '💸 Pago', general: '📄 Documento'
+      };
+
+      list.innerHTML = docs.map(doc => `
+        <div class="doc-item">
+          <div class="doc-icon">${typeLabels[doc.document_type]?.split(' ')[0] || '📄'}</div>
+          <div class="doc-info">
+            <div class="doc-name">${doc.document_name}</div>
+            <div class="doc-hash">SHA-256: ${doc.sha256_hash}</div>
+            <div class="doc-meta">${new Date(doc.stamped_at).toLocaleString('es-ES',{timeZone:'Europe/Madrid'})} · ${typeLabels[doc.document_type] || doc.document_type}</div>
+          </div>
+          <span class="doc-badge ${doc.level === 2 ? 'level2' : ''}">
+            ${doc.level === 1 ? '⛓️ Sellado' : '✍️ Firmafiy'}
+          </span>
+          <div class="doc-actions">
+            <button class="btn-icon" title="Copiar hash" onclick="copyHash('${doc.sha256_hash}')">📋</button>
+            <button class="btn-icon" title="Ver verificación" onclick="openVerify('${doc.sha256_hash}')">🔍</button>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      list.innerHTML = `<div class="empty"><p>Error cargando documentos: ${err.message}</p></div>`;
+    }
+  }
+
+  function copyHash(hash) {
+    navigator.clipboard.writeText(hash);
+    toast('📋 Hash copiado', 'success');
+  }
+
+  function openVerify(hash) {
+    window.open(`verify.html?hash=${hash}`, '_blank');
+  }
+
+  // ── Toast ──────────────────────────────────────────────────
+  function toast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show ' + type;
+    setTimeout(() => t.className = '', 3000);
+  }
+
+  // ── Init ───────────────────────────────────────────────────
+  getAuth();
+  loadDocuments();
+</script>
+</body>
+</html>
