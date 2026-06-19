@@ -22,6 +22,7 @@ import { whatsappRoutes } from './routes/whatsapp'
 import { documentsRoutes, documentsPublicRoutes } from './routes/documents'
 import { cazadorRoutes, cazadorInternalRoute } from './routes/cazador'
 import { supportRoutes } from './routes/support'
+import { legalRoutes } from './routes/legal'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 import { accrueCommissions } from './routes/export'
@@ -128,6 +129,7 @@ export function createApp() {
   app.route('/api/notifications/telegram', telegramRoutes)
   app.route('/api/documents', documentsRoutes)
   app.route('/api/cazador', cazadorRoutes)
+  app.route('/api/legal', legalRoutes)   // ← NUEVO: Módulo Legal
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))
