@@ -148,6 +148,9 @@
       <a href="clients.html" class="nav-item"><span>👥</span>Clientes</a>
       <a href="transactions.html" class="nav-item"><span>💰</span>Transacciones</a>
       <a href="reports.html" class="nav-item"><span>📈</span>Reportes</a>
+      <a href="documents.html" class="nav-item"><span>✍️</span>Documentos</a>
+      <a href="cazador.html" class="nav-item"><span>🦅</span>Cazador</a>
+      <a href="legal.html" class="nav-item"><span>⚖️</span>Legal</a>
     </nav>
     <div class="sidebar-footer">
       <button class="btn btn-secondary" style="width:100%" onclick="logout()">Cerrar Sesión</button>
@@ -400,7 +403,7 @@ function renderTable() {
       <td>${badgeHtml(inv.status)}</td>
       <td>
         <div class="actions">
-          ${inv.pdf_url ? `<button class="action-btn btn-pdf" onclick="window.open('${inv.pdf_url}','_blank')">📎 PDF</button>` : ''}
+          `<button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}')">📎 PDF</button>`
           <button class="action-btn btn-wp" onclick="sendWhatsApp('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📱 WA</button>
           <button class="action-btn btn-reminder" onclick="sendReminder('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>🔔 Aviso</button>
           ${!isPaid ? `<button class="action-btn btn-paid" onclick="markAsPaid('${inv.id}')">✅ Cobrada</button>` : ''}
@@ -426,12 +429,32 @@ function renderTable() {
     </table>`;
 }
 
+async function downloadPDF(id) {
+  toast('⏳ Generando PDF...', 'info');
+  try {
+    const res = await fetch(`${API}/api/invoices/${id}/pdf`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) { toast('❌ Error generando PDF', 'error'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `factura-${id.slice(0,8)}.pdf`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('✅ PDF descargado', 'success');
+  } catch(e) { toast('❌ Error de conexión', 'error'); }
+}
+
 async function sendWhatsApp(id) {
   if (!confirm('¿Enviar la factura por WhatsApp al cliente?')) return;
   toast('📱 Enviando por WhatsApp...', 'success');
   try {
     const res = await apiPost(`/api/invoices/${id}/send-whatsapp`, {});
-    if (res.success || res.messageSid) {
+    if (res.status === 'demo') {
+      toast('ℹ️ Modo demo — WhatsApp requiere Twilio activo', 'info');
+    } else if (res.success) {
       toast('✅ Factura enviada por WhatsApp', 'success');
     } else {
       toast('❌ ' + (res.error || 'Error al enviar'), 'error');
