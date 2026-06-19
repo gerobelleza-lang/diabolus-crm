@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diabolus · Firmar contrato</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #15101F; --surface: #211A33; --surface2: #2A2140;
+      --border: rgba(139,92,246,.18); --accent: #8B5CF6; --accent-glow: #9d5cff;
+      --gold: #E3BE7A; --text: #e8e8f0; --muted: #A39FB5;
+      --green: #22c55e; --red: #ef4444; --orange: #f97316;
+      --radius: 14px; --font: 'Hanken Grotesk','Inter',system-ui,sans-serif;
+      --mono: 'IBM Plex Mono','Courier New',monospace;
+    }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+    /* ── HEADER ── */
+    header {
+      display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+    .logo span { color: var(--gold); }
+    .header-sub { font-size: 13px; color: var(--muted); }
+
+    /* ── MAIN ── */
+    main { max-width: 680px; margin: 0 auto; padding: 28px 20px 60px; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+    }
+    .card h2 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .card p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ── CONTRACT PREVIEW ── */
+    .contract-preview {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; margin-bottom: 20px;
+    }
+    .contract-preview h3 {
+      font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 16px;
+      text-align: center; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .contract-row { display: flex; gap: 12px; margin-bottom: 10px; align-items: baseline; }
+    .contract-key { font-size: 12px; font-weight: 700; color: var(--muted); min-width: 100px; text-transform: uppercase; letter-spacing: .3px; }
+    .contract-val { font-size: 14px; color: var(--text); flex: 1; }
+    .contract-sep { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+    .contract-objeto {
+      background: rgba(139,92,246,.06); border-left: 3px solid var(--accent);
+      padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 14px;
+      font-size: 14px; color: var(--text); line-height: 1.6; white-space: pre-wrap;
+    }
+
+    /* ── PARTIES ── */
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    @media (max-width: 480px) { .parties { grid-template-columns: 1fr; } }
+    .party-card {
+      border-radius: 10px; padding: 14px;
+    }
+    .party-card.prov { background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.2); }
+    .party-card.cli  { background: rgba(34,197,94,.06); border: 1px solid rgba(34,197,94,.15); }
+    .party-label { font-size: 11px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+    .party-card.prov .party-label { color: var(--accent); }
+    .party-card.cli .party-label  { color: var(--green); }
+    .party-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .party-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ── SALON SIGNATURE ── */
+    .salon-sig-box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: center;
+    }
+    .salon-sig-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .3px; }
+    .salon-sig-img { max-width: 200px; height: 60px; object-fit: contain; background: #fff; border-radius: 6px; padding: 4px; }
+    .sig-name { font-size: 13px; color: var(--text); margin-top: 6px; font-weight: 600; }
+
+    /* ── SIGNATURE PAD ── */
+    .sig-section { margin-bottom: 20px; }
+    .sig-section label { display: block; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+    .sig-container {
+      position: relative; background: #fff; border-radius: 12px;
+      border: 2px solid var(--border); overflow: hidden;
+    }
+    #sig-canvas { width: 100%; height: 180px; display: block; touch-action: none; }
+    .sig-hint {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      pointer-events: none; transition: opacity .3s;
+    }
+    .sig-hint-inner { display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: .35; }
+    .sig-hint .icon { font-size: 28px; }
+    .sig-hint span { font-size: 13px; color: #888; }
+    .sig-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .btn-sig {
+      flex: 1; padding: 10px; border-radius: 9px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-sig.danger { color: var(--red); border-color: rgba(239,68,68,.3); }
+    .btn-sig.danger:hover { background: rgba(239,68,68,.1); }
+
+    /* ── BUTTONS ── */
+    .btn-main {
+      width: 100%; padding: 16px; background: var(--accent); color: #fff;
+      border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: all .25s; display: flex; align-items: center;
+      justify-content: center; gap: 8px; margin-top: 8px;
+    }
+    .btn-main:hover:not(:disabled) { background: var(--accent-glow); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(139,92,246,.3); }
+    .btn-main:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    /* ── SUCCESS ── */
+    #success-panel {
+      text-align: center; padding: 40px 20px;
+    }
+    .success-icon { font-size: 64px; margin-bottom: 16px; }
+    .success-title { font-size: 24px; font-weight: 800; color: var(--green); margin-bottom: 10px; }
+    .success-sub { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+    .cert-pill {
+      display: inline-block; background: rgba(34,197,94,.1); color: var(--green);
+      border: 1px solid rgba(34,197,94,.3); border-radius: 20px; padding: 6px 16px;
+      font-size: 13px; font-weight: 700; margin-bottom: 20px;
+    }
+    .hash-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; margin: 16px 0; text-align: left;
+    }
+    .hash-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+    .hash-val { font-family: var(--mono); font-size: 12px; color: var(--gold); word-break: break-all; }
+
+    /* ── ERROR ── */
+    #error-panel { text-align: center; padding: 60px 20px; }
+    .error-icon { font-size: 48px; margin-bottom: 16px; }
+    .error-title { font-size: 20px; font-weight: 700; color: var(--red); margin-bottom: 10px; }
+
+    /* ── LOADING ── */
+    #loading-panel { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .spinner {
+      width: 32px; height: 32px; border: 3px solid rgba(139,92,246,.2);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin .7s linear infinite; margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── LEGAL NOTE ── */
+    .legal-note {
+      background: rgba(227,190,122,.06); border: 1px solid rgba(227,190,122,.2);
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 20px;
+      font-size: 13px; color: var(--muted); line-height: 1.6;
+    }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 600;
+      color: var(--text); box-shadow: 0 8px 32px rgba(0,0,0,.4);
+      opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999;
+    }
+    #toast.show { opacity: 1; }
+    #toast.error { color: var(--red); border-color: rgba(239,68,68,.4); }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <div class="logo">D<span>·</span></div>
+  <div class="header-sub">Firma digital de contratos · Diabolus CRM</div>
+</header>
+
+<main>
+
+  <!-- LOADING -->
+  <div id="loading-panel">
+    <div class="spinner"></div>
+    <p>Cargando contrato...</p>
+  </div>
+
+  <!-- ERROR -->
+  <div id="error-panel" style="display:none">
+    <div class="error-icon">🔗</div>
+    <div class="error-title">Enlace no válido</div>
+    <p style="color:var(--muted);font-size:14px;" id="error-msg">Este enlace de firma no es válido o ya ha sido utilizado.</p>
+  </div>
+
+  <!-- YA FIRMADO -->
+  <div id="already-signed-panel" style="display:none">
+    <div id="success-panel">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Contrato ya firmado</div>
+      <p class="success-sub" id="already-doc-name">Este contrato ya fue firmado por ambas partes.</p>
+      <div class="cert-pill">⛓️ Sellado con SHA-256</div>
+    </div>
+  </div>
+
+  <!-- SIGN FORM -->
+  <div id="sign-panel" style="display:none">
+
+    <div class="card">
+      <h2>📋 Tienes un contrato para firmar</h2>
+      <p id="sign-intro">Revisa el contenido del contrato y fírmalo abajo con tu dedo o ratón.</p>
+    </div>
+
+    <!-- Contract preview -->
+    <div class="contract-preview">
+      <h3 id="contract-title">—</h3>
+
+      <div class="parties">
+        <div class="party-card prov">
+          <div class="party-label">Parte A — Proveedor</div>
+          <div class="party-name" id="prov-nombre">—</div>
+          <div class="party-detail" id="prov-nif"></div>
+        </div>
+        <div class="party-card cli">
+          <div class="party-label">Parte B — Cliente</div>
+          <div class="party-name" id="cli-nombre">—</div>
+          <div class="party-detail" id="cli-nif"></div>
+        </div>
+      </div>
+
+      <hr class="contract-sep">
+
+      <div class="contract-row">
+        <span class="contract-key">Objeto</span>
+      </div>
+      <div class="contract-objeto" id="contract-objeto">—</div>
+
+      <div id="importe-row" style="display:none">
+        <div class="contract-row">
+          <span class="contract-key">Importe</span>
+          <span class="contract-val" id="contract-importe">—</span>
+        </div>
+        <div class="contract-row">
+          <span class="contract-key">Pago</span>
+          <span class="contract-val" id="contract-pago">—</span>
+        </div>
+      </div>
+
+      <div id="plazo-row" style="display:none">
+        <div class="contract-row">
+          <span class="contract-key">Plazo</span>
+          <span class="contract-val" id="contract-plazo">—</span>
+        </div>
+      </div>
+
+      <div id="condiciones-row" style="display:none">
+        <hr class="contract-sep">
+        <div class="contract-row">
+          <span class="contract-key">Condiciones adicionales</span>
+        </div>
+        <div style="font-size:13px;color:var(--muted);white-space:pre-wrap;" id="contract-condiciones"></div>
+      </div>
+
+      <hr class="contract-sep">
+      <div class="contract-row">
+        <span class="contract-key">Fecha</span>
+        <span class="contract-val" id="contract-fecha">—</span>
+      </div>
+    </div>
+
+    <!-- Firma del proveedor (ya firmado) -->
+    <div class="salon-sig-box" id="salon-sig-box" style="display:none">
+      <div class="salon-sig-label">✅ Firma del proveedor</div>
+      <img id="salon-sig-img" class="salon-sig-img" src="" alt="Firma proveedor" />
+      <div class="sig-name" id="salon-sig-name">—</div>
+    </div>
+
+    <!-- Nota legal -->
+    <div class="legal-note">
+      ⚖️ <strong>Nota legal:</strong> Al firmar este documento confirmas que has leído, comprendido y aceptas todas las condiciones establecidas. Tu firma quedará registrada con sellado de tiempo SHA-256, generando una prueba digital de integridad e inmutabilidad.
+    </div>
+
+    <!-- Firma del cliente -->
+    <div class="sig-section">
+      <label>✍️ Tu firma (dedo en móvil · ratón en portátil)</label>
+      <div class="sig-container">
+        <canvas id="sig-canvas" style="touch-action:none;"></canvas>
+        <div class="sig-hint" id="sig-hint">
+          <div class="sig-hint-inner">
+            <span class="icon">✍️</span>
+            <span>Dibuja tu firma aquí</span>
+          </div>
+        </div>
+      </div>
+      <div class="sig-actions">
+        <button class="btn-sig danger" onclick="clearSig()">🗑️ Limpiar</button>
+        <button class="btn-sig" id="sig-status-btn" style="cursor:default">Firma vacía</button>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button class="btn-main" id="btn-firmar" disabled onclick="firmarContrato()">
+      ✅ Firmar y confirmar
+    </button>
+
+    <!-- Loading -->
+    <div id="sign-loading" style="display:none;text-align:center;padding:20px;color:var(--muted);">
+      <div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0 auto 12px;"></div>
+      <div id="sign-status">Procesando firma...</div>
+    </div>
+
+  </div><!-- /sign-panel -->
+
+  <!-- SUCCESS -->
+  <div id="sign-success" style="display:none">
+    <div id="success-panel">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">¡Contrato firmado!</div>
+      <p class="success-sub">
+        Has firmado el contrato correctamente.<br>
+        Recibirás una copia firmada en <strong id="success-email">tu email</strong>.
+      </p>
+      <div class="cert-pill">⛓️ Sellado con SHA-256 · Firmado por ambas partes</div>
+      <div class="hash-box">
+        <div class="hash-label">Huella SHA-256 del documento firmado</div>
+        <div class="hash-val" id="success-hash">—</div>
+      </div>
+      <button onclick="window.open('https://gerobelleza-lang.github.io/diabolus-crm/verify.html?hash=' + document.getElementById('success-hash').textContent, '_blank')"
+              style="background:var(--surface2);color:var(--accent);border:1px solid rgba(139,92,246,.3);
+                     border-radius:10px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;">
+        🔍 Verificar integridad del documento
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<!-- LIBS -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script>
+// @ts-nocheck
+const API = 'https://diabolus-crm-api.vercel.app';
+
+const tplTitles = {
+  servicios: 'Contrato de prestación de servicios',
+  presupuesto: 'Presupuesto aceptado',
+  nda: 'Acuerdo de confidencialidad (NDA)',
+  encargo: 'Carta de encargo profesional',
+  pago: 'Acuerdo de pago',
+  cesion: 'Cesión de derechos de propiedad intelectual',
+};
+
+// ── Read token from URL ────────────────────────────────────────────────────
+const urlParams = new URLSearchParams(window.location.search);
+const TOKEN = urlParams.get('token');
+
+let signaturePad = null;
+let contractDoc = null; // data returned from backend
+
+function show(id) {
+  ['loading-panel','error-panel','already-signed-panel','sign-panel','sign-success'].forEach(p => {
+    document.getElementById(p).style.display = p === id ? 'block' : 'none';
+  });
+}
+
+// ── Load contract ──────────────────────────────────────────────────────────
+async function loadContract() {
+  if (!TOKEN) {
+    show('error-panel');
+    document.getElementById('error-msg').textContent = 'No se encontró el token en la URL.';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/documents/verify/sign/${TOKEN}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      show('error-panel');
+      document.getElementById('error-msg').textContent = data.error || 'Enlace no válido.';
+      return;
+    }
+
+    if (data.already_signed) {
+      show('already-signed-panel');
+      document.getElementById('already-doc-name').textContent =
+        `"${data.document_name}" ya fue firmado por ambas partes.`;
+      return;
+    }
+
+    contractDoc = data;
+    fillContractPreview(data);
+    show('sign-panel');
+    initSignaturePad();
+
+  } catch (err) {
+    show('error-panel');
+    document.getElementById('error-msg').textContent = 'Error de conexión. Inténtalo de nuevo.';
+  }
+}
+
+// ── Fill preview ───────────────────────────────────────────────────────────
+function fillContractPreview(data) {
+  const cd = data.contract_data || {};
+  const tplTitle = tplTitles[cd.tpl] || data.document_name || 'Contrato';
+
+  document.getElementById('contract-title').textContent = tplTitle.toUpperCase();
+  document.getElementById('sign-intro').innerHTML = `Revisa el contrato <strong>${data.document_name}</strong> y fírmalo abajo.`;
+
+  document.getElementById('prov-nombre').textContent = cd.prov_nombre || '—';
+  document.getElementById('prov-nif').textContent = cd.prov_nif ? 'NIF/CIF: ' + cd.prov_nif : '';
+  document.getElementById('cli-nombre').textContent = cd.cli_nombre || data.client_name || '—';
+  document.getElementById('cli-nif').textContent = cd.cli_nif ? 'DNI/NIF: ' + cd.cli_nif : '';
+
+  document.getElementById('contract-objeto').textContent = cd.objeto || '—';
+
+  if (cd.importe) {
+    document.getElementById('importe-row').style.display = 'block';
+    document.getElementById('contract-importe').textContent =
+      parseFloat(cd.importe).toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' € (IVA no incluido)';
+    document.getElementById('contract-pago').textContent = cd.pago || '—';
+  }
+  if (cd.plazo) {
+    document.getElementById('plazo-row').style.display = 'block';
+    document.getElementById('contract-plazo').textContent = cd.plazo;
+  }
+  if (cd.condiciones) {
+    document.getElementById('condiciones-row').style.display = 'block';
+    document.getElementById('contract-condiciones').textContent = cd.condiciones;
+  }
+
+  const fechaStr = cd.fecha_str || (cd.fecha
+    ? new Date(cd.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+    : new Date().toLocaleDateString('es-ES'));
+  document.getElementById('contract-fecha').textContent = fechaStr;
+
+  // Salon signature preview
+  if (data.salon_signature_data) {
+    document.getElementById('salon-sig-box').style.display = 'block';
+    document.getElementById('salon-sig-img').src = data.salon_signature_data;
+    document.getElementById('salon-sig-name').textContent = cd.prov_nombre || '—';
+  }
+}
+
+// ── Signature pad ──────────────────────────────────────────────────────────
+function initSignaturePad() {
+  const canvas = document.getElementById('sig-canvas');
+  const container = canvas.parentElement;
+
+  function resize() {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width  = container.offsetWidth  * ratio;
+    canvas.height = canvas.offsetHeight    * ratio;
+    canvas.getContext('2d').scale(ratio, ratio);
+    if (signaturePad) signaturePad.clear();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  signaturePad = new SignaturePad(canvas, {
+    backgroundColor: 'rgb(255,255,255)',
+    penColor: '#1a1a2e',
+    minWidth: 1.5,
+    maxWidth: 3.5,
+  });
+
+  signaturePad.addEventListener('beginStroke', () => {
+    document.getElementById('sig-hint').style.opacity = '0';
+  });
+  signaturePad.addEventListener('afterUpdateStroke', () => {
+    const empty = signaturePad.isEmpty();
+    document.getElementById('btn-firmar').disabled = empty;
+    document.getElementById('sig-status-btn').textContent = empty ? 'Firma vacía' : '✅ Firma lista';
+    document.getElementById('sig-status-btn').style.color = empty ? 'var(--muted)' : 'var(--green)';
+  });
+}
+
+function clearSig() {
+  if (signaturePad) {
+    signaturePad.clear();
+    document.getElementById('sig-hint').style.opacity = '1';
+    document.getElementById('btn-firmar').disabled = true;
+    document.getElementById('sig-status-btn').textContent = 'Firma vacía';
+    document.getElementById('sig-status-btn').style.color = 'var(--muted)';
+  }
+}
+
+// ── Generate bilateral PDF ─────────────────────────────────────────────────
+function generateBilateralPDF(contractDoc, clientSigDataURL) {
+  const cd = contractDoc.contract_data || {};
+  const tplTitle = tplTitles[cd.tpl] || contractDoc.document_name || 'Contrato';
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const W = 210, margin = 20, lineH = 7;
+  let y = 20;
+
+  // Header
+  doc.setFillColor(21, 16, 31);
+  doc.rect(0, 0, W, 18, 'F');
+  doc.setTextColor(139, 92, 246);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('DIABOLUS CRM', margin, 12);
+  doc.setTextColor(227, 190, 122);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Documento con sellado de tiempo SHA-256', W - margin, 12, { align: 'right' });
+
+  y = 32;
+
+  // Title
+  doc.setTextColor(21, 16, 31);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(tplTitle.toUpperCase(), W / 2, y, { align: 'center' });
+  y += 4;
+  doc.setDrawColor(139, 92, 246);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, W - margin, y);
+  y += 10;
+
+  // Date
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 100, 100);
+  const fechaStr = cd.fecha_str || new Date().toLocaleDateString('es-ES');
+  doc.text(`Fecha de formalización: ${fechaStr}`, W - margin, y, { align: 'right' });
+  y += 10;
+
+  // Parties
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(21, 16, 31);
+  doc.text('PARTES INTERVINIENTES', margin, y);
+  y += 7;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(80, 50, 150);
+  doc.text('PARTE A — PROVEEDOR:', margin, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(30, 30, 30);
+  doc.text(`${cd.prov_nombre || ''}${cd.prov_nif ? '  ·  NIF/CIF: ' + cd.prov_nif : ''}`, margin + 55, y);
+  y += lineH;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(20, 120, 60);
+  doc.text('PARTE B — CLIENTE:', margin, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(30, 30, 30);
+  doc.text(`${cd.cli_nombre || ''}${cd.cli_nif ? '  ·  DNI/NIF: ' + cd.cli_nif : ''}`, margin + 55, y);
+  y += lineH + 4;
+
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, W - margin, y);
+  y += 8;
+
+  // Object
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(21, 16, 31);
+  doc.text('OBJETO DEL CONTRATO', margin, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(40, 40, 40);
+  const objetoLines = doc.splitTextToSize(cd.objeto || '', W - margin * 2);
+  doc.text(objetoLines, margin, y);
+  y += objetoLines.length * 6 + 6;
+
+  // Importe
+  if (cd.importe) {
+    doc.line(margin, y, W - margin, y);
+    y += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(21, 16, 31);
+    doc.text('CONTRAPRESTACIÓN ECONÓMICA', margin, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(40, 40, 40);
+    doc.text(`Importe: ${parseFloat(cd.importe).toLocaleString('es-ES', { minimumFractionDigits: 2 })} € (IVA no incluido)`, margin, y);
+    y += lineH;
+    if (cd.pago) { doc.text(`Forma de pago: ${cd.pago}`, margin, y); y += lineH; }
+    if (cd.plazo) { doc.text(`Plazo / Vigencia: ${cd.plazo}`, margin, y); y += lineH; }
+    y += 2;
+  }
+
+  // Condiciones
+  if (cd.condiciones) {
+    doc.line(margin, y, W - margin, y);
+    y += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(21, 16, 31);
+    doc.text('CONDICIONES ADICIONALES', margin, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(40, 40, 40);
+    const condLines = doc.splitTextToSize(cd.condiciones, W - margin * 2);
+    doc.text(condLines, margin, y);
+    y += condLines.length * 6 + 6;
+  }
+
+  // Legal clause
+  doc.line(margin, y, W - margin, y);
+  y += 8;
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(90, 90, 90);
+  const clausula = 'Ambas partes, de mutuo acuerdo, suscriben el presente documento, reconociendo haber leído y comprendido su contenido, aceptando todas las condiciones establecidas. Este documento ha sido generado y sellado digitalmente mediante Diabolus CRM.';
+  const clausulaLines = doc.splitTextToSize(clausula, W - margin * 2);
+  doc.text(clausulaLines, margin, y);
+  y += clausulaLines.length * 5 + 10;
+
+  // ── Signatures (bilateral) ──
+  const sigY = Math.max(y, 195);
+  if (sigY + 80 > 285) {
+    doc.addPage();
+    y = 20;
+  } else {
+    y = sigY;
+  }
+
+  const halfW = (W - margin * 2 - 16) / 2;
+  const sigBoxL = margin;
+  const sigBoxR = margin + halfW + 16;
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(21, 16, 31);
+  doc.text('FIRMA DEL PROVEEDOR', sigBoxL + halfW / 2, y, { align: 'center' });
+  doc.text('FIRMA DEL CLIENTE', sigBoxR + halfW / 2, y, { align: 'center' });
+  y += 4;
+
+  // Salon signature
+  if (contractDoc.salon_signature_data) {
+    try {
+      doc.addImage(contractDoc.salon_signature_data, 'PNG', sigBoxL, y, halfW, 28);
+    } catch(e) {}
+  }
+
+  // Client signature
+  try {
+    doc.addImage(clientSigDataURL, 'PNG', sigBoxR, y, halfW, 28);
+  } catch(e) {}
+
+  y += 32;
+
+  doc.setDrawColor(21, 16, 31);
+  doc.setLineWidth(0.4);
+  doc.line(sigBoxL, y, sigBoxL + halfW, y);
+  doc.line(sigBoxR, y, sigBoxR + halfW, y);
+  y += 5;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(60, 60, 60);
+  doc.text(cd.prov_nombre || '—', sigBoxL + halfW / 2, y, { align: 'center' });
+  doc.text(cd.cli_nombre || contractDoc.client_name || '—', sigBoxR + halfW / 2, y, { align: 'center' });
+  y += 5;
+  doc.text(fechaStr, sigBoxL + halfW / 2, y, { align: 'center' });
+  doc.text(new Date().toLocaleDateString('es-ES'), sigBoxR + halfW / 2, y, { align: 'center' });
+
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFillColor(21, 16, 31);
+    doc.rect(0, 287, W, 10, 'F');
+    doc.setTextColor(139, 92, 246);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Sellado con SHA-256 · Diabolus CRM · diabolus.es', W / 2, 293, { align: 'center' });
+  }
+
+  return doc.output('datauristring').split(',')[1]; // base64
+}
+
+// ── Sign contract ──────────────────────────────────────────────────────────
+async function firmarContrato() {
+  if (!signaturePad || signaturePad.isEmpty()) {
+    toast('❌ Firma el documento antes de continuar', 'error');
+    return;
+  }
+
+  document.getElementById('btn-firmar').disabled = true;
+  document.getElementById('sign-loading').style.display = 'block';
+  document.getElementById('sign-status').textContent = 'Generando PDF bilateral...';
+
+  try {
+    const clientSigDataURL = signaturePad.toDataURL('image/png');
+
+    // Generate bilateral PDF
+    const pdfBase64 = generateBilateralPDF(contractDoc, clientSigDataURL);
+
+    document.getElementById('sign-status').textContent = 'Sellando con SHA-256...';
+
+    const res = await fetch(`${API}/api/documents/verify/client-sign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: TOKEN,
+        client_signature_data: clientSigDataURL,
+        pdf_base64: pdfBase64,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al firmar');
+
+    // Show success
+    document.getElementById('success-email').textContent = contractDoc.client_email || 'tu email';
+    document.getElementById('success-hash').textContent = data.hash;
+    show('sign-success');
+
+  } catch (err) {
+    toast('❌ ' + err.message, 'error');
+    document.getElementById('btn-firmar').disabled = false;
+    document.getElementById('sign-loading').style.display = 'none';
+  }
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 3500);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+loadContract();
+</script>
+</body>
+</html>
