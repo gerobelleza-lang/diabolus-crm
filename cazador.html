@@ -21,6 +21,14 @@
       --text-dim: #9A8FB0;
       --border: rgba(139,92,246,0.18);
       --radius: 14px;
+      /* Sidebar compat aliases */
+      --text-primary: #E8E3F0;
+      --text-secondary: #9A8FB0;
+      --text-tertiary: #7C6F9A;
+      --border-color: rgba(139,92,246,0.18);
+      --font-body: 'Hanken Grotesk', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+      --font-display: 'Space Grotesk', sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--ink); color: var(--text); font-family: 'Hanken Grotesk', sans-serif; min-height: 100vh; }
@@ -33,6 +41,29 @@
     .status-pill { display: flex; align-items: center; gap: 6px; background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); border-radius: 20px; padding: 4px 12px; font-size: .8rem; color: #4ade80; font-weight: 600; cursor: pointer; transition: all .2s; }
     .status-pill.inactive { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); color: #f87171; }
     .status-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+
+    /* ── SIDEBAR ── */
+    .main-layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 260px; background: var(--surface); border-right: 1px solid var(--border-color);
+      padding: 2rem 0; display: flex; flex-direction: column;
+      position: fixed; height: 100vh; left: 0; top: 0; overflow-y: auto; z-index: 10;
+    }
+    .sidebar-header { padding: 0 1.5rem 1.5rem; text-align: center; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+    .sidebar-logo { margin-bottom: 0.5rem; padding: 0 0.5rem; }
+    .sidebar-salon { font-size: 0.75rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .sidebar-nav { flex: 1; padding: 0 0.75rem; }
+    .nav-item { padding: 0.65rem 1rem; margin-bottom: 0.2rem; border-radius: 0.5rem; display: flex; align-items: center; gap: 0.75rem; transition: all 0.18s; color: var(--text-secondary); text-decoration: none; font-weight: 500; font-size: 0.875rem; }
+    .nav-item:hover { background: rgba(139,92,246,.08); color: var(--text-primary); }
+    .nav-item.active { background: rgba(139,92,246,.15); color: var(--violet); font-weight: 600; }
+    .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+    .sidebar-footer { padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); }
+    .sidebar-ver { text-align: center; font-size: 0.65rem; color: var(--text-tertiary); margin-top: 0.5rem; font-family: var(--font-mono); }
+    .btn-logout { width: 100%; padding: 0.6rem 1rem; background: transparent; border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer; transition: all .18s; font-family: var(--font-body); }
+    .btn-logout:hover { border-color: var(--violet); color: var(--text-primary); }
+    .main-page { margin-left: 260px; flex: 1; }
+    @media (max-width: 768px) { .sidebar { display: none; } .main-page { margin-left: 0; } }
 
     .container { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
 
@@ -154,16 +185,68 @@
   </style>
 </head>
 <body>
-<nav>
-  <a class="nav-brand" href="dashboard.html">🦅 Agente Cazador</a>
-  <div class="nav-right">
+<div class="main-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220" style="width:100%;max-width:200px;display:block;margin:0 auto;" aria-label="Diabolus">
+          <defs>
+            <filter id="gf-s2" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="12" result="b1"/>
+              <feGaussianBlur stdDeviation="5" result="b2"/>
+              <feGaussianBlur stdDeviation="2" result="b3"/>
+              <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="b3"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="gf-g2" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="sd2" x="-10%" y="-10%" width="120%" height="140%">
+              <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".85"/>
+            </filter>
+            <linearGradient id="gv2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#E0D0FF"/>
+              <stop offset="40%" stop-color="#C4B5FD"/>
+              <stop offset="100%" stop-color="#7C3AED"/>
+            </linearGradient>
+          </defs>
+          <text x="350" y="160" font-family="Georgia,'Times New Roman',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#1a0033" stroke-width="18" filter="url(#sd2)" transform="skewX(-18)">Diabolus</text>
+          <text x="350" y="160" font-family="Georgia,'Times New Roman',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#6D28D9" stroke-width="8" filter="url(#gf-s2)" transform="skewX(-18)" opacity=".6">Diabolus</text>
+          <text x="350" y="160" font-family="Georgia,'Times New Roman',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#8B5CF6" stroke-width="3" filter="url(#gf-s2)" transform="skewX(-18)" opacity=".9">Diabolus</text>
+          <text x="350" y="160" font-family="Georgia,'Times New Roman',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="url(#gv2)" stroke="#C4B5FD" stroke-width=".4" transform="skewX(-18)">Diabolus</text>
+          <line x1="30" y1="178" x2="620" y2="168" stroke="#E3BE7A" stroke-width="1.2" stroke-linecap="round" filter="url(#gf-g2)" opacity=".85"/>
+          <path d="M610 168 Q640 162 655 155" stroke="#E3BE7A" stroke-width=".9" fill="none" stroke-linecap="round" filter="url(#gf-g2)" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="sidebar-salon" id="salonNameSidebar">—</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="chat.html"         class="nav-item"><span class="nav-icon">💬</span> Agente</a>
+      <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+      <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+      <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+      <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+      <a href="documents.html"    class="nav-item"><span class="nav-icon">✍️</span> Documentos</a>
+      <a href="cazador.html"      class="nav-item active"><span class="nav-icon">🦅</span> Cazador</a>
+      <a href="legal.html"        class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+      <div class="sidebar-ver">Diabolus CRM v2.2</div>
+    </div>
+  </aside>
+
+  <div class="main-page">
+  <!-- PAGE HEADER with status pill -->
+  <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:flex-end;gap:14px;">
     <div class="status-pill" id="status-pill" onclick="toggleEnabled()">
       <span class="dot"></span>
       <span id="status-text">Activo</span>
     </div>
-    <a class="nav-back" href="dashboard.html">← Dashboard</a>
   </div>
-</nav>
 
 <div class="container">
 
@@ -319,7 +402,9 @@
     </div>
   </div>
 
-</div>
+</div><!-- /container -->
+</div><!-- /main-page -->
+</div><!-- /main-layout -->
 
 <div class="toast" id="toast"></div>
 
@@ -334,6 +419,11 @@ function getAuth() {
     if (d.salonId && !d.salon_id) d.salon_id = d.salonId;
     return d;
   } catch { return null; }
+}
+
+function logout() {
+  localStorage.removeItem('diabolus_auth');
+  window.location.href = 'index-login.html';
 }
 
 function authHeaders() {
