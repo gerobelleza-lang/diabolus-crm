@@ -12,9 +12,7 @@
       --surface: #211A33;
       --surface2: #2A2040;
       --violet: #8B5CF6;
-      --violet-dim: #6D4EC4;
       --gold: #E3BE7A;
-      --gold-dim: #B8965A;
       --red: #EF4444;
       --orange: #F97316;
       --yellow: #EAB308;
@@ -27,258 +25,298 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--ink); color: var(--text); font-family: 'Hanken Grotesk', sans-serif; min-height: 100vh; }
 
-    /* NAV */
     nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-    .nav-brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--violet); display: flex; align-items: center; gap: 8px; text-decoration: none; }
-    .nav-back { color: var(--text-dim); text-decoration: none; font-size: .9rem; display: flex; align-items: center; gap: 6px; transition: color .2s; }
+    .nav-brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--violet); display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-back { color: var(--text-dim); text-decoration: none; font-size: .88rem; display: flex; align-items: center; gap: 5px; transition: color .2s; }
     .nav-back:hover { color: var(--text); }
+    .status-pill { display: flex; align-items: center; gap: 6px; background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); border-radius: 20px; padding: 4px 12px; font-size: .8rem; color: #4ade80; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .status-pill.inactive { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); color: #f87171; }
+    .status-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
-    /* LAYOUT */
-    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .container { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
 
-    /* HEADER */
-    .page-header { text-align: center; margin-bottom: 40px; }
-    .page-header .icon { font-size: 3rem; margin-bottom: 12px; display: block; }
-    .page-header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.9rem; font-weight: 700; margin-bottom: 8px; }
-    .page-header p { color: var(--text-dim); font-size: 1rem; max-width: 500px; margin: 0 auto; line-height: 1.6; }
-
-    /* STATS ROW */
-    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; }
-    .stat-card .val { font-family: 'IBM Plex Mono', monospace; font-size: 1.8rem; font-weight: 600; color: var(--gold); display: block; }
-    .stat-card .lbl { font-size: .8rem; color: var(--text-dim); margin-top: 4px; }
-
-    /* CARD */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 24px; }
-    .card-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-
-    /* TOGGLE */
-    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--surface2); border-radius: 10px; margin-bottom: 20px; }
-    .toggle-label { font-weight: 600; font-size: .95rem; }
-    .toggle-sub { font-size: .8rem; color: var(--text-dim); margin-top: 2px; }
-    .toggle { position: relative; width: 48px; height: 26px; }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider { position: absolute; inset: 0; background: #3D3358; border-radius: 26px; cursor: pointer; transition: .3s; }
-    .toggle-slider::before { content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: .3s; }
-    .toggle input:checked + .toggle-slider { background: var(--violet); }
-    .toggle input:checked + .toggle-slider::before { transform: translateX(22px); }
-
-    /* LEVEL BLOCK */
-    .level-block { border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
-    .level-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .level-badge { padding: 4px 12px; border-radius: 20px; font-size: .78rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
-    .level-badge.l1 { background: rgba(234,179,8,.15); color: var(--yellow); }
-    .level-badge.l2 { background: rgba(249,115,22,.15); color: var(--orange); }
-    .level-badge.l3 { background: rgba(239,68,68,.15); color: var(--red); }
-    .level-header span { font-weight: 600; font-size: .9rem; }
-
-    .field-row { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: start; }
-    .field-group { margin-bottom: 12px; }
-    label { display: block; font-size: .8rem; color: var(--text-dim); margin-bottom: 6px; }
-    input[type="number"], input[type="text"], select, textarea {
-      width: 100%; background: var(--ink); border: 1px solid var(--border); border-radius: 8px;
-      color: var(--text); font-family: 'Hanken Grotesk', sans-serif; font-size: .9rem;
-      padding: 10px 12px; transition: border-color .2s; resize: vertical;
-    }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--violet); }
-    textarea { min-height: 90px; }
-    .hint { font-size: .75rem; color: var(--text-dim); margin-top: 4px; }
-
-    /* CHANNEL SELECT */
-    .channel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .channel-opt { border: 1px solid var(--border); border-radius: 10px; padding: 14px; cursor: pointer; text-align: center; transition: all .2s; }
-    .channel-opt:hover { border-color: var(--violet-dim); }
-    .channel-opt.active { border-color: var(--violet); background: rgba(139,92,246,.1); }
-    .channel-opt .ch-icon { font-size: 1.5rem; margin-bottom: 6px; }
-    .channel-opt .ch-name { font-size: .85rem; font-weight: 600; }
-    .channel-opt .ch-note { font-size: .72rem; color: var(--text-dim); margin-top: 2px; }
-
-    /* HISTORIAL */
-    .attempt-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-    .attempt-item:last-child { border-bottom: none; }
-    .attempt-level { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
-    .attempt-level.l1 { background: rgba(234,179,8,.15); color: var(--yellow); }
-    .attempt-level.l2 { background: rgba(249,115,22,.15); color: var(--orange); }
-    .attempt-level.l3 { background: rgba(239,68,68,.15); color: var(--red); }
-    .attempt-info { flex: 1; min-width: 0; }
-    .attempt-info .name { font-size: .9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .attempt-info .meta { font-size: .78rem; color: var(--text-dim); margin-top: 2px; }
-    .attempt-date { font-size: .78rem; color: var(--text-dim); white-space: nowrap; }
-    .empty { text-align: center; color: var(--text-dim); padding: 32px; font-size: .9rem; }
-
-    /* BTNS */
-    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .btn { padding: 11px 22px; border-radius: 8px; border: none; cursor: pointer; font-family: 'Hanken Grotesk', sans-serif; font-size: .9rem; font-weight: 600; transition: all .2s; display: inline-flex; align-items: center; gap: 7px; }
+    /* HERO */
+    .page-hero { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-hero-left h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.7rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    .page-hero-left p { color: var(--text-dim); margin-top: 4px; font-size: .9rem; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px; font-family: 'Hanken Grotesk', sans-serif; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
     .btn-primary { background: var(--violet); color: white; }
-    .btn-primary:hover { background: var(--violet-dim); }
+    .btn-primary:hover { background: #7c3aed; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
     .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
     .btn-secondary:hover { border-color: var(--violet); color: var(--violet); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-    /* TOAST */
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--violet); color: var(--text); padding: 12px 20px; border-radius: 10px; font-size: .9rem; opacity: 0; transform: translateY(10px); transition: all .3s; pointer-events: none; z-index: 999; max-width: 320px; }
-    .toast.show { opacity: 1; transform: translateY(0); }
+    /* STATS */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+    .stat-val { font-family: 'IBM Plex Mono', monospace; font-size: 1.7rem; font-weight: 600; color: var(--gold); display: block; line-height: 1; }
+    .stat-val.danger { color: var(--red); }
+    .stat-lbl { font-size: .78rem; color: var(--text-dim); margin-top: 6px; }
+
+    /* CARD */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+    .card-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+
+    /* INVOICE TABLE */
+    .inv-table { width: 100%; border-collapse: collapse; }
+    .inv-table th { text-align: left; font-size: .75rem; color: var(--text-dim); font-weight: 600; padding: 0 12px 10px; letter-spacing: .04em; text-transform: uppercase; }
+    .inv-table td { padding: 12px; border-top: 1px solid var(--border); font-size: .88rem; vertical-align: middle; }
+    .inv-table tr:hover td { background: rgba(139,92,246,.04); }
+
+    .client-name { font-weight: 600; color: var(--text); }
+    .client-email { font-size: .78rem; color: var(--text-dim); margin-top: 2px; }
+
+    .amount { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--gold); }
+
+    .dias-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+    .dias-badge.d1 { background: rgba(234,179,8,.15); color: var(--yellow); }
+    .dias-badge.d3 { background: rgba(249,115,22,.15); color: var(--orange); }
+    .dias-badge.d7 { background: rgba(239,68,68,.15); color: var(--red); }
+
+    .avisos-badges { display: flex; gap: 4px; }
+    .aviso-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; }
+    .aviso-dot.sent { background: var(--violet); color: white; }
+    .aviso-dot.pending { background: rgba(255,255,255,.08); color: var(--text-dim); border: 1px solid var(--border); }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+    .empty-state .icon { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+    .empty-state p { font-size: .9rem; }
+
+    /* HISTORIAL */
+    .attempt-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--border); }
+    .attempt-item:first-child { border-top: none; }
+    .attempt-badge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
+    .attempt-badge.l1 { background: rgba(234,179,8,.2); color: var(--yellow); }
+    .attempt-badge.l2 { background: rgba(249,115,22,.2); color: var(--orange); }
+    .attempt-badge.l3 { background: rgba(239,68,68,.2); color: var(--red); }
+    .attempt-info { flex: 1; }
+    .attempt-name { font-weight: 600; font-size: .88rem; }
+    .attempt-meta { font-size: .78rem; color: var(--text-dim); margin-top: 2px; }
+
+    /* CONFIG SECTION */
+    .config-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+    .config-toggle .arrow { transition: transform .3s; color: var(--text-dim); }
+    .config-toggle.open .arrow { transform: rotate(180deg); }
+    .config-body { display: none; margin-top: 20px; }
+    .config-body.open { display: block; }
+
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--surface2); border-radius: 10px; margin-bottom: 20px; }
+    .toggle-label { font-weight: 600; font-size: .93rem; }
+    .toggle-sub { font-size: .78rem; color: var(--text-dim); margin-top: 2px; }
+    .toggle { position: relative; width: 46px; height: 25px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: #3D3358; border-radius: 25px; cursor: pointer; transition: .3s; }
+    .toggle-slider::before { content: ''; position: absolute; left: 3px; top: 3px; width: 19px; height: 19px; background: white; border-radius: 50%; transition: .3s; }
+    .toggle input:checked + .toggle-slider { background: var(--violet); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(21px); }
+
+    .level-block { border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 14px; }
+    .level-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .level-badge-tag { padding: 3px 10px; border-radius: 20px; font-size: .75rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+    .level-badge-tag.l1 { background: rgba(234,179,8,.15); color: var(--yellow); }
+    .level-badge-tag.l2 { background: rgba(249,115,22,.15); color: var(--orange); }
+    .level-badge-tag.l3 { background: rgba(239,68,68,.15); color: var(--red); }
+    .level-header span { font-weight: 600; font-size: .88rem; }
+
+    .field-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: start; }
+    .field-group { margin-bottom: 10px; }
+    label { display: block; font-size: .78rem; color: var(--text-dim); margin-bottom: 5px; }
+    input[type="number"], select, textarea {
+      width: 100%; background: var(--ink); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: 'Hanken Grotesk', sans-serif; font-size: .88rem;
+      padding: 8px 10px; transition: border-color .2s; resize: vertical;
+    }
+    input[type="number"]:focus, select:focus, textarea:focus { outline: none; border-color: var(--violet); }
+    textarea { min-height: 72px; }
+    .hint { font-size: .73rem; color: var(--text-dim); margin-top: 4px; font-family: 'IBM Plex Mono', monospace; }
+
+    .channel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+    .channel-opt { border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all .2s; }
+    .channel-opt:hover { border-color: var(--violet); }
+    .channel-opt.active { border-color: var(--violet); background: rgba(139,92,246,.12); }
+    .ch-icon { font-size: 1.4rem; margin-bottom: 5px; }
+    .ch-name { font-weight: 600; font-size: .85rem; }
+    .ch-note { font-size: .72rem; color: var(--text-dim); margin-top: 2px; }
+
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #2A2040; border: 1px solid var(--violet); border-radius: 10px; padding: 12px 20px; font-size: .88rem; color: var(--text); transform: translateY(80px); opacity: 0; transition: all .3s; z-index: 9999; max-width: 320px; }
+    .toast.show { transform: translateY(0); opacity: 1; }
     .toast.error { border-color: var(--red); }
-
-    /* OVERDUE LIST */
-    .overdue-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-    .overdue-item:last-child { border-bottom: none; }
-    .overdue-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .overdue-info { flex: 1; min-width: 0; }
-    .overdue-info .name { font-size: .9rem; font-weight: 600; }
-    .overdue-info .days { font-size: .78rem; color: var(--text-dim); margin-top: 2px; }
-    .overdue-amount { font-family: 'IBM Plex Mono', monospace; font-size: .9rem; font-weight: 600; color: var(--gold); }
 
     @media (max-width: 600px) {
       .stats-row { grid-template-columns: 1fr 1fr; }
       .field-row { grid-template-columns: 1fr; }
-      .channel-grid { grid-template-columns: 1fr; }
+      .inv-table th:nth-child(3), .inv-table td:nth-child(3) { display: none; }
     }
   </style>
 </head>
 <body>
-
 <nav>
-  <a class="nav-brand" href="dashboard.html">🦇 Diabolus</a>
-  <a class="nav-back" href="dashboard.html">← Volver al panel</a>
+  <a class="nav-brand" href="dashboard.html">🦅 Agente Cazador</a>
+  <div class="nav-right">
+    <div class="status-pill" id="status-pill" onclick="toggleEnabled()">
+      <span class="dot"></span>
+      <span id="status-text">Activo</span>
+    </div>
+    <a class="nav-back" href="dashboard.html">← Dashboard</a>
+  </div>
 </nav>
 
 <div class="container">
 
-  <!-- HEADER -->
-  <div class="page-header">
-    <span class="icon">🦅</span>
-    <h1>Agente Cazador</h1>
-    <p>Tu cobrador automático. Detecta facturas vencidas y avisa a tus clientes mientras tú te centras en tu trabajo.</p>
+  <!-- HERO -->
+  <div class="page-hero">
+    <div class="page-hero-left">
+      <h1>🦅 Cobros pendientes</h1>
+      <p>El Cazador persigue automáticamente cada factura vencida. Tú no tienes que hacer nada.</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary" id="btn-run">🦅 Ejecutar ahora</button>
+    </div>
   </div>
 
   <!-- STATS -->
   <div class="stats-row">
     <div class="stat-card">
-      <span class="val" id="stat-overdue">—</span>
-      <div class="lbl">Facturas vencidas</div>
+      <span class="stat-val danger" id="stat-count">—</span>
+      <div class="stat-lbl">Facturas vencidas</div>
     </div>
     <div class="stat-card">
-      <span class="val" id="stat-total">—</span>
-      <div class="lbl">Pendiente total</div>
+      <span class="stat-val" id="stat-total">—</span>
+      <div class="stat-lbl">Importe total pendiente</div>
     </div>
     <div class="stat-card">
-      <span class="val" id="stat-attempts">—</span>
-      <div class="lbl">Avisos enviados</div>
+      <span class="stat-val" id="stat-avisos">—</span>
+      <div class="stat-lbl">Avisos enviados (histórico)</div>
     </div>
   </div>
 
-  <!-- CONFIGURACIÓN -->
+  <!-- FACTURAS VENCIDAS — LO PRINCIPAL -->
   <div class="card">
-    <div class="card-title">⚙️ Configuración</div>
-
-    <!-- Toggle activar/desactivar -->
-    <div class="toggle-row">
-      <div>
-        <div class="toggle-label">Cazador activo</div>
-        <div class="toggle-sub">El sistema enviará avisos automáticos cada día a las 10:00</div>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="chk-enabled" checked />
-        <span class="toggle-slider"></span>
-      </label>
+    <div class="card-header">
+      <div class="card-title">⏰ Facturas en seguimiento</div>
+      <button class="btn btn-secondary" onclick="loadOverdue()" style="font-size:.8rem;padding:6px 14px">↻ Actualizar</button>
     </div>
-
-    <!-- Canal -->
-    <div class="field-group" style="margin-bottom:24px">
-      <label>Canal de aviso al cliente</label>
-      <div class="channel-grid">
-        <div class="channel-opt active" data-ch="email">
-          <div class="ch-icon">📧</div>
-          <div class="ch-name">Email</div>
-          <div class="ch-note">Recomendado</div>
-        </div>
-        <div class="channel-opt" data-ch="whatsapp">
-          <div class="ch-icon">💬</div>
-          <div class="ch-name">WhatsApp</div>
-          <div class="ch-note">Próximamente</div>
-        </div>
-        <div class="channel-opt" data-ch="telegram">
-          <div class="ch-icon">✈️</div>
-          <div class="ch-name">Telegram</div>
-          <div class="ch-note">Si tienes bot</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Nivel 1 -->
-    <div class="level-block">
-      <div class="level-header">
-        <span class="level-badge l1">AVISO 1</span>
-        <span>Recordatorio suave</span>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <label>Días de retraso</label>
-          <input type="number" id="l1-days" value="1" min="1" max="30" />
-        </div>
-        <div class="field-group">
-          <label>Mensaje</label>
-          <textarea id="l1-msg">Hola {nombre}, te recordamos que tienes una factura de {importe} pendiente de pago desde hace {dias} día(s). Si ya lo has realizado, ignora este mensaje. ¡Gracias!</textarea>
-        </div>
-      </div>
-      <div class="hint">Variables disponibles: {nombre} {importe} {dias} {numero}</div>
-    </div>
-
-    <!-- Nivel 2 -->
-    <div class="level-block">
-      <div class="level-header">
-        <span class="level-badge l2">AVISO 2</span>
-        <span>Recordatorio urgente</span>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <label>Días de retraso</label>
-          <input type="number" id="l2-days" value="3" min="1" max="60" />
-        </div>
-        <div class="field-group">
-          <label>Mensaje</label>
-          <textarea id="l2-msg">Hola {nombre}, llevamos {dias} días esperando el pago de {importe}. Por favor, confírmanos cuándo puedes regularizarlo. Estamos a tu disposición.</textarea>
-        </div>
-      </div>
-      <div class="hint">Variables disponibles: {nombre} {importe} {dias} {numero}</div>
-    </div>
-
-    <!-- Nivel 3 -->
-    <div class="level-block">
-      <div class="level-header">
-        <span class="level-badge l3">AVISO 3</span>
-        <span>Último aviso</span>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <label>Días de retraso</label>
-          <input type="number" id="l3-days" value="7" min="1" max="90" />
-        </div>
-        <div class="field-group">
-          <label>Mensaje</label>
-          <textarea id="l3-msg">Hola {nombre}, este es nuestro último aviso. La deuda de {importe} lleva {dias} días vencida. Por favor, contáctanos urgentemente para resolverlo.</textarea>
-        </div>
-      </div>
-      <div class="hint">Variables disponibles: {nombre} {importe} {dias} {numero}</div>
-    </div>
-
-    <div class="btn-row" style="margin-top:8px">
-      <button class="btn btn-primary" id="btn-save">💾 Guardar configuración</button>
-      <button class="btn btn-secondary" id="btn-run">🦅 Ejecutar ahora</button>
+    <div id="overdue-wrap">
+      <div class="empty-state"><span class="icon">⏳</span><p>Cargando...</p></div>
     </div>
   </div>
 
-  <!-- FACTURAS VENCIDAS -->
+  <!-- HISTORIAL DE AVISOS -->
   <div class="card">
-    <div class="card-title">⏰ Facturas vencidas en seguimiento</div>
-    <div id="overdue-list"><div class="empty">Cargando...</div></div>
+    <div class="card-header">
+      <div class="card-title">📋 Últimos avisos enviados</div>
+    </div>
+    <div id="attempt-list">
+      <div class="empty-state"><span class="icon">⏳</span><p>Cargando...</p></div>
+    </div>
   </div>
 
-  <!-- HISTORIAL -->
+  <!-- CONFIGURACIÓN (colapsable) -->
   <div class="card">
-    <div class="card-title">📋 Últimos avisos enviados</div>
-    <div id="attempt-list"><div class="empty">Cargando...</div></div>
+    <div class="config-toggle" id="config-toggle" onclick="toggleConfig()">
+      <div class="card-title">⚙️ Configurar avisos automáticos</div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="config-body" id="config-body">
+
+      <div class="toggle-row" style="margin-top:0">
+        <div>
+          <div class="toggle-label">Cazador automático</div>
+          <div class="toggle-sub">Se ejecuta cada día a las 10:00</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chk-enabled" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Canal -->
+      <div class="field-group" style="margin-bottom:18px">
+        <label>Canal de envío al cliente</label>
+        <div class="channel-grid">
+          <div class="channel-opt active" data-ch="email">
+            <div class="ch-icon">📧</div>
+            <div class="ch-name">Email</div>
+            <div class="ch-note">Recomendado</div>
+          </div>
+          <div class="channel-opt" data-ch="whatsapp">
+            <div class="ch-icon">💬</div>
+            <div class="ch-name">WhatsApp</div>
+            <div class="ch-note">Próximamente</div>
+          </div>
+          <div class="channel-opt" data-ch="telegram">
+            <div class="ch-icon">✈️</div>
+            <div class="ch-name">Telegram</div>
+            <div class="ch-note">Si tienes bot</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nivel 1 -->
+      <div class="level-block">
+        <div class="level-header">
+          <span class="level-badge-tag l1">AVISO 1</span>
+          <span>Recordatorio suave</span>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Días de retraso</label>
+            <input type="number" id="l1-days" value="1" min="1" max="30" />
+          </div>
+          <div class="field-group">
+            <label>Mensaje</label>
+            <textarea id="l1-msg">Hola {nombre}, te recordamos que tienes una factura de {importe} pendiente de pago desde hace {dias} día(s). Si ya lo has realizado, ignora este mensaje. ¡Gracias!</textarea>
+          </div>
+        </div>
+        <div class="hint">Variables: {nombre} {importe} {dias} {numero}</div>
+      </div>
+
+      <!-- Nivel 2 -->
+      <div class="level-block">
+        <div class="level-header">
+          <span class="level-badge-tag l2">AVISO 2</span>
+          <span>Recordatorio urgente</span>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Días de retraso</label>
+            <input type="number" id="l2-days" value="3" min="1" max="60" />
+          </div>
+          <div class="field-group">
+            <label>Mensaje</label>
+            <textarea id="l2-msg">Hola {nombre}, llevamos {dias} días esperando el pago de {importe}. Por favor, confírmanos cuándo puedes regularizarlo. Estamos a tu disposición.</textarea>
+          </div>
+        </div>
+        <div class="hint">Variables: {nombre} {importe} {dias} {numero}</div>
+      </div>
+
+      <!-- Nivel 3 -->
+      <div class="level-block">
+        <div class="level-header">
+          <span class="level-badge-tag l3">AVISO 3</span>
+          <span>Último aviso</span>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Días de retraso</label>
+            <input type="number" id="l3-days" value="7" min="1" max="90" />
+          </div>
+          <div class="field-group">
+            <label>Mensaje</label>
+            <textarea id="l3-msg">Hola {nombre}, este es nuestro último aviso. La deuda de {importe} lleva {dias} días vencida. Por favor, contáctanos urgentemente para resolverlo.</textarea>
+          </div>
+        </div>
+        <div class="hint">Variables: {nombre} {importe} {dias} {numero}</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-save">💾 Guardar configuración</button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -310,8 +348,8 @@ function toast(msg, err = false) {
   setTimeout(() => el.classList.remove('show'), 3500);
 }
 
-function formatEur(n) {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+function eur(n) {
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
 }
 
 function formatDate(iso) {
@@ -328,93 +366,149 @@ document.querySelectorAll('.channel-opt').forEach(opt => {
   });
 });
 
-// ── Cargar config ──
-async function loadConfig() {
-  const res = await fetch(`${API}/api/cazador/config`, { headers: authHeaders() });
-  if (!res.ok) return;
-  const d = await res.json();
-  document.getElementById('chk-enabled').checked = d.enabled;
-  document.getElementById('l1-days').value = d.level1_days;
-  document.getElementById('l1-msg').value = d.level1_msg;
-  document.getElementById('l2-days').value = d.level2_days;
-  document.getElementById('l2-msg').value = d.level2_msg;
-  document.getElementById('l3-days').value = d.level3_days;
-  document.getElementById('l3-msg').value = d.level3_msg;
-  selectedChannel = d.channel || 'email';
-  document.querySelectorAll('.channel-opt').forEach(o => {
-    o.classList.toggle('active', o.dataset.ch === selectedChannel);
-  });
+// ── Status pill toggle ──
+let cazadorEnabled = true;
+function toggleEnabled() {
+  cazadorEnabled = !cazadorEnabled;
+  updateStatusPill();
+  document.getElementById('chk-enabled').checked = cazadorEnabled;
+}
+function updateStatusPill() {
+  const pill = document.getElementById('status-pill');
+  const txt = document.getElementById('status-text');
+  if (cazadorEnabled) {
+    pill.className = 'status-pill';
+    txt.textContent = 'Activo';
+  } else {
+    pill.className = 'status-pill inactive';
+    txt.textContent = 'Inactivo';
+  }
 }
 
-// ── Cargar stats ──
-async function loadStats() {
-  const res = await fetch(`${API}/api/cazador/stats`, { headers: authHeaders() });
-  if (!res.ok) return;
-  const d = await res.json();
+// ── Config collapse ──
+function toggleConfig() {
+  const toggle = document.getElementById('config-toggle');
+  const body = document.getElementById('config-body');
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+}
 
-  document.getElementById('stat-overdue').textContent = d.overdue_count;
-  document.getElementById('stat-total').textContent = formatEur(d.overdue_total);
-  document.getElementById('stat-attempts').textContent = d.recent_attempts.length;
+// ── Cargar config ──
+async function loadConfig() {
+  try {
+    const res = await fetch(`${API}/api/cazador/config`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const d = await res.json();
+    cazadorEnabled = d.enabled;
+    updateStatusPill();
+    document.getElementById('chk-enabled').checked = d.enabled;
+    document.getElementById('l1-days').value = d.level1_days;
+    document.getElementById('l1-msg').value = d.level1_msg;
+    document.getElementById('l2-days').value = d.level2_days;
+    document.getElementById('l2-msg').value = d.level2_msg;
+    document.getElementById('l3-days').value = d.level3_days;
+    document.getElementById('l3-msg').value = d.level3_msg;
+    selectedChannel = d.channel || 'email';
+    document.querySelectorAll('.channel-opt').forEach(o => {
+      o.classList.toggle('active', o.dataset.ch === selectedChannel);
+    });
+  } catch(e) {}
+}
 
-  // Historial
-  const alist = document.getElementById('attempt-list');
-  if (!d.recent_attempts.length) {
-    alist.innerHTML = '<div class="empty">🦅 Todavía no se ha enviado ningún aviso</div>';
-  } else {
-    alist.innerHTML = d.recent_attempts.map(a => {
+// ── Cargar facturas vencidas ──
+async function loadOverdue() {
+  const wrap = document.getElementById('overdue-wrap');
+  wrap.innerHTML = '<div class="empty-state"><span class="icon">⏳</span><p>Cargando...</p></div>';
+  try {
+    const res = await fetch(`${API}/api/cazador/overdue`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('API error');
+    const { overdue, total_importe, count } = await res.json();
+
+    document.getElementById('stat-count').textContent = count;
+    document.getElementById('stat-total').textContent = eur(total_importe);
+
+    if (!count) {
+      wrap.innerHTML = '<div class="empty-state"><span class="icon">✅</span><p>No hay facturas vencidas. ¡Todo al día!</p></div>';
+      return;
+    }
+
+    const rows = overdue.map(inv => {
+      const dias = inv.dias_vencida;
+      let badgeClass = dias >= 7 ? 'd7' : dias >= 3 ? 'd3' : 'd1';
+      let badgeText = dias === 1 ? '1 día' : `${dias} días`;
+
+      // Dots de nivel: 1, 2, 3
+      const dots = [1,2,3].map(n => {
+        const sent = inv.max_level >= n;
+        return `<div class="aviso-dot ${sent ? 'sent' : 'pending'}" title="Aviso ${n}: ${sent ? 'enviado' : 'pendiente'}">${n}</div>`;
+      }).join('');
+
+      return `
+        <tr>
+          <td>
+            <div class="client-name">${inv.client_name}</div>
+            <div class="client-email">${inv.client_email || '—'}</div>
+          </td>
+          <td><span class="amount">${eur(inv.total)}</span></td>
+          <td><span class="dias-badge ${badgeClass}">⏰ ${badgeText}</span></td>
+          <td>
+            <div class="avisos-badges" title="${inv.avisos_enviados} aviso(s) enviado(s)">${dots}</div>
+          </td>
+          <td style="font-size:.78rem;color:var(--text-dim)">${formatDate(inv.due_date)}</td>
+        </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Importe</th>
+            <th>Vencida hace</th>
+            <th>Avisos</th>
+            <th>Venció el</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch(e) {
+    wrap.innerHTML = '<div class="empty-state"><span class="icon">⚠️</span><p>Error cargando facturas</p></div>';
+  }
+}
+
+// ── Cargar historial ──
+async function loadAttempts() {
+  try {
+    const res = await fetch(`${API}/api/cazador/stats`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const d = await res.json();
+
+    document.getElementById('stat-avisos').textContent = d.recent_attempts.length;
+
+    const list = document.getElementById('attempt-list');
+    if (!d.recent_attempts.length) {
+      list.innerHTML = '<div class="empty-state"><span class="icon">🦅</span><p>Todavía no se ha enviado ningún aviso</p></div>';
+      return;
+    }
+    list.innerHTML = d.recent_attempts.map(a => {
+      const lc = `l${a.level}`;
       const emoji = a.level === 1 ? '🟡' : a.level === 2 ? '🟠' : '🔴';
-      const levelClass = `l${a.level}`;
       return `
         <div class="attempt-item">
-          <div class="attempt-level ${levelClass}">${a.level}</div>
+          <div class="attempt-badge ${lc}">${a.level}</div>
           <div class="attempt-info">
-            <div class="name">Factura · Aviso nº${a.level}</div>
-            <div class="meta">${emoji} ${a.channel} · ${formatDate(a.sent_at)}</div>
+            <div class="attempt-name">Aviso nº${a.level} ${emoji}</div>
+            <div class="attempt-meta">${a.channel} · ${formatDate(a.sent_at)}</div>
           </div>
         </div>`;
     }).join('');
-  }
-
-  // Overdue list (usando recent_attempts como proxy — hacemos GET overdue separado si hay datos)
-  loadOverdue(d.overdue_count);
-}
-
-async function loadOverdue(count) {
-  const olist = document.getElementById('overdue-list');
-  if (count === 0) {
-    olist.innerHTML = '<div class="empty">✅ No hay facturas vencidas. ¡Todo al día!</div>';
-    return;
-  }
-  // Fetch invoices overdue
-  const res = await fetch(`${API}/api/invoices?status=pending&overdue=true`, { headers: authHeaders() });
-  if (!res.ok) { olist.innerHTML = '<div class="empty">No se pudieron cargar</div>'; return; }
-  const data = await res.json();
-  const invoices = data.data || data || [];
-  const today = new Date();
-  const overdue = invoices.filter(i => i.due_date && new Date(i.due_date) < today && i.status === 'pending');
-  if (!overdue.length) { olist.innerHTML = '<div class="empty">✅ No hay facturas vencidas.</div>'; return; }
-
-  olist.innerHTML = overdue.map(inv => {
-    const dias = Math.floor((today - new Date(inv.due_date)) / 86400000);
-    const color = dias >= 7 ? '#EF4444' : dias >= 3 ? '#F97316' : '#EAB308';
-    const clientName = inv.clients?.name || 'Cliente';
-    return `
-      <div class="overdue-item">
-        <div class="overdue-dot" style="background:${color}"></div>
-        <div class="overdue-info">
-          <div class="name">${clientName}</div>
-          <div class="days">Vencida hace ${dias} día${dias === 1 ? '' : 's'}</div>
-        </div>
-        <div class="overdue-amount">${formatEur(inv.total || 0)}</div>
-      </div>`;
-  }).join('');
+  } catch(e) {}
 }
 
 // ── Guardar config ──
 document.getElementById('btn-save').addEventListener('click', async () => {
   const btn = document.getElementById('btn-save');
-  btn.disabled = true;
-  btn.textContent = 'Guardando...';
+  btn.disabled = true; btn.textContent = 'Guardando...';
   const body = {
     enabled: document.getElementById('chk-enabled').checked,
     level1_days: document.getElementById('l1-days').value,
@@ -425,38 +519,32 @@ document.getElementById('btn-save').addEventListener('click', async () => {
     level3_msg: document.getElementById('l3-msg').value,
     channel: selectedChannel,
   };
-  const res = await fetch(`${API}/api/cazador/config`, {
-    method: 'PUT', headers: authHeaders(), body: JSON.stringify(body),
-  });
-  btn.disabled = false;
-  btn.innerHTML = '💾 Guardar configuración';
-  if (res.ok) { toast('✅ Configuración guardada'); }
-  else { toast('❌ Error al guardar', true); }
+  const res = await fetch(`${API}/api/cazador/config`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(body) });
+  btn.disabled = false; btn.innerHTML = '💾 Guardar configuración';
+  cazadorEnabled = body.enabled;
+  updateStatusPill();
+  res.ok ? toast('✅ Configuración guardada') : toast('❌ Error al guardar', true);
 });
 
 // ── Ejecutar manual ──
 document.getElementById('btn-run').addEventListener('click', async () => {
   const btn = document.getElementById('btn-run');
-  btn.disabled = true;
-  btn.textContent = '🦅 Cazando...';
-  const res = await fetch(`${API}/api/cazador/run`, {
-    method: 'POST', headers: authHeaders(), body: JSON.stringify({}),
-  });
-  const d = await res.json();
-  btn.disabled = false;
-  btn.innerHTML = '🦅 Ejecutar ahora';
-  if (res.ok) {
-    toast(`✅ Cazador ejecutado. ${d.enviados} aviso(s) enviado(s).`);
-    loadStats();
-  } else {
-    toast('❌ Error al ejecutar', true);
-  }
+  btn.disabled = true; btn.textContent = '🦅 Cazando...';
+  try {
+    const res = await fetch(`${API}/api/cazador/run`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({}) });
+    const d = await res.json();
+    btn.disabled = false; btn.innerHTML = '🦅 Ejecutar ahora';
+    if (res.ok) {
+      toast(`✅ Cazador ejecutado. ${d.enviados} aviso(s) enviado(s).`);
+      loadOverdue(); loadAttempts();
+    } else { toast('❌ Error al ejecutar', true); }
+  } catch(e) { btn.disabled = false; btn.innerHTML = '🦅 Ejecutar ahora'; toast('❌ Error de red', true); }
 });
 
-// ── Auth check & init ──
+// ── Init ──
 const auth = getAuth();
 if (!auth?.token) { window.location.href = 'index-login.html'; }
-else { loadConfig(); loadStats(); }
+else { loadConfig(); loadOverdue(); loadAttempts(); }
 </script>
 </body>
 </html>

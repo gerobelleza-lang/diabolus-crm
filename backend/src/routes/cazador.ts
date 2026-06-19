@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { Hono } from 'hono';
-import { createClient } from '@supabase/supabase-js';
 import { getSupabaseAdmin } from '../integrations/supabase';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY!;
@@ -40,7 +39,6 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
   const supabase = getSupabaseAdmin();
   const today = new Date(new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Madrid' }));
 
-  // Obtener salones con cazador activo
   let configQuery = supabase.from('cazador_config').select('*').eq('enabled', true);
   if (salonId) configQuery = configQuery.eq('salon_id', salonId);
   const { data: configs } = await configQuery;
@@ -49,7 +47,6 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
   let totalEnviados = 0;
 
   for (const config of configs) {
-    // Obtener info del salón
     const { data: salon } = await supabase
       .from('salons')
       .select('name, email, telegram_chat_id, whatsapp_number')
@@ -57,7 +54,6 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
       .single();
     if (!salon) continue;
 
-    // Facturas vencidas no pagadas
     const { data: invoices } = await supabase
       .from('invoices')
       .select('*, clients(name, email, phone)')
@@ -75,14 +71,12 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
       const diffMs = today.getTime() - dueDate.getTime();
       const diasVencida = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-      // Determinar nivel a enviar
       let level: 1 | 2 | 3 | null = null;
       if (diasVencida >= config.level3_days) level = 3;
       else if (diasVencida >= config.level2_days) level = 2;
       else if (diasVencida >= config.level1_days) level = 1;
       if (!level) continue;
 
-      // ¿Ya enviamos este nivel?
       const { data: existing } = await supabase
         .from('cobros_cazador')
         .select('id')
@@ -91,7 +85,6 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
         .single();
       if (existing) continue;
 
-      // ¿Ya pagó? (doble check)
       const { data: fresh } = await supabase.from('invoices').select('status').eq('id', invoice.id).single();
       if (fresh?.status === 'paid') continue;
 
@@ -118,7 +111,6 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
       }
 
       if (sent) {
-        // Registrar intento
         await supabase.from('cobros_cazador').insert([{
           salon_id: config.salon_id,
           invoice_id: invoice.id,
@@ -136,7 +128,6 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
       }
     }
 
-    // Informe Telegram al salón
     if (salonEnviados > 0 && salon.telegram_chat_id) {
       const report = [
         `🦅 <b>Agente Cazador — ${new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid' })}</b>`,
@@ -157,7 +148,7 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
 
 export const cazadorRoutes = new Hono();
 
-// GET /api/cazador/config — obtener config del salón
+// GET /api/cazador/config
 cazadorRoutes.get('/config', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
@@ -171,7 +162,6 @@ cazadorRoutes.get('/config', async (c) => {
 
   if (error && error.code !== 'PGRST116') return c.json({ error: error.message }, 500);
 
-  // Si no existe, devolver defaults
   if (!data) {
     return c.json({
       salon_id,
@@ -189,7 +179,7 @@ cazadorRoutes.get('/config', async (c) => {
   return c.json(data);
 });
 
-// PUT /api/cazador/config — guardar config
+// PUT /api/cazador/config
 cazadorRoutes.put('/config', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
@@ -217,7 +207,62 @@ cazadorRoutes.put('/config', async (c) => {
   return c.json({ ok: true });
 });
 
-// GET /api/cazador/stats — estadísticas de cobros pendientes y enviados
+// GET /api/cazador/overdue — facturas vencidas con detalle completo + historial de intentos por factura
+cazadorRoutes.get('/overdue', async (c) => {
+  const salon_id = c.get('salon_id');
+  if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
+  const supabase = getSupabaseAdmin();
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const [{ data: invoices }, { data: attempts }] = await Promise.all([
+    supabase
+      .from('invoices')
+      .select('id, number, total, due_date, status, client_id, clients(name, email, phone)')
+      .eq('salon_id', salon_id)
+      .eq('status', 'pending')
+      .lt('due_date', today)
+      .order('due_date', { ascending: true }),
+    supabase
+      .from('cobros_cazador')
+      .select('invoice_id, level, sent_at, channel, status')
+      .eq('salon_id', salon_id)
+      .order('sent_at', { ascending: false }),
+  ]);
+
+  const attemptsMap: Record<string, any[]> = {};
+  for (const a of (attempts || [])) {
+    if (!attemptsMap[a.invoice_id]) attemptsMap[a.invoice_id] = [];
+    attemptsMap[a.invoice_id].push(a);
+  }
+
+  const now = new Date();
+  const result = (invoices || []).map(inv => {
+    const dueDate = new Date(inv.due_date);
+    const dias = Math.floor((now.getTime() - dueDate.getTime()) / 86400000);
+    const invAttempts = attemptsMap[inv.id] || [];
+    const maxLevel = invAttempts.length ? Math.max(...invAttempts.map(a => a.level)) : 0;
+    const lastAttempt = invAttempts[0] || null;
+    return {
+      id: inv.id,
+      number: inv.number || inv.id.slice(0, 8),
+      total: inv.total || 0,
+      due_date: inv.due_date,
+      dias_vencida: dias,
+      client_name: inv.clients?.name || 'Desconocido',
+      client_email: inv.clients?.email || null,
+      avisos_enviados: invAttempts.length,
+      max_level: maxLevel,
+      last_attempt: lastAttempt,
+    };
+  });
+
+  const total_importe = result.reduce((s, i) => s + i.total, 0);
+
+  return c.json({ overdue: result, total_importe, count: result.length });
+});
+
+// GET /api/cazador/stats — resumen rápido + últimos intentos
 cazadorRoutes.get('/stats', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
@@ -228,7 +273,7 @@ cazadorRoutes.get('/stats', async (c) => {
   const [{ data: overdue }, { data: intentos }] = await Promise.all([
     supabase
       .from('invoices')
-      .select('id, total, clients(name)')
+      .select('id, total')
       .eq('salon_id', salon_id)
       .eq('status', 'pending')
       .lt('due_date', today),
@@ -249,7 +294,7 @@ cazadorRoutes.get('/stats', async (c) => {
   });
 });
 
-// POST /api/cazador/run — ejecutar cazador manual (también llamado por trigger)
+// POST /api/cazador/run — ejecutar cazador manual
 cazadorRoutes.post('/run', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
@@ -261,7 +306,7 @@ cazadorRoutes.post('/run', async (c) => {
   }
 });
 
-// POST /api/internal/cazador/run — trigger diario (sin auth de usuario)
+// POST /api/internal/cazador/run — trigger diario
 export const cazadorInternalRoute = async (c: any) => {
   try {
     const result = await runCazador();
