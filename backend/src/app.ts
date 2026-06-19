@@ -20,6 +20,7 @@ import { onboardingRoutes } from './routes/onboarding'
 import { categoriesRoutes } from './routes/categories'
 import { whatsappRoutes } from './routes/whatsapp'
 import { documentsRoutes, documentsPublicRoutes } from './routes/documents'
+import { cazadorRoutes, cazadorInternalRoute } from './routes/cazador'
 import { supportRoutes } from './routes/support'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
@@ -71,7 +72,7 @@ export function createApp() {
   // ─── Documents Verify (Public — cualquiera puede verificar un hash) ────────
   app.route('/api/documents/verify', documentsPublicRoutes)
 
-  // ─── Support Email Agent (Public — llamado por n8n con secret header) ──────
+  // ─── Support Email (Public — auth via x-support-secret) ────────────────────
   app.route('/api/support', supportRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
@@ -108,6 +109,9 @@ export function createApp() {
     }
   })
 
+  // ─── Internal: Cazador Run (called by daily trigger — no user auth) ────────
+  app.post('/api/internal/cazador/run', cazadorInternalRoute)
+
   // ─── Protected Routes ──────────────────────────────────────────────────────
   app.use('/api/*', authMiddleware)
   app.route('/api/dashboard', dashboardRoutes)
@@ -123,6 +127,7 @@ export function createApp() {
   app.route('/api/categories', categoriesRoutes)
   app.route('/api/notifications/telegram', telegramRoutes)
   app.route('/api/documents', documentsRoutes)
+  app.route('/api/cazador', cazadorRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))
