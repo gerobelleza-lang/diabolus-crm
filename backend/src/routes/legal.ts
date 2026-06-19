@@ -34,7 +34,6 @@ legalRoutes.get('/templates/:slug', async (c) => {
 });
 
 // ── POST /api/legal/templates/:slug/render ────────────────────────
-// Renderiza plantilla sustituyendo {{variables}}
 legalRoutes.post('/templates/:slug/render', async (c) => {
   const { slug } = c.req.param();
   const body = await c.req.json().catch(() => ({}));
@@ -53,14 +52,12 @@ legalRoutes.post('/templates/:slug/render', async (c) => {
   for (const [key, value] of Object.entries(variables)) {
     rendered = rendered.replaceAll(`{{${key}}}`, String(value || '___________'));
   }
-  // Resaltar variables no rellenadas
   rendered = rendered.replace(/\{\{[^}]+\}\}/g, '___________');
 
   return c.json({ rendered, template: data });
 });
 
 // ── GET /api/legal/knowledge ──────────────────────────────────────
-// Busca en la base de conocimiento legal
 legalRoutes.get('/knowledge', async (c) => {
   const q = c.req.query('q') || '';
   const category = c.req.query('category') || '';
@@ -71,15 +68,34 @@ legalRoutes.get('/knowledge', async (c) => {
     .select('id, doc_name, article, title, content, keywords, category, doc_id');
 
   if (category) query = query.eq('category', category);
-  if (q) query = query.textSearch('search_vector', q, { config: 'spanish' });
 
   const { data, error } = await query.limit(20);
   if (error) return c.json({ error: error.message }, 500);
   return c.json({ results: data });
 });
 
+// ── Helpers ───────────────────────────────────────────────────────
+function extractKeywords(question: string): string[] {
+  const stopWords = new Set(['que', 'de', 'la', 'el', 'en', 'un', 'una', 'los', 'las', 'y', 'o', 'a', 'se', 'su', 'me', 'mi', 'si', 'por', 'con', 'para', 'es', 'son', 'hay', 'como', 'qué', 'cómo']);
+  return question
+    .toLowerCase()
+    .replace(/[¿?¡!.,;:]/g, '')
+    .split(' ')
+    .filter(w => w.length > 3 && !stopWords.has(w))
+    .slice(0, 6);
+}
+
+function detectCategory(question: string): string {
+  const q = question.toLowerCase();
+  if (q.includes('morosidad') || q.includes('impag') || q.includes('cobr') || q.includes('interes') || q.includes('mora') || q.includes('pago') || q.includes('factura') || q.includes('venci')) return 'morosidad';
+  if (q.includes('rgpd') || q.includes('datos') || q.includes('privacidad') || q.includes('lopd') || q.includes('consentimiento')) return 'rgpd';
+  if (q.includes('contrato') || q.includes('incumpl') || q.includes('resci') || q.includes('cancel') || q.includes('servicio')) return 'contratos';
+  if (q.includes('web') || q.includes('lssi') || q.includes('aviso legal') || q.includes('online') || q.includes('email')) return 'comercio-electronico';
+  if (q.includes('autóno') || q.includes('autono') || q.includes('trade') || q.includes('trabajo')) return 'autonomos';
+  return 'contratos';
+}
+
 // ── POST /api/legal/chat ──────────────────────────────────────────
-// Agente Legal IA con RAG sobre base de conocimiento
 legalRoutes.post('/chat', async (c) => {
   const salonId = c.get('salonId') || c.get('salon_id');
   const body = await c.req.json().catch(() => ({}));
@@ -88,23 +104,25 @@ legalRoutes.post('/chat', async (c) => {
   if (!question?.trim()) return c.json({ error: 'Pregunta requerida' }, 400);
 
   const supabase = getSupabaseAdmin();
-
-  // 1. Buscar chunks relevantes en la base de conocimiento
   let relevantChunks: any[] = [];
+
+  // ── Búsqueda en base de conocimiento legal ────────────────────
   try {
-    // Búsqueda FTS
-    const { data: ftsResults } = await supabase
+    // Intento 1: FTS con config español
+    const { data: ftsResults, error: ftsError } = await supabase
       .from('legal_knowledge')
       .select('doc_name, article, title, content, category')
-      .textSearch('search_vector', question.split(' ').slice(0, 5).join(' | '), {
-        config: 'spanish',
-      })
+      .textSearch('search_vector', question.split(' ').filter(w => w.length > 3).slice(0, 5).join(' | '), { config: 'spanish' })
       .limit(4);
 
-    if (ftsResults && ftsResults.length > 0) {
+    if (!ftsError && ftsResults && ftsResults.length > 0) {
       relevantChunks = ftsResults;
-    } else {
-      // Fallback: búsqueda por palabras clave manualmente
+    }
+  } catch (_) {}
+
+  // Intento 2: keywords en array
+  if (relevantChunks.length === 0) {
+    try {
       const keywords = extractKeywords(question);
       if (keywords.length > 0) {
         const { data: kwResults } = await supabase
@@ -112,12 +130,28 @@ legalRoutes.post('/chat', async (c) => {
           .select('doc_name, article, title, content, category')
           .overlaps('keywords', keywords)
           .limit(4);
-        relevantChunks = kwResults || [];
+        if (kwResults && kwResults.length > 0) relevantChunks = kwResults;
       }
-    }
+    } catch (_) {}
+  }
 
-    // Si no hay resultados FTS, traer artículos más relevantes por categoría detectada
-    if (relevantChunks.length === 0) {
+  // Intento 3: ILIKE en título y contenido
+  if (relevantChunks.length === 0) {
+    try {
+      const words = extractKeywords(question);
+      const searchTerm = words[0] || question.split(' ')[0];
+      const { data: ilikeResults } = await supabase
+        .from('legal_knowledge')
+        .select('doc_name, article, title, content, category')
+        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+        .limit(4);
+      if (ilikeResults && ilikeResults.length > 0) relevantChunks = ilikeResults;
+    } catch (_) {}
+  }
+
+  // Intento 4: categoría detectada
+  if (relevantChunks.length === 0) {
+    try {
       const detectedCategory = detectCategory(question);
       const { data: catResults } = await supabase
         .from('legal_knowledge')
@@ -125,41 +159,59 @@ legalRoutes.post('/chat', async (c) => {
         .eq('category', detectedCategory)
         .limit(3);
       relevantChunks = catResults || [];
-    }
-  } catch (err) {
-    console.error('[Legal] Error buscando chunks:', err);
+    } catch (_) {}
   }
 
-  // 2. Construir contexto con los chunks encontrados
-  const contextText = relevantChunks.length > 0
-    ? relevantChunks.map(c =>
-        `[${c.doc_name} — ${c.article || ''}]\nTítulo: ${c.title}\n${c.content}`
-      ).join('\n\n---\n\n')
-    : 'No se encontraron artículos específicos en la base de conocimiento.';
+  // Último recurso: artículos más recientes
+  if (relevantChunks.length === 0) {
+    try {
+      const { data: allResults } = await supabase
+        .from('legal_knowledge')
+        .select('doc_name, article, title, content, category')
+        .limit(3);
+      relevantChunks = allResults || [];
+    } catch (_) {}
+  }
 
-  const sources = relevantChunks.map(c => ({
-    doc: c.doc_name,
-    article: c.article,
-    title: c.title,
+  const contextText = relevantChunks.length > 0
+    ? relevantChunks.map(ch =>
+        `[${ch.doc_name} — ${ch.article || ''}]\nTítulo: ${ch.title}\n${ch.content}`
+      ).join('\n\n---\n\n')
+    : 'No se encontraron artículos específicos.';
+
+  const sources = relevantChunks.map(ch => ({
+    doc: ch.doc_name,
+    article: ch.article,
+    title: ch.title,
   }));
 
-  // 3. Llamar al LLM con el contexto legal real
+  // ── LLM ───────────────────────────────────────────────────────
   let answer = '';
-  try {
-    if (!OPENROUTER_API_KEY) {
-      answer = 'El servicio de IA no está disponible temporalmente. Consulta los artículos de la base de conocimiento.';
+
+  if (!OPENROUTER_API_KEY) {
+    // Sin IA: devolvemos los artículos directamente
+    if (relevantChunks.length > 0) {
+      answer = `Artículos relevantes encontrados en la base de conocimiento legal:\n\n` +
+        relevantChunks.map(ch =>
+          `📚 **${ch.doc_name} — ${ch.article || ''}**: ${ch.title}\n${ch.content.substring(0, 300)}...`
+        ).join('\n\n') +
+        '\n\n⚠️ El asistente IA no está disponible temporalmente. Estos son los artículos más relevantes para tu consulta.';
     } else {
-      const systemPrompt = `Eres el Agente Legal de Diabolus CRM, especializado en derecho español para autónomos y pequeñas empresas de servicios.
+      answer = 'No se encontraron artículos específicos para tu consulta. El asistente IA no está disponible temporalmente. Consulta con tu asesor legal.';
+    }
+  } else {
+    try {
+      const systemPrompt = `Eres el Agente Legal de Diabolus CRM, especializado en derecho español para autónomos y pequeñas empresas de servicios (peluquerías, centros de estética, profesionales independientes).
 
 Tu base de conocimiento incluye: Ley 3/2004 de Morosidad, RGPD/LOPD, Código Civil, LSSI y Estatuto del Trabajo Autónomo.
 
 INSTRUCCIONES:
-- Responde SIEMPRE citando el artículo o ley específica cuando lo tengas disponible.
-- Usa el contexto legal proporcionado como fuente principal. Es legislación española oficial.
+- Responde SIEMPRE citando el artículo o ley específica cuando esté disponible en el contexto.
+- Usa el contexto legal proporcionado como fuente principal — es legislación española oficial.
 - Sé preciso, práctico y orientado al negocio pequeño.
-- Si la pregunta está fuera de tu base de conocimiento, indícalo claramente y recomienda consultar a un abogado.
+- Si la pregunta está fuera de tu base de conocimiento, indícalo y recomienda consultar a un abogado.
 - Responde en español, de forma clara y sin jerga jurídica innecesaria.
-- Al final, indica qué documentación o acción concreta recomiendas.
+- Al final, indica qué documentación o acción concreta recomiendas tomar.
 - NUNCA inventes artículos o leyes que no estén en el contexto proporcionado.
 
 CONTEXTO LEGAL OFICIAL:
@@ -188,17 +240,21 @@ ${contextText}`;
         const data = await response.json();
         answer = data.choices?.[0]?.message?.content || 'Sin respuesta del modelo.';
       } else {
-        const errText = await response.text();
+        const errText = await response.text().catch(() => '');
         console.error('[Legal Chat] OpenRouter error:', errText);
-        answer = 'Error al conectar con el servicio de IA. Inténtalo de nuevo.';
+        // Fallback: mostrar artículos directamente
+        answer = `No pude conectar con el asistente IA en este momento.\n\nArtículos más relevantes encontrados:\n\n` +
+          relevantChunks.slice(0, 2).map(ch =>
+            `📚 ${ch.doc_name} — ${ch.article}: ${ch.title}\n${ch.content.substring(0, 400)}`
+          ).join('\n\n---\n\n');
       }
+    } catch (err) {
+      console.error('[Legal Chat] Error LLM:', err);
+      answer = 'Error inesperado al conectar con el asistente. Inténtalo de nuevo en unos segundos.';
     }
-  } catch (err) {
-    console.error('[Legal Chat] Error LLM:', err);
-    answer = 'Error inesperado. Inténtalo de nuevo.';
   }
 
-  // 4. Guardar en historial
+  // ── Guardar historial ─────────────────────────────────────────
   if (salonId) {
     await supabase.from('legal_chat_history').insert([{
       salon_id: salonId,
@@ -214,8 +270,9 @@ ${contextText}`;
 // ── GET /api/legal/chat/history ───────────────────────────────────
 legalRoutes.get('/chat/history', async (c) => {
   const salonId = c.get('salonId') || c.get('salon_id');
-  const supabase = getSupabaseAdmin();
+  if (!salonId) return c.json({ history: [] });
 
+  const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from('legal_chat_history')
     .select('id, question, answer, sources, created_at')
@@ -223,26 +280,6 @@ legalRoutes.get('/chat/history', async (c) => {
     .order('created_at', { ascending: false })
     .limit(20);
 
-  if (error) return c.json({ error: error.message }, 500);
+  if (error) return c.json({ history: [] });
   return c.json({ history: data });
 });
-
-// ── Helpers ───────────────────────────────────────────────────────
-function extractKeywords(text: string): string[] {
-  const stopwords = new Set(['de', 'la', 'el', 'en', 'y', 'a', 'que', 'es', 'se', 'no', 'un', 'una', 'los', 'las', 'del', 'con', 'por', 'para', 'su', 'al', 'le', 'me', 'si', 'pero', 'como', 'más', 'o', 'hay']);
-  return text
-    .toLowerCase()
-    .replace(/[¿?¡!.,;:]/g, '')
-    .split(/\s+/)
-    .filter(w => w.length > 3 && !stopwords.has(w))
-    .slice(0, 6);
-}
-
-function detectCategory(text: string): string {
-  const lower = text.toLowerCase();
-  if (/pago|cobr|factura|deuda|moroso|interés|vencid|impag/.test(lower)) return 'cobros';
-  if (/dato|privacidad|rgpd|lopd|consentimiento|aepd/.test(lower)) return 'datos';
-  if (/contrato|acuerdo|cancelaci|señal|arras|resolv/.test(lower)) return 'contratos';
-  if (/web|internet|cookie|aviso legal|lssi/.test(lower)) return 'web';
-  return 'contratos';
-}
