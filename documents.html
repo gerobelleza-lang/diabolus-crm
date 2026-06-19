@@ -563,42 +563,52 @@
       </div>
     </div>
 
-    <!-- STEP 4: CERTIFICADO -->
+    <!-- STEP 4: ENVIADO AL CLIENTE -->
     <div id="step-4" style="display:none">
       <div class="certificate-result" id="cert-result-crear" style="display:block;">
         <div class="cert-header">
-          <span class="check">✅</span>
+          <span class="check">📨</span>
           <div>
-            <h3>Contrato firmado y sellado</h3>
-            <p>El documento tiene validez probatoria con sello SHA-256</p>
+            <h3>Contrato enviado al cliente</h3>
+            <p>Recibirá un email con el enlace para leer y firmar el documento</p>
           </div>
         </div>
-        <div class="cert-hash">
-          <div class="label">Huella SHA-256</div>
-          <span id="cert-hash-crear"></span>
+
+        <!-- Enlace de firma -->
+        <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:12px;padding:16px;margin:16px 0;">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Enlace de firma</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input id="signing-url-input" readonly style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--muted);font-family:var(--mono);font-size:11px;min-width:0;" />
+            <button class="btn-cert copy" id="btn-copy-signing-url" style="flex-shrink:0;">📋 Copiar</button>
+          </div>
         </div>
+
+        <!-- Estado y destino -->
         <div class="cert-meta">
           <div class="cert-field">
-            <div class="key">Fecha y hora (Madrid)</div>
-            <div class="val" id="cert-date-crear"></div>
+            <div class="key">Enviado a</div>
+            <div class="val" id="cert-client-email-crear" style="color:var(--green)"></div>
+          </div>
+          <div class="cert-field">
+            <div class="key">Estado</div>
+            <div class="val" style="color:var(--gold);">⏳ Pendiente de firma del cliente</div>
           </div>
           <div class="cert-field">
             <div class="key">Tipo</div>
             <div class="val" id="cert-type-crear"></div>
           </div>
           <div class="cert-field">
-            <div class="key">ID de certificado</div>
+            <div class="key">ID documento</div>
             <div class="val" id="cert-id-crear" style="font-family:var(--mono);font-size:11px"></div>
           </div>
-          <div class="cert-field">
-            <div class="key">Nivel</div>
-            <div class="val">Sellado de tiempo SHA-256</div>
-          </div>
         </div>
-        <div class="cert-actions">
-          <button class="btn-cert copy" id="btn-copy-hash-crear">📋 Copiar hash</button>
-          <button class="btn-cert share" id="btn-copy-url-crear">🔗 Copiar URL verificación</button>
-          <button class="btn-cert download" id="btn-download-pdf">⬇️ Descargar PDF</button>
+
+        <!-- Acciones -->
+        <div class="cert-actions" style="flex-wrap:wrap;gap:8px;">
+          <button class="btn-cert download" id="btn-download-pdf">⬇️ Mi copia (PDF)</button>
+          <button class="btn-cert share" id="btn-whatsapp-share" style="background:rgba(37,211,102,.12);color:#25d366;border-color:rgba(37,211,102,.3);">
+            💬 Enviar por WhatsApp
+          </button>
         </div>
       </div>
       <button class="btn-main" onclick="resetCrear()" style="max-width:340px;margin:0 auto 28px;">➕ Crear otro contrato</button>
@@ -1079,49 +1089,71 @@ async function generarYSellar() {
     window._lastPdfDoc = doc;
     window._lastPdfName = docName;
 
-    // ── Stamp ──
-    document.getElementById('gen-status').textContent = 'Sellando con SHA-256...';
+    // ── Enviar al cliente para firma bilateral ──
+    document.getElementById('gen-status').textContent = 'Enviando enlace al cliente...';
 
-    const res = await fetch(`${API}/api/documents/stamp`, {
+    const sigDataPNG = signaturePad.toDataURL('image/png');
+
+    const res = await fetch(`${API}/api/documents/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${auth.token}`
       },
       body: JSON.stringify({
-        document_name: docName,
-        document_base64: pdfBase64,
-        document_type: selectedTpl,
         salon_id: auth.salon_id,
+        salon_email: auth.email || '',
+        document_name: docName,
+        document_type: selectedTpl,
+        salon_signature_data: sigDataPNG,
+        client_email: cliEmail,
+        client_name: cliNombre,
+        contract_data: {
+          tpl: selectedTpl,
+          prov_nombre: provNombre,
+          prov_nif: provNif,
+          cli_nombre: cliNombre,
+          cli_nif: cliNif,
+          cli_email: cliEmail,
+          cli_tel: document.getElementById('c-cli-tel').value.trim(),
+          objeto,
+          importe,
+          pago,
+          plazo,
+          condiciones,
+          fecha: fechaInput,
+          fecha_str: fechaStr,
+          doc_name: docName,
+        },
       })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al sellar');
+    if (!res.ok) throw new Error(data.error || 'Error al enviar');
 
     lastCertData = data;
 
-    // Show certificate
-    document.getElementById('cert-hash-crear').textContent = data.hash;
-    document.getElementById('cert-date-crear').textContent = data.stamped_at_madrid;
-    document.getElementById('cert-type-crear').textContent = tplTitles[data.document_type] || data.document_type;
-    document.getElementById('cert-id-crear').textContent = data.certificate_id;
+    // Rellenar Step 4
+    document.getElementById('signing-url-input').value = data.signing_url;
+    document.getElementById('cert-client-email-crear').textContent = cliEmail;
+    document.getElementById('cert-type-crear').textContent = tplTitles[selectedTpl] || selectedTpl;
+    document.getElementById('cert-id-crear').textContent = data.document_id;
 
-    document.getElementById('btn-copy-hash-crear').onclick = () => {
-      navigator.clipboard.writeText(data.hash);
-      toast('📋 Hash copiado', 'success');
-    };
-    document.getElementById('btn-copy-url-crear').onclick = () => {
-      navigator.clipboard.writeText(data.verify_url);
-      toast('🔗 URL copiada', 'success');
+    document.getElementById('btn-copy-signing-url').onclick = () => {
+      navigator.clipboard.writeText(data.signing_url);
+      toast('📋 Enlace copiado', 'success');
     };
     document.getElementById('btn-download-pdf').onclick = () => {
       window._lastPdfDoc.save((window._lastPdfName || 'contrato') + '.pdf');
       toast('⬇️ PDF descargado', 'success');
     };
+    document.getElementById('btn-whatsapp-share').onclick = () => {
+      const msg = encodeURIComponent(`Hola ${cliNombre}, te envío el contrato "${docName}" para que lo revises y firmes: ${data.signing_url}`);
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    };
 
     goStep(4);
     loadDocuments();
-    toast('✅ Contrato firmado y sellado', 'success');
+    toast('📨 Enlace de firma enviado a ' + cliEmail, 'success');
 
   } catch (err) {
     toast('❌ ' + err.message, 'error');
@@ -1272,23 +1304,37 @@ async function loadDocuments() {
       servicios: '📝 Servicios', pago: '💸 Pago',
     };
 
-    list.innerHTML = docs.map(doc => `
+    list.innerHTML = docs.map(doc => {
+      const isPending = doc.status === 'pending_client';
+      const isCompleted = doc.status === 'completed';
+      const statusBadge = isPending
+        ? '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(227,190,122,.12);color:var(--gold);border:1px solid rgba(227,190,122,.3);">⏳ Pendiente</span>'
+        : isCompleted
+          ? '<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.3);">✅ Firmado</span>'
+          : `<span class="doc-badge ${doc.level === 2 ? 'level2' : ''}">${doc.level === 1 ? '⛓️ Sellado' : '✍️ Firmafiy'}</span>`;
+
+      const clientInfo = doc.client_name
+        ? `<div style="font-size:11px;color:var(--muted);">Cliente: ${doc.client_name}${doc.client_signed_at ? ' · Firmó: ' + new Date(doc.client_signed_at).toLocaleString('es-ES',{timeZone:'Europe/Madrid'}) : ''}</div>`
+        : '';
+
+      const hashDisplay = isPending ? '' : `<div class="doc-hash">SHA-256: ${doc.sha256_hash}</div>`;
+
+      return `
       <div class="doc-item">
         <div class="doc-icon">${(typeLabels[doc.document_type] || '📄').split(' ')[0]}</div>
         <div class="doc-info">
           <div class="doc-name">${doc.document_name}</div>
-          <div class="doc-hash">SHA-256: ${doc.sha256_hash}</div>
+          ${hashDisplay}
           <div class="doc-meta">${new Date(doc.stamped_at).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })} · ${typeLabels[doc.document_type] || doc.document_type}</div>
+          ${clientInfo}
         </div>
-        <span class="doc-badge ${doc.level === 2 ? 'level2' : ''}">
-          ${doc.level === 1 ? '⛓️ Sellado' : '✍️ Firmafiy'}
-        </span>
+        ${statusBadge}
         <div class="doc-actions">
-          <button class="btn-icon" title="Copiar hash" onclick="copyHash('${doc.sha256_hash}')">📋</button>
-          <button class="btn-icon" title="Ver verificación" onclick="openVerify('${doc.sha256_hash}')">🔍</button>
+          ${!isPending ? `<button class="btn-icon" title="Copiar hash" onclick="copyHash('${doc.sha256_hash}')">📋</button>` : ''}
+          ${!isPending ? `<button class="btn-icon" title="Ver verificación" onclick="openVerify('${doc.sha256_hash}')">🔍</button>` : ''}
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   } catch (err) {
     list.innerHTML = `<div class="empty"><p>Error cargando documentos: ${err.message}</p></div>`;
   }
