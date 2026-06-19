@@ -184,7 +184,11 @@
         salonName: 'Demo Negocio',
         token:     'demo_token_xyz'
       }))
-      window.location.href = 'dashboard.html'
+      window.location.href = isMobile() ? 'mobile.html' : 'dashboard.html'
+    }
+
+    function isMobile() {
+      return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768
     }
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -222,7 +226,7 @@
           token:     data.token,
         }))
 
-        window.location.href = 'dashboard.html'
+        window.location.href = isMobile() ? 'mobile.html' : 'dashboard.html'
 
       } catch (err) {
         alertEl.textContent   = 'Error de conexión. Comprueba tu internet.'

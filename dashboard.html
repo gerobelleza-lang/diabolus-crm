@@ -669,6 +669,12 @@
     const auth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null')
     if (!auth?.token) window.location.href = 'index-login.html'
 
+    // ── Mobile → Panel de Mando (salvo que el usuario haya pedido escritorio) ──
+    if (!sessionStorage.getItem('forceDesktop') &&
+        (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768)) {
+      window.location.replace('mobile.html')
+    }
+
     function logout() {
       localStorage.removeItem('diabolus_auth')
       window.location.href = 'index-login.html'
