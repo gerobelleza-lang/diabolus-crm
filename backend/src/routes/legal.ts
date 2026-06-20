@@ -267,8 +267,9 @@ ${contextText}`;
 
   return c.json({ answer, sources });
   } catch (topErr: any) {
-    console.error('[Legal Chat] Uncaught error:', topErr?.message || topErr);
-    return c.json({ answer: 'Error interno. Inténtalo de nuevo en unos segundos.', sources: [] });
+    const errMsg = topErr?.message || String(topErr) || 'unknown';
+    console.error('[Legal Chat] Uncaught error:', errMsg);
+    return c.json({ answer: `DEBUG ERROR: ${errMsg}`, sources: [] });
   }
 });
 
