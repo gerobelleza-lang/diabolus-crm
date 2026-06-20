@@ -39,6 +39,8 @@ export function createApp() {
     cors({
       origin: (origin) => {
         const allowed = [
+          'https://diabolus.es',
+          'https://www.diabolus.es',
           'https://gerobelleza-lang.github.io',
           'http://localhost:3000',
           'http://localhost:5500',
