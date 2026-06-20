@@ -827,7 +827,7 @@ async function startMediaRecorderFallback() {
 
     try {
       const auth = getAuth();
-      const res = await fetch('/api/agent/transcribe', {
+      const res = await fetch(`${API}/api/agent/transcribe`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${auth.token}` },
         body: form
