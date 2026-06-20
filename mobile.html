@@ -666,10 +666,24 @@ async function submit(userText) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${auth.token}`
       },
-      body: JSON.stringify({ userInput: msg })
+      body: JSON.stringify({ userInput: msg, salon_id: auth.salon_id })
     });
-    const data = await res.json();
+
+    let data;
+    try { data = await res.json(); } catch(e) { data = {}; }
+
     removeTyping();
+
+    if (!res.ok) {
+      setStatus('Error ' + res.status);
+      if (res.status === 401 || res.status === 403) {
+        addMsg('ai', '🔐 Sesión expirada. <a href="index-login.html" style="color:var(--purple)">Inicia sesión de nuevo</a>.');
+      } else {
+        addMsg('ai', `❌ Error ${res.status}: ${data.error || data.message || 'Sin respuesta del servidor'}`);
+      }
+      return;
+    }
+
     setStatus('Listo');
 
     if (data.status === 'pending_confirmation' && data.card) {
@@ -686,7 +700,8 @@ async function submit(userText) {
   } catch (err) {
     removeTyping();
     setStatus('Sin conexión');
-    addMsg('ai', '❌ Error de conexión. Inténtalo de nuevo.');
+    const errMsg = (err && err.message) ? err.message : String(err);
+    addMsg('ai', `❌ Fallo de red: ${errMsg.includes('fetch') ? 'CORS o sin conexión' : errMsg}`);
   }
 }
 

@@ -1,10 +1,9 @@
-// sw.js — Diabolus PWA Service Worker
+// sw.js — Diabolus PWA Service Worker v3
 // Estrategia: Cache-first para el app shell; Network-only para /api/*
-// Offline: muestra offline.html honesto, sin simular acciones.
+// v3: FIX — no interceptar peticiones externas (evita CORS bug en Safari)
 
-const CACHE_NAME = 'diabolus-shell-v2';
+const CACHE_NAME = 'diabolus-shell-v3';
 
-// App shell — lo que se precarga al instalar el SW
 const SHELL_URLS = [
   '/chat.html',
   '/dashboard.html',
@@ -15,27 +14,20 @@ const SHELL_URLS = [
   '/onboarding.html',
   '/register.html',
   '/reports.html',
-  '/api-client.js',
   '/manifest.json',
   '/offline.html',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-maskable-192.png',
 ];
 
-// ── Install: precarga el shell ──────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // addAll falla si alguna URL falla; usamos add individual para ser resilientes
       return Promise.allSettled(
-        SHELL_URLS.map((url) => cache.add(url).catch(() => { /* silencio: no bloquea */ }))
+        SHELL_URLS.map((url) => cache.add(url).catch(() => {}))
       );
     }).then(() => self.skipWaiting())
   );
 });
 
-// ── Activate: limpia caches viejas ─────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -48,14 +40,20 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// ── Fetch ───────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // 1) API calls → siempre red. Nunca caché. Si falla: el UI gestiona el error.
+  // 1) Peticiones externas (API, etc.) → NO interceptar.
+  //    El navegador las maneja directamente con CORS nativo.
+  //    IMPORTANTE: en Safari, event.respondWith(fetch(req)) en SW puede
+  //    cortar los headers CORS. Dejamos que el browser lo gestione solo.
+  if (url.hostname !== self.location.hostname) {
+    return; // no llamar event.respondWith → browser maneja CORS nativo
+  }
+
+  // 2) Internal API calls → siempre red (nunca caché)
   if (
-    url.hostname !== self.location.hostname ||
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/telegram/') ||
     url.pathname.startsWith('/webhooks/')
@@ -64,13 +62,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) Navegación (HTML) → intenta red primero (contenido fresco);
-  //    si no hay red, sirve desde caché; si tampoco está en caché, offline.html
+  // 3) Navegación HTML → network first, cache fallback
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Guarda copia fresca en cache
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
@@ -84,7 +80,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3) Otros assets estáticos → cache-first, network fallback
+  // 4) Otros assets → cache first, network fallback
   event.respondWith(
     caches.match(request).then(
       (cached) =>
