@@ -75,7 +75,7 @@ export function routeToLLM(
   // Default: use Sonnet for safety
   return {
     level: 'L2',
-    model: 'anthropic/claude-sonnet-4-20250514',
+    model: 'anthropic/claude-sonnet-4.5',
     rationale: 'Default to Sonnet for balanced accuracy/cost.',
     estimatedCost: 0.005
   }
