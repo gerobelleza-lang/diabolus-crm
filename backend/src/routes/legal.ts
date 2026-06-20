@@ -257,19 +257,20 @@ ${contextText}`;
 
   // ── Guardar historial ─────────────────────────────────────────
   if (salonId) {
-    await supabase.from('legal_chat_history').insert([{
-      salon_id: salonId,
-      question,
-      answer,
-      sources,
-    }]).catch(() => {});
+    try {
+      await supabase.from('legal_chat_history').insert([{
+        salon_id: salonId,
+        question,
+        answer,
+        sources,
+      }]);
+    } catch (_) { /* historial opcional */ }
   }
 
   return c.json({ answer, sources });
   } catch (topErr: any) {
-    const errMsg = topErr?.message || String(topErr) || 'unknown';
-    console.error('[Legal Chat] Uncaught error:', errMsg);
-    return c.json({ answer: `DEBUG ERROR: ${errMsg}`, sources: [] });
+    console.error('[Legal Chat] Uncaught error:', topErr?.message || topErr);
+    return c.json({ answer: 'Ha ocurrido un error inesperado. Inténtalo de nuevo.', sources: [] });
   }
 });
 
