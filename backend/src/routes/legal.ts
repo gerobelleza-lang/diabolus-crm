@@ -97,6 +97,7 @@ function detectCategory(question: string): string {
 
 // ── POST /api/legal/chat ──────────────────────────────────────────
 legalRoutes.post('/chat', async (c) => {
+  try {
   const salonId = c.get('salonId') || c.get('salon_id');
   const body = await c.req.json().catch(() => ({}));
   const { question } = body;
@@ -265,6 +266,10 @@ ${contextText}`;
   }
 
   return c.json({ answer, sources });
+  } catch (topErr: any) {
+    console.error('[Legal Chat] Uncaught error:', topErr?.message || topErr);
+    return c.json({ answer: 'Error interno. Inténtalo de nuevo en unos segundos.', sources: [] });
+  }
 });
 
 // ── GET /api/legal/chat/history ───────────────────────────────────
