@@ -666,21 +666,21 @@ async function submit(userText) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${auth.token}`
       },
-      body: JSON.stringify({ message: msg, salon_id: auth.salon_id })
+      body: JSON.stringify({ userInput: msg })
     });
     const data = await res.json();
     removeTyping();
     setStatus('Listo');
 
-    if (data.confirmation_card) {
+    if (data.status === 'pending_confirmation' && data.card) {
       pendingAction = data;
-      const card = data.confirmation_card;
-      const summary = card.summary || card.message || JSON.stringify(card);
+      const card = data.card;
+      const summary = card.summary || card.message || card.description || JSON.stringify(card);
       document.getElementById('sheetBody').textContent = summary;
       document.getElementById('sheetOverlay').classList.add('open');
       addMsg('ai', '⚡ Revisa la acción a confirmar.');
     } else {
-      const reply = data.reply || data.message || '✓ Hecho.';
+      const reply = data.message || data.reply || '✓ Hecho.';
       addMsg('ai', escHtml(reply).replace(/\n/g,'<br>'));
     }
   } catch (err) {
@@ -697,22 +697,19 @@ async function confirmSheet() {
   addTyping();
   setStatus('Ejecutando…');
   try {
-    const res = await fetch(`${API}/api/agent/chat`, {
+    const pendingId = pendingAction.card?.action_id || pendingAction.card?.pending_action_id || pendingAction.action_id;
+    const res = await fetch(`${API}/api/agent/confirm`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${auth.token}`
       },
-      body: JSON.stringify({
-        message: 'CONFIRMAR',
-        salon_id: auth.salon_id,
-        confirm_action_id: pendingAction.action_id
-      })
+      body: JSON.stringify({ pending_action_id: pendingId })
     });
     const data = await res.json();
     removeTyping();
     setStatus('Listo');
-    addMsg('ai', escHtml(data.reply || data.message || '✅ ¡Hecho! Registrado en tu contabilidad.').replace(/\n/g,'<br>'));
+    addMsg('ai', escHtml(data.message || data.reply || '✅ ¡Hecho! Registrado en tu contabilidad.').replace(/\n/g,'<br>'));
   } catch {
     removeTyping();
     addMsg('ai', '❌ Error al confirmar. Inténtalo de nuevo.');
@@ -722,6 +719,14 @@ async function confirmSheet() {
 
 function cancelSheet() {
   document.getElementById('sheetOverlay').classList.remove('open');
+  if (pendingAction) {
+    const pendingId = pendingAction.card?.action_id || pendingAction.card?.pending_action_id || pendingAction.action_id;
+    fetch(`${API}/api/agent/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${auth.token}` },
+      body: JSON.stringify({ pending_action_id: pendingId })
+    }).catch(() => {});
+  }
   addMsg('ai', 'Cancelado. Dime si quieres hacer algo más.');
   pendingAction = null;
 }
@@ -772,14 +777,9 @@ async function startVoice() {
 
     recog.onerror = (ev) => {
       console.warn('SR error:', ev.error);
-      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-        stopVoice();
-        addMsg('ai', '🎙 Micrófono bloqueado. Ve a Ajustes → Safari → Micrófono → Permitir.');
-      } else {
-        // Fallo silencioso → usar fallback
-        if (recog) { try { recog.abort(); } catch(e){} recog = null; }
-        startMediaRecorderFallback();
-      }
+      // Cualquier error de SR → caer al MediaRecorder (más fiable en iOS)
+      if (recog) { try { recog.abort(); } catch(e){} recog = null; }
+      startMediaRecorderFallback();
     };
 
     try {
@@ -827,7 +827,7 @@ async function startMediaRecorderFallback() {
 
     try {
       const auth = getAuth();
-      const res = await fetch('/api/agent/transcribe', {
+      const res = await fetch(`${API}/api/agent/transcribe`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${auth.token}` },
         body: form
