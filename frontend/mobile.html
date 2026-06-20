@@ -550,7 +550,7 @@
     <div class="voice-ring"></div>
     <div class="voice-ring"></div>
     <div class="voice-ring"></div>
-    <div class="voice-circle" onclick="stopVoice()">🎙</div>
+    <div class="voice-circle" onclick="stopVoice()" title="Parar">◉</div>
   </div>
   <div class="voice-transcript" id="voiceTranscript">Di tu orden…</div>
   <button class="btn-voice-cancel" onclick="stopVoice()">Cancelar</button>
@@ -729,52 +729,144 @@ function cancelSheet() {
 /* ── VOICE ── */
 let recog = null;
 let isRec = false;
+let mediaRec = null;
 
 function toggleVoice() {
   if (isRec) { stopVoice(); return; }
   startVoice();
 }
 
-function startVoice() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    addMsg('ai', '🎙 Voz no disponible. Usa Chrome (Android) o Safari (iOS 17+).');
+async function startVoice() {
+  // Step 1 — pedir permiso de micrófono explícitamente (iOS requiere esto)
+  try {
+    const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    testStream.getTracks().forEach(t => t.stop());
+  } catch(err) {
+    addMsg('ai', '🎙 Necesito acceso al micrófono.\n\nVe a: Ajustes → Safari → Micrófono → Permitir para diabolus.es');
     return;
   }
-  recog = new SR();
-  recog.lang = 'es-ES';
-  recog.continuous = false;
-  recog.interimResults = true;
 
-  recog.onstart = () => {
-    isRec = true;
-    document.getElementById('btnMic').classList.add('recording');
-    document.getElementById('voiceScreen').classList.add('open');
-    document.getElementById('voiceTranscript').textContent = 'Escuchando…';
-    document.getElementById('voiceLabel').textContent = 'Habla ahora';
+  isRec = true;
+  openVoiceUI('Habla ahora', 'Escuchando…');
+
+  // Step 2 — intentar API nativa (Chrome / Safari iOS 17+)
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    recog = new SR();
+    recog.lang = 'es-ES';
+    recog.continuous = false;
+    recog.interimResults = true;
+    recog.maxAlternatives = 1;
+
+    recog.onresult = (e) => {
+      const t = Array.from(e.results).map(r => r[0].transcript).join('');
+      document.getElementById('voiceTranscript').textContent = t;
+    };
+
+    recog.onend = () => {
+      const t = document.getElementById('voiceTranscript').textContent.trim();
+      stopVoice();
+      const bad = ['escuchando…','di tu orden…','habla ahora'];
+      if (t && !bad.includes(t.toLowerCase())) submit(t);
+    };
+
+    recog.onerror = (ev) => {
+      console.warn('SR error:', ev.error);
+      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+        stopVoice();
+        addMsg('ai', '🎙 Micrófono bloqueado. Ve a Ajustes → Safari → Micrófono → Permitir.');
+      } else {
+        // Fallo silencioso → usar fallback
+        if (recog) { try { recog.abort(); } catch(e){} recog = null; }
+        startMediaRecorderFallback();
+      }
+    };
+
+    try {
+      recog.start();
+      return;
+    } catch(e) {
+      recog = null;
+      // Caemos al fallback
+    }
+  }
+
+  // Step 3 — Fallback: MediaRecorder → Groq Whisper (funciona en TODO iOS)
+  startMediaRecorderFallback();
+}
+
+async function startMediaRecorderFallback() {
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    isRec = false;
+    closeVoiceUI();
+    addMsg('ai', '🎙 No se pudo acceder al micrófono.');
+    return;
+  }
+
+  openVoiceUI('Habla y pulsa ◉ para enviar', 'Grabando…');
+
+  // iOS usa audio/mp4; Android/Chrome usa audio/webm
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+    : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+    : '';
+
+  const chunks = [];
+  mediaRec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+  mediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+  mediaRec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    openVoiceUI('Transcribiendo…', '⏳ Un momento…');
+
+    const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' });
+    const form = new FormData();
+    form.append('audio', blob, mimeType && mimeType.includes('webm') ? 'voice.webm' : 'voice.mp4');
+
+    try {
+      const auth = getAuth();
+      const res = await fetch('/api/agent/transcribe', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${auth.token}` },
+        body: form
+      });
+      const data = await res.json();
+      if (data.text && data.text.trim()) {
+        document.getElementById('voiceTranscript').textContent = data.text;
+        setTimeout(() => { stopVoice(); submit(data.text.trim()); }, 500);
+      } else {
+        stopVoice();
+        addMsg('ai', '🎙 No captamos tu voz. ¿Puedes repetirlo o escribirlo?');
+      }
+    } catch(e) {
+      stopVoice();
+      addMsg('ai', '🎙 Error de transcripción. Escribe tu orden y funciona igual de bien 😉');
+    }
   };
 
-  recog.onresult = (e) => {
-    const t = Array.from(e.results).map(r => r[0].transcript).join('');
-    document.getElementById('voiceTranscript').textContent = t;
-  };
+  mediaRec.start();
+}
 
-  recog.onend = () => {
-    const t = document.getElementById('voiceTranscript').textContent.trim();
-    stopVoice();
-    if (t && t !== 'Escuchando…' && t !== 'Di tu orden…') submit(t);
-  };
+function openVoiceUI(label, transcript) {
+  document.getElementById('btnMic').classList.add('recording');
+  document.getElementById('voiceScreen').classList.add('open');
+  document.getElementById('voiceLabel').textContent = label;
+  document.getElementById('voiceTranscript').textContent = transcript;
+}
 
-  recog.onerror = () => stopVoice();
-  recog.start();
+function closeVoiceUI() {
+  document.getElementById('btnMic').classList.remove('recording');
+  document.getElementById('voiceScreen').classList.remove('open');
+  document.getElementById('voiceTranscript').textContent = 'Di tu orden…';
 }
 
 function stopVoice() {
   isRec = false;
-  document.getElementById('btnMic').classList.remove('recording');
-  document.getElementById('voiceScreen').classList.remove('open');
-  document.getElementById('voiceTranscript').textContent = 'Di tu orden…';
+  closeVoiceUI();
   if (recog) { try { recog.stop(); } catch(e){} recog = null; }
+  if (mediaRec && mediaRec.state !== 'inactive') { try { mediaRec.stop(); } catch(e){} mediaRec = null; }
 }
 
 /* ── HELPERS ── */

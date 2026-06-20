@@ -24,6 +24,7 @@ import { cazadorRoutes, cazadorInternalRoute } from './routes/cazador'
 import { supportRoutes } from './routes/support'
 import { legalRoutes } from './routes/legal'
 import { albaranRoute } from './routes/albaran'
+import { transcribeRoute } from './routes/transcribe'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 import { accrueCommissions } from './routes/export'
@@ -131,7 +132,8 @@ export function createApp() {
   app.route('/api/documents', documentsRoutes)
   app.route('/api/cazador', cazadorRoutes)
   app.route('/api/legal', legalRoutes)       // ← Módulo Legal
-  app.route('/api/albaranes', albaranRoute)  // ← Albaranes (Panel Móvil)
+  app.route('/api/albaranes', albaranRoute)      // ← Albaranes (Panel Móvil)
+  app.route('/api/agent/transcribe', transcribeRoute) // ← Voz → Groq Whisper
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))
