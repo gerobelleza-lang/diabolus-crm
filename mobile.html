@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#050508">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="manifest" href="manifest.json">
+  <title>Diabolus</title>
+  <style>
+    /* ═══════════════════════════════
+       RESET & TOKENS
+    ═══════════════════════════════ */
+    *, *::before, *::after {
+      margin: 0; padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    :root {
+      --bg:          #050508;
+      --surface:     rgba(255,255,255,0.05);
+      --surface2:    rgba(255,255,255,0.08);
+      --border:      rgba(255,255,255,0.09);
+      --purple:      #9B76FB;
+      --purple-dim:  rgba(155,118,251,0.18);
+      --gold:        #E3BE7A;
+      --text:        rgba(255,255,255,0.92);
+      --text-dim:    rgba(255,255,255,0.42);
+      --bubble-user: #7C5CFC;
+      --bubble-ai:   rgba(255,255,255,0.07);
+      --safe-top:    env(safe-area-inset-top,    0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%; width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+                   'Helvetica Neue', 'Segoe UI', sans-serif;
+      overflow: hidden;
+      position: fixed;
+    }
+
+    /* ═══════════════════════════════
+       BACKGROUND GLOW
+    ═══════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -20vh; left: 50%;
+      transform: translateX(-50%);
+      width: 60vw; height: 60vw;
+      max-width: 400px; max-height: 400px;
+      background: radial-gradient(circle, rgba(100,60,220,0.12) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ═══════════════════════════════
+       APP SHELL
+    ═══════════════════════════════ */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      height: 100dvh;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ═══════════════════════════════
+       HEADER
+    ═══════════════════════════════ */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      padding-top: calc(14px + var(--safe-top));
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .dot-alive {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 6px #34d399;
+      animation: blink 2.5s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .btn-desktop {
+      background: none; border: none;
+      color: var(--text-dim);
+      font-size: 17px; cursor: pointer;
+      padding: 4px 6px; line-height: 1;
+    }
+
+    /* ═══════════════════════════════
+       MESSAGES AREA
+    ═══════════════════════════════ */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 6px 16px 12px;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+    .messages::-webkit-scrollbar { display: none; }
+
+    /* ── Welcome ── */
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100%;
+      padding: 32px 24px 24px;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .welcome-logo {
+      font-size: 72px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      background: linear-gradient(140deg, #ffffff 20%, #9B76FB 60%, #6D44E0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 30px rgba(155,118,251,0.35));
+      margin-bottom: 4px;
+    }
+
+    .welcome-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+
+    .welcome-sub {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.5;
+      max-width: 240px;
+    }
+
+    .hints {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .hint {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 16px;
+      font-size: 13.5px;
+      color: var(--text-dim);
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hint:active {
+      background: var(--purple-dim);
+      border-color: var(--purple);
+      color: var(--text);
+    }
+    .hint-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* ── Chat bubbles ── */
+    .msg {
+      display: flex;
+      margin-bottom: 6px;
+      animation: pop-in 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes pop-in {
+      from { opacity:0; transform:translateY(10px) scale(0.96); }
+      to   { opacity:1; transform:translateY(0)    scale(1);    }
+    }
+
+    .msg.user { justify-content: flex-end; }
+    .msg.ai   { justify-content: flex-start; }
+
+    .bubble {
+      max-width: 78%;
+      padding: 10px 14px;
+      border-radius: 20px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .msg.user .bubble {
+      background: var(--bubble-user);
+      color: #fff;
+      border-bottom-right-radius: 5px;
+    }
+    .msg.ai .bubble {
+      background: var(--bubble-ai);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 5px;
+    }
+
+    /* ── Typing dots ── */
+    .typing .bubble {
+      padding: 14px 18px;
+      display: flex; gap: 5px; align-items: center;
+    }
+    .tdot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--text-dim);
+      animation: tdot 1.2s ease infinite;
+    }
+    .tdot:nth-child(2){ animation-delay:.2s }
+    .tdot:nth-child(3){ animation-delay:.4s }
+    @keyframes tdot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+    /* ─────────────────────────────
+       INPUT BAR
+    ───────────────────────────── */
+    .input-bar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 14px;
+      padding-bottom: calc(10px + var(--safe-bottom));
+      border-top: 1px solid var(--border);
+      background: rgba(5,5,8,0.7);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+
+    /* Mic button */
+    .btn-mic {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+    .btn-mic.recording {
+      background: var(--purple-dim);
+      border-color: var(--purple);
+      color: var(--purple);
+      box-shadow: 0 0 0 0 rgba(155,118,251,0.5);
+      animation: mic-ring 1.2s ease-in-out infinite;
+    }
+    @keyframes mic-ring {
+      0%  { box-shadow: 0 0 0 0   rgba(155,118,251,0.5); }
+      70% { box-shadow: 0 0 0 12px rgba(155,118,251,0);  }
+      100%{ box-shadow: 0 0 0 0   rgba(155,118,251,0);   }
+    }
+
+    /* Text input */
+    .input-pill {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      transition: border-color 0.2s;
+      min-height: 44px;
+    }
+    .input-pill:focus-within {
+      border-color: rgba(155,118,251,0.45);
+    }
+
+    textarea.field {
+      flex: 1;
+      background: none; border: none; outline: none;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      resize: none;
+      line-height: 1.4;
+      max-height: 96px;
+      caret-color: var(--purple);
+    }
+    textarea.field::placeholder { color: var(--text-dim); }
+
+    /* Send button */
+    .btn-send {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--purple);
+      border: none;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.2s, transform 0.15s;
+      align-self: flex-end;
+    }
+    .btn-send:disabled { opacity: 0.2; }
+    .btn-send:not(:disabled):active { transform: scale(0.88); }
+
+    /* ─────────────────────────────
+       VOICE OVERLAY
+    ───────────────────────────── */
+    .voice-screen {
+      position: fixed; inset: 0;
+      background: rgba(4,3,10,0.96);
+      -webkit-backdrop-filter: blur(24px);
+      backdrop-filter: blur(24px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      gap: 36px;
+      padding: 40px;
+    }
+    .voice-screen.open { display: flex; }
+
+    .voice-label {
+      font-size: 13px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* Big pulsing mic */
+    .voice-circle-wrap {
+      position: relative;
+      width: 110px; height: 110px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .voice-ring {
+      position: absolute; border-radius: 50%;
+      border: 1px solid rgba(155,118,251,0.25);
+      animation: vring 2s ease-out infinite;
+    }
+    .voice-ring:nth-child(1){ width:110px;height:110px;animation-delay:0s; }
+    .voice-ring:nth-child(2){ width:150px;height:150px;animation-delay:0.5s; }
+    .voice-ring:nth-child(3){ width:195px;height:195px;animation-delay:1s; }
+    @keyframes vring {
+      0%  { opacity:.7; transform:scale(.85); }
+      100%{ opacity:0;  transform:scale(1.1); }
+    }
+
+    .voice-circle {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: var(--purple-dim);
+      border: 1.5px solid rgba(155,118,251,0.55);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      position: relative; z-index: 1;
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+    }
+
+    .voice-transcript {
+      font-size: 17px;
+      color: var(--text);
+      text-align: center;
+      max-width: 280px;
+      min-height: 52px;
+      line-height: 1.55;
+    }
+
+    .btn-voice-cancel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 14px;
+      padding: 12px 32px;
+      border-radius: 22px;
+      cursor: pointer;
+    }
+
+    /* ─────────────────────────────
+       CONFIRMATION BOTTOM SHEET
+    ───────────────────────────── */
+    .sheet-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: none; align-items: flex-end;
+    }
+    .sheet-overlay.open { display: flex; }
+
+    .sheet {
+      width: 100%;
+      background: #12111f;
+      border-top-left-radius: 26px;
+      border-top-right-radius: 26px;
+      border-top: 1px solid rgba(155,118,251,0.25);
+      padding: 20px 22px calc(22px + var(--safe-bottom));
+      animation: sheet-rise 0.3s cubic-bezier(0.32,0.72,0,1);
+    }
+    @keyframes sheet-rise {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+
+    .sheet-handle {
+      width: 36px; height: 4px;
+      background: rgba(255,255,255,0.13);
+      border-radius: 2px;
+      margin: 0 auto 18px;
+    }
+    .sheet-tag {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .sheet-body {
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.55;
+      margin-bottom: 20px;
+    }
+    .sheet-actions {
+      display: flex; gap: 10px;
+    }
+    .btn-cancel-sheet {
+      flex: 1;
+      padding: 14px 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text-dim);
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .btn-ok-sheet {
+      flex: 2;
+      padding: 14px 0;
+      background: var(--purple);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-ok-sheet:active { opacity: 0.8; }
+
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── HEADER ── -->
+  <header>
+    <span class="logo">Diabolus</span>
+    <div class="status-pill">
+      <div class="dot-alive"></div>
+      <span id="statusLabel">Listo</span>
+    </div>
+    <button class="btn-desktop" onclick="goDesktop()" title="Escritorio">⊞</button>
+  </header>
+
+  <!-- ── MESSAGES ── -->
+  <div class="messages" id="messages">
+    <div class="welcome" id="welcome">
+      <div class="welcome-logo">D</div>
+      <div class="welcome-title">Tu negocio,<br>gestionado hablando.</div>
+      <div class="welcome-sub">Crea facturas, cobra clientes y controla tu tesorería con una sola frase.</div>
+      <div class="hints">
+        <div class="hint" onclick="useHint('¿Cuánto he cobrado este mes?')">
+          <span class="hint-icon">💰</span> ¿Cuánto he cobrado este mes?
+        </div>
+        <div class="hint" onclick="useHint('Crea un albarán para mi próximo cliente')">
+          <span class="hint-icon">📋</span> Crear albarán para un cliente
+        </div>
+        <div class="hint" onclick="useHint('Manda la factura pendiente de Juan')">
+          <span class="hint-icon">📨</span> Mandar factura pendiente
+        </div>
+        <div class="hint" onclick="useHint('¿Cuánto tengo pendiente de cobrar?')">
+          <span class="hint-icon">⏳</span> Ver cobros pendientes
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── INPUT BAR ── -->
+  <div class="input-bar">
+    <button class="btn-mic" id="btnMic" onclick="toggleVoice()" title="Hablar">🎙</button>
+    <div class="input-pill">
+      <textarea class="field" id="field" placeholder="Escribe o habla…" rows="1"
+        oninput="onInput(this)" onkeydown="onKey(event)"></textarea>
+      <button class="btn-send" id="btnSend" onclick="submit()" disabled>↑</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── VOICE SCREEN ── -->
+<div class="voice-screen" id="voiceScreen">
+  <div class="voice-label" id="voiceLabel">Escuchando…</div>
+  <div class="voice-circle-wrap">
+    <div class="voice-ring"></div>
+    <div class="voice-ring"></div>
+    <div class="voice-ring"></div>
+    <div class="voice-circle" onclick="stopVoice()" title="Parar">◉</div>
+  </div>
+  <div class="voice-transcript" id="voiceTranscript">Di tu orden…</div>
+  <button class="btn-voice-cancel" onclick="stopVoice()">Cancelar</button>
+</div>
+
+<!-- ── CONFIRMATION SHEET ── -->
+<div class="sheet-overlay" id="sheetOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-tag">⚡ Confirmar acción</div>
+    <div class="sheet-body" id="sheetBody"></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel-sheet" onclick="cancelSheet()">Cancelar</button>
+      <button class="btn-ok-sheet" onclick="confirmSheet()">Confirmar ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// @ts-nocheck
+'use strict';
+
+const API = 'https://diabolus-crm-api.vercel.app';
+
+/* ── AUTH ── */
+function getAuth() {
+  try {
+    const d = JSON.parse(localStorage.getItem('diabolus_auth') || 'null');
+    if (!d) return null;
+    return { ...d, salon_id: d.salon_id || d.salonId };
+  } catch { return null; }
+}
+const auth = getAuth();
+if (!auth?.token) { window.location.replace('index-login.html'); }
+
+/* ── DESKTOP TOGGLE ── */
+function goDesktop() {
+  sessionStorage.setItem('forceDesktop', '1');
+  window.location.href = 'dashboard.html';
+}
+
+/* ── TEXTAREA ── */
+function onInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 96) + 'px';
+  document.getElementById('btnSend').disabled = el.value.trim() === '';
+}
+
+function onKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const v = document.getElementById('field').value.trim();
+    if (v) submit();
+  }
+}
+
+function useHint(text) {
+  const f = document.getElementById('field');
+  f.value = text;
+  onInput(f);
+  submit();
+}
+
+/* ── MESSAGES ── */
+let welcomeGone = false;
+function hideWelcome() {
+  if (welcomeGone) return;
+  document.getElementById('welcome')?.remove();
+  welcomeGone = true;
+}
+
+function addMsg(role, html) {
+  hideWelcome();
+  const wrap = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.className = `msg ${role}`;
+  el.innerHTML = `<div class="bubble">${html}</div>`;
+  wrap.appendChild(el);
+  wrap.scrollTop = wrap.scrollHeight;
+  return el;
+}
+
+function addTyping() {
+  hideWelcome();
+  const wrap = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.id = 'typing';
+  el.className = 'msg ai typing';
+  el.innerHTML = `<div class="bubble"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
+  wrap.appendChild(el);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+function removeTyping() { document.getElementById('typing')?.remove(); }
+
+/* ── SEND ── */
+let pendingAction = null;
+
+async function submit(userText) {
+  const field = document.getElementById('field');
+  const msg = userText || field.value.trim();
+  if (!msg) return;
+  field.value = '';
+  onInput(field);
+
+  addMsg('user', escHtml(msg));
+  addTyping();
+  setStatus('Procesando…');
+
+  try {
+    const res = await fetch(`${API}/api/agent/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth.token}`
+      },
+      body: JSON.stringify({ message: msg, salon_id: auth.salon_id })
+    });
+    const data = await res.json();
+    removeTyping();
+    setStatus('Listo');
+
+    if (data.confirmation_card) {
+      pendingAction = data;
+      const card = data.confirmation_card;
+      const summary = card.summary || card.message || JSON.stringify(card);
+      document.getElementById('sheetBody').textContent = summary;
+      document.getElementById('sheetOverlay').classList.add('open');
+      addMsg('ai', '⚡ Revisa la acción a confirmar.');
+    } else {
+      const reply = data.reply || data.message || '✓ Hecho.';
+      addMsg('ai', escHtml(reply).replace(/\n/g,'<br>'));
+    }
+  } catch (err) {
+    removeTyping();
+    setStatus('Sin conexión');
+    addMsg('ai', '❌ Error de conexión. Inténtalo de nuevo.');
+  }
+}
+
+/* ── CONFIRM SHEET ── */
+async function confirmSheet() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+  if (!pendingAction) return;
+  addTyping();
+  setStatus('Ejecutando…');
+  try {
+    const res = await fetch(`${API}/api/agent/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth.token}`
+      },
+      body: JSON.stringify({
+        message: 'CONFIRMAR',
+        salon_id: auth.salon_id,
+        confirm_action_id: pendingAction.action_id
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    setStatus('Listo');
+    addMsg('ai', escHtml(data.reply || data.message || '✅ ¡Hecho! Registrado en tu contabilidad.').replace(/\n/g,'<br>'));
+  } catch {
+    removeTyping();
+    addMsg('ai', '❌ Error al confirmar. Inténtalo de nuevo.');
+  }
+  pendingAction = null;
+}
+
+function cancelSheet() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+  addMsg('ai', 'Cancelado. Dime si quieres hacer algo más.');
+  pendingAction = null;
+}
+
+/* ── VOICE ── */
+let recog = null;
+let isRec = false;
+let mediaRec = null;
+
+function toggleVoice() {
+  if (isRec) { stopVoice(); return; }
+  startVoice();
+}
+
+async function startVoice() {
+  // Step 1 — pedir permiso de micrófono explícitamente (iOS requiere esto)
+  try {
+    const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    testStream.getTracks().forEach(t => t.stop());
+  } catch(err) {
+    addMsg('ai', '🎙 Necesito acceso al micrófono.\n\nVe a: Ajustes → Safari → Micrófono → Permitir para diabolus.es');
+    return;
+  }
+
+  isRec = true;
+  openVoiceUI('Habla ahora', 'Escuchando…');
+
+  // Step 2 — intentar API nativa (Chrome / Safari iOS 17+)
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    recog = new SR();
+    recog.lang = 'es-ES';
+    recog.continuous = false;
+    recog.interimResults = true;
+    recog.maxAlternatives = 1;
+
+    recog.onresult = (e) => {
+      const t = Array.from(e.results).map(r => r[0].transcript).join('');
+      document.getElementById('voiceTranscript').textContent = t;
+    };
+
+    recog.onend = () => {
+      const t = document.getElementById('voiceTranscript').textContent.trim();
+      stopVoice();
+      const bad = ['escuchando…','di tu orden…','habla ahora'];
+      if (t && !bad.includes(t.toLowerCase())) submit(t);
+    };
+
+    recog.onerror = (ev) => {
+      console.warn('SR error:', ev.error);
+      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+        stopVoice();
+        addMsg('ai', '🎙 Micrófono bloqueado. Ve a Ajustes → Safari → Micrófono → Permitir.');
+      } else {
+        // Fallo silencioso → usar fallback
+        if (recog) { try { recog.abort(); } catch(e){} recog = null; }
+        startMediaRecorderFallback();
+      }
+    };
+
+    try {
+      recog.start();
+      return;
+    } catch(e) {
+      recog = null;
+      // Caemos al fallback
+    }
+  }
+
+  // Step 3 — Fallback: MediaRecorder → Groq Whisper (funciona en TODO iOS)
+  startMediaRecorderFallback();
+}
+
+async function startMediaRecorderFallback() {
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    isRec = false;
+    closeVoiceUI();
+    addMsg('ai', '🎙 No se pudo acceder al micrófono.');
+    return;
+  }
+
+  openVoiceUI('Habla y pulsa ◉ para enviar', 'Grabando…');
+
+  // iOS usa audio/mp4; Android/Chrome usa audio/webm
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+    : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+    : '';
+
+  const chunks = [];
+  mediaRec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+  mediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+  mediaRec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    openVoiceUI('Transcribiendo…', '⏳ Un momento…');
+
+    const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' });
+    const form = new FormData();
+    form.append('audio', blob, mimeType && mimeType.includes('webm') ? 'voice.webm' : 'voice.mp4');
+
+    try {
+      const auth = getAuth();
+      const res = await fetch(`${API}/api/agent/transcribe`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${auth.token}` },
+        body: form
+      });
+      const data = await res.json();
+      if (data.text && data.text.trim()) {
+        document.getElementById('voiceTranscript').textContent = data.text;
+        setTimeout(() => { stopVoice(); submit(data.text.trim()); }, 500);
+      } else {
+        stopVoice();
+        addMsg('ai', '🎙 No captamos tu voz. ¿Puedes repetirlo o escribirlo?');
+      }
+    } catch(e) {
+      stopVoice();
+      addMsg('ai', '🎙 Error de transcripción. Escribe tu orden y funciona igual de bien 😉');
+    }
+  };
+
+  mediaRec.start();
+}
+
+function openVoiceUI(label, transcript) {
+  document.getElementById('btnMic').classList.add('recording');
+  document.getElementById('voiceScreen').classList.add('open');
+  document.getElementById('voiceLabel').textContent = label;
+  document.getElementById('voiceTranscript').textContent = transcript;
+}
+
+function closeVoiceUI() {
+  document.getElementById('btnMic').classList.remove('recording');
+  document.getElementById('voiceScreen').classList.remove('open');
+  document.getElementById('voiceTranscript').textContent = 'Di tu orden…';
+}
+
+function stopVoice() {
+  isRec = false;
+  closeVoiceUI();
+  if (recog) { try { recog.stop(); } catch(e){} recog = null; }
+  if (mediaRec && mediaRec.state !== 'inactive') { try { mediaRec.stop(); } catch(e){} mediaRec = null; }
+}
+
+/* ── HELPERS ── */
+function setStatus(text) {
+  document.getElementById('statusLabel').textContent = text;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* prevent scroll on voice overlay */
+document.getElementById('voiceScreen').addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+</script>
+</body>
+</html>
