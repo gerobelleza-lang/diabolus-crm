@@ -34,25 +34,35 @@ export function createApp() {
 
   // ─── Global Middleware ─────────────────────────────────────────────────────
   app.use('*', logger())
-  app.use(
-    '*',
-    cors({
-      origin: (origin) => {
-        const allowed = [
-          'https://diabolus.es',
-          'https://www.diabolus.es',
-          'https://gerobelleza-lang.github.io',
-          'http://localhost:3000',
-          'http://localhost:5500',
-          'http://127.0.0.1:5500',
-        ]
-        return allowed.includes(origin) ? origin : null
-      },
-      allowHeaders: ['Content-Type', 'Authorization'],
-      allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      credentials: true,
-    })
-  )
+
+  // CORS: origin function + explicit OPTIONS handler before auth
+  const corsMiddleware = cors({
+    origin: (origin) => {
+      if (!origin) return null
+      const allowed = [
+        'https://diabolus.es',
+        'https://www.diabolus.es',
+        'http://diabolus.es',
+        'https://gerobelleza-lang.github.io',
+        'http://localhost:3000',
+        'http://localhost:5500',
+        'http://127.0.0.1:5500',
+      ]
+      return allowed.includes(origin) ? origin : null
+    },
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    exposeHeaders: ['Content-Length'],
+    credentials: true,
+    maxAge: 86400,
+  })
+
+  app.use('*', corsMiddleware)
+
+  // Explicit preflight handler — runs BEFORE authMiddleware, returns 204 immediately
+  app.options('*', (c) => {
+    return c.newResponse(null, 204)
+  })
 
   // ─── Health & Root ─────────────────────────────────────────────────────────
   app.get('/health', (c) =>
