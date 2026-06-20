@@ -40,7 +40,7 @@ export function routeToLLM(
   if (parserConfidence > 0.7 && userInput.length < 100) {
     return {
       level: 'L1',
-      model: 'anthropic/claude-haiku-4.5-20241022',
+      model: 'anthropic/claude-haiku-4.5',
       rationale: 'Parser semi-confident (70-85%). Simple query (<100 chars).',
       estimatedCost: 0.001
     }
@@ -50,7 +50,7 @@ export function routeToLLM(
   if (needsTools || userInput.includes('crear') || userInput.includes('crear')) {
     return {
       level: 'L2',
-      model: 'anthropic/claude-sonnet-4-20250514',
+      model: 'anthropic/claude-sonnet-4.5',
       rationale: 'Tools needed or action requested. Use Sonnet.',
       estimatedCost: 0.005
     }
