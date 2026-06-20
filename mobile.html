@@ -777,14 +777,9 @@ async function startVoice() {
 
     recog.onerror = (ev) => {
       console.warn('SR error:', ev.error);
-      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-        stopVoice();
-        addMsg('ai', '🎙 Micrófono bloqueado. Ve a Ajustes → Safari → Micrófono → Permitir.');
-      } else {
-        // Fallo silencioso → usar fallback
-        if (recog) { try { recog.abort(); } catch(e){} recog = null; }
-        startMediaRecorderFallback();
-      }
+      // Cualquier error de SR → caer al MediaRecorder (más fiable en iOS)
+      if (recog) { try { recog.abort(); } catch(e){} recog = null; }
+      startMediaRecorderFallback();
     };
 
     try {
