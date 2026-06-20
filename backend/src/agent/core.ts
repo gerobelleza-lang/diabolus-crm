@@ -183,6 +183,37 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
   const userInput = (input.text || '').trim()
   if (!userInput) return { needsInfo: '¿Qué necesitas? Escribe /ayuda para ver los comandos.' }
 
+  // ── Saludos y ayuda ──────────────────────────────────────────────────────
+  if (/^(hola|hey|buenas|buenos días|buenas tardes|buenas noches|ey|hi|hello|qué hay|qué tal|holi|ola|buenas!|hola!|hey!)\s*[!?]?$/i.test(userInput)) {
+    return { replyText: '¡Hola! 👋 Soy tu asistente de Diabolus. Puedo ayudarte a:\n\n• Registrar cobros y gastos\n• Crear facturas y clientes\n• Consultar tu balance\n• Ver quién te debe dinero\n\nDime qué necesitas o escribe /ayuda para más opciones.' }
+  }
+  if (/^(ayuda|help|comandos|opciones|qué puedes hacer|para qué sirves|cómo funciona)\s*[?]?$/i.test(userInput)) {
+    return {
+      replyText: [
+        '📋 Comandos disponibles:',
+        '',
+        '💰 *Finanzas*',
+        '• "cobré 150€ de Ana" → registra ingreso',
+        '• "gasté 80€ en material" → registra gasto',
+        '',
+        '📄 *Facturas*',
+        '• "crea factura para Ana por 150€"',
+        '• "la factura de Ana está pagada"',
+        '• "manda recordatorio a Ana"',
+        '',
+        '👥 *Clientes*',
+        '• "nuevo cliente Ana García tel 612345678"',
+        '',
+        '📊 *Consultas*',
+        '• "¿cuánto tengo?" → balance del mes',
+        '• "¿quién me debe?" → cobros pendientes',
+        '• "facturas vencidas"',
+        '',
+        '📷 También puedes *enviar una foto* de ticket o factura.',
+      ].join('\n')
+    }
+  }
+
   const supabase = getSupabase()
   const parsed   = parseUserInput(userInput)
 
