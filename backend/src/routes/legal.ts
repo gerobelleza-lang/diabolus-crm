@@ -226,7 +226,7 @@ ${contextText}`;
           'X-Title': 'Diabolus Legal Agent',
         },
         body: JSON.stringify({
-          model: 'anthropic/claude-haiku',
+          model: 'anthropic/claude-haiku-4.5',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: question },
