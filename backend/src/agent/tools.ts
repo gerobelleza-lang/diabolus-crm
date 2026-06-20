@@ -44,6 +44,11 @@ export const TOOLS: Record<string, ToolDefinition> = {
     type: 'send',
     description: 'Envía un recordatorio de cobro a un cliente por WhatsApp o email',
   },
+  enviar_factura: {
+    name: 'enviar_factura',
+    type: 'send',
+    description: 'Crea una factura borrador y la envía por email al cliente en un solo paso',
+  },
   consultar_estado: {
     name: 'consultar_estado',
     type: 'read',

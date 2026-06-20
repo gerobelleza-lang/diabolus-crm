@@ -268,6 +268,51 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     return { card }
   }
 
+  // ── enviar_factura (crear + enviar email en un paso) ─────────────────────
+  if (/(?:crea|haz|genera|manda|envía|envia).{0,25}factura.{0,40}(?:envía|envia|manda|remite|al correo|por email|por correo|y envía|y envia|y manda)|(?:envía|envia|manda).{0,25}factura.{0,25}(?:para|a\s)|factura.{0,30}(?:al correo|por email|por correo|y envíasela|y enviasela|y mándasela|y mandasela)/i.test(userInput)) {
+    const mCliente  = userInput.match(/(?:para|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:por|de|con|al correo|,|$)|\s*$)/i)
+    const mImporte  = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*€?(?:\s*euros?)?/i)
+    const mEmail    = userInput.match(/(?:al correo|por email|a)\s+([\w.+-]+@[\w.-]+\.[a-z]{2,})/i)
+    const mConcepto = userInput.match(/(?:por|concepto|servicio)[:\s]+([^,\n.]{3,60})/i)
+
+    const clienteNombre = mCliente ? mCliente[1].trim() : ''
+    const importeNum    = mImporte ? parseFloat(mImporte[1].replace(',', '.')) : 0
+    const emailInput    = mEmail ? mEmail[1].trim() : ''
+    const concepto      = mConcepto ? mConcepto[1].trim() : 'Servicios'
+
+    if (!clienteNombre) return { needsInfo: '¿Para qué cliente? Ej: "crea factura para Ana por 150€ y envíasela"' }
+    if (!importeNum)    return { needsInfo: '¿Por qué importe? Ej: "crea factura para Ana por 150€ y envíasela"' }
+
+    const { data: clientes } = await supabase
+      .from('clients')
+      .select('id, name, email')
+      .eq('salon_id', tenantId)
+      .ilike('name', `%${clienteNombre}%`)
+      .limit(3)
+
+    if (!clientes || clientes.length === 0) {
+      return { needsInfo: `No encontré al cliente "${clienteNombre}". ¿Quieres crearlo primero? Di "nuevo cliente ${clienteNombre}".` }
+    }
+
+    const cliente      = clientes[0]
+    const clienteEmail = emailInput || cliente.email || ''
+    const lineas       = [{ concepto, cantidad: 1, precio_unitario: importeNum / 1.21, iva: 21 }]
+
+    if (!clienteEmail) {
+      return { needsInfo: `${cliente.name} no tiene email registrado. ¿Cuál es su correo? O añádelo en la ficha del cliente.` }
+    }
+
+    const card = await createPendingAction('enviar_factura', {
+      cliente_id:     cliente.id,
+      cliente_nombre: cliente.name,
+      cliente_email:  clienteEmail,
+      lineas,
+      total:          importeNum,
+      fecha:          new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }),
+    }, tenantId, userId)
+    return { card }
+  }
+
   // ── crear_factura ────────────────────────────────────────────────────────
   if (/crea.{0,10}factura|nueva factura|factura para|hazme.{0,10}factura|factura a\s|apunta.{0,10}factura|registra.{0,10}factura|hacer.{0,10}factura|pon.{0,10}factura|mete.{0,10}factura|generar?.{0,10}factura/i.test(userInput)) {
     const mCliente  = userInput.match(/(?:para|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:por|de|con|,|$)|\s*$)/i)

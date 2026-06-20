@@ -68,6 +68,7 @@ const SUMMARIES: Record<string, string> = {
   crear_factura:          '🧾 Crear factura (borrador)',
   cambiar_estado_factura: '🔄 Cambiar estado de factura',
   enviar_recordatorio:    '📩 Enviar recordatorio de cobro',
+  enviar_factura:         '📧 Crear factura y enviar al cliente',
 }
 
 function buildCardFields(
@@ -137,6 +138,25 @@ function buildCardFields(
         { label: 'Para',    value: `${p.cliente_nombre || '—'}${p.factura_numero ? ` (factura ${p.factura_numero})` : ''}${p.importe ? `, ${formatImporte(p.importe)}` : ''}` },
         { label: 'Canal',   value: p.canal === 'whatsapp' ? '📱 WhatsApp' : '📧 Email' },
       ]
+
+    case 'enviar_factura': {
+      const lineas = p.lineas || []
+      const total = p.total || lineas.reduce((acc, l) => {
+        const base = (l.cantidad || 1) * l.precio_unitario
+        const iva  = base * ((l.iva || 21) / 100)
+        return acc + base + iva
+      }, 0)
+      const lineasText = lineas.map(l =>
+        `${l.concepto} × ${l.cantidad || 1} = ${formatImporte((l.cantidad || 1) * l.precio_unitario)}`
+      ).join(' · ')
+      return [
+        { label: 'Cliente',  value: p.cliente_nombre || p.cliente || '—' },
+        { label: 'Email',    value: p.cliente_email || '—' },
+        { label: 'Líneas',   value: lineasText || '—' },
+        { label: 'Total',    value: formatImporte(total) },
+        { label: 'Acción',   value: '🧾 Crear factura + 📧 Enviar email' },
+      ]
+    }
 
     default:
       return Object.entries(p)
@@ -255,6 +275,9 @@ export async function executePendingAction(
       break
     case 'enviar_recordatorio':
       result = await executeEnviarRecordatorio(action.parameters, action.salon_id)
+      break
+    case 'enviar_factura':
+      result = await executeEnviarFactura(action.parameters, action.salon_id)
       break
     default:
       result = { ok: false, message: `Tipo de acción desconocida: ${action.action_type}` }
@@ -587,5 +610,192 @@ async function enviarEmail(
   return {
     ok: true,
     message: `✅ Recordatorio enviado por email\n• Para: ${p.cliente_nombre || to}\n• Factura: ${p.factura_numero || '—'}`,
+  }
+}
+
+// ─── Enviar factura (crear + email en un paso) ─────────────────────────────────
+
+async function executeEnviarFactura(
+  p: Record<string, any>,
+  salonId: string
+): Promise<{ ok: boolean; message: string }> {
+  const supabase = getSupabase()
+
+  // 1. Calcular total
+  const lineas = p.lineas || []
+  let subtotal = 0
+  let totalIva = 0
+  for (const l of lineas) {
+    const base = (l.cantidad || 1) * l.precio_unitario
+    const iva  = base * ((l.iva !== undefined ? l.iva : 21) / 100)
+    subtotal += base
+    totalIva += iva
+  }
+  const total = p.total || subtotal + totalIva
+
+  // 2. Generar número de factura
+  const year = new Date().getFullYear()
+  const { count } = await supabase
+    .from('invoices')
+    .select('*', { count: 'exact', head: true })
+    .eq('salon_id', salonId)
+  const num = String((count || 0) + 1).padStart(3, '0')
+  const invoiceNumber = `${year}-${num}`
+
+  // 3. Insertar cabecera
+  const { data: invoice, error: invErr } = await supabase
+    .from('invoices')
+    .insert({
+      number:     invoiceNumber,
+      client_id:  p.cliente_id || null,
+      salon_id:   salonId,
+      total:      total,
+      status:     'sent',
+      issue_date: p.fecha      || today(),
+      due_date:   p.vencimiento || null,
+      sent_at:    new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+
+  if (invErr || !invoice) {
+    return { ok: false, message: `Error al crear factura: ${invErr?.message}` }
+  }
+
+  // 4. Insertar líneas
+  if (lineas.length > 0) {
+    const items = lineas.map(l => ({
+      invoice_id:      invoice.id,
+      concepto:        l.concepto,
+      cantidad:        l.cantidad || 1,
+      precio_unitario: l.precio_unitario,
+      iva:             l.iva !== undefined ? l.iva : 21,
+      subtotal:        (l.cantidad || 1) * l.precio_unitario,
+      total_line:      (l.cantidad || 1) * l.precio_unitario * (1 + (l.iva !== undefined ? l.iva : 21) / 100),
+    }))
+    await supabase.from('invoice_items').insert(items)
+  }
+
+  // 5. Obtener email del cliente (puede venir en p.cliente_email o buscarlo en BD)
+  let clienteEmail = p.cliente_email
+  let clienteNombre = p.cliente_nombre || p.cliente || '—'
+  let salonNombre = 'Tu negocio'
+
+  if (!clienteEmail && p.cliente_id) {
+    const { data: clientData } = await supabase
+      .from('clients')
+      .select('email, name')
+      .eq('id', p.cliente_id)
+      .single()
+    if (clientData) {
+      clienteEmail = clientData.email
+      clienteNombre = clientData.name || clienteNombre
+    }
+  }
+
+  // Obtener nombre del salón para el email
+  const { data: salonData } = await supabase
+    .from('salons')
+    .select('name')
+    .eq('id', salonId)
+    .single()
+  if (salonData) salonNombre = salonData.name
+
+  if (!clienteEmail) {
+    return {
+      ok: true,
+      message: `✅ Factura ${invoiceNumber} creada\n• Cliente: ${clienteNombre}\n• Total: ${formatImporte(total)}\n⚠️ No se pudo enviar: el cliente no tiene email registrado. Añádelo en Clientes.`,
+    }
+  }
+
+  // 6. Enviar email via Resend
+  const apiKey  = process.env.RESEND_API_KEY
+  const fromEmail = process.env.FROM_EMAIL || 'Diabolus CRM <noreply@diabolus.es>'
+
+  if (!apiKey) {
+    return {
+      ok: true,
+      message: `✅ Factura ${invoiceNumber} creada\n• Cliente: ${clienteNombre}\n• Total: ${formatImporte(total)}\n⚠️ Email no enviado: falta configuración de email.`,
+    }
+  }
+
+  // Construir líneas del email
+  const lineasHtml = lineas.map(l => {
+    const baseL = (l.cantidad || 1) * l.precio_unitario
+    const ivaL  = baseL * ((l.iva !== undefined ? l.iva : 21) / 100)
+    return `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee">${l.concepto}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${l.cantidad || 1}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right">${formatImporte(baseL)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right">${l.iva !== undefined ? l.iva : 21}%</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right">${formatImporte(baseL + ivaL)}</td>
+    </tr>`
+  }).join('')
+
+  const emailHtml = `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="font-family:'Helvetica Neue',Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+    <div style="background:#15101F;padding:28px 32px">
+      <h1 style="color:#E3BE7A;margin:0;font-size:22px;font-weight:700">Diabolus CRM</h1>
+      <p style="color:#8B5CF6;margin:6px 0 0;font-size:13px">${salonNombre}</p>
+    </div>
+    <div style="padding:32px">
+      <h2 style="color:#15101F;margin:0 0 6px">Factura ${invoiceNumber}</h2>
+      <p style="color:#666;margin:0 0 24px">Estimado/a ${clienteNombre},</p>
+      <p style="color:#444;margin:0 0 20px">Te enviamos la siguiente factura para tu revisión:</p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+        <thead>
+          <tr style="background:#f9f9f9">
+            <th style="padding:8px 12px;text-align:left;font-size:12px;color:#888;text-transform:uppercase">Concepto</th>
+            <th style="padding:8px 12px;text-align:center;font-size:12px;color:#888;text-transform:uppercase">Cant.</th>
+            <th style="padding:8px 12px;text-align:right;font-size:12px;color:#888;text-transform:uppercase">Base</th>
+            <th style="padding:8px 12px;text-align:right;font-size:12px;color:#888;text-transform:uppercase">IVA</th>
+            <th style="padding:8px 12px;text-align:right;font-size:12px;color:#888;text-transform:uppercase">Total</th>
+          </tr>
+        </thead>
+        <tbody>${lineasHtml || `<tr><td colspan="5" style="padding:8px 12px;color:#666">Servicios prestados</td></tr>`}</tbody>
+      </table>
+      <div style="text-align:right;padding:12px 0;border-top:2px solid #15101F">
+        <span style="font-size:20px;font-weight:700;color:#15101F">${formatImporte(total)}</span>
+      </div>
+      <p style="color:#888;font-size:12px;margin-top:24px">Factura emitida el ${new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: 'long', year: 'numeric' })}.</p>
+    </div>
+    <div style="background:#f9f9f9;padding:16px 32px;text-align:center">
+      <p style="color:#bbb;font-size:11px;margin:0">Gestionado con <strong>Diabolus CRM</strong> · <a href="https://diabolus.es" style="color:#8B5CF6">diabolus.es</a></p>
+    </div>
+  </div>
+</body>
+</html>`
+
+  const emailText = `Factura ${invoiceNumber}\n\nEstimado/a ${clienteNombre},\n\nAdjuntamos tu factura:\n${lineas.map(l => `• ${l.concepto}: ${formatImporte((l.cantidad||1)*l.precio_unitario)}`).join('\n')}\n\nTotal: ${formatImporte(total)}\n\nGracias por confiar en ${salonNombre}.\n\nDiabolus CRM · diabolus.es`
+
+  const resp = await fetch('https://api.resend.com/emails', {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      from:    fromEmail,
+      to:      [clienteEmail],
+      subject: `Factura ${invoiceNumber} — ${salonNombre}`,
+      html:    emailHtml,
+      text:    emailText,
+    }),
+  })
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}))
+    return {
+      ok: true,
+      message: `✅ Factura ${invoiceNumber} creada\n• Cliente: ${clienteNombre}\n• Total: ${formatImporte(total)}\n⚠️ Email no enviado: ${err.message || resp.status}`,
+    }
+  }
+
+  return {
+    ok: true,
+    message: `✅ Factura ${invoiceNumber} creada y enviada\n• Cliente: ${clienteNombre}\n• Email: ${clienteEmail}\n• Total: ${formatImporte(total)}\n• Estado: enviada`,
   }
 }
