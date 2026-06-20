@@ -12,15 +12,30 @@
 import { Hono } from 'hono'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
-
 const app = new Hono()
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
-const resend = new Resend(process.env.RESEND_API_KEY!)
+
+// Edge-compatible email via Resend REST API (no SDK)
+async function sendEmail(to: string, subject: string, html: string) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.FROM_EMAIL || 'Diabolus CRM <noreply@diabolus.es>',
+      to: [to],
+      subject,
+      html,
+    }),
+  })
+  return res.ok
+}
 
 // ─── Autenticación JWT ────────────────────────────────────────────────────────
 async function authMiddleware(c: any, next: any) {
@@ -261,11 +276,7 @@ app.post('/', authMiddleware, async (c) => {
   let emailSent = false
   if (send_email && clientEmail && pdfBytes) {
     try {
-      const emailResult = await resend.emails.send({
-        from: `${salon?.name || 'Diabolus CRM'} <noreply@diabolus.es>`,
-        to: clientEmail,
-        subject: `Albarán ${albNumber} — ${salon?.name || 'Tu proveedor'}`,
-        html: `
+      const emailHtml = `
           <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e">
             <div style="background:#050508;padding:32px;border-radius:12px 12px 0 0;text-align:center">
               <h1 style="color:#9B76FB;font-size:28px;font-weight:800;margin:0">DIABOLUS</h1>
@@ -276,7 +287,7 @@ app.post('/', authMiddleware, async (c) => {
               <p style="color:#555;margin:0 0 20px">Hola <strong>${clientName}</strong>,</p>
               <p style="color:#555">Te adjuntamos el albarán correspondiente a los servicios prestados por <strong>${salon?.name || 'tu proveedor'}</strong>.</p>
               <table style="width:100%;border-collapse:collapse;margin:24px 0">
-                ${lineItems.map(l => `
+                ${lineItems.map((l: any) => `
                   <tr style="border-bottom:1px solid #eee">
                     <td style="padding:10px 0;color:#333">${l.description}</td>
                     <td style="padding:10px 0;color:#666;text-align:center">${l.quantity}×</td>
@@ -291,14 +302,12 @@ app.post('/', authMiddleware, async (c) => {
               ${notes ? `<p style="color:#777;font-size:13px;background:#f9f9f9;padding:12px;border-radius:8px">${notes}</p>` : ''}
               <p style="color:#aaa;font-size:12px;margin-top:24px">Este albarán ha sido generado automáticamente. No tiene valor fiscal.</p>
             </div>
-          </div>
-        `,
-        attachments: pdfBytes ? [{
-          filename: `albaran-${albNumber}.pdf`,
-          content: Buffer.from(pdfBytes).toString('base64'),
-        }] : [],
-      })
-      emailSent = !emailResult.error
+          </div>`
+      emailSent = await sendEmail(
+        clientEmail,
+        `Albarán ${albNumber} — ${salon?.name || 'Tu proveedor'}`,
+        emailHtml
+      )
     } catch (e) {
       console.error('Email error:', e)
     }
