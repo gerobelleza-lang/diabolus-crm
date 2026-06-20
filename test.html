@@ -1,5 +1,75 @@
 <!DOCTYPE html>
 <html>
-<head><title>Test</title></head>
-<body><h1>DIABOLUS - FUNCIONA!</h1></body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Diabolus API</title>
+<style>
+  body { font-family: monospace; background: #111; color: #eee; padding: 20px; font-size: 14px; }
+  button { background: #8B5CF6; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; margin: 8px 4px; cursor: pointer; }
+  pre { background: #222; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; margin-top: 8px; }
+  .ok { color: #4ade80; }
+  .err { color: #f87171; }
+</style>
+</head>
+<body>
+<h2>🔍 Diabolus API Diagnostics</h2>
+
+<button onclick="testCORS()">1. Test CORS (OPTIONS)</button>
+<button onclick="testPing()">2. Test API Ping</button>
+<button onclick="testChat()">3. Test Chat (sin auth)</button>
+<div id="out"></div>
+
+<script>
+const API = 'https://diabolus-crm-api.vercel.app';
+const out = document.getElementById('out');
+
+function log(html) { out.innerHTML += html; }
+
+async function testCORS() {
+  log('<h3>Test 1: OPTIONS preflight</h3>');
+  try {
+    const r = await fetch(`${API}/api/agent/chat`, {
+      method: 'OPTIONS',
+      headers: {
+        'Origin': window.location.origin,
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+      }
+    });
+    log(`<pre class="ok">Status: ${r.status}\nOrigin enviado: ${window.location.origin}\nACL-Allow-Origin: ${r.headers.get('access-control-allow-origin') || '(vacío)'}\nACL-Allow-Methods: ${r.headers.get('access-control-allow-methods') || '(vacío)'}</pre>`);
+  } catch(e) {
+    log(`<pre class="err">ERROR: ${e.message}\nTipo: ${e.name}\nStack: ${e.stack||'N/A'}</pre>`);
+  }
+}
+
+async function testPing() {
+  log('<h3>Test 2: GET /api/agent/chat (sin auth)</h3>');
+  try {
+    const r = await fetch(`${API}/api/agent/chat`);
+    log(`<pre class="ok">Status: ${r.status}\nACLAO: ${r.headers.get('access-control-allow-origin')||'(vacío)'}</pre>`);
+  } catch(e) {
+    log(`<pre class="err">ERROR: ${e.message}\nTipo: ${e.name}</pre>`);
+  }
+}
+
+async function testChat() {
+  log('<h3>Test 3: POST /api/agent/chat (sin auth → espera 401)</h3>');
+  try {
+    const r = await fetch(`${API}/api/agent/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer FAKE_TOKEN' },
+      body: JSON.stringify({ userInput: 'hola', salon_id: 'test' })
+    });
+    const text = await r.text();
+    log(`<pre class="${r.status < 400 ? 'ok' : 'err'}">Status: ${r.status}\nBody: ${text.substring(0,200)}</pre>`);
+  } catch(e) {
+    log(`<pre class="err">ERROR: ${e.message}\nTipo: ${e.name}\nStack: ${e.stack||'N/A'}</pre>`);
+  }
+}
+
+log('<pre>UA: ' + navigator.userAgent + '</pre>');
+log('<pre>Origen: ' + window.location.origin + '</pre>');
+</script>
+</body>
 </html>
