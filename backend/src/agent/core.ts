@@ -478,6 +478,97 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     return { card }
   }
 
+  // ── préstamo / adelanto nómina / anticipo ────────────────────────────────
+  if (/pr[eé]stamo|adelanto\s+(?:de\s+)?(?:n[oó]mina|sueldo)|anticipo\s+(?:de\s+)?(?:n[oó]mina|sueldo)|anticipo\s+a\s|presto\s|presté\s/i.test(userInput)) {
+
+    // Determinar dirección: ¿sale dinero (gasto) o entra (ingreso)?
+    const esDevolucion = /devuelve|me\s+devuelve|me\s+paga(?!\s+a)|cobr[eé]\s+el\s+pr[eé]stamo|reintegra|descont[oó]|descuent|ya\s+me\s+pag[oó]/i.test(userInput)
+    const esGasto      = !esDevolucion // por defecto: si doy/pago/presto → gasto
+
+    const isAdelanto   = /adelanto|anticipo\s+(?:de\s+)?(?:n[oó]mina|sueldo)|anticipo\s+a\s/i.test(userInput)
+    const isPrestamoBanco = /banco|hipoteca|cr[eé]dito|prestamista/i.test(userInput)
+
+    // Extraer importe (buscar número con o sin €)
+    const mImporte = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|eur\w*)/i)
+      || userInput.match(/(?:de\s+|por\s+)(\d+(?:[.,]\d{1,2})?)\b/i)
+    const importe = mImporte ? parseFloat(mImporte[1].replace(',', '.')) : 0
+
+    // Extraer persona (la que recibe o da)
+    const mPersona = userInput.match(
+      /(?:a|de|para|con)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,50}?)(?:\s+(?:de|por|un|una|el|la|con|,)|$)/i
+    )
+    const persona = mPersona ? mPersona[1].trim() : ''
+
+    // Concepto base
+    let conceptoBase: string
+    if (isAdelanto) {
+      conceptoBase = esDevolucion
+        ? `Devolución adelanto nómina${persona ? ` - ${persona}` : ''}`
+        : `Adelanto nómina${persona ? ` - ${persona}` : ''}`
+    } else if (isPrestamoBanco) {
+      conceptoBase = esDevolucion
+        ? `Devolución préstamo${persona ? ` - ${persona}` : ''}`
+        : `Cuota préstamo${persona ? ` - ${persona}` : ''}`
+    } else {
+      conceptoBase = esDevolucion
+        ? `Devolución préstamo${persona ? ` - ${persona}` : ''}`
+        : `Préstamo${persona ? ` - ${persona}` : ''}`
+    }
+
+    // Pedir importe si falta
+    if (!importe || importe <= 0) {
+      const tipo = isAdelanto ? 'adelanto de nómina' : 'préstamo'
+      return { needsInfo: `¿De qué importe es el ${tipo}${persona ? ` a ${persona}` : ''}? Ej: "500€"` }
+    }
+
+    const actionType = esGasto ? 'registrar_gasto' : 'registrar_ingreso'
+    const params = esGasto
+      ? { importe, concepto: conceptoBase, es_gasto_empresa: true, categoria: 'personal' }
+      : { importe, concepto: conceptoBase, categoria: 'otros', iva_incluido: false }
+
+    const card = await createPendingAction(actionType, params, tenantId, userId)
+    return { card }
+  }
+
+  // ── cuota autónomo / seguridad social / nómina empleado ──────────────────
+  if (/cuota\s+aut[oó]nomo|cuota\s+reta|seguridad\s+social|cuota\s+ss\b|n[oó]mina\s+de|pago\s+n[oó]mina/i.test(userInput)) {
+
+    const mImporte = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|eur\w*)/i)
+    const importe  = mImporte ? parseFloat(mImporte[1].replace(',', '.')) : 0
+
+    const isNomina   = /n[oó]mina\s+de|pago\s+n[oó]mina/i.test(userInput)
+    const isCuotaSS  = /cuota\s+aut[oó]nomo|cuota\s+reta|seguridad\s+social|cuota\s+ss\b/i.test(userInput)
+
+    // Extraer mes (si lo menciona)
+    const mMes = userInput.match(/(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/i)
+    const mes  = mMes ? mMes[1] : ''
+
+    // Extraer persona (para nómina)
+    const mPersona = userInput.match(
+      /n[oó]mina\s+de\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:de|por|,)|$)/i
+    )
+    const persona = mPersona ? mPersona[1].trim() : ''
+
+    let concepto: string
+    if (isNomina) {
+      concepto = `Nómina${persona ? ` - ${persona}` : ''}${mes ? ` (${mes})` : ''}`
+    } else {
+      concepto = `Cuota autónomo${mes ? ` ${mes}` : ''}`
+    }
+
+    if (!importe || importe <= 0) {
+      return { needsInfo: `¿De qué importe es ${isNomina ? 'la nómina' : 'la cuota'}? Ej: "${isNomina ? '1.200€' : '320€'}"` }
+    }
+
+    const card = await createPendingAction('registrar_gasto', {
+      importe,
+      concepto,
+      es_gasto_empresa: true,
+      categoria: isCuotaSS ? 'impuestos' : 'nominas',
+    }, tenantId, userId)
+    return { card }
+  }
+
   // ── READ intents → ejecutar directamente ─────────────────────────────────
   const routing = routeToLLM(parsed.confidence, userInput, false)
 
