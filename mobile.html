@@ -698,6 +698,7 @@ async function submit(userText) {
     } else {
       const reply = data.message || data.reply || '✓ Hecho.';
       addMsg('ai', escHtml(reply).replace(/\n/g,'<br>'));
+      speakResponse(reply);  // TTS en respuestas normales
     }
   } catch (err) {
     removeTyping();
