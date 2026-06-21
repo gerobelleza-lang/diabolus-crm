@@ -395,3 +395,133 @@ export const cazadorInternalRoute = async (c: any) => {
     return c.json({ error: err.message }, 500);
   }
 };
+
+// ── Preview mañanero (08:00) ───────────────────────────────────────────────
+// Calcula qué haría el Cazador HOY sin enviar nada a clientes.
+// Avisa al dueño por su canal preferido para que corrija antes de las 10:00.
+
+async function sendOwnerMessage(salon: any, text: string) {
+  const channel = salon.notify_channel || 'telegram';
+  if (channel === 'telegram' && salon.telegram_chat_id) {
+    await sendTelegram(salon.telegram_chat_id, text);
+  } else if (channel === 'whatsapp' && salon.whatsapp_number) {
+    // WhatsApp via Meta API — misma URL que /api/whatsapp
+    const WABA_TOKEN = process.env.WHATSAPP_TOKEN;
+    const PHONE_ID   = process.env.WHATSAPP_PHONE_ID;
+    if (WABA_TOKEN && PHONE_ID) {
+      await fetch(`https://graph.facebook.com/v19.0/${PHONE_ID}/messages`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${WABA_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: salon.whatsapp_number,
+          type: 'text',
+          text: { body: text.replace(/<[^>]+>/g, '') }, // strip HTML tags for WA
+        }),
+      });
+    }
+  } else if (salon.telegram_chat_id) {
+    // fallback: si tiene Telegram, úsalo aunque notify_channel sea otro
+    await sendTelegram(salon.telegram_chat_id, text);
+  }
+}
+
+export async function runCazadorPreview(): Promise<{ salones: number; total_facturas: number }> {
+  const supabase = getSupabaseAdmin();
+  const today = new Date(new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Madrid' }));
+
+  const { data: configs } = await supabase.from('cazador_config').select('*').eq('enabled', true);
+  if (!configs?.length) return { salones: 0, total_facturas: 0 };
+
+  let totalFacturas = 0;
+
+  for (const config of configs) {
+    const { data: salon } = await supabase
+      .from('salons')
+      .select('name, email, telegram_chat_id, whatsapp_number, notify_channel')
+      .eq('id', config.salon_id)
+      .single();
+    if (!salon) continue;
+
+    // No tiene ningún canal para avisar al dueño → saltamos
+    if (!salon.telegram_chat_id && !salon.whatsapp_number) continue;
+
+    const { data: invoices } = await supabase
+      .from('invoices')
+      .select('*, clients(name, email, phone)')
+      .eq('salon_id', config.salon_id)
+      .eq('status', 'pending')
+      .lt('due_date', today.toISOString().split('T')[0]);
+
+    const previewLines: string[] = [];
+
+    for (const invoice of (invoices || [])) {
+      const dueDate   = new Date(invoice.due_date);
+      const diffMs    = today.getTime() - dueDate.getTime();
+      const dias      = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      let level: 1 | 2 | 3 | null = null;
+      if      (dias >= config.level3_days) level = 3;
+      else if (dias >= config.level2_days) level = 2;
+      else if (dias >= config.level1_days) level = 1;
+      if (!level) continue;
+
+      // ¿Ya se envió este nivel?
+      const { data: existing } = await supabase
+        .from('cobros_cazador')
+        .select('id')
+        .eq('invoice_id', invoice.id)
+        .eq('level', level)
+        .single();
+      if (existing) continue;
+
+      // ¿Ya está pagada?
+      const { data: fresh } = await supabase.from('invoices').select('status').eq('id', invoice.id).single();
+      if (fresh?.status === 'paid') continue;
+
+      const client  = invoice.clients;
+      const emoji   = level === 1 ? '🟡' : level === 2 ? '🟠' : '🔴';
+      const avisoN  = level === 1 ? '1er aviso' : level === 2 ? '2º aviso' : '⚠️ Último aviso';
+      previewLines.push(
+        `${emoji} ${client?.name || 'Sin nombre'} — ${formatEur(invoice.total || 0)} — lleva ${dias} día(s) · ${avisoN}`
+      );
+      totalFacturas++;
+    }
+
+    // Construir mensaje para el dueño
+    const fecha = new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid' });
+
+    if (previewLines.length === 0) {
+      await sendOwnerMessage(
+        salon,
+        `🌅 Buenos días.\n\nHoy el Cazador no tiene facturas que reclamar. ✅ Todo al día.\n\n— Diabolus`
+      );
+    } else {
+      const total = previewLines.length;
+      const lines = [
+        `🌅 <b>Buenos días — ${fecha}</b>`,
+        ``,
+        `El Cazador actúa HOY a las 10:00 sobre <b>${total}</b> factura(s):`,
+        ``,
+        ...previewLines,
+        ``,
+        `Si alguna ya está cobrada, márcala en Diabolus <b>antes de las 10:00</b> y no saldrá ningún aviso.`,
+        ``,
+        `<i>diabolus.es</i>`,
+      ];
+      await sendOwnerMessage(salon, lines.join('\n'));
+    }
+  }
+
+  return { salones: configs.length, total_facturas: totalFacturas };
+}
+
+// POST /api/internal/cazador/preview — trigger 08:00
+export const cazadorPreviewRoute = async (c: any) => {
+  try {
+    const result = await runCazadorPreview();
+    return c.json({ ok: true, ...result });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+};

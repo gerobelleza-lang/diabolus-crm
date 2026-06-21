@@ -20,7 +20,7 @@ import { onboardingRoutes } from './routes/onboarding'
 import { categoriesRoutes } from './routes/categories'
 import { whatsappRoutes } from './routes/whatsapp'
 import { documentsRoutes, documentsPublicRoutes } from './routes/documents'
-import { cazadorRoutes, cazadorInternalRoute } from './routes/cazador'
+import { cazadorRoutes, cazadorInternalRoute, cazadorPreviewRoute } from './routes/cazador'
 import { supportRoutes } from './routes/support'
 import { legalRoutes } from './routes/legal'
 import { albaranRoute } from './routes/albaran'
@@ -126,6 +126,9 @@ export function createApp() {
 
   // ─── Internal: Cazador Run (called by daily trigger — no user auth) ────────
   app.post('/api/internal/cazador/run', cazadorInternalRoute)
+
+  // ─── Internal: Cazador Preview 08:00 (aviso al dueño antes de actuar) ─────
+  app.post('/api/internal/cazador/preview', cazadorPreviewRoute)
 
   // ─── Protected Routes ──────────────────────────────────────────────────────
   app.use('/api/*', authMiddleware)
