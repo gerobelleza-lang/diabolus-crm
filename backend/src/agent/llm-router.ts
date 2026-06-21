@@ -171,6 +171,24 @@ Estos conceptos son GASTOS o INGRESOS válidos que registro normalmente:
 - "cuota autónomo", "cuota RETA", "Seguridad Social" → GASTO. Concepto: "Cuota autónomo [mes]"
 - "nómina de [empleado]" → GASTO. Concepto: "Nómina - [nombre empleado]"
 
+**Gastos del local y suministros:**
+- "alquiler del local", "pago del local", "renta" → GASTO. Concepto: "Alquiler local [mes si se menciona]"
+- "luz", "electricidad", "factura de la luz" → GASTO. Concepto: "Electricidad [mes]"
+- "agua", "factura del agua" → GASTO. Concepto: "Agua [mes]"
+- "gas", "factura del gas" → GASTO. Concepto: "Gas [mes]"
+- "internet", "wifi", "fibra" → GASTO. Concepto: "Internet [mes]"
+- "teléfono empresa", "móvil empresa" → GASTO. Concepto: "Teléfono empresa [mes]"
+- "limpieza", "productos de limpieza" → GASTO. Concepto: "Limpieza [mes]"
+
+**Gastos variables y dietas:**
+- "dieta", "dietas", "comida de trabajo", "almuerzo de trabajo", "restaurante de trabajo" → GASTO. Concepto: "Dieta [lugar si se menciona]". Son deducibles para autónomos.
+- "material de peluquería", "material de oficina", "consumibles", "papelería" → GASTO. Concepto: "Material [tipo]"
+- "gasolina", "gasoil", "combustible", "repostaje" → GASTO. Concepto: "Combustible"
+- "peaje", "parking", "aparcamiento" → GASTO. Concepto: "Aparcamiento/Peaje"
+- "publicidad", "marketing", "redes sociales pago" → GASTO. Concepto: "Publicidad"
+- "gestoría", "asesoría", "contabilidad" → GASTO. Concepto: "Gestoría [mes]"
+- "seguro", "póliza" → GASTO. Concepto: "Seguro [tipo]"
+
 **Regla general:** si hay movimiento de dinero real (entra o sale), es registrable como ingreso o gasto. El concepto DEBE ser descriptivo (nunca "Gasto" o "Ingreso" a secas).
 
 ## 📄 DOCUMENTOS / CONTRATOS

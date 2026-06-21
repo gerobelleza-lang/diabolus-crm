@@ -530,6 +530,65 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     return { card }
   }
 
+  // ── gastos recurrentes del negocio (local, suministros, dietas, material) ─
+  {
+    // Patrones de suministros y gastos fijos típicos
+    const gastoMap: Array<{re: RegExp; concepto: string; categoria: string; ejemploImporte: string}> = [
+      { re: /alquiler\s+(?:del?\s+)?local|pago\s+(?:del?\s+)?local|renta\s+(?:del?\s+)?local/i, concepto: 'Alquiler local',    categoria: 'alquiler',      ejemploImporte: '800€'  },
+      { re: /\bluz\b|electricidad|factura\s+(?:de\s+)?(?:la\s+)?luz|recibo\s+(?:de\s+)?(?:la\s+)?luz/i, concepto: 'Electricidad', categoria: 'suministros', ejemploImporte: '90€'   },
+      { re: /\bagua\b|factura\s+(?:del?\s+)?agua|recibo\s+(?:del?\s+)?agua/i, concepto: 'Agua',              categoria: 'suministros',   ejemploImporte: '30€'   },
+      { re: /\bgas\b|factura\s+(?:del?\s+)?gas|recibo\s+(?:del?\s+)?gas/i,   concepto: 'Gas',               categoria: 'suministros',   ejemploImporte: '60€'   },
+      { re: /internet|wifi|fibra|banda\s+ancha|l[ií]nea\s+(?:de\s+)?internet/i, concepto: 'Internet',        categoria: 'suministros',   ejemploImporte: '45€'   },
+      { re: /tel[eé]fono\s+(?:m[oó]vil|fijo|empresa)|m[oó]vil\s+(?:empresa|trabajo)/i, concepto: 'Teléfono empresa', categoria: 'suministros', ejemploImporte: '30€' },
+      { re: /\bdieta\b|dietas\b|comida\s+(?:de\s+)?(?:trabajo|empresa|negocio)|almuerzo\s+(?:de\s+)?(?:trabajo|negocio)|restaurante\s+(?:de\s+)?(?:trabajo|negocio)/i, concepto: 'Dieta', categoria: 'dietas', ejemploImporte: '25€' },
+      { re: /material\s+(?:de\s+)?(?:oficina|trabajo|peluquer[ií]a|est[eé]tica)|papeler[ií]a|consumibles/i, concepto: 'Material', categoria: 'material', ejemploImporte: '50€' },
+      { re: /limpieza|productos\s+(?:de\s+)?limpieza/i,                       concepto: 'Limpieza',          categoria: 'gastos_generales', ejemploImporte: '40€' },
+      { re: /\bseguro\b(?!\s+(?:social|de\s+vida))|p[oó]liza/i,              concepto: 'Seguro',            categoria: 'seguros',       ejemploImporte: '120€'  },
+      { re: /gestor[ií]a|asesor[ií]a|contabilidad|gestor\s+(?:de\s+)?(?:empresa|fiscal)/i, concepto: 'Gestoría', categoria: 'servicios_profesionales', ejemploImporte: '80€' },
+      { re: /gasoil|gasolina|carburante|repostaje|combustible/i,              concepto: 'Combustible',       categoria: 'transporte',    ejemploImporte: '70€'   },
+      { re: /peaje|aparcamiento|parking|estacionamiento/i,                    concepto: 'Aparcamiento/Peaje',categoria: 'transporte',    ejemploImporte: '15€'   },
+      { re: /publicidad|marketing|redes\s+sociales\s+(?:de\s+)?(?:pago|empresa)|anuncio/i, concepto: 'Publicidad', categoria: 'marketing', ejemploImporte: '100€' },
+    ]
+
+    let matchedGasto: typeof gastoMap[0] | null = null
+    for (const g of gastoMap) {
+      if (g.re.test(userInput)) { matchedGasto = g; break }
+    }
+
+    if (matchedGasto) {
+      // Extraer importe
+      const mImp = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|eur\w*)/i)
+        || userInput.match(/(?:de\s+|por\s+|son\s+|ha\s+sido\s+)(\d+(?:[.,]\d{1,2})?)\b/i)
+      const importe = mImp ? parseFloat(mImp[1].replace(',', '.')) : 0
+
+      // Extraer mes mencionado
+      const mMes = userInput.match(/(?:de\s+|del?\s+mes\s+de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/i)
+      const mes = mMes ? mMes[1] : ''
+
+      // Refinar concepto con mes o extra info
+      let concepto = matchedGasto.concepto
+      if (mes) concepto += ` ${mes}`
+
+      // Para dietas, capturar descripción extra si hay
+      if (matchedGasto.categoria === 'dietas') {
+        const mDesc = userInput.match(/(?:en\s+|de\s+)([A-Za-záéíóúñÁÉÍÓÚÑ\s]{3,30})$/i)
+        if (mDesc) concepto += ` - ${mDesc[1].trim()}`
+      }
+
+      if (!importe || importe <= 0) {
+        return { needsInfo: `¿De qué importe es ${matchedGasto.concepto.toLowerCase()}? Ej: "${matchedGasto.ejemploImporte}"` }
+      }
+
+      const card = await createPendingAction('registrar_gasto', {
+        importe,
+        concepto,
+        es_gasto_empresa: true,
+        categoria: matchedGasto.categoria,
+      }, tenantId, userId)
+      return { card }
+    }
+  }
+
   // ── cuota autónomo / seguridad social / nómina empleado ──────────────────
   if (/cuota\s+aut[oó]nomo|cuota\s+reta|seguridad\s+social|cuota\s+ss\b|n[oó]mina\s+de|pago\s+n[oó]mina/i.test(userInput)) {
 
