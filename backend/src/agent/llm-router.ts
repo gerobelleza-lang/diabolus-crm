@@ -188,6 +188,14 @@ Estos conceptos son GASTOS o INGRESOS válidos que registro normalmente:
 - "publicidad", "marketing", "redes sociales pago" → GASTO. Concepto: "Publicidad"
 - "gestoría", "asesoría", "contabilidad" → GASTO. Concepto: "Gestoría [mes]"
 - "seguro", "póliza" → GASTO. Concepto: "Seguro [tipo]"
+- "proveedor", "compra de producto", "stock", "género", "mercancía" → GASTO. Concepto: "Compra proveedor - [nombre]"
+- "suscripción software", "herramienta digital", "licencia", "SaaS" → GASTO. Concepto: "Herramienta digital - [nombre]"
+- "comisión banco", "gasto banco", "cuota cuenta", "TPV", "datáfono" → GASTO. Concepto: "Comisión bancaria"
+- "impuesto", "tasa municipal", "IBI", "basuras", "licencia apertura" → GASTO. Concepto: "Impuesto/Tasa - [tipo]"
+- "reparación", "avería", "mantenimiento local", "fontanero", "electricista" → GASTO. Concepto: "Reparación/Mantenimiento"
+- "formación", "curso", "taller" → GASTO. Concepto: "Formación - [nombre curso]"
+
+**Proveedor:** si el usuario menciona el nombre de quién cobra ("de Endesa", "a Mapfre", "proveedor X"), inclúyelo en el concepto con guión. Ej: "Electricidad mayo - Endesa"
 
 **Regla general:** si hay movimiento de dinero real (entra o sale), es registrable como ingreso o gasto. El concepto DEBE ser descriptivo (nunca "Gasto" o "Ingreso" a secas).
 

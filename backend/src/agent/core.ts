@@ -548,6 +548,13 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       { re: /gasoil|gasolina|carburante|repostaje|combustible/i,              concepto: 'Combustible',       categoria: 'transporte',    ejemploImporte: '70€'   },
       { re: /peaje|aparcamiento|parking|estacionamiento/i,                    concepto: 'Aparcamiento/Peaje',categoria: 'transporte',    ejemploImporte: '15€'   },
       { re: /publicidad|marketing|redes\s+sociales\s+(?:de\s+)?(?:pago|empresa)|anuncio/i, concepto: 'Publicidad', categoria: 'marketing', ejemploImporte: '100€' },
+      // Nuevas categorías
+      { re: /proveedor|compra\s+(?:de\s+)?producto|stock|mercanc[ií]a|género/i,           concepto: 'Compra proveedor',  categoria: 'proveedores',         ejemploImporte: '200€' },
+      { re: /herramienta\s+digital|suscripci[oó]n\s+(?:de\s+)?(?:software|app|servicio)|software|saas|licencia|netflix\s+empresa|spotify\s+empresa/i, concepto: 'Herramienta digital', categoria: 'herramientas_digitales', ejemploImporte: '30€' },
+      { re: /comisi[oó]n\s+banco|comisi[oó]n\s+bancaria|gasto\s+banco|mantenimiento\s+cuenta|cuota\s+(?:tarjeta|cuenta)|tpv|datafono/i, concepto: 'Comisión bancaria', categoria: 'bancos_comisiones', ejemploImporte: '15€' },
+      { re: /impuesto|tasa\s+(?:municipal|local|ayuntamiento)|ibi\b|ibi\s+|basuras|licencia\s+(?:de\s+)?apertura|tasa\s+(?:de\s+)?apertura/i, concepto: 'Impuesto/Tasa', categoria: 'impuestos_tasas', ejemploImporte: '150€' },
+      { re: /reparaci[oó]n|averia|mantenimiento\s+(?:local|m[aá]quina|equipo)|fontanero|electricista|pintor|albañil/i, concepto: 'Reparación/Mantenimiento', categoria: 'mantenimiento', ejemploImporte: '120€' },
+      { re: /formaci[oó]n|curso|taller|capacitaci[oó]n|master|training/i,                  concepto: 'Formación',         categoria: 'formacion',           ejemploImporte: '150€' },
     ]
 
     let matchedGasto: typeof gastoMap[0] | null = null
@@ -568,6 +575,24 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       // Refinar concepto con mes o extra info
       let concepto = matchedGasto.concepto
       if (mes) concepto += ` ${mes}`
+
+      // Capturar proveedor si se menciona ("de Endesa", "de Iberdrola", "de [Nombre]")
+      const proveedorPatterns = [
+        /(?:de\s+|con\s+|a\s+|proveedor\s+)([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñÁÉÍÓÚÑ\s&.,]{2,25})(?:\s+(?:son|es|de|por|a)|\s*$)/,
+        /([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñÁÉÍÓÚÑ]{2,}\s*(?:S\.?L\.?|S\.?A\.?|S\.?L\.?U\.?)?)/,
+      ]
+      for (const pr of proveedorPatterns) {
+        const mProv = userInput.match(pr)
+        if (mProv && !concepto.includes(mProv[1].trim())) {
+          const nombre = mProv[1].trim()
+          // Evitar falsos positivos con palabras del propio concepto
+          const stopWords = ['Alquiler','Electricidad','Internet','Limpieza','Seguro','Material','Gasolina','Gestoría','Formación','Reparación','Comisión','Publicidad','Dieta','Agua','Gas']
+          if (!stopWords.some(sw => nombre.toLowerCase().startsWith(sw.toLowerCase()))) {
+            concepto += ` - ${nombre}`
+          }
+          break
+        }
+      }
 
       // Para dietas, capturar descripción extra si hay
       if (matchedGasto.categoria === 'dietas') {
