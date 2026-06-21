@@ -23,6 +23,7 @@ import { documentsRoutes, documentsPublicRoutes } from './routes/documents'
 import { cazadorRoutes, cazadorInternalRoute, cazadorPreviewRoute } from './routes/cazador'
 import { supportRoutes } from './routes/support'
 import { legalRoutes } from './routes/legal'
+import { pactoRoutes } from './routes/pacto'
 import { albaranRoute } from './routes/albaran'
 import { transcribeRoute } from './routes/transcribe'
 import { ttsRoute } from './routes/tts'
@@ -149,6 +150,7 @@ export function createApp() {
   app.route('/api/documents', documentsRoutes)
   app.route('/api/cazador', cazadorRoutes)
   app.route('/api/legal', legalRoutes)       // ← Módulo Legal
+  app.route('/api/pacto', pactoRoutes)       // ← El Pacto del Diablo
   app.route('/api/admin', adminRoutes)       // ← Super Admin: usage, planes
   app.route('/api/albaranes', albaranRoute)      // ← Albaranes (Panel Móvil)
   app.route('/api/agent/transcribe', transcribeRoute) // ← Voz → Groq Whisper
