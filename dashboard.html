@@ -196,6 +196,27 @@
       border-color: rgba(139,92,246,.7);
       box-shadow: 0 0 18px rgba(139,92,246,.3);
     }
+    /* ── Usage widget ── */
+    .usage-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .usage-card.warn  { border-color: rgba(251,191,36,.4); }
+    .usage-card.block { border-color: rgba(239,68,68,.5); }
+    .usage-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem; }
+    .usage-title  { font-size:.75rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; }
+    .usage-badge  { font-size:.72rem; font-weight:600; padding:.2rem .5rem; border-radius:20px; background:rgba(139,92,246,.15); color:var(--violet); }
+    .usage-badge.warn  { background:rgba(251,191,36,.15); color:#fbbf24; }
+    .usage-badge.block { background:rgba(239,68,68,.15); color:#f87171; }
+    .usage-bar-bg   { height:6px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; }
+    .usage-bar-fill { height:100%; background:var(--violet); border-radius:99px; transition:width .6s ease; }
+    .usage-bar-fill.warn  { background:#fbbf24; }
+    .usage-bar-fill.block { background:#f87171; }
+    .usage-meta { font-size:.68rem; color:var(--text-tertiary); margin-top:.45rem; }
+
     .kpi-card.alert {
       border-color: rgba(239,68,68,.5);
       box-shadow: 0 0 12px rgba(239,68,68,.2);
@@ -554,6 +575,18 @@
           </div>
         </div>
 
+        <!-- 💬 Uso de mensajes del Agente IA -->
+        <div class="usage-card" id="usageCard" style="display:none">
+          <div class="usage-header">
+            <span class="usage-title">💬 Agente IA — mensajes este mes</span>
+            <span class="usage-badge" id="usageBadge">...</span>
+          </div>
+          <div class="usage-bar-bg">
+            <div class="usage-bar-fill" id="usageBarFill" style="width:0%"></div>
+          </div>
+          <div class="usage-meta" id="usageMeta">&nbsp;</div>
+        </div>
+
         <!-- Charts -->
         <div class="charts-row">
           <div class="chart-card">
@@ -866,6 +899,50 @@
     }
 
     loadDashboard()
+    loadUsage()
+
+    // ── Uso del agente IA ──
+    async function loadUsage() {
+      try {
+        const res = await fetch(`${API}/api/agent/usage`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (!res.ok) return
+        const d = await res.json()
+
+        // Enterprise sin límite → no mostrar
+        if (d.limit === -1) return
+
+        const card  = document.getElementById('usageCard')
+        const fill  = document.getElementById('usageBarFill')
+        const badge = document.getElementById('usageBadge')
+        const meta  = document.getElementById('usageMeta')
+
+        card.style.display = ''
+
+        const pct  = d.pct || 0
+        const isWarn  = pct >= 80 && pct < 100
+        const isBlock = pct >= 100
+
+        fill.style.width = Math.min(pct, 100) + '%'
+        fill.className   = 'usage-bar-fill' + (isBlock ? ' block' : isWarn ? ' warn' : '')
+        badge.className  = 'usage-badge' + (isBlock ? ' block' : isWarn ? ' warn' : '')
+        card.className   = 'usage-card'  + (isBlock ? ' block' : isWarn ? ' warn' : '')
+
+        const planLabel = { basico:'Básico', pro:'Pro', pro_plus:'Pro+', enterprise:'Enterprise' }[d.plan] || d.plan
+        badge.textContent = `${d.count} / ${d.limit} msgs`
+
+        if (isBlock) {
+          meta.innerHTML = `⛔ Límite alcanzado. <a href="mailto:hola@diabolus.es" style="color:#f87171">Amplía tu plan →</a>`
+        } else if (isWarn) {
+          meta.textContent = `⚠️ Quedan ${d.remaining} mensajes — Plan ${planLabel}`
+        } else {
+          meta.textContent = `Plan ${planLabel} · Quedan ${d.remaining} mensajes este mes`
+        }
+      } catch(e) {
+        // silencioso — no crítico
+      }
+    }
 
     // ── PWA ──
     if ('serviceWorker' in navigator) {

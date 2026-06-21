@@ -29,6 +29,7 @@ import { ttsRoute } from './routes/tts'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 import { accrueCommissions } from './routes/export'
+import { adminRoutes } from './routes/admin'
 
 export function createApp() {
   const app = new Hono()
@@ -148,6 +149,7 @@ export function createApp() {
   app.route('/api/documents', documentsRoutes)
   app.route('/api/cazador', cazadorRoutes)
   app.route('/api/legal', legalRoutes)       // ← Módulo Legal
+  app.route('/api/admin', adminRoutes)       // ← Super Admin: usage, planes
   app.route('/api/albaranes', albaranRoute)      // ← Albaranes (Panel Móvil)
   app.route('/api/agent/transcribe', transcribeRoute) // ← Voz → Groq Whisper
   app.post('/api/agent/tts', ttsRoute)               // ← TTS → OpenAI voz
