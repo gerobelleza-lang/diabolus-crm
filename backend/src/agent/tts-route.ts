@@ -7,7 +7,7 @@ export const config = { runtime: 'edge' };
 
 const MAX_CHARS = 800;
 // nova = cálida, natural, femenina. shimmer = más suave/susurrante.
-const OPENAI_VOICE = 'nova';
+const OPENAI_VOICE = 'shimmer';
 
 export async function ttsRoute(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
