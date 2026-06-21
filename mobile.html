@@ -516,10 +516,10 @@
       <!-- Burbuja de saludo del bot -->
       <div class="msg ai" style="width:100%;max-width:340px;margin-bottom:4px;">
         <div class="bubble">
-          😈 <strong>Hola, soy tu Diablillo.</strong><br>
-          Solo ejecuto órdenes dentro de la app:<br>
+          😈 <strong>Hola. Soy tu Diablilla.</strong><br>
+          Estoy aquí para concederte lo que necesitas:<br>
           cobros, gastos, facturas, clientes.<br><br>
-          ¿Qué apuntamos?
+          ¿Qué deseas?
         </div>
       </div>
       <!-- Chips de acción rápida -->
@@ -930,6 +930,82 @@ function primeAudioContext() {
     src.start(0);
   } catch(e) {}
 }
+
+/* ── SONIDO DE APERTURA — sintetizado con Web Audio API ────────────────────
+   Demónico y sutil: bass sweep + mid whoosh + chispa alta.
+   Android/Desktop: se lanza al cargar la página (100ms delay).
+   iOS: se lanza en el primer toque del usuario (autoplay bloqueado por WebKit).
+   Solo suena UNA vez por sesión. Respeta el botón 🔇.
+────────────────────────────────────────────────────────────────────────── */
+let _openingSoundPlayed = false;
+
+function playOpeningSound() {
+  if (_openingSoundPlayed) return;
+  if (!ttsEnabled) return;
+  _openingSoundPlayed = true;
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+
+    // 1. Bass rumble demónico (80Hz → 35Hz, 2s)
+    const bassOsc = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+    bassOsc.type = 'sine';
+    bassOsc.frequency.setValueAtTime(80, now);
+    bassOsc.frequency.exponentialRampToValueAtTime(35, now + 1.8);
+    bassGain.gain.setValueAtTime(0, now);
+    bassGain.gain.linearRampToValueAtTime(0.38, now + 0.12);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+    bassOsc.connect(bassGain);
+    bassGain.connect(ctx.destination);
+    bassOsc.start(now);
+    bassOsc.stop(now + 2.0);
+
+    // 2. Mid whoosh (sawtooth filtrado, 420Hz → 140Hz, 0.9s)
+    const midOsc = ctx.createOscillator();
+    const midFilter = ctx.createBiquadFilter();
+    const midGain = ctx.createGain();
+    midOsc.type = 'sawtooth';
+    midOsc.frequency.setValueAtTime(420, now);
+    midOsc.frequency.exponentialRampToValueAtTime(140, now + 0.85);
+    midFilter.type = 'bandpass';
+    midFilter.frequency.value = 280;
+    midFilter.Q.value = 2.5;
+    midGain.gain.setValueAtTime(0, now);
+    midGain.gain.linearRampToValueAtTime(0.12, now + 0.06);
+    midGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+    midOsc.connect(midFilter);
+    midFilter.connect(midGain);
+    midGain.connect(ctx.destination);
+    midOsc.start(now);
+    midOsc.stop(now + 0.85);
+
+    // 3. Chispa alta (sine, 1400Hz → 700Hz, comienza a 0.08s)
+    const hiOsc = ctx.createOscillator();
+    const hiGain = ctx.createGain();
+    hiOsc.type = 'sine';
+    hiOsc.frequency.setValueAtTime(1400, now + 0.08);
+    hiOsc.frequency.exponentialRampToValueAtTime(700, now + 0.45);
+    hiGain.gain.setValueAtTime(0, now + 0.08);
+    hiGain.gain.linearRampToValueAtTime(0.09, now + 0.13);
+    hiGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    hiOsc.connect(hiGain);
+    hiGain.connect(ctx.destination);
+    hiOsc.start(now + 0.08);
+    hiOsc.stop(now + 0.5);
+
+  } catch(e) {}
+}
+
+// Desktop / Android → autoplay permitido
+setTimeout(() => { playOpeningSound(); }, 100);
+
+// iOS → esperar primer toque (autoplay bloqueado por WebKit)
+document.addEventListener('touchstart', function _iosSound() {
+  document.removeEventListener('touchstart', _iosSound);
+  playOpeningSound();
+}, { once: true, passive: true });
 
 function toggleSound() {
   ttsEnabled = !ttsEnabled;

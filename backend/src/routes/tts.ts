@@ -73,9 +73,9 @@ export async function ttsRoute(req: Request): Promise<Response> {
           text: clean,
           model_id: MODEL_ID,
           voice_settings: {
-            stability: 0.45,
-            similarity_boost: 0.80,
-            style: 0.15,
+            stability: 0.38,
+            similarity_boost: 0.82,
+            style: 0.45,
             use_speaker_boost: true,
           },
           output_format: 'mp3_44100_128',
