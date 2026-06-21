@@ -892,22 +892,25 @@ function stopVoice() {
 /* ── TTS — Diabolus habla ── */
 let ttsEnabled = true;
 let ttsAudio = null;
-let audioCtx = null;  // AudioContext pre-calentado para iOS Safari
+let audioCtx = null;  // AudioContext desbloqueado para iOS Safari
+let audioUnlocked = false;
 
-// iOS Safari requiere que AudioContext se cree/resume DENTRO de un gesto de usuario
-// Lo pre-calentamos en el primer click/touch de la página
-function ensureAudioContext() {
-  if (!audioCtx) {
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-  }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(() => {});
-  }
+// iOS Safari: reproducir buffer silencioso en el primer gesto desbloquea
+// el AudioContext de forma permanente (incluso tras awaits async).
+function unlockAudioContext() {
+  if (audioUnlocked) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
+    audioUnlocked = true;
+  } catch(e) {}
 }
-
-// Llamar ensureAudioContext en cualquier gesto de usuario
-document.addEventListener('touchstart', ensureAudioContext, { once: false, passive: true });
-document.addEventListener('click', ensureAudioContext, { once: false, passive: true });
+document.addEventListener('touchstart', unlockAudioContext, { once: true, passive: true });
+document.addEventListener('click',      unlockAudioContext, { once: true, passive: true });
 
 function toggleSound() {
   ttsEnabled = !ttsEnabled;
@@ -915,13 +918,13 @@ function toggleSound() {
   btn.textContent = ttsEnabled ? '🔊' : '🔇';
   btn.classList.toggle('muted', !ttsEnabled);
   if (!ttsEnabled && ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
-  ensureAudioContext();
+  unlockAudioContext();
 }
 
 async function speakResponse(text) {
   if (!ttsEnabled || !text) return;
-  // Detener audio previo si hay
-  if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+  if (ttsAudio) { try { ttsAudio.pause(); } catch(e) {} ttsAudio = null; }
+
   try {
     const a = getAuth();
     const res = await fetch(`${API}/api/agent/tts`, {
@@ -933,33 +936,41 @@ async function speakResponse(text) {
       body: JSON.stringify({ text })
     });
     if (!res.ok) return;
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
+    const arrayBuf = await res.arrayBuffer();
+    if (!arrayBuf || arrayBuf.byteLength < 100) return;
 
-    // Intentar AudioContext primero (iOS Safari)
+    // Asegurar AudioContext activo (iOS puede haberlo re-suspendido)
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      try { await audioCtx.resume(); } catch(e) {}
+    }
+
+    // Intentar AudioContext (funciona en iOS tras unlock)
     if (audioCtx && audioCtx.state === 'running') {
       try {
-        const arrayBuf = await blob.arrayBuffer();
-        const decoded  = await audioCtx.decodeAudioData(arrayBuf);
-        const source   = audioCtx.createBufferSource();
-        source.buffer  = decoded;
+        const decoded = await audioCtx.decodeAudioData(arrayBuf.slice(0));
+        const source  = audioCtx.createBufferSource();
+        source.buffer = decoded;
         source.connect(audioCtx.destination);
-        source.onended = () => { URL.revokeObjectURL(url); };
         source.start(0);
         ttsAudio = { pause: () => { try { source.stop(); } catch(e) {} } };
         return;
       } catch(e) {
-        // AudioContext falló — fallback a Audio
+        // Falló decode — intentar fallback
       }
     }
 
-    // Fallback: new Audio() (Chrome/Android/Desktop)
-    ttsAudio = new Audio(url);
+    // Fallback: blob URL + Audio (Chrome, Android, Safari desktop)
+    const blob = new Blob([arrayBuf], { type: 'audio/mpeg' });
+    const url  = URL.createObjectURL(blob);
+    ttsAudio   = new Audio(url);
     ttsAudio.onended = () => { URL.revokeObjectURL(url); ttsAudio = null; };
     ttsAudio.onerror = () => { URL.revokeObjectURL(url); ttsAudio = null; };
-    await ttsAudio.play();
+    ttsAudio.play().catch(() => { URL.revokeObjectURL(url); ttsAudio = null; });
   } catch(e) {
-    // TTS es silencioso — nunca bloquea la UX
+    // TTS silencioso — nunca bloquea UX
   }
 }
 
