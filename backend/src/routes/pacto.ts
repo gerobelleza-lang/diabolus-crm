@@ -409,3 +409,49 @@ pactoRoutes.delete('/campanas/:id', async (c) => {
     return c.json({ ok: true })
   } catch { return c.json({ error: 'Error al eliminar' }, 500) }
 })
+
+// ─── GET /api/pacto/status ────────────────────────────────────────────────────
+pactoRoutes.get('/status', async (c) => {
+  try {
+    const salonId = c.get('salonId')
+    const supabase = getSupabase()
+    const { data } = await supabase
+      .from('salons')
+      .select('pacto_activo, pacto_activado_at')
+      .eq('id', salonId)
+      .single()
+    return c.json({ ok: true, pacto_activo: data?.pacto_activo || false, activado_at: data?.pacto_activado_at })
+  } catch {
+    return c.json({ ok: true, pacto_activo: false })
+  }
+})
+
+// ─── POST /api/pacto/solicitar ────────────────────────────────────────────────
+pactoRoutes.post('/solicitar', async (c) => {
+  try {
+    const salonId = c.get('salonId')
+    const supabase = getSupabase()
+    const { data: salon } = await supabase
+      .from('salons')
+      .select('name')
+      .eq('id', salonId)
+      .single()
+
+    const tgToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
+    const chatId  = Deno.env.get('TELEGRAM_CHAT_ID')
+    if (tgToken && chatId) {
+      await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: `🔥 *El Pacto del Diablo — Solicitud*\n\nSalón: *${salon?.name || salonId}*\n\nActiva en admin:\nPOST /api/admin/salons/${salonId}/pacto\n{"activo": true}`,
+          parse_mode: 'Markdown'
+        })
+      })
+    }
+    return c.json({ ok: true, message: 'Solicitud enviada' })
+  } catch {
+    return c.json({ ok: true })
+  }
+})

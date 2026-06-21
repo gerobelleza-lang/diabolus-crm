@@ -4,764 +4,1160 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>El Pacto del Diablo — Diabolus CRM</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink: #15101F;
-      --surface: #1e1020;
-      --surface2: #2a1428;
-      --crimson: #dc2626;
-      --crimson-dim: rgba(220,38,38,.15);
-      --gold: #E3BE7A;
-      --green: #22C55E;
-      --text: #E8E3F0;
-      --text-dim: #9A8FB0;
-      --border: rgba(220,38,38,.18);
-      --violet: #8B5CF6;
-      --radius: 14px;
+      --crimson:  #c0392b;
+      --ember:    #e74c3c;
+      --gold:     #f39c12;
+      --dark:     #0a0a0f;
+      --panel:    #12121a;
+      --border:   #2a2a3a;
+      --text:     #e8e8f0;
+      --muted:    #6b6b8a;
+      --sidebar-w:220px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--ink); color: var(--text); font-family: 'Hanken Grotesk', sans-serif; min-height: 100vh; }
-
-    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-    .nav-brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--crimson); display: flex; align-items: center; gap: 8px; text-decoration: none; }
-    .nav-back { color: var(--text-dim); text-decoration: none; font-size: .88rem; display: flex; align-items: center; gap: 5px; transition: color .2s; }
-    .nav-back:hover { color: var(--text); }
-
-    .container { max-width: 900px; margin: 0 auto; padding: 28px 20px 80px; }
-
-    /* ── HERO ── */
-    .page-hero { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
-    .hero-left h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    .hero-left p { color: var(--text-dim); margin-top: 5px; font-size: .9rem; }
-    .plan-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(220,38,38,.12); border: 1px solid rgba(220,38,38,.35); border-radius: 20px; padding: 4px 14px; font-size: .78rem; font-weight: 700; color: #f87171; margin-top: 8px; }
-
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px; font-family: 'Hanken Grotesk', sans-serif; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
-    .btn-primary { background: var(--crimson); color: white; }
-    .btn-primary:hover { background: #b91c1c; }
-    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
-    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover { border-color: var(--crimson); color: #f87171; }
-    .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid rgba(255,255,255,.08); }
-    .btn-ghost:hover { color: var(--text); }
-    .btn-green { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
-    .btn-green:hover { background: rgba(34,197,94,.25); }
-    .btn-sm { padding: 6px 12px; font-size: .8rem; border-radius: 8px; }
-
-    /* ── STATS ── */
-    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
-    @media(max-width:640px) { .stats-row { grid-template-columns: repeat(2,1fr); } }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
-    .stat-val { font-family: 'IBM Plex Mono', monospace; font-size: 1.6rem; font-weight: 600; color: var(--gold); display: block; line-height: 1; }
-    .stat-val.red { color: #f87171; }
-    .stat-val.green { color: #4ade80; }
-    .stat-lbl { font-size: .75rem; color: var(--text-dim); margin-top: 6px; }
-
-    /* ── LIST ── */
-    .campanas-list { display: flex; flex-direction: column; gap: 14px; }
-    .campana-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; cursor: pointer; transition: border-color .2s, transform .15s; }
-    .campana-card:hover { border-color: rgba(220,38,38,.5); transform: translateY(-1px); }
-    .campana-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .campana-nombre { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; }
-    .campana-meta { font-size: .8rem; color: var(--text-dim); margin-top: 4px; }
-    .campana-stats { display: flex; gap: 16px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; }
-    .campana-stat { font-size: .8rem; color: var(--text-dim); }
-    .campana-stat span { color: var(--text); font-weight: 600; }
-    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
-    .empty-state .icon { font-size: 3rem; display: block; margin-bottom: 12px; }
-    .empty-state p { font-size: .9rem; line-height: 1.6; }
-
-    /* ── STATUS BADGES ── */
-    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: .75rem; font-weight: 700; }
-    .badge-borrador  { background: rgba(155,155,155,.12); color: #9ca3af; border: 1px solid rgba(155,155,155,.2); }
-    .badge-buscando  { background: rgba(234,179,8,.12); color: #fbbf24; border: 1px solid rgba(234,179,8,.25); }
-    .badge-leads     { background: rgba(139,92,246,.12); color: #a78bfa; border: 1px solid rgba(139,92,246,.25); }
-    .badge-mensaje   { background: rgba(59,130,246,.12); color: #60a5fa; border: 1px solid rgba(59,130,246,.25); }
-    .badge-activa    { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
-    .badge-completada{ background: rgba(220,38,38,.12); color: #f87171; border: 1px solid rgba(220,38,38,.25); }
-    .dot-pulse { width: 6px; height: 6px; border-radius: 50%; background: #fbbf24; animation: pulse 1.2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-    /* ══════════════════════════════════════════════════════════
-       WIZARD
-    ══════════════════════════════════════════════════════════ */
-    .wizard-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
-    .wizard-overlay.open { display: flex; }
-    .wizard-box { background: #1a0e26; border: 1px solid rgba(220,38,38,.3); border-radius: 20px; width: 100%; max-width: 700px; margin: auto; overflow: hidden; }
-    .wizard-header { padding: 24px 28px 0; }
-    .wizard-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    .wizard-subtitle { color: var(--text-dim); font-size: .85rem; margin-top: 4px; }
-    .wizard-close { margin-left: auto; background: none; border: none; color: var(--text-dim); font-size: 1.4rem; cursor: pointer; line-height: 1; padding: 4px; }
-    .wizard-close:hover { color: var(--text); }
-    .wizard-top { display: flex; align-items: flex-start; }
-
-    /* Progress */
-    .wizard-progress { display: flex; align-items: center; padding: 20px 28px 0; gap: 0; }
-    .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; border: 2px solid rgba(220,38,38,.3); color: var(--text-dim); background: var(--surface2); transition: all .3s; flex-shrink: 0; }
-    .step-dot.active { background: var(--crimson); border-color: var(--crimson); color: white; }
-    .step-dot.done { background: rgba(34,197,94,.2); border-color: #22c55e; color: #4ade80; }
-    .step-line { flex: 1; height: 2px; background: rgba(220,38,38,.15); }
-    .step-line.done { background: rgba(34,197,94,.4); }
-
-    .wizard-body { padding: 24px 28px 28px; }
-
-    /* Step panels */
-    .wizard-step { display: none; }
-    .wizard-step.active { display: block; }
-
-    /* Form */
-    .form-group { margin-bottom: 18px; }
-    .form-label { display: block; font-size: .82rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
-    .form-input, .form-select, .form-textarea {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
-      padding: 10px 14px; color: var(--text); font-family: 'Hanken Grotesk', sans-serif; font-size: .9rem;
-      transition: border-color .2s; outline: none;
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
     }
-    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--crimson); }
-    .form-select option { background: #1a0e26; }
-    .form-textarea { resize: vertical; min-height: 100px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media(max-width:520px) { .form-row { grid-template-columns: 1fr; } }
-    .form-hint { font-size: .78rem; color: var(--text-dim); margin-top: 5px; }
-    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-    .chip { padding: 5px 12px; border-radius: 20px; font-size: .78rem; font-weight: 600; cursor: pointer; border: 1px solid rgba(220,38,38,.25); color: var(--text-dim); background: var(--surface2); transition: all .2s; }
-    .chip.selected { background: var(--crimson); border-color: var(--crimson); color: white; }
-    .chip:hover { border-color: var(--crimson); color: #f87171; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 0;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .sidebar-logo span { font-size: 1.4rem; font-weight: 700; color: var(--crimson); }
+    .sidebar-logo small { display: block; font-size: .7rem; color: var(--muted); }
+    .nav-section-label {
+      font-size: .65rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--muted); padding: .5rem 1.5rem .25rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .6rem 1.5rem; color: var(--muted);
+      text-decoration: none; font-size: .85rem;
+      transition: all .2s;
+    }
+    .nav-item:hover, .nav-item.active {
+      color: var(--text); background: rgba(192,57,43,.1);
+    }
+    .nav-item.active { border-right: 2px solid var(--crimson); color: var(--crimson); }
+    .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .topbar {
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar h1 { font-size: 1.1rem; font-weight: 600; }
+    .topbar .plan-badge {
+      font-size: .7rem; padding: .25rem .7rem;
+      border-radius: 999px; font-weight: 600;
+      background: rgba(192,57,43,.2); color: var(--ember);
+      border: 1px solid rgba(192,57,43,.4);
+    }
+
+    /* ── GATE — PUERTA BLOQUEADA ── */
+    #gate-view {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 2rem;
+      padding: 2rem;
+      background: radial-gradient(ellipse at center, #1a0505 0%, #0a0a0f 70%);
+      position: relative;
+      overflow: hidden;
+    }
+    #gate-view.hidden { display: none; }
+
+    /* Partículas de brasa */
+    .embers {
+      position: absolute; inset: 0; pointer-events: none;
+      overflow: hidden;
+    }
+    .ember {
+      position: absolute;
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: var(--ember);
+      opacity: 0;
+      animation: float-up var(--dur, 4s) var(--delay, 0s) infinite ease-out;
+      left: var(--x, 50%);
+    }
+    @keyframes float-up {
+      0%   { opacity: 0; transform: translateY(0) scale(1); }
+      20%  { opacity: .9; }
+      80%  { opacity: .3; }
+      100% { opacity: 0; transform: translateY(-500px) scale(0); }
+    }
+
+    /* La puerta */
+    .door-wrap {
+      position: relative;
+      width: 260px;
+      height: 360px;
+    }
+    .door-frame {
+      position: absolute; inset: 0;
+      border: 3px solid #3a1010;
+      border-radius: 8px 8px 0 0;
+      background: #0d0505;
+      box-shadow: 0 0 60px rgba(192,57,43,.25), inset 0 0 40px rgba(0,0,0,.8);
+    }
+    .door-panel {
+      position: absolute; inset: 12px 12px 0 12px;
+      background: linear-gradient(160deg, #150808, #0a0303);
+      border: 1px solid #2a1010;
+      border-radius: 4px 4px 0 0;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      transform-origin: left center;
+      transition: transform 1.5s cubic-bezier(.2,.8,.2,1);
+    }
+    .door-panel.open {
+      transform: perspective(800px) rotateY(-75deg);
+    }
+
+    /* Pentáculo */
+    .pentacle-wrap {
+      position: relative;
+      width: 180px; height: 180px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pentacle-circle {
+      position: absolute;
+      width: 160px; height: 160px;
+      border: 2px solid var(--crimson);
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(192,57,43,.6), 0 0 60px rgba(192,57,43,.2), inset 0 0 20px rgba(192,57,43,.1);
+      animation: pulse-glow 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(192,57,43,.6), 0 0 60px rgba(192,57,43,.2); }
+      50%       { box-shadow: 0 0 35px rgba(192,57,43,.9), 0 0 90px rgba(192,57,43,.4); }
+    }
+    .pentacle-svg {
+      width: 130px; height: 130px;
+      animation: rotate-slow 20s linear infinite;
+      filter: drop-shadow(0 0 8px rgba(192,57,43,.8));
+    }
+    @keyframes rotate-slow {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* Cadenas */
+    .chains {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px; height: 200px;
+      pointer-events: none;
+      animation: chain-rattle 3s ease-in-out infinite;
+      transition: opacity .8s;
+    }
+    .chains.unlocked { opacity: 0; }
+    @keyframes chain-rattle {
+      0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+      92% { transform: translate(-50%, -50%) rotate(0deg); }
+      94% { transform: translate(-50%, -50%) rotate(-1.5deg); }
+      96% { transform: translate(-50%, -50%) rotate(1.5deg); }
+      98% { transform: translate(-50%, -50%) rotate(-1deg); }
+    }
+
+    /* Candado */
+    .lock-icon {
+      position: absolute;
+      bottom: -22px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 2rem;
+      filter: drop-shadow(0 0 8px rgba(192,57,43,.8));
+      animation: lock-pulse 2s ease-in-out infinite;
+      transition: opacity .5s;
+      z-index: 10;
+    }
+    .lock-icon.unlocked { opacity: 0; }
+    @keyframes lock-pulse {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50%       { transform: translateX(-50%) scale(1.1); }
+    }
+
+    /* Texto gate */
+    .gate-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-align: center;
+      background: linear-gradient(135deg, var(--ember), var(--gold), var(--crimson));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+    }
+    .gate-subtitle {
+      color: var(--muted);
+      font-size: .95rem;
+      text-align: center;
+      max-width: 380px;
+      line-height: 1.6;
+    }
+    .gate-price {
+      display: flex; align-items: baseline; gap: .5rem;
+      justify-content: center;
+    }
+    .gate-price .amount {
+      font-size: 3rem; font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 30px rgba(243,156,18,.4);
+    }
+    .gate-price .currency { font-size: 1.5rem; color: var(--gold); font-weight: 700; }
+    .gate-price .period { color: var(--muted); font-size: .9rem; }
+
+    .gate-features {
+      list-style: none;
+      display: flex; flex-direction: column; gap: .5rem;
+      text-align: left;
+    }
+    .gate-features li {
+      font-size: .85rem; color: var(--muted);
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .gate-features li::before {
+      content: '🔥'; font-size: .8rem;
+    }
+
+    .btn-activate {
+      background: linear-gradient(135deg, var(--crimson), #8e1010);
+      color: #fff;
+      border: none; cursor: pointer;
+      padding: .9rem 2.5rem;
+      border-radius: 8px;
+      font-size: 1rem; font-weight: 700;
+      letter-spacing: .05em;
+      box-shadow: 0 0 30px rgba(192,57,43,.5);
+      transition: all .3s;
+      text-transform: uppercase;
+    }
+    .btn-activate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(192,57,43,.8);
+    }
+
+    /* ── CONTENT DESBLOQUEADO ── */
+    #pacto-content {
+      flex: 1;
+      padding: 2rem;
+      display: none;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    #pacto-content.visible { display: flex; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-card .val { font-size: 2rem; font-weight: 800; color: var(--ember); }
+    .stat-card .lbl { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+
+    /* Campaigns */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .section-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .btn-primary {
+      background: var(--crimson);
+      color: #fff; border: none; cursor: pointer;
+      padding: .6rem 1.4rem; border-radius: 8px;
+      font-size: .85rem; font-weight: 600;
+      display: flex; align-items: center; gap: .5rem;
+      transition: all .2s;
+    }
+    .btn-primary:hover { background: var(--ember); transform: translateY(-1px); }
+
+    .campaigns-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+    .campaign-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .campaign-card:hover {
+      border-color: var(--crimson);
+      box-shadow: 0 0 20px rgba(192,57,43,.15);
+      transform: translateY(-2px);
+    }
+    .campaign-card .camp-name { font-weight: 700; margin-bottom: .5rem; }
+    .campaign-card .camp-meta { font-size: .8rem; color: var(--muted); margin-bottom: 1rem; }
+    .campaign-card .camp-stats {
+      display: flex; gap: 1rem;
+    }
+    .camp-stat { text-align: center; }
+    .camp-stat .n { font-size: 1.4rem; font-weight: 800; color: var(--ember); }
+    .camp-stat .l { font-size: .7rem; color: var(--muted); }
+
+    .status-badge {
+      display: inline-block;
+      font-size: .7rem; font-weight: 700;
+      padding: .2rem .6rem; border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .status-borrador  { background: rgba(107,107,138,.2); color: var(--muted); }
+    .status-buscando  { background: rgba(243,156,18,.2); color: var(--gold); }
+    .status-activa    { background: rgba(46,204,113,.2); color: #2ecc71; }
+    .status-pausada   { background: rgba(192,57,43,.2); color: var(--ember); }
+    .status-completada{ background: rgba(52,152,219,.2); color: #3498db; }
+
+    .empty-campaigns {
+      grid-column: 1/-1;
+      text-align: center; padding: 4rem;
+      color: var(--muted); font-size: .95rem;
+    }
+    .empty-campaigns .big { font-size: 3rem; margin-bottom: 1rem; }
+
+    /* ── WIZARD MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.85);
+      z-index: 1000;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 95%; max-width: 680px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 2rem;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute; top: 1rem; right: 1rem;
+      background: none; border: none;
+      color: var(--muted); cursor: pointer; font-size: 1.3rem;
+    }
+    .modal-close:hover { color: var(--text); }
+
+    /* Wizard steps */
+    .wizard-steps {
+      display: flex; gap: .5rem; margin-bottom: 2rem;
+      align-items: center;
+    }
+    .step {
+      flex: 1; height: 4px; border-radius: 2px;
+      background: var(--border);
+      transition: background .3s;
+    }
+    .step.done { background: var(--crimson); }
+    .step.active { background: var(--ember); }
+
+    .wizard-title {
+      font-size: 1.2rem; font-weight: 800;
+      margin-bottom: .5rem; color: var(--ember);
+    }
+    .wizard-sub {
+      font-size: .85rem; color: var(--muted); margin-bottom: 1.5rem;
+    }
+
+    .form-row { margin-bottom: 1.25rem; }
+    .form-row label {
+      display: block; font-size: .8rem;
+      color: var(--muted); margin-bottom: .4rem;
+    }
+    .form-row input, .form-row select, .form-row textarea {
+      width: 100%;
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: .65rem .9rem;
+      border-radius: 8px; font-size: .9rem;
+      outline: none; transition: border .2s;
+    }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+      border-color: var(--crimson);
+    }
+    .form-row textarea { resize: vertical; min-height: 100px; }
+    .form-row select option { background: #1a1a2e; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .radio-group {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;
+    }
+    .radio-opt {
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: .75rem 1rem;
+      cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; gap: .75rem;
+    }
+    .radio-opt.selected {
+      border-color: var(--crimson);
+      background: rgba(192,57,43,.1);
+    }
+    .radio-opt .opt-icon { font-size: 1.5rem; }
+    .radio-opt .opt-label { font-size: .85rem; font-weight: 600; }
+    .radio-opt .opt-desc { font-size: .7rem; color: var(--muted); }
+
+    /* Buscando animation */
+    #step-searching {
+      text-align: center; padding: 3rem 1rem;
+    }
+    .searching-pentacle {
+      font-size: 4rem;
+      animation: rotate-slow 3s linear infinite;
+      display: block; margin: 0 auto 1.5rem;
+    }
+    .searching-text {
+      font-size: 1.1rem; font-weight: 700; color: var(--ember);
+      margin-bottom: .5rem;
+    }
+    .searching-sub { color: var(--muted); font-size: .85rem; }
+    .searching-dots span {
+      animation: blink 1.4s infinite;
+    }
+    .searching-dots span:nth-child(2) { animation-delay: .2s; }
+    .searching-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0; }
+      40% { opacity: 1; }
+    }
+
+    /* Leads table */
+    .leads-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .leads-table th {
+      text-align: left; color: var(--muted);
+      font-size: .72rem; text-transform: uppercase;
+      padding: .5rem .75rem; border-bottom: 1px solid var(--border);
+    }
+    .leads-table td { padding: .6rem .75rem; border-bottom: 1px solid rgba(42,42,58,.5); }
+    .leads-table tr:hover td { background: rgba(192,57,43,.05); }
+    .lead-check { accent-color: var(--crimson); width: 15px; height: 15px; cursor: pointer; }
+    .lead-name { font-weight: 600; }
+    .lead-cat { font-size: .72rem; color: var(--muted); }
+    .lead-rating { color: var(--gold); }
+    .lead-phone { font-family: monospace; font-size: .8rem; }
+
+    /* Message preview */
+    .whatsapp-preview {
+      background: #0d1f13;
+      border: 1px solid #1a3320;
+      border-radius: 12px; padding: 1rem;
+      margin-top: 1rem;
+    }
+    .wa-header {
+      display: flex; align-items: center; gap: .75rem;
+      padding-bottom: .75rem; border-bottom: 1px solid #1a3320;
+      margin-bottom: .75rem;
+    }
+    .wa-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--crimson);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .wa-name { font-size: .85rem; font-weight: 700; color: #4ade80; }
+    .wa-status { font-size: .7rem; color: #6b6b8a; }
+    .wa-bubble {
+      background: #1a3a22;
+      border-radius: 0 10px 10px 10px;
+      padding: .75rem 1rem;
+      font-size: .85rem; line-height: 1.5;
+      color: #e8e8f0;
+      max-width: 85%;
+      white-space: pre-wrap;
+    }
 
     /* Wizard nav */
-    .wizard-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .wizard-nav {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-top: 2rem;
+      padding-top: 1.5rem; border-top: 1px solid var(--border);
+    }
+    .btn-back {
+      background: none; border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer;
+      padding: .6rem 1.4rem; border-radius: 8px;
+      font-size: .85rem; transition: all .2s;
+    }
+    .btn-back:hover { border-color: var(--text); color: var(--text); }
+    .btn-next {
+      background: var(--crimson);
+      color: #fff; border: none; cursor: pointer;
+      padding: .6rem 1.6rem; border-radius: 8px;
+      font-size: .85rem; font-weight: 700;
+      transition: all .2s;
+    }
+    .btn-next:hover { background: var(--ember); }
+    .btn-next:disabled { opacity: .5; cursor: not-allowed; }
 
-    /* Step 2: Buscando */
-    .buscando-anim { text-align: center; padding: 40px 20px; }
-    .fire-icon { font-size: 3.5rem; animation: flame 1.5s ease-in-out infinite alternate; display: block; margin-bottom: 16px; }
-    @keyframes flame { from { transform: scale(1) rotate(-3deg); } to { transform: scale(1.08) rotate(3deg); } }
-    .buscando-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
-    .buscando-sub { color: var(--text-dim); font-size: .88rem; }
-    .progress-bar-wrap { background: rgba(255,255,255,.06); border-radius: 6px; height: 4px; margin: 20px 0; overflow: hidden; }
-    .progress-bar { height: 100%; background: var(--crimson); border-radius: 6px; animation: loading 2s ease-in-out infinite; }
-    @keyframes loading { 0%{width:5%;margin-left:0} 50%{width:50%;margin-left:25%} 100%{width:5%;margin-left:90%} }
+    /* Unlock animation */
+    @keyframes door-open-flash {
+      0%   { background: #1a0505; }
+      20%  { background: #3a0808; }
+      50%  { background: #ff2200; }
+      70%  { background: #1a0505; }
+      100% { background: radial-gradient(ellipse at center, #1a0505 0%, #0a0a0f 70%); }
+    }
+    #gate-view.opening {
+      animation: door-open-flash .8s ease-out;
+    }
 
-    /* Step 3: Leads */
-    .leads-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
-    .leads-count { font-size: .85rem; color: var(--text-dim); }
-    .leads-count strong { color: var(--text); }
-    .leads-table-wrap { max-height: 320px; overflow-y: auto; border-radius: 10px; border: 1px solid var(--border); }
-    .leads-table { width: 100%; border-collapse: collapse; }
-    .leads-table th { text-align: left; font-size: .72rem; color: var(--text-dim); font-weight: 600; padding: 10px 12px; text-transform: uppercase; letter-spacing: .04em; background: var(--surface2); position: sticky; top: 0; }
-    .leads-table td { padding: 10px 12px; border-top: 1px solid var(--border); font-size: .85rem; vertical-align: middle; }
-    .leads-table tr:hover td { background: rgba(220,38,38,.04); }
-    .lead-check { width: 16px; height: 16px; accent-color: var(--crimson); cursor: pointer; }
-    .lead-name { font-weight: 600; }
-    .lead-cat { font-size: .75rem; color: var(--text-dim); }
-    .rating-badge { display: inline-flex; align-items: center; gap: 3px; font-size: .75rem; color: #fbbf24; }
-
-    /* Step 4: Mensaje */
-    .mensaje-preview { background: #0a3d0a; border: 1px solid rgba(34,197,94,.2); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    .mensaje-preview-label { font-size: .72rem; color: #4ade80; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
-    .mensaje-preview-text { font-size: .88rem; line-height: 1.6; white-space: pre-wrap; }
-    .ai-spinning { display: inline-block; animation: spin .8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Step 5: Confirmar */
-    .confirm-summary { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-    .confirm-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: .88rem; }
-    .confirm-row:last-child { border-bottom: none; }
-    .confirm-label { color: var(--text-dim); }
-    .confirm-value { font-weight: 600; }
-    .warning-box { background: rgba(234,179,8,.08); border: 1px solid rgba(234,179,8,.25); border-radius: 10px; padding: 12px 16px; font-size: .82rem; color: #fbbf24; line-height: 1.5; margin-bottom: 16px; }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(220,38,38,.3); border-radius: 3px; }
+    @media(max-width:768px){
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .form-grid { grid-template-columns: 1fr; }
+      .radio-group { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-<nav>
-  <a href="dashboard.html" class="nav-brand">🔥 El Pacto del Diablo</a>
-  <div style="display:flex;align-items:center;gap:16px;">
-    <a href="dashboard.html" class="nav-back">← Dashboard</a>
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <span>😈 Diabolus</span>
+    <small>Centro de Mando</small>
   </div>
+  <div class="nav-section-label">Mando</div>
+  <a href="dashboard.html"    class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+  <a href="mobile.html"       class="nav-item"><span class="nav-icon">🤖</span> Agente IA</a>
+  <div class="nav-section-label">Negocio</div>
+  <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+  <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+  <a href="transactions.html" class="nav-item"><span class="nav-icon">💳</span> Transacciones</a>
+  <div class="nav-section-label">Inteligencia</div>
+  <a href="reports.html"      class="nav-item"><span class="nav-icon">📊</span> Reportes</a>
+  <a href="cazador.html"      class="nav-item"><span class="nav-icon">🎯</span> Cazador</a>
+  <div class="nav-section-label">Módulos</div>
+  <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+  <a href="legal.html"        class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
+  <a href="pacto.html"        class="nav-item active"><span class="nav-icon">🔥</span> El Pacto</a>
 </nav>
 
-<div class="container">
-
-  <!-- HERO -->
-  <div class="page-hero">
-    <div class="hero-left">
-      <h1>🔥 El Pacto del Diablo</h1>
-      <p>Encuentra clientes potenciales y lanza tu campaña de captación.</p>
-      <div class="plan-badge">+29€/mes · Módulo Pro</div>
-    </div>
-    <button class="btn btn-primary" onclick="abrirWizard()">+ Nueva Campaña</button>
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="topbar">
+    <h1>🔥 El Pacto del Diablo</h1>
+    <span id="plan-badge" class="plan-badge">Cargando…</span>
   </div>
 
-  <!-- STATS -->
-  <div class="stats-row">
-    <div class="stat-card">
-      <span class="stat-val" id="statCampanas">—</span>
-      <div class="stat-lbl">Campañas</div>
+  <!-- ═══ GATE — PUERTA CERRADA ═══ -->
+  <div id="gate-view">
+    <!-- Brasas flotantes -->
+    <div class="embers" id="embers"></div>
+
+    <!-- La puerta -->
+    <div class="door-wrap">
+      <div class="door-frame"></div>
+      <div class="door-panel" id="door-panel">
+        <!-- Pentáculo -->
+        <div class="pentacle-wrap">
+          <div class="pentacle-circle"></div>
+          <svg class="pentacle-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <!-- Outer circle -->
+            <circle cx="100" cy="100" r="95" stroke="#c0392b" stroke-width="2" fill="none" opacity=".4"/>
+            <!-- Inner circle -->
+            <circle cx="100" cy="100" r="75" stroke="#c0392b" stroke-width="1.5" fill="none" opacity=".3"/>
+            <!-- Pentagram — 5-pointed star -->
+            <polygon
+              points="100,10 121,74 190,74 134,114 155,178 100,138 45,178 66,114 10,74 79,74"
+              fill="none"
+              stroke="#c0392b"
+              stroke-width="2.5"
+              stroke-linejoin="round"
+              opacity=".9"
+            />
+            <!-- Center dot -->
+            <circle cx="100" cy="100" r="4" fill="#e74c3c" opacity=".9"/>
+          </svg>
+          <!-- Cadenas -->
+          <svg class="chains" id="chains" viewBox="0 0 200 200">
+            <!-- Cadena horizontal -->
+            <g stroke="#5a3a1a" stroke-width="3" fill="none" opacity=".7">
+              <path d="M10,100 Q30,90 40,100 Q50,110 60,100 Q70,90 80,100 Q90,110 100,100"/>
+              <path d="M100,100 Q110,90 120,100 Q130,110 140,100 Q150,90 160,100 Q170,110 190,100"/>
+              <!-- Cadena vertical -->
+              <path d="M100,10 Q90,30 100,40 Q110,50 100,60 Q90,70 100,80 Q110,90 100,100"/>
+              <path d="M100,100 Q90,110 100,120 Q110,130 100,140 Q90,150 100,160 Q110,170 100,190"/>
+              <!-- Argollas -->
+              <circle cx="100" cy="100" r="8" stroke-width="3.5"/>
+              <circle cx="100" cy="10"  r="5"/>
+              <circle cx="100" cy="190" r="5"/>
+              <circle cx="10"  cy="100" r="5"/>
+              <circle cx="190" cy="100" r="5"/>
+            </g>
+          </svg>
+        </div>
+        <!-- Candado -->
+        <div class="lock-icon" id="lock-icon">🔒</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <span class="stat-val" id="statLeads">—</span>
-      <div class="stat-lbl">Leads encontrados</div>
+
+    <!-- Texto -->
+    <div class="gate-title">El Pacto del Diablo</div>
+    <p class="gate-subtitle">
+      Deja que el diablo encuentre tus próximos clientes.<br>
+      Búsqueda inteligente de leads + campaña WhatsApp + tracking de conversiones.
+    </p>
+
+    <div class="gate-price">
+      <span class="currency">+</span>
+      <span class="amount">29</span>
+      <span class="currency">€</span>
+      <span class="period">/ mes</span>
     </div>
-    <div class="stat-card">
-      <span class="stat-val" id="statEnviados">—</span>
-      <div class="stat-lbl">Mensajes enviados</div>
-    </div>
-    <div class="stat-card">
-      <span class="stat-val green" id="statConvertidos">—</span>
-      <div class="stat-lbl">Convertidos</div>
-    </div>
+
+    <ul class="gate-features">
+      <li>Búsqueda de leads en Google Maps via IA</li>
+      <li>Campaña WhatsApp personalizada con tu negocio</li>
+      <li>Tracking: enviados → respondidos → clientes</li>
+      <li>Historial de campañas y conversiones</li>
+    </ul>
+
+    <button class="btn-activate" onclick="solicitarActivacion()">
+      🔥 Solicitar Activación
+    </button>
   </div>
 
-  <!-- LISTA CAMPAÑAS -->
-  <div id="listaCampanas" class="campanas-list">
-    <div class="empty-state">
-      <span class="icon">😈</span>
-      <p>Todavía no hay campañas.<br>Crea tu primera y deja que el diablo trabaje.</p>
-    </div>
-  </div>
+  <!-- ═══ CONTENIDO DESBLOQUEADO ═══ -->
+  <div id="pacto-content">
 
+    <!-- Stats -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-card"><div class="val" id="stat-campanas">0</div><div class="lbl">Campañas</div></div>
+      <div class="stat-card"><div class="val" id="stat-leads">0</div><div class="lbl">Leads encontrados</div></div>
+      <div class="stat-card"><div class="val" id="stat-enviados">0</div><div class="lbl">Mensajes enviados</div></div>
+      <div class="stat-card"><div class="val" id="stat-clientes">0</div><div class="lbl">Convertidos</div></div>
+    </div>
+
+    <!-- Campañas -->
+    <div>
+      <div class="section-header">
+        <h2>Campañas</h2>
+        <button class="btn-primary" onclick="openWizard()">🔥 Nueva Campaña</button>
+      </div>
+    </div>
+
+    <div class="campaigns-grid" id="campaigns-grid">
+      <div class="empty-campaigns">
+        <div class="big">🔥</div>
+        <div>El diablo está en reposo.<br>Crea tu primera campaña.</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
-<!-- ══ WIZARD ══════════════════════════════════════════════════════════════ -->
-<div class="wizard-overlay" id="wizardOverlay">
-  <div class="wizard-box">
-    <div class="wizard-header">
-      <div class="wizard-top">
-        <div>
-          <div class="wizard-title">🔥 Nueva Campaña</div>
-          <div class="wizard-subtitle" id="wizardSubtitle">Configura tu objetivo de captación</div>
-        </div>
-        <button class="wizard-close" onclick="cerrarWizard()">✕</button>
+<!-- ═══ WIZARD MODAL ═══ -->
+<div class="modal-overlay" id="wizard-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeWizard()">✕</button>
+
+    <!-- Progress -->
+    <div class="wizard-steps">
+      <div class="step active" id="ws1"></div>
+      <div class="step" id="ws2"></div>
+      <div class="step" id="ws3"></div>
+      <div class="step" id="ws4"></div>
+      <div class="step" id="ws5"></div>
+    </div>
+
+    <!-- PASO 1: Configurar -->
+    <div id="step1">
+      <div class="wizard-title">¿A quién buscamos?</div>
+      <div class="wizard-sub">El diablo necesita saber qué tipo de alma buscar.</div>
+
+      <div class="form-row">
+        <label>Nombre de la campaña</label>
+        <input type="text" id="camp-nombre" placeholder="Ej: Captación primavera 2026" />
       </div>
-    </div>
 
-    <!-- Progress bar -->
-    <div class="wizard-progress" id="wizardProgress">
-      <div class="step-dot active" id="dot1">1</div>
-      <div class="step-line" id="line1"></div>
-      <div class="step-dot" id="dot2">2</div>
-      <div class="step-line" id="line2"></div>
-      <div class="step-dot" id="dot3">3</div>
-      <div class="step-line" id="line3"></div>
-      <div class="step-dot" id="dot4">4</div>
-      <div class="step-line" id="line4"></div>
-      <div class="step-dot" id="dot5">✓</div>
-    </div>
-
-    <div class="wizard-body">
-
-      <!-- ── STEP 1: CONFIGURAR ── -->
-      <div class="wizard-step active" id="step1">
-        <div class="form-group">
-          <label class="form-label">Nombre de la campaña</label>
-          <input class="form-input" id="wNombre" placeholder="Ej: Hoteles Madrid Junio" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">¿Qué tipo de cliente buscas?</label>
-          <div class="chips" id="tipoChips">
-            <div class="chip selected" onclick="selectChip(this,'negocios')">🏢 Negocios</div>
-            <div class="chip" onclick="selectChip(this,'personas')">👤 Personas</div>
+      <div class="form-row">
+        <label>Tipo de cliente</label>
+        <div class="radio-group">
+          <div class="radio-opt selected" id="opt-negocios" onclick="selectTipo('negocios')">
+            <span class="opt-icon">🏪</span>
+            <div>
+              <div class="opt-label">Negocios</div>
+              <div class="opt-desc">Empresas, autónomos, locales</div>
+            </div>
           </div>
-          <input type="hidden" id="wTipo" value="negocios" />
+          <div class="radio-opt" id="opt-personas" onclick="selectTipo('personas')">
+            <span class="opt-icon">👤</span>
+            <div>
+              <div class="opt-label">Personas</div>
+              <div class="opt-desc">Clientes finales (RGPD)</div>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">¿Qué buscas exactamente?</label>
-          <input class="form-input" id="wCategoria" placeholder="Ej: hoteles, gimnasios, restaurantes, oficinas…" />
-          <div class="form-hint">Escribe el tipo de negocio o persona que quieres contactar</div>
-          <div class="chips" style="margin-top:10px;" id="sugerenciasChips"></div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Categoría a buscar</label>
+          <input type="text" id="camp-categoria" placeholder="Ej: restaurantes, clínicas, talleres" />
         </div>
         <div class="form-row">
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label">Ciudad o zona</label>
-            <input class="form-input" id="wZona" placeholder="Ej: Madrid, Valencia centro" />
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label">Nº de leads objetivo</label>
-            <select class="form-select" id="wLeads">
-              <option value="25">25 leads</option>
-              <option value="50" selected>50 leads</option>
-              <option value="100">100 leads</option>
-            </select>
-          </div>
-        </div>
-        <div class="wizard-nav">
-          <button class="btn btn-ghost" onclick="cerrarWizard()">Cancelar</button>
-          <button class="btn btn-primary" onclick="step1Next()">Buscar leads →</button>
+          <label>Zona</label>
+          <input type="text" id="camp-zona" placeholder="Ej: Madrid, Barcelona centro" />
         </div>
       </div>
 
-      <!-- ── STEP 2: BUSCANDO ── -->
-      <div class="wizard-step" id="step2">
-        <div class="buscando-anim">
-          <span class="fire-icon">🔥</span>
-          <div class="buscando-title">El diablo está buscando…</div>
-          <div class="buscando-sub" id="buscandoSub">Analizando <strong id="buscandoQuery"></strong></div>
-          <div class="progress-bar-wrap"><div class="progress-bar"></div></div>
-          <div style="font-size:.78rem;color:var(--text-dim);margin-top:8px;" id="buscandoStatus">Iniciando búsqueda en Google Maps…</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Radio (km)</label>
+          <input type="number" id="camp-radio" value="5" min="1" max="50" />
         </div>
-        <div class="wizard-nav">
-          <button class="btn btn-ghost" onclick="cerrarWizard()">Cancelar</button>
-          <button class="btn btn-primary" disabled id="btnContinueLeads">Ver leads →</button>
+        <div class="form-row">
+          <label>Leads objetivo</label>
+          <input type="number" id="camp-objetivo" value="50" min="10" max="500" />
         </div>
       </div>
 
-      <!-- ── STEP 3: LEADS ── -->
-      <div class="wizard-step" id="step3">
-        <div class="leads-toolbar">
-          <div class="leads-count"><strong id="leadsCount">0</strong> leads encontrados · <strong id="leadsSelCount">0</strong> seleccionados</div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-ghost btn-sm" onclick="toggleAll(true)">Todos</button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleAll(false)">Ninguno</button>
+      <div class="wizard-nav">
+        <span></span>
+        <button class="btn-next" onclick="paso1Siguiente()">Siguiente →</button>
+      </div>
+    </div>
+
+    <!-- PASO 2: Buscando -->
+    <div id="step2" style="display:none;">
+      <div id="step-searching">
+        <span class="searching-pentacle">🔥</span>
+        <div class="searching-text">El diablo está buscando<span class="searching-dots"><span>.</span><span>.</span><span>.</span></span></div>
+        <div class="searching-sub" id="search-status">Rastreando Google Maps en tu zona…</div>
+      </div>
+      <div id="step-search-error" style="display:none; text-align:center; color:var(--ember); padding:2rem;">
+        <div style="font-size:2rem; margin-bottom:1rem;">⚠️</div>
+        <div id="search-error-msg">Error al buscar leads.</div>
+        <button class="btn-back" style="margin-top:1rem;" onclick="showStep(1)">← Volver</button>
+      </div>
+    </div>
+
+    <!-- PASO 3: Seleccionar leads -->
+    <div id="step3" style="display:none;">
+      <div class="wizard-title">Selecciona tus leads</div>
+      <div class="wizard-sub" id="leads-count-text">El diablo encontró X almas. Marca las que quieres contactar.</div>
+
+      <div style="overflow-x:auto; max-height:320px; overflow-y:auto;">
+        <table class="leads-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="check-all" class="lead-check" onchange="toggleAllLeads()" checked /></th>
+              <th>Negocio</th>
+              <th>Teléfono</th>
+              <th>⭐</th>
+              <th>Reseñas</th>
+            </tr>
+          </thead>
+          <tbody id="leads-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="btn-back" onclick="showStep(1)">← Volver</button>
+        <button class="btn-next" onclick="paso3Siguiente()">Siguiente →</button>
+      </div>
+    </div>
+
+    <!-- PASO 4: Mensaje -->
+    <div id="step4" style="display:none;">
+      <div class="wizard-title">El mensaje</div>
+      <div class="wizard-sub">La IA ha preparado un mensaje. Edítalo a tu gusto.</div>
+
+      <div class="form-row">
+        <label>Texto del mensaje</label>
+        <textarea id="mensaje-texto" oninput="updatePreview()"></textarea>
+      </div>
+
+      <div class="whatsapp-preview">
+        <div class="wa-header">
+          <div class="wa-avatar">😈</div>
+          <div>
+            <div class="wa-name" id="wa-biz-name">Tu negocio</div>
+            <div class="wa-status">WhatsApp Business</div>
           </div>
         </div>
-        <div class="leads-table-wrap">
-          <table class="leads-table">
-            <thead>
-              <tr>
-                <th style="width:36px;"></th>
-                <th>Nombre</th>
-                <th>Teléfono</th>
-                <th>Rating</th>
-                <th>Categoría</th>
-              </tr>
-            </thead>
-            <tbody id="leadsTableBody"></tbody>
-          </table>
-        </div>
-        <div class="wizard-nav">
-          <button class="btn btn-ghost" onclick="goToStep(1)">← Atrás</button>
-          <button class="btn btn-primary" onclick="step3Next()">Crear mensaje →</button>
+        <div class="wa-bubble" id="wa-bubble">…</div>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="btn-back" onclick="showStep(3)">← Volver</button>
+        <button class="btn-next" onclick="paso4Siguiente()">Siguiente →</button>
+      </div>
+    </div>
+
+    <!-- PASO 5: Confirmar -->
+    <div id="step5" style="display:none;">
+      <div class="wizard-title">¡Listo para lanzar!</div>
+      <div class="wizard-sub">El pacto está sellado. Revisa y confirma.</div>
+
+      <div style="background:#0d0d16; border:1px solid var(--border); border-radius:10px; padding:1.5rem; margin-bottom:1.5rem;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; font-size:.85rem;">
+          <div><span style="color:var(--muted)">Campaña:</span><br><strong id="sum-nombre">—</strong></div>
+          <div><span style="color:var(--muted)">Zona:</span><br><strong id="sum-zona">—</strong></div>
+          <div><span style="color:var(--muted)">Tipo:</span><br><strong id="sum-tipo">—</strong></div>
+          <div><span style="color:var(--muted)">Leads seleccionados:</span><br><strong id="sum-leads" style="color:var(--ember)">0</strong></div>
         </div>
       </div>
 
-      <!-- ── STEP 4: MENSAJE ── -->
-      <div class="wizard-step" id="step4">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-          <div style="font-size:.9rem;font-weight:600;">Mensaje de captación</div>
-          <button class="btn btn-ghost btn-sm" onclick="generarMensajeIA()" id="btnRegenerar">✨ Generar con IA</button>
-        </div>
-        <div class="form-group">
-          <textarea class="form-textarea" id="wMensaje" rows="5"
-            placeholder="Escribe tu mensaje o usa IA para generarlo…&#10;&#10;Usa [nombre] donde quieras incluir el nombre del lead."
-            oninput="actualizarPreview()"></textarea>
-          <div class="form-hint">Usa <strong>[nombre]</strong> para personalizar cada mensaje automáticamente</div>
-        </div>
-        <div class="mensaje-preview">
-          <div class="mensaje-preview-label">📱 Vista previa WhatsApp</div>
-          <div class="mensaje-preview-text" id="mensajePreview">El mensaje aparecerá aquí…</div>
-        </div>
-        <div class="wizard-nav">
-          <button class="btn btn-ghost" onclick="goToStep(3)">← Atrás</button>
-          <button class="btn btn-primary" onclick="step4Next()" id="btnConfirmar">Confirmar →</button>
-        </div>
+      <div style="background:rgba(192,57,43,.1); border:1px solid rgba(192,57,43,.3); border-radius:8px; padding:1rem; font-size:.82rem; color:var(--muted); margin-bottom:1.5rem;">
+        ⚠️ WhatsApp requiere templates aprobados por Meta. La campaña quedará en estado <strong style="color:var(--gold)">Lista para enviar</strong> hasta que los templates estén aprobados.
       </div>
 
-      <!-- ── STEP 5: CONFIRMAR ── -->
-      <div class="wizard-step" id="step5">
-        <div class="confirm-summary">
-          <div class="confirm-row">
-            <span class="confirm-label">Campaña</span>
-            <span class="confirm-value" id="confNombre">—</span>
-          </div>
-          <div class="confirm-row">
-            <span class="confirm-label">Búsqueda</span>
-            <span class="confirm-value" id="confBusqueda">—</span>
-          </div>
-          <div class="confirm-row">
-            <span class="confirm-label">Leads seleccionados</span>
-            <span class="confirm-value" id="confLeads">—</span>
-          </div>
-          <div class="confirm-row">
-            <span class="confirm-label">Canal de envío</span>
-            <span class="confirm-value">📱 WhatsApp</span>
-          </div>
-        </div>
-        <div class="warning-box">
-          ⚠️ El envío masivo de WhatsApp requiere mensajes plantilla aprobados por Meta. Cuando tu cuenta esté verificada, los mensajes se enviarán automáticamente.
-        </div>
-        <div id="envioResult" style="display:none;padding:12px 16px;border-radius:10px;margin-bottom:14px;font-size:.88rem;"></div>
-        <div class="wizard-nav">
-          <button class="btn btn-ghost" onclick="goToStep(4)">← Atrás</button>
-          <button class="btn btn-primary" onclick="enviarCampana()" id="btnEnviar">🔥 Lanzar campaña</button>
-        </div>
+      <div class="wizard-nav">
+        <button class="btn-back" onclick="showStep(4)">← Volver</button>
+        <button class="btn-next" id="btn-launch" onclick="lanzarCampana()">🔥 Sellar el Pacto</button>
       </div>
+    </div>
 
-    </div><!-- /wizard-body -->
-  </div><!-- /wizard-box -->
-</div><!-- /wizard-overlay -->
+  </div>
+</div>
 
 <script>
-  const API = 'https://diabolus-crm-api.vercel.app'
-  let token = '', salonId = ''
-  let currentCampanaId = null
-  let currentStep = 1
-  let allLeads = []
-  let pollInterval = null
+// ── Auth & State ──────────────────────────────────────────────────────────────
+const API = 'https://diabolus-crm-api.vercel.app'
+let token = null, salonId = null
+let tipoCliente = 'negocios'
+let leadsData = []
+let campanaId = null
 
-  // ── AUTH ──────────────────────────────────────────────────────────────────
-  function getAuth() {
-    try {
-      const raw = localStorage.getItem('diabolus_auth')
-      if (!raw) return null
-      const d = JSON.parse(raw)
-      return { token: d.token, salonId: d.salon_id || d.salonId }
-    } catch { return null }
-  }
+function getAuth() {
+  try {
+    const raw = localStorage.getItem('diabolus_auth')
+    if (!raw) return null
+    const d = JSON.parse(raw)
+    return { token: d.token, salonId: d.salon_id || d.salonId }
+  } catch { return null }
+}
 
-  window.addEventListener('DOMContentLoaded', async () => {
-    const auth = getAuth()
-    if (!auth?.token) { location.href = 'index-login.html'; return }
-    token = auth.token
-    salonId = auth.salonId
-    await loadStats()
-    await loadCampanas()
-  })
+async function init() {
+  const auth = getAuth()
+  if (!auth?.token) { window.location.href = 'index-login.html'; return }
+  token   = auth.token
+  salonId = auth.salonId
 
-  function headers() { return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }
+  // Generar brasas
+  generateEmbers()
 
-  // ── LOAD ──────────────────────────────────────────────────────────────────
-  async function loadStats() {
-    try {
-      const r = await fetch(`${API}/api/pacto/stats`, { headers: headers() })
-      const d = await r.json()
-      document.getElementById('statCampanas').textContent   = d.total_campanas   || 0
-      document.getElementById('statLeads').textContent      = d.total_leads       || 0
-      document.getElementById('statEnviados').textContent   = d.total_enviados    || 0
-      document.getElementById('statConvertidos').textContent = d.total_convertidos || 0
-    } catch {}
-  }
+  // Verificar si pacto activo
+  await checkPactoStatus()
+}
 
-  async function loadCampanas() {
-    try {
-      const r = await fetch(`${API}/api/pacto/campanas`, { headers: headers() })
-      const d = await r.json()
-      renderCampanas(d.campanas || [])
-    } catch {}
-  }
+async function checkPactoStatus() {
+  try {
+    const r = await fetch(`${API}/api/pacto/status`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const d = await r.json()
 
-  function renderCampanas(campanas) {
-    const el = document.getElementById('listaCampanas')
-    if (!campanas.length) {
-      el.innerHTML = `<div class="empty-state"><span class="icon">😈</span><p>Todavía no hay campañas.<br>Crea tu primera y deja que el diablo trabaje.</p></div>`
-      return
+    document.getElementById('plan-badge').textContent =
+      d.pacto_activo ? '🔥 Pacto Activo' : '🔒 No activado'
+
+    if (d.pacto_activo) {
+      unlockGate()
     }
-    el.innerHTML = campanas.map(c => `
-      <div class="campana-card" onclick="abrirCampana('${c.id}','${c.estado}')">
-        <div class="campana-card-top">
-          <div>
-            <div class="campana-nombre">${c.nombre}</div>
-            <div class="campana-meta">${c.categoria_busqueda} · ${c.zona}</div>
-          </div>
-          ${estadoBadge(c.estado)}
-        </div>
-        <div class="campana-stats">
-          <div class="campana-stat">Encontrados: <span>${c.leads_encontrados || 0}</span></div>
-          <div class="campana-stat">Enviados: <span>${c.leads_enviados || 0}</span></div>
-          <div class="campana-stat">Convertidos: <span style="color:#4ade80">${c.leads_convertidos || 0}</span></div>
-        </div>
-      </div>`).join('')
+  } catch {
+    // Si falla, mantener puerta cerrada
   }
+}
 
-  function estadoBadge(estado) {
-    const map = {
-      borrador:   ['badge-borrador',  '✏️ Borrador'],
-      buscando:   ['badge-buscando',  '<span class="dot-pulse"></span> Buscando'],
-      leads_listos:['badge-leads',    '👥 Leads listos'],
-      mensaje_listo:['badge-mensaje', '💬 Mensaje listo'],
-      activa:     ['badge-activa',    '✅ Activa'],
-      completada: ['badge-completada','🏁 Completada'],
-    }
-    const [cls, label] = map[estado] || ['badge-borrador', estado]
-    return `<span class="badge ${cls}">${label}</span>`
+// ── Embers ────────────────────────────────────────────────────────────────────
+function generateEmbers() {
+  const container = document.getElementById('embers')
+  for (let i = 0; i < 30; i++) {
+    const e = document.createElement('div')
+    e.className = 'ember'
+    e.style.setProperty('--x', Math.random() * 100 + '%')
+    e.style.setProperty('--dur', (3 + Math.random() * 5) + 's')
+    e.style.setProperty('--delay', (Math.random() * 5) + 's')
+    container.appendChild(e)
   }
+}
 
-  // ── WIZARD ────────────────────────────────────────────────────────────────
-  const sugerenciasNegocios = ['hoteles','gimnasios','restaurantes','clínicas','oficinas','academias','tiendas','agencias']
-  const sugerenciasPersonas = ['freelancers','autónomos','artistas','deportistas']
+// ── Gate / Unlock ─────────────────────────────────────────────────────────────
+function unlockGate() {
+  const gate    = document.getElementById('gate-view')
+  const content = document.getElementById('pacto-content')
+  const door    = document.getElementById('door-panel')
+  const lock    = document.getElementById('lock-icon')
+  const chains  = document.getElementById('chains')
 
-  function abrirWizard() {
-    currentCampanaId = null
-    currentStep = 1
-    goToStep(1)
-    document.getElementById('wNombre').value = ''
-    document.getElementById('wCategoria').value = ''
-    document.getElementById('wZona').value = ''
-    document.getElementById('wMensaje').value = ''
-    document.getElementById('mensajePreview').textContent = 'El mensaje aparecerá aquí…'
-    renderSugerencias('negocios')
-    document.getElementById('wizardOverlay').classList.add('open')
-  }
-
-  function cerrarWizard() {
-    if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
-    document.getElementById('wizardOverlay').classList.remove('open')
+  gate.classList.add('opening')
+  setTimeout(() => {
+    lock.classList.add('unlocked')
+    chains.classList.add('unlocked')
+    door.classList.add('open')
+  }, 300)
+  setTimeout(() => {
+    gate.classList.add('hidden')
+    content.classList.add('visible')
     loadCampanas()
-    loadStats()
-  }
+  }, 1800)
+}
 
-  function abrirCampana(id, estado) {
-    // If campaign already has leads, go directly to step 3
-    currentCampanaId = id
-    if (estado === 'leads_listos' || estado === 'mensaje_listo') {
-      goToStep(3)
-      loadLeads(id)
-      document.getElementById('wizardOverlay').classList.add('open')
-    } else if (estado === 'activa' || estado === 'completada') {
-      goToStep(5)
-      document.getElementById('wizardOverlay').classList.add('open')
-    } else if (estado === 'buscando') {
-      goToStep(2)
-      document.getElementById('wizardOverlay').classList.add('open')
-      startPolling(id)
-    } else {
-      abrirWizard()
-    }
-  }
-
-  function goToStep(n) {
-    for (let i = 1; i <= 5; i++) {
-      const s = document.getElementById(`step${i}`)
-      if (s) s.classList.toggle('active', i === n)
-      const dot = document.getElementById(`dot${i}`)
-      if (dot) {
-        dot.classList.remove('active','done')
-        if (i < n) dot.classList.add('done')
-        else if (i === n) dot.classList.add('active')
-      }
-      if (i < 5) {
-        const line = document.getElementById(`line${i}`)
-        if (line) line.classList.toggle('done', i < n)
-      }
-    }
-    const subtitles = ['','Configura tu objetivo','Buscando leads…','Selecciona leads','Crea el mensaje','Confirma y lanza']
-    document.getElementById('wizardSubtitle').textContent = subtitles[n] || ''
-    currentStep = n
-  }
-
-  function selectChip(el, value) {
-    document.querySelectorAll('#tipoChips .chip').forEach(c => c.classList.remove('selected'))
-    el.classList.add('selected')
-    document.getElementById('wTipo').value = value
-    renderSugerencias(value)
-  }
-
-  function renderSugerencias(tipo) {
-    const items = tipo === 'negocios' ? sugerenciasNegocios : sugerenciasPersonas
-    document.getElementById('sugerenciasChips').innerHTML = items.map(s =>
-      `<div class="chip" onclick="setCategoria('${s}')">${s}</div>`
-    ).join('')
-  }
-
-  function setCategoria(val) {
-    document.getElementById('wCategoria').value = val
-  }
-
-  // ── STEP 1 → 2 ───────────────────────────────────────────────────────────
-  async function step1Next() {
-    const nombre    = document.getElementById('wNombre').value.trim()
-    const tipo      = document.getElementById('wTipo').value
-    const categoria = document.getElementById('wCategoria').value.trim()
-    const zona      = document.getElementById('wZona').value.trim()
-    const leads_obj = parseInt(document.getElementById('wLeads').value)
-    if (!nombre || !categoria || !zona) {
-      alert('Rellena nombre, qué buscas y la zona.'); return
-    }
-    try {
-      // Create campaign
-      const r = await fetch(`${API}/api/pacto/campanas`, {
-        method: 'POST', headers: headers(),
-        body: JSON.stringify({ nombre, tipo_cliente: tipo, categoria_busqueda: categoria, zona, leads_objetivo: leads_obj })
-      })
-      const d = await r.json()
-      if (!d.campana) { alert('Error al crear campaña'); return }
-      currentCampanaId = d.campana.id
-      goToStep(2)
-      document.getElementById('buscandoQuery').textContent = `${categoria} en ${zona}`
-      // Trigger search
-      await fetch(`${API}/api/pacto/campanas/${currentCampanaId}/buscar`, {
-        method: 'POST', headers: headers()
-      })
-      startPolling(currentCampanaId)
-    } catch (e) { alert('Error: ' + e.message) }
-  }
-
-  function startPolling(campanaId) {
-    let attempts = 0
-    const statusMsgs = [
-      'Iniciando búsqueda en Google Maps…',
-      'Rastreando resultados en tu zona…',
-      'Filtrando leads con teléfono disponible…',
-      'Clasificando por relevancia…',
-      'Últimos retoques…',
-    ]
-    if (pollInterval) clearInterval(pollInterval)
-    pollInterval = setInterval(async () => {
-      attempts++
-      const msgEl = document.getElementById('buscandoStatus')
-      if (msgEl) msgEl.textContent = statusMsgs[attempts % statusMsgs.length]
-      try {
-        const r = await fetch(`${API}/api/pacto/campanas/${campanaId}/buscar/estado`, { headers: headers() })
-        const d = await r.json()
-        if (d.listo) {
-          clearInterval(pollInterval); pollInterval = null
-          document.getElementById('btnContinueLeads').disabled = false
-          document.getElementById('btnContinueLeads').onclick = () => { goToStep(3); loadLeads(campanaId) }
-          if (msgEl) msgEl.textContent = `✅ ${d.total} leads encontrados`
-        } else if (d.estado === 'error') {
-          clearInterval(pollInterval); pollInterval = null
-          if (msgEl) msgEl.textContent = '❌ Error en la búsqueda. Inténtalo de nuevo.'
-        }
-      } catch {}
-    }, 5000)
-  }
-
-  // ── STEP 3 ────────────────────────────────────────────────────────────────
-  async function loadLeads(campanaId) {
-    try {
-      const r = await fetch(`${API}/api/pacto/campanas/${campanaId}/leads`, { headers: headers() })
-      const d = await r.json()
-      allLeads = d.leads || []
-      renderLeads()
-    } catch {}
-  }
-
-  function renderLeads() {
-    const tbody = document.getElementById('leadsTableBody')
-    const seleccionados = allLeads.filter(l => l.seleccionado).length
-    document.getElementById('leadsCount').textContent = allLeads.length
-    document.getElementById('leadsSelCount').textContent = seleccionados
-    tbody.innerHTML = allLeads.map((l, i) => `
-      <tr>
-        <td><input type="checkbox" class="lead-check" ${l.seleccionado ? 'checked' : ''} onchange="toggleLead(${i},this.checked)" /></td>
-        <td><div class="lead-name">${l.nombre || '—'}</div></td>
-        <td style="font-family:'IBM Plex Mono',monospace;font-size:.8rem;">${l.telefono || '—'}</td>
-        <td>
-          ${l.rating ? `<span class="rating-badge">⭐ ${l.rating}</span>` : '—'}
-          ${l.num_reviews ? `<span style="font-size:.72rem;color:var(--text-dim);margin-left:4px;">(${l.num_reviews})</span>` : ''}
-        </td>
-        <td><div class="lead-cat">${l.categoria || '—'}</div></td>
-      </tr>`).join('')
-  }
-
-  async function toggleLead(index, checked) {
-    allLeads[index].seleccionado = checked
-    const lead = allLeads[index]
-    await fetch(`${API}/api/pacto/leads/${lead.id}`, {
-      method: 'PATCH', headers: headers(),
-      body: JSON.stringify({ seleccionado: checked })
-    }).catch(() => {})
-    const seleccionados = allLeads.filter(l => l.seleccionado).length
-    document.getElementById('leadsSelCount').textContent = seleccionados
-  }
-
-  async function toggleAll(val) {
-    for (const lead of allLeads) {
-      lead.seleccionado = val
-      await fetch(`${API}/api/pacto/leads/${lead.id}`, {
-        method: 'PATCH', headers: headers(),
-        body: JSON.stringify({ seleccionado: val })
-      }).catch(() => {})
-    }
-    renderLeads()
-  }
-
-  function step3Next() {
-    const sel = allLeads.filter(l => l.seleccionado).length
-    if (sel === 0) { alert('Selecciona al menos un lead.'); return }
-    goToStep(4)
-    // Auto-generate if no message yet
-    const msg = document.getElementById('wMensaje').value.trim()
-    if (!msg) generarMensajeIA()
-  }
-
-  // ── STEP 4 ────────────────────────────────────────────────────────────────
-  async function generarMensajeIA() {
-    const btn = document.getElementById('btnRegenerar')
-    btn.innerHTML = '<span class="ai-spinning">⚙️</span> Generando…'
-    btn.disabled = true
-    try {
-      const r = await fetch(`${API}/api/pacto/campanas/${currentCampanaId}/mensaje-ia`, {
-        method: 'POST', headers: headers()
-      })
-      const d = await r.json()
-      if (d.mensaje) {
-        document.getElementById('wMensaje').value = d.mensaje
-        actualizarPreview()
-      }
-    } catch {}
-    btn.innerHTML = '✨ Regenerar'
+async function solicitarActivacion() {
+  const btn = document.querySelector('.btn-activate')
+  btn.textContent = '⏳ Enviando solicitud…'
+  btn.disabled = true
+  try {
+    await fetch(`${API}/api/pacto/solicitar`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+    })
+    btn.textContent = '✅ Solicitud enviada — te contactamos'
+  } catch {
+    btn.textContent = '🔥 Solicitar Activación'
     btn.disabled = false
   }
+}
 
-  function actualizarPreview() {
-    const msg = document.getElementById('wMensaje').value
-    const primerLead = allLeads.find(l => l.seleccionado)
-    const nombre = primerLead?.nombre || 'Nombre del lead'
-    const preview = msg.replace(/\[nombre\],/g, `${nombre},`).replace(/\[nombre\]/g, nombre)
-    document.getElementById('mensajePreview').textContent = preview || 'El mensaje aparecerá aquí…'
+// ── Campañas ──────────────────────────────────────────────────────────────────
+async function loadCampanas() {
+  try {
+    const r = await fetch(`${API}/api/pacto/campanas`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const d = await r.json()
+    const campanas = d.campanas || []
+    renderCampanas(campanas)
+    updateStats(campanas)
+  } catch {}
+}
+
+function updateStats(campanas) {
+  const totalLeads     = campanas.reduce((s, c) => s + (c.leads_encontrados  || 0), 0)
+  const totalEnviados  = campanas.reduce((s, c) => s + (c.leads_enviados     || 0), 0)
+  const totalConvert   = campanas.reduce((s, c) => s + (c.leads_convertidos  || 0), 0)
+  document.getElementById('stat-campanas').textContent  = campanas.length
+  document.getElementById('stat-leads').textContent     = totalLeads
+  document.getElementById('stat-enviados').textContent  = totalEnviados
+  document.getElementById('stat-clientes').textContent  = totalConvert
+}
+
+function renderCampanas(campanas) {
+  const grid = document.getElementById('campaigns-grid')
+  if (!campanas.length) {
+    grid.innerHTML = `<div class="empty-campaigns"><div class="big">🔥</div><div>El diablo está en reposo.<br>Crea tu primera campaña.</div></div>`
+    return
   }
+  grid.innerHTML = campanas.map(c => `
+    <div class="campaign-card" onclick="verCampana('${c.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;">
+        <div class="camp-name">${c.nombre}</div>
+        <span class="status-badge status-${c.estado}">${c.estado}</span>
+      </div>
+      <div class="camp-meta">${c.categoria_busqueda} · ${c.zona} · ${c.tipo_cliente}</div>
+      <div class="camp-stats">
+        <div class="camp-stat"><div class="n">${c.leads_encontrados||0}</div><div class="l">Leads</div></div>
+        <div class="camp-stat"><div class="n">${c.leads_enviados||0}</div><div class="l">Enviados</div></div>
+        <div class="camp-stat"><div class="n">${c.leads_respondidos||0}</div><div class="l">Resp.</div></div>
+        <div class="camp-stat"><div class="n">${c.leads_convertidos||0}</div><div class="l">Clientes</div></div>
+      </div>
+    </div>
+  `).join('')
+}
 
-  async function step4Next() {
-    const mensaje = document.getElementById('wMensaje').value.trim()
-    if (!mensaje) { alert('Escribe un mensaje antes de continuar.'); return }
-    // Save message
-    await fetch(`${API}/api/pacto/campanas/${currentCampanaId}`, {
-      method: 'PATCH', headers: headers(),
-      body: JSON.stringify({ mensaje_plantilla: mensaje })
-    }).catch(() => {})
-    // Update confirm summary
-    const nombre = document.getElementById('wNombre').value || '—'
-    const categoria = document.getElementById('wCategoria').value || '—'
-    const zona = document.getElementById('wZona').value || '—'
-    const sel = allLeads.filter(l => l.seleccionado).length
-    document.getElementById('confNombre').textContent    = nombre
-    document.getElementById('confBusqueda').textContent  = `${categoria} en ${zona}`
-    document.getElementById('confLeads').textContent     = `${sel} leads`
-    goToStep(5)
+function verCampana(id) {
+  alert('Vista detalle campaña — próximamente 🔥')
+}
+
+// ── Wizard ────────────────────────────────────────────────────────────────────
+function openWizard() {
+  document.getElementById('wizard-modal').classList.add('open')
+  showStep(1)
+}
+function closeWizard() {
+  document.getElementById('wizard-modal').classList.remove('open')
+}
+function showStep(n) {
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById(`step${i}`).style.display = i === n ? 'block' : 'none'
+    const ws = document.getElementById(`ws${i}`)
+    ws.className = 'step ' + (i < n ? 'done' : i === n ? 'active' : '')
   }
+}
+function selectTipo(t) {
+  tipoCliente = t
+  document.getElementById('opt-negocios').classList.toggle('selected', t==='negocios')
+  document.getElementById('opt-personas').classList.toggle('selected', t==='personas')
+}
 
-  // ── STEP 5 ────────────────────────────────────────────────────────────────
-  async function enviarCampana() {
-    const btn = document.getElementById('btnEnviar')
-    btn.disabled = true
-    btn.textContent = 'Enviando…'
-    const resultEl = document.getElementById('envioResult')
-    try {
-      const r = await fetch(`${API}/api/pacto/campanas/${currentCampanaId}/enviar`, {
-        method: 'POST', headers: headers(),
-        body: JSON.stringify({})
+async function paso1Siguiente() {
+  const nombre    = document.getElementById('camp-nombre').value.trim()
+  const categoria = document.getElementById('camp-categoria').value.trim()
+  const zona      = document.getElementById('camp-zona').value.trim()
+  if (!nombre || !categoria || !zona) { alert('Completa nombre, categoría y zona.'); return }
+
+  showStep(2)
+  document.getElementById('step-searching').style.display = 'block'
+  document.getElementById('step-search-error').style.display = 'none'
+
+  try {
+    // Crear campaña en BD
+    const r1 = await fetch(`${API}/api/pacto/campanas`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre,
+        tipo_cliente:       tipoCliente,
+        categoria_busqueda: categoria,
+        zona,
+        radio_km:   parseInt(document.getElementById('camp-radio').value) || 5,
+        leads_objetivo: parseInt(document.getElementById('camp-objetivo').value) || 50,
       })
-      const d = await r.json()
-      resultEl.style.display = 'block'
-      if (d.ok) {
-        resultEl.style.background = 'rgba(34,197,94,.1)'
-        resultEl.style.border = '1px solid rgba(34,197,94,.3)'
-        resultEl.style.color = '#4ade80'
-        resultEl.innerHTML = `✅ <strong>${d.enviados}</strong> mensajes enviados${d.errores > 0 ? ` · ${d.errores} errores (sin teléfono)` : ''}`
-        btn.textContent = '✅ Enviado'
-        await loadStats()
-        await loadCampanas()
-      } else {
-        resultEl.style.background = 'rgba(239,68,68,.1)'
-        resultEl.style.border = '1px solid rgba(239,68,68,.3)'
-        resultEl.style.color = '#f87171'
-        resultEl.textContent = d.error || 'Error al enviar'
-        btn.disabled = false
-        btn.textContent = '🔥 Reintentar'
-      }
-    } catch (e) {
-      resultEl.style.display = 'block'
-      resultEl.textContent = 'Error de conexión'
-      btn.disabled = false
-      btn.textContent = '🔥 Reintentar'
-    }
+    })
+    const d1 = await r1.json()
+    campanaId = d1.campana?.id
+
+    // Lanzar búsqueda Apify
+    document.getElementById('search-status').textContent = 'El diablo está pactando con Google Maps…'
+    const r2 = await fetch(`${API}/api/pacto/campanas/${campanaId}/buscar`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const d2 = await r2.json()
+
+    if (!d2.ok) throw new Error(d2.error || 'Error en búsqueda')
+
+    leadsData = d2.leads || []
+    renderLeads()
+    showStep(3)
+    document.getElementById('leads-count-text').textContent =
+      `El diablo encontró ${leadsData.length} almas. Marca las que quieres contactar.`
+  } catch (err) {
+    document.getElementById('step-searching').style.display = 'none'
+    document.getElementById('step-search-error').style.display = 'block'
+    document.getElementById('search-error-msg').textContent = err.message || 'Error al buscar leads.'
   }
+}
+
+function renderLeads() {
+  const tbody = document.getElementById('leads-tbody')
+  tbody.innerHTML = leadsData.map((l, i) => `
+    <tr>
+      <td><input type="checkbox" class="lead-check lead-cb" data-i="${i}" checked /></td>
+      <td>
+        <div class="lead-name">${l.name || l.nombre || '—'}</div>
+        <div class="lead-cat">${l.category || l.categoria || ''}</div>
+      </td>
+      <td class="lead-phone">${l.phone || l.telefono || '—'}</td>
+      <td class="lead-rating">${l.rating ? '⭐ '+l.rating : '—'}</td>
+      <td>${l.reviews || l.num_reviews || '—'}</td>
+    </tr>
+  `).join('')
+}
+
+function toggleAllLeads() {
+  const master = document.getElementById('check-all').checked
+  document.querySelectorAll('.lead-cb').forEach(cb => cb.checked = master)
+}
+
+function getSelectedLeads() {
+  return Array.from(document.querySelectorAll('.lead-cb'))
+    .filter(cb => cb.checked)
+    .map(cb => leadsData[parseInt(cb.dataset.i)])
+}
+
+function paso3Siguiente() {
+  const sel = getSelectedLeads()
+  if (!sel.length) { alert('Selecciona al menos un lead.'); return }
+  generarMensaje()
+  showStep(4)
+}
+
+function generarMensaje() {
+  const categoria = document.getElementById('camp-categoria').value.trim()
+  const zona      = document.getElementById('camp-zona').value.trim()
+  const msg = `Hola, soy de [Tu Negocio] en ${zona}.\n\nNos especializamos en ${categoria} y me gustaría presentarte nuestros servicios.\n\n¿Tienes 5 minutos para una breve llamada? Creo que podemos aportarte valor.\n\nSaludos 😊`
+  document.getElementById('mensaje-texto').value = msg
+  updatePreview()
+  document.getElementById('wa-biz-name').textContent = document.getElementById('camp-nombre').value || 'Tu negocio'
+}
+
+function updatePreview() {
+  document.getElementById('wa-bubble').textContent = document.getElementById('mensaje-texto').value
+}
+
+function paso4Siguiente() {
+  if (!document.getElementById('mensaje-texto').value.trim()) { alert('Escribe el mensaje.'); return }
+  // Rellenar resumen
+  document.getElementById('sum-nombre').textContent = document.getElementById('camp-nombre').value
+  document.getElementById('sum-zona').textContent   = document.getElementById('camp-zona').value
+  document.getElementById('sum-tipo').textContent   = tipoCliente === 'negocios' ? 'Negocios / Empresas' : 'Personas'
+  document.getElementById('sum-leads').textContent  = getSelectedLeads().length
+  showStep(5)
+}
+
+async function lanzarCampana() {
+  const btn = document.getElementById('btn-launch')
+  btn.disabled = true
+  btn.textContent = '⏳ Sellando…'
+  try {
+    const leads = getSelectedLeads()
+    const msg   = document.getElementById('mensaje-texto').value
+    await fetch(`${API}/api/pacto/campanas/${campanaId}/lanzar`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensaje: msg, leads_seleccionados: leads.length })
+    })
+    closeWizard()
+    loadCampanas()
+  } catch {
+    btn.disabled = false
+    btn.textContent = '🔥 Sellar el Pacto'
+  }
+}
+
+init()
 </script>
 </body>
 </html>

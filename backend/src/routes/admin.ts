@@ -141,3 +141,47 @@ adminRoutes.post('/salons/:id/plan', async (c) => {
     return c.json({ error: err.message }, 500)
   }
 })
+
+// ─── POST /api/admin/salons/:id/pacto ─────────────────────────────────────────
+
+adminRoutes.post('/salons/:id/pacto', async (c) => {
+  try {
+    const salonId = c.req.param('id')
+    const body    = await c.req.json().catch(() => ({}) )
+    const activo  = body.activo === true
+
+    const supabase = getSupabase()
+    const { error } = await supabase
+      .from('salons')
+      .update({
+        pacto_activo:       activo,
+        pacto_activado_at:  activo ? new Date().toISOString() : null,
+      })
+      .eq('id', salonId)
+
+    if (error) return c.json({ error: error.message }, 500)
+
+    return c.json({ ok: true, salon_id: salonId, pacto_activo: activo })
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500)
+  }
+})
+
+// ─── GET /api/admin/pacto/stats ───────────────────────────────────────────────
+
+adminRoutes.get('/pacto/stats', async (c) => {
+  try {
+    const supabase = getSupabase()
+    const { data } = await supabase
+      .from('salons')
+      .select('id, name, pacto_activo, pacto_activado_at')
+      .eq('pacto_activo', true)
+
+    const activos   = (data || []).length
+    const ingresos  = activos * 29
+
+    return c.json({ ok: true, activos, ingresos_mes: ingresos, salones: data || [] })
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500)
+  }
+})
