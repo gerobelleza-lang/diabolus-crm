@@ -1,13 +1,13 @@
 // @ts-nocheck
-// POST /api/agent/tts — OpenAI TTS proxy (Edge Runtime)
-// Body: { text: string, voice?: string }
-// Returns: audio/mpeg stream
+// POST /api/agent/tts — ElevenLabs TTS proxy (Edge Runtime)
+// Body: { text: string }
+// Returns: audio/mpeg
 
 export const config = { runtime: 'edge' };
 
-const VOICE = 'nova'; // cálida, profesional, femenina
-const MODEL = 'tts-1';  // tts-1-hd para mayor calidad (más lento)
-const MAX_CHARS = 1000; // recortamos para evitar gastos excesivos
+const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || 'onwK4e9ZLuTAKqWW03F9'; // Daniel — multilingual
+const MODEL_ID = 'eleven_multilingual_v2';
+const MAX_CHARS = 800;
 
 export async function ttsRoute(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
@@ -25,57 +25,73 @@ export async function ttsRoute(req: Request): Promise<Response> {
   }
 
   try {
-    const { text, voice } = await req.json();
+    const { text } = await req.json();
 
     if (!text || typeof text !== 'string') {
       return new Response(JSON.stringify({ error: 'text requerido' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.ELEVENLABS_API_KEY;
     if (!apiKey) {
       return new Response(JSON.stringify({ error: 'TTS no configurado' }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
     }
 
     // Limpiar texto: quitar emojis y markdown para voz más natural
     const clean = text
-      .replace(/[*_~`#>]/g, '')           // markdown
-      .replace(/[\u{1F300}-\u{1FAFF}]/gu, '') // emojis
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1') // links
-      .replace(/\n+/g, '. ')              // saltos → pausa natural
+      .replace(/[*_~`#>]/g, '')
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+      .replace(/[\u{2600}-\u{27BF}]/gu, '')
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+      .replace(/\n+/g, '. ')
+      .replace(/\.{2,}/g, '.')
       .trim()
       .slice(0, MAX_CHARS);
 
-    const ttsRes = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        input: clean,
-        voice: voice || VOICE,
-        response_format: 'mp3',
-        speed: 1.0,
-      }),
-    });
-
-    if (!ttsRes.ok) {
-      const err = await ttsRes.text();
-      console.error('OpenAI TTS error:', err);
-      return new Response(JSON.stringify({ error: 'Error generando audio' }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' },
+    if (!clean) {
+      return new Response(JSON.stringify({ error: 'texto vacío' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
     }
 
-    // Stream el audio directamente al cliente
+    const ttsRes = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+      {
+        method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'audio/mpeg',
+        },
+        body: JSON.stringify({
+          text: clean,
+          model_id: MODEL_ID,
+          voice_settings: {
+            stability: 0.45,
+            similarity_boost: 0.80,
+            style: 0.15,
+            use_speaker_boost: true,
+          },
+          output_format: 'mp3_44100_128',
+        }),
+      }
+    );
+
+    if (!ttsRes.ok) {
+      const err = await ttsRes.text();
+      console.error('ElevenLabs TTS error:', err);
+      return new Response(JSON.stringify({ error: 'Error generando audio' }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+
     return new Response(ttsRes.body, {
       headers: {
         'Content-Type': 'audio/mpeg',
@@ -88,7 +104,7 @@ export async function ttsRoute(req: Request): Promise<Response> {
     console.error('TTS route error:', e);
     return new Response(JSON.stringify({ error: 'Error interno' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   }
 }
