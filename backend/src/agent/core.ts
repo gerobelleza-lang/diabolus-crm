@@ -257,9 +257,10 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
   }
 
   // ── crear_cliente ────────────────────────────────────────────────────────
-  if (/nuevo cliente|crear cliente|añadir cliente|agrega.{0,10}cliente|da de alta|registra.{0,15}cliente|alta.{0,10}cliente/i.test(userInput)) {
+  if (/nuevo cliente|crear cliente|añadir cliente|agrega.{0,10}cliente|da de alta|registra.{0,15}cliente|alta.{0,10}cliente|registra\s+a\s+[A-ZÁÉÍÓÚÑ]|añade\s+a\s+[A-ZÁÉÍÓÚÑ]|a[ñn]ade\s+a\s+[A-ZÁÉÍÓÚÑ]|mete\s+a\s+[A-ZÁÉÍÓÚÑ]|apunta\s+a\s+[A-ZÁÉÍÓÚÑ]/i.test(userInput)) {
+    // Extrae nombre: soporta "nuevo cliente X", "registra a X", "añade a X", etc.
     const mNombre = userInput.match(
-      /(?:cliente|nuevo|añade|crea|registra|alta)\s+(?:llamad[oa]?\s+)?([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:con|teléfono|telefono|email|,|$)|\s*$)/i
+      /(?:cliente|nuevo|añade|crea|registra|alta|mete|apunta)\s+(?:a\s+)?(?:llamad[oa]?\s+)?([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:con|teléfono|telefono|email|,|$)|\s*$)/i
     )
     const nombre = mNombre ? mNombre[1].trim() : ''
     if (!nombre) {
