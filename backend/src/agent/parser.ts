@@ -68,11 +68,14 @@ export function parseUserInput(input: string): ParsedInput {
   }
 
   // ── CONSULTA DE INGRESOS — ANTES de INCOME para evitar falsos positivos ──
-  // Cubre: "cuánto he cobrado", "cuánto cobré", "qué he cobrado este mes", "ingresos del mes"...
-  if (/cu[aá]nto\s+(cobr|ingres)/i.test(lowerInput) ||
-      /cu[aá]nto\s+(he|ha|llevo|tengo)\s+(cobrado|cobré|ingresado|ingresé|facturado|ganado)/i.test(lowerInput) ||
-      /qu[eé]\s+(he|ha)\s+(cobrado|ingresado|ganado|facturado)/i.test(lowerInput) ||
-      /mis\s+ingresos|ingresos\s+del\s+mes|ingresos\s+de\s+este/i.test(lowerInput)) {
+  // Cubre: "cuánto/cuántos he cobrado", "ingresos de hoy/mes", "cuántos ingresos hemos hecho"...
+  if (/cu[aá]nto[s]?\s+(cobr|ingres)/i.test(lowerInput) ||
+      /cu[aá]nto[s]?\s+(he|ha|llevo|tengo|hemos)\s+(cobrado|cobré|ingresado|ingresé|facturado|ganado|hecho)/i.test(lowerInput) ||
+      /qu[eé]\s+(he|ha|hemos)\s+(cobrado|ingresado|ganado|facturado)/i.test(lowerInput) ||
+      /mis\s+ingresos|ingresos\s+del\s+mes|ingresos\s+de\s+este/i.test(lowerInput) ||
+      /cu[aá]ntos?\s+ingresos/i.test(lowerInput) ||
+      /ingresos\s+(de\s+hoy|de\s+esta|del\s+d[ií]a|hemos\s+hecho|que\s+hemos)/i.test(lowerInput) ||
+      /hemos\s+(cobrado|ingresado|facturado|ganado)/i.test(lowerInput)) {
     return { intent: 'query_income', data: { type: 'income' }, confidence: 0.9 };
   }
 
