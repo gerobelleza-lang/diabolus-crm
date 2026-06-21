@@ -454,6 +454,62 @@
       .page-header { flex-direction: column; gap: 1rem; }
       .quick-actions { grid-template-columns: 1fr; }
     }
+
+    /* ── CAZADOR BANNER ── */
+    .cazador-banner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: linear-gradient(135deg, rgba(251,146,60,.12) 0%, rgba(239,68,68,.08) 100%);
+      border: 1px solid rgba(251,146,60,.25);
+      border-radius: 0.875rem;
+      padding: 0.875rem 1.25rem;
+      margin-bottom: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .cazador-banner:hover {
+      background: linear-gradient(135deg, rgba(251,146,60,.18) 0%, rgba(239,68,68,.12) 100%);
+      border-color: rgba(251,146,60,.4);
+      transform: translateY(-1px);
+    }
+    .cazador-banner-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      animation: cazador-pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes cazador-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.08); opacity: 0.85; }
+    }
+    .cazador-banner-body { flex: 1; }
+    .cazador-banner-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #fb923c;
+      margin-bottom: 0.2rem;
+    }
+    .cazador-banner-sub {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+    }
+    .cazador-banner-badge {
+      background: rgba(251,146,60,.2);
+      border: 1px solid rgba(251,146,60,.35);
+      color: #fb923c;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.3rem 0.7rem;
+      border-radius: 2rem;
+      flex-shrink: 0;
+    }
+    .cazador-banner-arrow {
+      color: rgba(251,146,60,.6);
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -528,6 +584,17 @@
           <div class="avatar" id="userAvatar">?</div>
         </div>
       </div>
+
+      <!-- ── CAZADOR BANNER (solo visible si hay facturas en caza) ── -->
+      <a href="cazador.html" id="cazadorBanner" class="cazador-banner" style="display:none;">
+        <div class="cazador-banner-icon">🦅</div>
+        <div class="cazador-banner-body">
+          <div class="cazador-banner-title" id="cazadorBannerTitle">El Cazador está trabajando</div>
+          <div class="cazador-banner-sub" id="cazadorBannerSub">Cargando…</div>
+        </div>
+        <div class="cazador-banner-badge" id="cazadorBannerBadge">—</div>
+        <div class="cazador-banner-arrow">›</div>
+      </a>
 
       <!-- ══════════════════════════════════════ -->
       <!-- ZONA 1 — FINANZAS                      -->
@@ -874,7 +941,33 @@
       })
     }
 
+    // ── Cazador Banner ──
+    async function loadCazadorBanner() {
+      try {
+        const res = await fetch(`${API}/api/cazador/stats`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        const count = data.overdue_count ?? 0
+        const total = data.overdue_total ?? 0
+        if (count === 0) return // nada en caza → banner oculto
+
+        const banner  = document.getElementById('cazadorBanner')
+        const title   = document.getElementById('cazadorBannerTitle')
+        const sub     = document.getElementById('cazadorBannerSub')
+        const badge   = document.getElementById('cazadorBannerBadge')
+
+        const plural  = count === 1 ? 'factura vencida' : 'facturas vencidas'
+        title.textContent = `El Cazador tiene ${count} ${plural} en seguimiento`
+        sub.textContent   = `${eur(total)} pendientes de cobro · Toca para gestionar`
+        badge.textContent = `${count} en caza`
+        banner.style.display = 'flex'
+      } catch (_) { /* silencioso — el banner simplemente no aparece */ }
+    }
+
     loadDashboard()
+    loadCazadorBanner()
 
     // ── PWA ──
     if ('serviceWorker' in navigator) {
