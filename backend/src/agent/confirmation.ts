@@ -378,23 +378,36 @@ async function executeCrearCliente(
 ): Promise<{ ok: boolean; message: string }> {
   const supabase = getSupabase()
 
+  // ¿Registro completo? Solo lo marcamos completo si tiene al menos phone o email
+  const tieneContacto = !!(p.telefono || p.email)
+  const recordatorio  = tieneContacto
+    ? null
+    : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString() // +10 días
+
   const { data, error } = await supabase
     .from('clients')
     .insert({
-      name:      p.nombre,
-      phone:     p.telefono || null,
-      email:     p.email    || null,
-      nif:       p.nif      || null,
-      salon_id:  salonId,
+      name:                     p.nombre,
+      nombre_comercial:         p.nombre_comercial || null,
+      phone:                    p.telefono         || null,
+      email:                    p.email            || null,
+      nif:                      p.nif              || null,
+      salon_id:                 salonId,
+      registro_completo:        tieneContacto,
+      recordatorio_registro_at: recordatorio,
     })
     .select('id')
     .single()
 
   if (error) return { ok: false, message: `Error al crear cliente: ${error.message}` }
 
+  const avisoIncompleto = tieneContacto
+    ? ''
+    : '\n⚠️ Registro pendiente de completar — te aviso en 10 días si no añades sus datos.'
+
   return {
     ok: true,
-    message: `✅ Cliente creado\n• ${p.nombre}${p.telefono ? `\n• Tel: ${p.telefono}` : ''}${p.email ? `\n• Email: ${p.email}` : ''}`,
+    message: `✅ Cliente creado\n• ${p.nombre}${p.nombre_comercial ? `\n• Negocio: ${p.nombre_comercial}` : ''}${p.telefono ? `\n• Tel: ${p.telefono}` : ''}${p.email ? `\n• Email: ${p.email}` : ''}${avisoIncompleto}`,
   }
 }
 

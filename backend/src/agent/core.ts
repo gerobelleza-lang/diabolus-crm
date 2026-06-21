@@ -266,11 +266,34 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     if (!nombre) {
       return { needsInfo: '¿Cómo se llama el cliente? Ej: "nuevo cliente Ana García"' }
     }
-    const mPhone  = userInput.match(/(?:teléfono|telefono|telf?|móvil|movil|tlf)[\s:]+([+0-9\s]{7,15})/i)
-    const mEmail  = userInput.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
-    const mNif    = userInput.match(/(?:nif|cif|dni)[\s:]+([A-Z0-9]{7,9})/i)
+    const mPhone    = userInput.match(/(?:teléfono|telefono|telf?|móvil|movil|tlf)[\s:]+([+0-9\s]{7,15})/i)
+    const mEmail    = userInput.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
+    const mNif      = userInput.match(/(?:nif|cif|dni)[\s:]+([A-Z0-9]{7,9})/i)
+    // Nombre comercial: "panadería X", "bar X", "negocio X", "empresa X", "tienda X"
+    const mComercial = userInput.match(/(?:panadería|panaderia|bar|restaurante|cafetería|cafeteria|peluquería|peluqueria|tienda|negocio|empresa|clínica|clinica|farmacia|taller|academia|gimnasio|gym)\s+([A-Za-záéíóúñÁÉÍÓÚÑ\s]{2,30})/i)
+    const nombreComercial = mComercial ? mComercial[0].trim() : undefined
+
+    // ── Anti-duplicados: buscar si ya existe un cliente con nombre similar ──
+    try {
+      const supabase = getSupabase()
+      const { data: existentes } = await supabase
+        .from('clients')
+        .select('id, name')
+        .eq('salon_id', tenantId)
+        .ilike('name', `%${nombre.split(' ')[0]}%`)
+        .limit(3)
+
+      if (existentes && existentes.length > 0) {
+        const lista = existentes.map(c => `• ${c.name}`).join('\n')
+        return {
+          needsInfo: `Ya tengo estos clientes con nombre similar:\n${lista}\n\n¿Es alguno de ellos? Si sí, dime cuál y le busco la ficha. Si es nuevo, dime "crear nuevo".`,
+        }
+      }
+    } catch {}
+
     const card = await createPendingAction('crear_cliente', {
       nombre,
+      nombre_comercial: nombreComercial,
       telefono: mPhone ? mPhone[1].trim().replace(/\s/g, '') : undefined,
       email:    mEmail ? mEmail[1]                            : undefined,
       nif:      mNif   ? mNif[1].toUpperCase()                : undefined,

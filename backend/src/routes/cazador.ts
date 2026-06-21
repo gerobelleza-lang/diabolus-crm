@@ -491,7 +491,23 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
     // Construir mensaje para el dueño
     const fecha = new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid' });
 
-    if (previewLines.length === 0) {
+    // ── Clientes con registro incompleto cuyo recordatorio ha llegado ──
+    const todayISO = today.toISOString();
+    const { data: clientesIncompletos } = await supabase
+      .from('clients')
+      .select('id, name, created_at')
+      .eq('salon_id', config.salon_id)
+      .eq('registro_completo', false)
+      .lte('recordatorio_registro_at', todayISO)
+      .limit(10);
+
+    const incompleteLines: string[] = [];
+    for (const c of (clientesIncompletos || [])) {
+      const diasDesde = Math.floor((today.getTime() - new Date(c.created_at).getTime()) / (1000*60*60*24));
+      incompleteLines.push(`👤 ${c.name} — sin datos de contacto — ${diasDesde} día(s) pendiente`);
+    }
+
+    if (previewLines.length === 0 && incompleteLines.length === 0) {
       await sendOwnerMessage(
         salon,
         `🌅 Buenos días.\n\nHoy el Cazador no tiene facturas que reclamar. ✅ Todo al día.\n\n— Diabolus`
@@ -501,11 +517,20 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
       const lines = [
         `🌅 <b>Buenos días — ${fecha}</b>`,
         ``,
-        `El Cazador actúa HOY a las 10:00 sobre <b>${total}</b> factura(s):`,
-        ``,
-        ...previewLines,
-        ``,
-        `Si alguna ya está cobrada, márcala en Diabolus <b>antes de las 10:00</b> y no saldrá ningún aviso.`,
+        ...(previewLines.length > 0 ? [
+          `El Cazador actúa HOY a las 10:00 sobre <b>${total}</b> factura(s):`,
+          ``,
+          ...previewLines,
+          ``,
+          `Si alguna ya está cobrada, márcala en Diabolus <b>antes de las 10:00</b> y no saldrá ningún aviso.`,
+        ] : []),
+        ...(incompleteLines.length > 0 ? [
+          ``,
+          `📋 <b>${incompleteLines.length} cliente(s) con registro incompleto:</b>`,
+          ...incompleteLines,
+          ``,
+          `Completa sus datos o elimínalos para evitar duplicados.`,
+        ] : []),
         ``,
         `<i>diabolus.es</i>`,
       ];
