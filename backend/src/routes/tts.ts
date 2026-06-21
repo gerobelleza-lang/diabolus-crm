@@ -5,7 +5,7 @@
 
 export const config = { runtime: 'edge' };
 
-const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || 'onwK4e9ZLuTAKqWW03F9'; // Daniel — multilingual
+const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // Adam — male, multilingual
 const MODEL_ID = 'eleven_multilingual_v2';
 const MAX_CHARS = 800;
 
