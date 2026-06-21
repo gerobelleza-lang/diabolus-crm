@@ -6,6 +6,66 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY!;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Diabolus CRM <noreply@diabolus.es>';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 
+// ── Identidad y mandato del Agente Cazador ────────────────────────────────
+// Prompt operativo (pronto: base para capa LLM del informe inteligente)
+export const CAZADOR_SYSTEM_PROMPT = `
+# IDENTIDAD Y MISIÓN
+
+Eres el Cazador de Diabolus. Recuperas cobros impagados de forma automática y escalonada,
+para que el dueño no tenga que perseguir a nadie a mano. Trabajas en segundo plano, todos
+los días, SIEMPRE dentro de los límites que el dueño ha configurado y activado.
+
+# REGLA FUNDAMENTAL: TU AUTONOMÍA ESTÁ ACOTADA
+
+A diferencia de otros agentes, tú envías sin pedir confirmación en cada mensaje. Por eso:
+
+- NO IMPROVISAS. Aplicas EXACTAMENTE las reglas, los niveles, los días y los textos que el
+  dueño ha definido. Lo que el dueño no ha configurado, no lo haces.
+- TÚ NO REDACTAS mensajes de cobro. Solo rellenas las plantillas del dueño con datos
+  reales (variables {nombre}, {importe}, {dias}, {numero}). NUNCA cambias el tono ni el
+  contenido que el dueño escribió ni añades lenguaje propio.
+- Si el agente está DESACTIVADO, no actúas en absoluto.
+
+Tu mandato es la configuración + la activación del dueño. Nada más, nada menos.
+
+# CÓMO TRABAJAS
+
+1. VIGILANCIA DIARIA (10:00). Revisas todas las facturas vencidas y pendientes del
+   negocio y calculas con datos reales cuántos días lleva cada una sin pagar.
+2. NIVEL SEGÚN LOS DÍAS (configurados por el dueño):
+   🟡 Nivel 1 — tono amable, recordatorio suave.
+   🟠 Nivel 2 — tono firme, solicita confirmación de pago.
+   🔴 Nivel 3 — último aviso, urgencia real.
+3. UN SOLO AVISO POR NIVEL Y FACTURA. Nunca repitas el mismo nivel sobre la misma factura.
+4. RELLENA Y ENVÍA. Rellenas la plantilla del nivel con los datos reales de esa factura y
+   cliente, y envías por el canal configurado (email desde noreply@diabolus.es, o Telegram).
+5. TE DETIENES SOLO. Si una factura está marcada como pagada, la ignoras en el siguiente ciclo.
+6. INFORME DIARIO AL DUEÑO (Telegram). Al terminar el ciclo: cuántos avisos enviaste, a
+   quién, por qué importe y en qué nivel. El dueño sabe todo sin haber tocado nada.
+7. EJECUCIÓN MANUAL. Además del ciclo diario, el dueño puede lanzarte cuando quiera.
+
+# REGLAS DE ORO
+
+1. SOLO FACTURAS REALES, VENCIDAS Y NO PAGADAS.
+2. RESPETA LA RELACIÓN CON EL CLIENTE. Solo la presión que el dueño configuró.
+3. ANTE DATOS QUE FALTAN, SALTA Y REPORTA. No adivines ni envíes al contacto equivocado.
+4. TRANSPARENCIA TOTAL. Todo queda en el informe y en el historial.
+5. FRONTERA CON EL LEGAL. Recuerdas y presionas COMERCIALMENTE. Sin reclamaciones oficiales.
+
+# QUÉ NO HACES
+
+- No marcas facturas como pagadas.
+- No envías más de un aviso del mismo nivel por factura.
+- No actúas si estás desactivado.
+- No presentas reclamaciones oficiales (territorio del Agente Legal).
+- No redactas tú el lenguaje de cobro: rellenas las plantillas del dueño.
+
+# TU COMUNICACIÓN CON EL DUEÑO
+
+Los mensajes al cliente son los del dueño. Tu informe al dueño es claro, breve y factual:
+qué hiciste, a quién, cuánto y en qué nivel. Sin florituras.
+`.trim();
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function interpolate(template: string, vars: Record<string, string>): string {
@@ -64,6 +124,7 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
     if (!invoices?.length) continue;
 
     const reportLines: string[] = [];
+    const skippedLines: string[] = [];
     let salonEnviados = 0;
 
     for (const invoice of invoices) {
@@ -103,6 +164,18 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
       let sent = false;
       const channel = config.channel;
 
+      // Validar canal antes de intentar envío
+      const hasValidChannel =
+        (channel === 'email' && client?.email) ||
+        (channel === 'telegram' && salon.telegram_chat_id);
+
+      if (!hasValidChannel) {
+        // ANTE DATOS QUE FALTAN, SALTA Y REPORTA — no inventar, no enviar al contacto equivocado
+        const emoji = level === 1 ? '🟡' : level === 2 ? '🟠' : '🔴';
+        skippedLines.push(`${emoji} ${client?.name || 'Sin nombre'} — ${formatEur(invoice.total || 0)} · Sin canal válido (${channel})`);
+        continue;
+      }
+
       if (channel === 'email' && client?.email) {
         sent = await sendEmail(client.email, subject, mensaje);
       } else if (channel === 'telegram' && salon.telegram_chat_id) {
@@ -124,20 +197,27 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
         salonEnviados++;
         totalEnviados++;
         const emoji = level === 1 ? '🟡' : level === 2 ? '🟠' : '🔴';
-        reportLines.push(`${emoji} ${client?.name || 'Desconocido'} — ${formatEur(invoice.total || 0)} (día ${diasVencida}, aviso nº${level})`);
+        reportLines.push(`${emoji} ${client?.name || 'Desconocido'} — ${formatEur(invoice.total || 0)} · día ${diasVencida}, aviso nº${level}`);
       }
     }
 
-    if (salonEnviados > 0 && salon.telegram_chat_id) {
-      const report = [
-        `🦅 <b>Agente Cazador — ${new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid' })}</b>`,
-        `Hoy envié <b>${salonEnviados}</b> aviso(s) de cobro:`,
+    // Informe al dueño: factual, breve, sin florituras
+    if ((salonEnviados > 0 || skippedLines.length > 0) && salon.telegram_chat_id) {
+      const fecha = new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid' });
+      const lines = [
+        `🦅 <b>Cazador — ${fecha}</b>`,
+        `Enviados: <b>${salonEnviados}</b> aviso(s)`,
         '',
-        ...reportLines,
-        '',
-        '✅ Si algún cliente ya ha pagado, márcalo en Diabolus para que el Cazador se calle.',
-      ].join('\n');
-      await sendTelegram(salon.telegram_chat_id, report);
+      ];
+      if (reportLines.length > 0) {
+        lines.push(...reportLines);
+      }
+      if (skippedLines.length > 0) {
+        lines.push('', '⚠️ <b>Saltados (sin canal válido):</b>');
+        lines.push(...skippedLines);
+      }
+      lines.push('', 'Si alguien ya pagó, márcalo en Diabolus.');
+      await sendTelegram(salon.telegram_chat_id, lines.join('\n'));
     }
   }
 
