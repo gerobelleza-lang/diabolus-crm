@@ -115,12 +115,13 @@
     }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    .btn-desktop {
+    .btn-desktop, .btn-sound {
       background: none; border: none;
       color: var(--text-dim);
       font-size: 17px; cursor: pointer;
       padding: 4px 6px; line-height: 1;
     }
+    .btn-sound.muted { opacity: 0.35; }
 
     /* ═══════════════════════════════
        MESSAGES AREA
@@ -139,12 +140,11 @@
     .welcome {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      align-items: flex-start;
+      justify-content: flex-end;
       min-height: 100%;
-      padding: 32px 24px 24px;
-      gap: 12px;
-      text-align: center;
+      padding: 24px 0 16px;
+      gap: 10px;
     }
 
     .welcome-logo {
@@ -176,33 +176,34 @@
 
     .hints {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
+      flex-direction: row;
       gap: 8px;
-      margin-top: 8px;
+      margin-top: 4px;
       width: 100%;
-      max-width: 300px;
     }
 
     .hint {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 11px 16px;
-      font-size: 13.5px;
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 13px;
       color: var(--text-dim);
       text-align: left;
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 7px;
+      white-space: nowrap;
     }
     .hint:active {
       background: var(--purple-dim);
       border-color: var(--purple);
       color: var(--text);
     }
-    .hint-icon { font-size: 16px; flex-shrink: 0; }
+    .hint-icon { font-size: 14px; flex-shrink: 0; }
 
     /* ── Chat bubbles ── */
     .msg {
@@ -506,26 +507,40 @@
       <span id="statusLabel">Listo</span>
     </div>
     <button class="btn-desktop" onclick="goDesktop()" title="Escritorio">⊞</button>
+    <button class="btn-sound" id="btnSound" onclick="toggleSound()" title="Silenciar voz">🔊</button>
   </header>
 
   <!-- ── MESSAGES ── -->
   <div class="messages" id="messages">
     <div class="welcome" id="welcome">
-      <div class="welcome-logo">D</div>
-      <div class="welcome-title">Tu negocio,<br>gestionado hablando.</div>
-      <div class="welcome-sub">Crea facturas, cobra clientes y controla tu tesorería con una sola frase.</div>
+      <!-- Burbuja de saludo del bot -->
+      <div class="msg ai" style="width:100%;max-width:340px;margin-bottom:4px;">
+        <div class="bubble">
+          😈 <strong>Hola, soy tu Diablillo.</strong><br>
+          Solo ejecuto órdenes dentro de la app:<br>
+          cobros, gastos, facturas, clientes.<br><br>
+          ¿Qué apuntamos?
+        </div>
+      </div>
+      <!-- Chips de acción rápida -->
       <div class="hints">
-        <div class="hint" onclick="useHint('¿Cuánto he cobrado este mes?')">
-          <span class="hint-icon">💰</span> ¿Cuánto he cobrado este mes?
+        <div class="hint" onclick="useHint('Cobré 45€ de manicura a María')">
+          <span class="hint-icon">💰</span> Registrar cobro
         </div>
-        <div class="hint" onclick="useHint('Crea un albarán para mi próximo cliente')">
-          <span class="hint-icon">📋</span> Crear albarán para un cliente
+        <div class="hint" onclick="useHint('Gasté 80€ en tinte Wella')">
+          <span class="hint-icon">💸</span> Apuntar gasto
         </div>
-        <div class="hint" onclick="useHint('Manda la factura pendiente de Juan')">
-          <span class="hint-icon">📨</span> Mandar factura pendiente
+        <div class="hint" onclick="useHint('¿Cuánto he cobrado hoy?')">
+          <span class="hint-icon">📊</span> ¿Cuánto llevo hoy?
         </div>
-        <div class="hint" onclick="useHint('¿Cuánto tengo pendiente de cobrar?')">
-          <span class="hint-icon">⏳</span> Ver cobros pendientes
+        <div class="hint" onclick="useHint('¿Quién me debe dinero?')">
+          <span class="hint-icon">⏳</span> Ver quién me debe
+        </div>
+        <div class="hint" onclick="useHint('Crea factura para Ana por 120€ de coloración')">
+          <span class="hint-icon">🧾</span> Crear factura
+        </div>
+        <div class="hint" onclick="useHint('Nuevo cliente Laura Pérez teléfono 612345678')">
+          <span class="hint-icon">👥</span> Nuevo cliente
         </div>
       </div>
     </div>
@@ -649,6 +664,7 @@ function removeTyping() { document.getElementById('typing')?.remove(); }
 let pendingAction = null;
 
 async function submit(userText) {
+  primeAudioContext(); // SYNC: desbloquear AudioContext antes del primer await (clave para iOS)
   const field = document.getElementById('field');
   const msg = userText || field.value.trim();
   if (!msg) return;
@@ -666,10 +682,24 @@ async function submit(userText) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${auth.token}`
       },
-      body: JSON.stringify({ userInput: msg })
+      body: JSON.stringify({ userInput: msg, salon_id: auth.salon_id })
     });
-    const data = await res.json();
+
+    let data;
+    try { data = await res.json(); } catch(e) { data = {}; }
+
     removeTyping();
+
+    if (!res.ok) {
+      setStatus('Error ' + res.status);
+      if (res.status === 401 || res.status === 403) {
+        addMsg('ai', '🔐 Sesión expirada. <a href="index-login.html" style="color:var(--purple)">Inicia sesión de nuevo</a>.');
+      } else {
+        addMsg('ai', `❌ Error ${res.status}: ${data.error || data.message || 'Sin respuesta del servidor'}`);
+      }
+      return;
+    }
+
     setStatus('Listo');
 
     if (data.status === 'pending_confirmation' && data.card) {
@@ -682,11 +712,13 @@ async function submit(userText) {
     } else {
       const reply = data.message || data.reply || '✓ Hecho.';
       addMsg('ai', escHtml(reply).replace(/\n/g,'<br>'));
+      speakResponse(reply);  // TTS en respuestas normales
     }
   } catch (err) {
     removeTyping();
     setStatus('Sin conexión');
-    addMsg('ai', '❌ Error de conexión. Inténtalo de nuevo.');
+    const errMsg = (err && err.message) ? err.message : String(err);
+    addMsg('ai', `❌ Fallo de red: ${errMsg.includes('fetch') ? 'CORS o sin conexión' : errMsg}`);
   }
 }
 
@@ -709,7 +741,9 @@ async function confirmSheet() {
     const data = await res.json();
     removeTyping();
     setStatus('Listo');
-    addMsg('ai', escHtml(data.message || data.reply || '✅ ¡Hecho! Registrado en tu contabilidad.').replace(/\n/g,'<br>'));
+    const confirmReply = data.message || data.reply || '✅ ¡Hecho! Registrado en tu contabilidad.';
+    addMsg('ai', escHtml(confirmReply).replace(/\n/g,'<br>'));
+    speakResponse(confirmReply);
   } catch {
     removeTyping();
     addMsg('ai', '❌ Error al confirmar. Inténtalo de nuevo.');
@@ -777,14 +811,9 @@ async function startVoice() {
 
     recog.onerror = (ev) => {
       console.warn('SR error:', ev.error);
-      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-        stopVoice();
-        addMsg('ai', '🎙 Micrófono bloqueado. Ve a Ajustes → Safari → Micrófono → Permitir.');
-      } else {
-        // Fallo silencioso → usar fallback
-        if (recog) { try { recog.abort(); } catch(e){} recog = null; }
-        startMediaRecorderFallback();
-      }
+      // Cualquier error de SR → caer al MediaRecorder (más fiable en iOS)
+      if (recog) { try { recog.abort(); } catch(e){} recog = null; }
+      startMediaRecorderFallback();
     };
 
     try {
@@ -872,6 +901,111 @@ function stopVoice() {
   closeVoiceUI();
   if (recog) { try { recog.stop(); } catch(e){} recog = null; }
   if (mediaRec && mediaRec.state !== 'inactive') { try { mediaRec.stop(); } catch(e){} mediaRec = null; }
+}
+
+/* ── TTS — Diabolus habla (ElevenLabs + AudioContext iOS fix) ── */
+let ttsEnabled = true;
+let ttsCurrentSource = null;
+
+// AudioContext compartido — se desbloquea en el primer gesto del usuario
+let _audioCtx = null;
+
+function getAudioCtx() {
+  if (!_audioCtx) {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return _audioCtx;
+}
+
+// Llamar SINCRÓNICAMENTE en el primer gesto (antes de cualquier await)
+// Reproduce un buffer silencioso → desbloquea el AudioContext permanentemente en iOS
+function primeAudioContext() {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch(e) {}
+}
+
+function toggleSound() {
+  ttsEnabled = !ttsEnabled;
+  const btn = document.getElementById('btnSound');
+  btn.textContent = ttsEnabled ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !ttsEnabled);
+  if (!ttsEnabled) stopCurrentAudio();
+  primeAudioContext();
+}
+
+function stopCurrentAudio() {
+  if (ttsCurrentSource) {
+    try { ttsCurrentSource.stop(); } catch(e) {}
+    ttsCurrentSource = null;
+  }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+async function speakResponse(text) {
+  if (!ttsEnabled || !text) return;
+  stopCurrentAudio();
+
+  const clean = text
+    .replace(/[*_~`#>]/g, '')
+    .replace(/\p{Emoji}/gu, '')
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+    .replace(/\n+/g, '. ')
+    .trim()
+    .slice(0, 600);
+
+  if (!clean) return;
+
+  try {
+    const a = getAuth();
+    const res = await fetch(`${API}/api/agent/tts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${a.token}`
+      },
+      body: JSON.stringify({ text: clean })
+    });
+
+    if (!res.ok) throw new Error('TTS ' + res.status);
+
+    const arrayBuf = await res.arrayBuffer();
+    if (!arrayBuf || arrayBuf.byteLength < 100) throw new Error('Audio vacío');
+
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') {
+      try { await ctx.resume(); } catch(e) {}
+    }
+
+    const audioBuffer = await ctx.decodeAudioData(arrayBuf.slice(0));
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    ttsCurrentSource = source;
+    source.onended = () => { ttsCurrentSource = null; };
+    source.start(0);
+
+  } catch(e) {
+    // Fallback: speechSynthesis nativo
+    try {
+      if (window.speechSynthesis) {
+        const u = new SpeechSynthesisUtterance(clean.slice(0, 300));
+        u.lang = 'es-ES';
+        u.rate = 1.05;
+        const voices = window.speechSynthesis.getVoices();
+        const esVoice = voices.find(v => v.lang.startsWith('es') && v.localService)
+                     || voices.find(v => v.lang.startsWith('es'));
+        if (esVoice) u.voice = esVoice;
+        window.speechSynthesis.speak(u);
+      }
+    } catch(e2) {}
+  }
 }
 
 /* ── HELPERS ── */

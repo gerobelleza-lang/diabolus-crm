@@ -228,17 +228,26 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       }
     }
 
+    // Concepto SIEMPRE obligatorio — nunca usar defaults genéricos
+    if (!parsed.data.concept) {
+      return { needsInfo: isIncome
+        ? `¿De qué servicio son los ${parsed.data.amount}€? Ej: "corte", "color", "manicura". ¿El importe lleva IVA incluido?`
+        : `¿En qué gastaste los ${parsed.data.amount}€? Ej: "tinte Wella", "alquiler", "electricidad"`
+      }
+    }
+
     const actionType  = isIncome ? 'registrar_ingreso' : 'registrar_gasto'
     const parameters  = isIncome
       ? {
-          importe:   parsed.data.amount,
-          concepto:  parsed.data.concept || 'Servicio',
-          cliente:   parsed.data.clientName !== 'Cliente' ? parsed.data.clientName : undefined,
-          categoria: 'servicios',
+          importe:      parsed.data.amount,
+          concepto:     parsed.data.concept,
+          cliente:      parsed.data.clientName !== 'Cliente' ? parsed.data.clientName : undefined,
+          categoria:    'servicios',
+          iva_incluido: true,
         }
       : {
           importe:          parsed.data.amount,
-          concepto:         parsed.data.concept || 'Gasto',
+          concepto:         parsed.data.concept,
           es_gasto_empresa: true,
           categoria:        suggestCategory(parsed.data.concept || ''),
         }
@@ -615,9 +624,9 @@ async function fetchIncome(salonId: string): Promise<string> {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     const { data: txns } = await getSupabase()
       .from('transactions').select('amount').eq('salon_id', salonId).eq('type', 'income').gte('created_at', startOfMonth)
-    if (!txns?.length) return '📈 Ingresos este mes: 0 € — Aún no has registrado ningún ingreso este mes. Dime "cobré X€ de [cliente]" para apuntarlo.'
+    if (!txns?.length) return 'No hay ingresos registrados este mes.'
     const total = txns.reduce((s, t) => s + (t.amount || 0), 0)
-    return `📈 Ingresos este mes: ${total.toFixed(2)} € (${txns.length} cobro${txns.length !== 1 ? 's' : ''} registrado${txns.length !== 1 ? 's' : ''})`
+    return `📈 Ingresos este mes: €${total.toFixed(2)} (${txns.length} registros)`
   } catch { return 'No se pudo consultar los ingresos.' }
 }
 
@@ -627,8 +636,8 @@ async function fetchExpenses(salonId: string): Promise<string> {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     const { data: txns } = await getSupabase()
       .from('transactions').select('amount').eq('salon_id', salonId).eq('type', 'expense').gte('created_at', startOfMonth)
-    if (!txns?.length) return '📉 Gastos este mes: 0 € — Aún no has registrado ningún gasto este mes. Dime "gasté X€ en [concepto]" para apuntarlo.'
+    if (!txns?.length) return 'No hay gastos registrados este mes.'
     const total = txns.reduce((s, t) => s + (t.amount || 0), 0)
-    return `📉 Gastos este mes: ${total.toFixed(2)} € (${txns.length} gasto${txns.length !== 1 ? 's' : ''} registrado${txns.length !== 1 ? 's' : ''})`
+    return `📉 Gastos este mes: €${total.toFixed(2)} (${txns.length} registros)`
   } catch { return 'No se pudo consultar los gastos.' }
 }
