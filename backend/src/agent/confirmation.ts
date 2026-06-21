@@ -117,6 +117,7 @@ function buildCardFields(
       ).join(' · ')
       return [
         { label: 'Cliente',     value: p.cliente_nombre || p.cliente || '—' },
+        ...(p.cif_nif ? [{ label: 'CIF/NIF', value: p.cif_nif }] : []),
         { label: 'Líneas',      value: lineasText || '—' },
         { label: 'Total',       value: formatImporte(total) },
         { label: 'Fecha',       value: formatDate(p.fecha) },
@@ -152,6 +153,7 @@ function buildCardFields(
       return [
         { label: 'Cliente',  value: p.cliente_nombre || p.cliente || '—' },
         { label: 'Email',    value: p.cliente_email || '—' },
+        ...(p.cif_nif ? [{ label: 'CIF/NIF', value: p.cif_nif }] : []),
         { label: 'Líneas',   value: lineasText || '—' },
         { label: 'Total',    value: formatImporte(total) },
         { label: 'Acción',   value: '🧾 Crear factura + 📧 Enviar email' },
@@ -456,6 +458,16 @@ async function executeCrearFactura(
     await supabase.from('invoice_items').insert(items)
   }
 
+  // Si vino CIF/NIF y el cliente no lo tenía → actualizarlo
+  if (p.cif_nif && p.cliente_id) {
+    try {
+      const { data: cl } = await supabase.from('clients').select('nif').eq('id', p.cliente_id).single()
+      if (cl && !cl.nif) {
+        await supabase.from('clients').update({ nif: p.cif_nif }).eq('id', p.cliente_id).eq('salon_id', salonId)
+      }
+    } catch {}
+  }
+
   return {
     ok: true,
     message: `✅ Factura creada (borrador)\n• Número: ${invoiceNumber}\n• Cliente: ${p.cliente_nombre || p.cliente || '—'}\n• Total: ${formatImporte(total)}\n• Estado: pendiente`,
@@ -674,6 +686,16 @@ async function executeEnviarFactura(
       total_line:      (l.cantidad || 1) * l.precio_unitario * (1 + (l.iva !== undefined ? l.iva : 21) / 100),
     }))
     await supabase.from('invoice_items').insert(items)
+  }
+
+  // 4b. Si vino CIF/NIF y el cliente no lo tenía → actualizarlo
+  if (p.cif_nif && p.cliente_id) {
+    try {
+      const { data: cl } = await supabase.from('clients').select('nif').eq('id', p.cliente_id).single()
+      if (cl && !cl.nif) {
+        await supabase.from('clients').update({ nif: p.cif_nif }).eq('id', p.cliente_id).eq('salon_id', salonId)
+      }
+    } catch {}
   }
 
   // 5. Obtener email del cliente (puede venir en p.cliente_email o buscarlo en BD)

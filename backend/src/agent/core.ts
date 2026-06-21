@@ -268,67 +268,64 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     return { card }
   }
 
-  // ── enviar_factura (crear + enviar email en un paso) ─────────────────────
-  if (/(?:crea|haz|genera|manda|envía|envia).{0,25}factura.{0,40}(?:envía|envia|manda|remite|al correo|por email|por correo|y envía|y envia|y manda)|(?:envía|envia|manda).{0,25}factura.{0,25}(?:para|a\s)|factura.{0,30}(?:al correo|por email|por correo|y envíasela|y enviasela|y mándasela|y mandasela)/i.test(userInput)) {
-    const mCliente  = userInput.match(/(?:para|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:por|de|con|al correo|,|$)|\s*$)/i)
-    const mImporte  = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*€?(?:\s*euros?)?/i)
-    const mEmail    = userInput.match(/(?:al correo|por email|a)\s+([\w.+-]+@[\w.-]+\.[a-z]{2,})/i)
-    const mConcepto = userInput.match(/(?:por|concepto|servicio)[:\s]+([^,\n.]{3,60})/i)
-
-    const clienteNombre = mCliente ? mCliente[1].trim() : ''
-    const importeNum    = mImporte ? parseFloat(mImporte[1].replace(',', '.')) : 0
-    const emailInput    = mEmail ? mEmail[1].trim() : ''
-    const concepto      = mConcepto ? mConcepto[1].trim() : 'Servicios'
-
-    if (!clienteNombre) return { needsInfo: '¿Para qué cliente? Ej: "crea factura para Ana por 150€ y envíasela"' }
-    if (!importeNum)    return { needsInfo: '¿Por qué importe? Ej: "crea factura para Ana por 150€ y envíasela"' }
-
-    const { data: clientes } = await supabase
-      .from('clients')
-      .select('id, name, email')
-      .eq('salon_id', tenantId)
-      .ilike('name', `%${clienteNombre}%`)
-      .limit(3)
-
-    if (!clientes || clientes.length === 0) {
-      return { needsInfo: `No encontré al cliente "${clienteNombre}". ¿Quieres crearlo primero? Di "nuevo cliente ${clienteNombre}".` }
-    }
-
-    const cliente      = clientes[0]
-    const clienteEmail = emailInput || cliente.email || ''
-    const lineas       = [{ concepto, cantidad: 1, precio_unitario: importeNum / 1.21, iva: 21 }]
-
-    if (!clienteEmail) {
-      return { needsInfo: `${cliente.name} no tiene email registrado. ¿Cuál es su correo? O añádelo en la ficha del cliente.` }
-    }
-
-    const card = await createPendingAction('enviar_factura', {
-      cliente_id:     cliente.id,
-      cliente_nombre: cliente.name,
-      cliente_email:  clienteEmail,
-      lineas,
-      total:          importeNum,
-      fecha:          new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }),
-    }, tenantId, userId)
-    return { card }
-  }
-
-  // ── crear_factura ────────────────────────────────────────────────────────
+  // ── crear_factura / enviar_factura (crear + enviar en un paso) ───────────
   if (/crea.{0,10}factura|nueva factura|factura para|hazme.{0,10}factura|factura a\s|apunta.{0,10}factura|registra.{0,10}factura|hacer.{0,10}factura|pon.{0,10}factura|mete.{0,10}factura|generar?.{0,10}factura/i.test(userInput)) {
-    const mCliente  = userInput.match(/(?:para|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:por|de|con|,|$)|\s*$)/i)
-    const mImporte  = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*€?(?:\s*euros?)?/i)
-    const mConcepto = userInput.match(/(?:por|concepto|servicio)[:\s]+([^,\n.]{3,60})/i)
 
-    const clienteNombre = mCliente ? mCliente[1].trim() : ''
-    const importeNum    = mImporte ? parseFloat(mImporte[1].replace(',', '.')) : 0
-    const concepto      = mConcepto ? mConcepto[1].trim() : 'Servicios'
+    // 1. ¿Quiere NO enviar explícitamente?
+    const noEnviar     = /no env[íi]|sin enviar|solo crea|solo borrador/i.test(userInput)
+    // ¿Pide envío explícito? (para forzarlo aunque no haya email en BD)
+    const userWantsSend = !noEnviar && /env[íi]a|manda(?:l[ao])?|por\s+email|al\s+correo/i.test(userInput)
 
-    if (!clienteNombre) return { needsInfo: '¿Para qué cliente es la factura? Ej: "crea factura para Ana por 150€"' }
-    if (!importeNum)    return { needsInfo: '¿Por qué importe? Ej: "crea factura para Ana por 150€"' }
+    // 2. Extraer cliente — artículo inicial opcional (el/la/los/las/un/una)
+    const mCliente = userInput.match(
+      /(?:para|a)\s+(?:(?:el|la|los|las|un|una)\s+)?([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,55}?)(?:\s+(?:con|por|de|,)|$)/i
+    )
+    let clienteNombre = mCliente ? mCliente[1].trim() : ''
+    // Limpieza artículos residuales
+    clienteNombre = clienteNombre.replace(/^(?:el|la|los|las|un|una)\s+/i, '').trim()
 
+    // 3. Extraer importe — busca número seguido de €/eur* (evita "500 ml", CIFs, años)
+    let importeNum = 0
+    const mImporteUnit = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|eur\w*)/i)
+    if (mImporteUnit) {
+      importeNum = parseFloat(mImporteUnit[1].replace(',', '.'))
+    }
+
+    // 4. Extraer concepto — entre "concepto de/:" y "con el cif/nif" o fin
+    let concepto = ''
+    const mConcepto = userInput.match(
+      /(?:concepto\s+(?:de\s+)?)([^,\n]+?)(?:\s+con\s+(?:el\s+)?(?:cif|nif)|,|\s*$)/i
+    ) || userInput.match(
+      /\bpor\b\s+([a-záéíóúñA-ZÁÉÍÓÚÑ][^,\n]{3,80}?)(?:\s+con\s+|\s+cif\b|\s+nif\b|,|\s*$)/i
+    )
+    if (mConcepto) {
+      concepto = mConcepto[1].trim().replace(/^de\s+/i, '').trim()
+      concepto = concepto.charAt(0).toUpperCase() + concepto.slice(1)
+    }
+
+    // 5. Extraer CIF/NIF (letra + 7-8 dígitos, con posible espacio entre letra y número)
+    const mCif   = userInput.match(/(?:cif|nif)\D{0,35}([A-Z]\s*\d{6,8}[A-Z0-9]?)/i)
+    const cifNif = mCif ? mCif[1].replace(/\s/g, '').toUpperCase() : null
+
+    // 6. Extraer email directo del mensaje
+    const mEmailDir    = userInput.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
+    const emailDirecto = mEmailDir ? mEmailDir[1] : null
+
+    // 7. Datos obligatorios — pedir uno a uno
+    if (!clienteNombre) {
+      return { needsInfo: '¿Para qué cliente es la factura? Ej: "crea factura para Ana García por 150€"' }
+    }
+    if (!importeNum) {
+      return { needsInfo: `¿Por qué importe es la factura para ${clienteNombre}? Ej: "150 euros"` }
+    }
+    if (!concepto) {
+      return { needsInfo: `¿Cuál es el concepto de la factura para ${clienteNombre}? Ej: "servicios de peluquería"` }
+    }
+
+    // 8. Buscar cliente en BD
     const { data: clientes } = await supabase
       .from('clients')
-      .select('id, name')
+      .select('id, name, email, nif')
       .eq('salon_id', tenantId)
       .ilike('name', `%${clienteNombre}%`)
       .limit(3)
@@ -337,15 +334,37 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       return { needsInfo: `No encontré al cliente "${clienteNombre}". ¿Quieres crearlo primero? Di "nuevo cliente ${clienteNombre}".` }
     }
 
-    const cliente = clientes[0]
-    const lineas  = [{ concepto, cantidad: 1, precio_unitario: importeNum / 1.21, iva: 21 }]
-    const card    = await createPendingAction('crear_factura', {
+    const cliente     = clientes[0]
+    const clientEmail = emailDirecto || cliente.email || null
+
+    // 9. Decidir acción:
+    //    - Si pide envío explícito y no hay email → pedirlo
+    //    - Si hay email (y no rechaza) → crear + enviar
+    //    - Si no hay email → solo borrador
+    if (userWantsSend && !clientEmail) {
+      return { needsInfo: `Para enviar la factura a ${cliente.name} necesito su email. ¿Cuál es?` }
+    }
+    const doSend     = !noEnviar && !!clientEmail
+    const actionType = doSend ? 'enviar_factura' : 'crear_factura'
+
+    const lineas = [{
+      concepto,
+      cantidad:        1,
+      precio_unitario: importeNum / 1.21,
+      iva:             21,
+    }]
+
+    const params: Record<string, any> = {
       cliente_id:     cliente.id,
       cliente_nombre: cliente.name,
       lineas,
       total:          importeNum,
       fecha:          new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }),
-    }, tenantId, userId)
+    }
+    if (doSend)  params.cliente_email = clientEmail
+    if (cifNif)  params.cif_nif       = cifNif
+
+    const card = await createPendingAction(actionType, params, tenantId, userId)
     return { card }
   }
 
