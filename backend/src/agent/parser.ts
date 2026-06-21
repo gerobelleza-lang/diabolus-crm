@@ -67,6 +67,24 @@ export function parseUserInput(input: string): ParsedInput {
     return parseSendInvoice(input);
   }
 
+  // ── CONSULTA DE INGRESOS — ANTES de INCOME para evitar falsos positivos ──
+  // Cubre: "cuánto he cobrado", "cuánto cobré", "qué he cobrado este mes", "ingresos del mes"...
+  if (/cu[aá]nto\s+(he|ha|llevo|tengo|cobr|ingres)/i.test(lowerInput) ||
+      /cu[aá]nto.*\s+(cobrado|cobré|ingresado|ingresé|facturado|ganado)/i.test(lowerInput) ||
+      /qu[eé]\s+(he|ha)\s+(cobrado|ingresado|ganado|facturado)/i.test(lowerInput) ||
+      /mis\s+ingresos|ingresos\s+del\s+mes|ingresos\s+de\s+este/i.test(lowerInput)) {
+    return { intent: 'query_income', data: { type: 'income' }, confidence: 0.9 };
+  }
+
+  // ── CONSULTA DE GASTOS — ANTES de EXPENSE para evitar falsos positivos ──
+  // Cubre: "cuánto he gastado", "cuánto gasté", "mis gastos del mes"...
+  if (/cu[aá]nto\s+(he|ha|llevo|tengo|gast|pag)/i.test(lowerInput) ||
+      /cu[aá]nto.*\s+(gastado|gasté|pagado|pagué|desembolsado|comprado)/i.test(lowerInput) ||
+      /qu[eé]\s+(he|ha)\s+(gastado|pagado|comprado|desembolsado)/i.test(lowerInput) ||
+      /mis\s+gastos|gastos\s+del\s+mes|gastos\s+de\s+este/i.test(lowerInput)) {
+    return { intent: 'query_expense', data: { type: 'expense' }, confidence: 0.9 };
+  }
+
   // ── INCOME ─────────────────────────────────────────────────────────────────
   if (includesAny(lowerInput, INCOME_KEYWORDS)) {
     return parseIncome(input, amounts);
@@ -75,6 +93,12 @@ export function parseUserInput(input: string): ParsedInput {
   // ── EXPENSE ────────────────────────────────────────────────────────────────
   if (includesAny(lowerInput, EXPENSE_KEYWORDS)) {
     return parseExpense(input, amounts);
+  }
+
+  // Añadimos cuánto/cuanto a QUERY_KEYWORDS en tiempo de ejecución
+  const extendedQueryKw = [...QUERY_KEYWORDS, 'cuánto', 'cuanto', 'cuántos', 'cuantos', 'cuánta', 'cuanta']
+  if (includesAny(lowerInput, extendedQueryKw)) {
+    return parseQuery(input);
   }
 
   if (includesAny(lowerInput, QUERY_KEYWORDS)) {
