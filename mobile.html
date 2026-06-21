@@ -115,12 +115,13 @@
     }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    .btn-desktop {
+    .btn-desktop, .btn-sound {
       background: none; border: none;
       color: var(--text-dim);
       font-size: 17px; cursor: pointer;
       padding: 4px 6px; line-height: 1;
     }
+    .btn-sound.muted { opacity: 0.35; }
 
     /* ═══════════════════════════════
        MESSAGES AREA
@@ -506,6 +507,7 @@
       <span id="statusLabel">Listo</span>
     </div>
     <button class="btn-desktop" onclick="goDesktop()" title="Escritorio">⊞</button>
+    <button class="btn-sound" id="btnSound" onclick="toggleSound()" title="Silenciar voz">🔊</button>
   </header>
 
   <!-- ── MESSAGES ── -->
@@ -724,7 +726,9 @@ async function confirmSheet() {
     const data = await res.json();
     removeTyping();
     setStatus('Listo');
-    addMsg('ai', escHtml(data.message || data.reply || '✅ ¡Hecho! Registrado en tu contabilidad.').replace(/\n/g,'<br>'));
+    const confirmReply = data.message || data.reply || '✅ ¡Hecho! Registrado en tu contabilidad.';
+    addMsg('ai', escHtml(confirmReply).replace(/\n/g,'<br>'));
+    speakResponse(confirmReply);
   } catch {
     removeTyping();
     addMsg('ai', '❌ Error al confirmar. Inténtalo de nuevo.');
@@ -882,6 +886,44 @@ function stopVoice() {
   closeVoiceUI();
   if (recog) { try { recog.stop(); } catch(e){} recog = null; }
   if (mediaRec && mediaRec.state !== 'inactive') { try { mediaRec.stop(); } catch(e){} mediaRec = null; }
+}
+
+/* ── TTS — Diabolus habla ── */
+let ttsEnabled = true;
+let ttsAudio = null;
+
+function toggleSound() {
+  ttsEnabled = !ttsEnabled;
+  const btn = document.getElementById('btnSound');
+  btn.textContent = ttsEnabled ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !ttsEnabled);
+  if (!ttsEnabled && ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+}
+
+async function speakResponse(text) {
+  if (!ttsEnabled || !text) return;
+  // Detener audio previo si hay
+  if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+  try {
+    const a = getAuth();
+    const res = await fetch(`${API}/api/agent/tts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${a.token}`
+      },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) return; // silencioso — no interrumpir UX si falla
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    ttsAudio = new Audio(url);
+    ttsAudio.onended = () => { URL.revokeObjectURL(url); ttsAudio = null; };
+    ttsAudio.onerror = () => { URL.revokeObjectURL(url); ttsAudio = null; };
+    await ttsAudio.play();
+  } catch(e) {
+    // TTS es silencioso — nunca bloquea la UX
+  }
 }
 
 /* ── HELPERS ── */
