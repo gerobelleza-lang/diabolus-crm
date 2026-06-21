@@ -615,9 +615,9 @@ async function fetchIncome(salonId: string): Promise<string> {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     const { data: txns } = await getSupabase()
       .from('transactions').select('amount').eq('salon_id', salonId).eq('type', 'income').gte('created_at', startOfMonth)
-    if (!txns?.length) return 'No hay ingresos registrados este mes.'
+    if (!txns?.length) return '📈 Ingresos este mes: 0 € — Aún no has registrado ningún ingreso este mes. Dime "cobré X€ de [cliente]" para apuntarlo.'
     const total = txns.reduce((s, t) => s + (t.amount || 0), 0)
-    return `📈 Ingresos este mes: €${total.toFixed(2)} (${txns.length} registros)`
+    return `📈 Ingresos este mes: ${total.toFixed(2)} € (${txns.length} cobro${txns.length !== 1 ? 's' : ''} registrado${txns.length !== 1 ? 's' : ''})`
   } catch { return 'No se pudo consultar los ingresos.' }
 }
 
@@ -627,8 +627,8 @@ async function fetchExpenses(salonId: string): Promise<string> {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     const { data: txns } = await getSupabase()
       .from('transactions').select('amount').eq('salon_id', salonId).eq('type', 'expense').gte('created_at', startOfMonth)
-    if (!txns?.length) return 'No hay gastos registrados este mes.'
+    if (!txns?.length) return '📉 Gastos este mes: 0 € — Aún no has registrado ningún gasto este mes. Dime "gasté X€ en [concepto]" para apuntarlo.'
     const total = txns.reduce((s, t) => s + (t.amount || 0), 0)
-    return `📉 Gastos este mes: €${total.toFixed(2)} (${txns.length} registros)`
+    return `📉 Gastos este mes: ${total.toFixed(2)} € (${txns.length} gasto${txns.length !== 1 ? 's' : ''} registrado${txns.length !== 1 ? 's' : ''})`
   } catch { return 'No se pudo consultar los gastos.' }
 }
