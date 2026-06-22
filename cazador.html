@@ -34,7 +34,7 @@
     .nav-back:hover { color: var(--text); }
 
     /* LAYOUT */
-    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .container { max-width: 100%; padding: 0; }
 
     /* HEADER */
     .page-header { text-align: center; margin-bottom: 40px; }
@@ -143,12 +143,11 @@
     }
   </style>
 </head>
-<body>
+<body style="display:flex;flex-direction:row;min-height:100vh;overflow:hidden;">
+<aside id="db-sidebar"></aside>
+<main class="db-main" style="flex:1;overflow-y:auto;padding:32px 24px 60px;">
 
-<nav>
-  <a class="nav-brand" href="dashboard.html">🦇 Diabolus</a>
-  <a class="nav-back" href="dashboard.html">← Volver al panel</a>
-</nav>
+
 
 <div class="container">
 
@@ -466,6 +465,7 @@ const auth = getAuth();
 if (!auth?.token) { window.location.href = 'index-login.html'; }
 else { loadConfig(); loadStats(); }
 </script>
+</main>
 <script src="sidebar.js"></script>
 </body>
 </html>
