@@ -133,6 +133,18 @@ export function createApp() {
   // ─── Internal: Cazador Preview 08:00 (aviso al dueño antes de actuar) ─────
   app.post('/api/internal/cazador/preview', cazadorPreviewRoute)
 
+  // ─── Public: Meta WhatsApp webhook verification (no auth) ──────────────────
+  app.get('/api/demonio/wa-verify', async (c) => {
+    const mode      = c.req.query('hub.mode')
+    const token     = c.req.query('hub.verify_token')
+    const challenge = c.req.query('hub.challenge')
+    const expected  = c.env?.WA_VERIFY_TOKEN || 'diabolus_demonio_2026'
+    if (mode === 'subscribe' && token === expected) {
+      return new Response(challenge, { status: 200, headers: { 'Content-Type': 'text/plain' } })
+    }
+    return new Response('Forbidden', { status: 403 })
+  })
+
   // ─── Protected Routes ──────────────────────────────────────────────────────
   app.use('/api/*', authMiddleware)
   app.route('/api/dashboard', dashboardRoutes)
