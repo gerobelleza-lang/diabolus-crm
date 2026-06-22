@@ -1,430 +1,258 @@
 // @ts-nocheck
-import { Hono } from 'hono'
-import { getSupabaseAdmin } from '../integrations/supabase.js'
+import { Hono } from 'hono';
+import { createClient } from '@supabase/supabase-js';
 
-export const demonioRoutes = new Hono()
+const app = new Hono();
 
-/**
- * POST /api/demonio/execute
- * Ejecuta workflow N8N desde DIABOLUS
- */
-demonioRoutes.post('/execute', async (c) => {
-  try {
-    const body = await c.req.json().catch(() => ({}))
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-    const { action, data, auto_approve = false } = body as {
-      action: string
-      data: any
-      auto_approve?: boolean
-    }
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY!;
+const WA_TOKEN      = process.env.WHATSAPP_ACCESS_TOKEN!;
+const WA_PHONE_ID   = process.env.WHATSAPP_PHONE_NUMBER_ID!;
+const TG_TOKEN      = process.env.TELEGRAM_BOT_TOKEN!;
+const TG_CHAT       = process.env.TELEGRAM_CHAT_ID!;
 
-    // 1. VALIDAR USUARIO
-    const userId = c.get('userId') as string | undefined
-    const salonId = c.get('salonId') as string | undefined
+// ─── Hermes 3 via OpenRouter ──────────────────────────────────────────────────
+async function callHermes(systemPrompt: string, messages: any[]): Promise<string> {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENROUTER_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'nousresearch/hermes-3-llama-3.1-70b',
+      max_tokens: 300,
+      temperature: 0.75,
+      messages: [{ role: 'system', content: systemPrompt }, ...messages]
+    })
+  });
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || '';
+}
 
-    if (!userId || !salonId) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
-
-    // 2. VALIDAR ACCIÓN
-    const validActions = [
-      'import_clients',
-      'reconcile_bank',
-      'generate_report',
-      'sync_accounting'
-    ]
-
-    if (!validActions.includes(action)) {
-      return c.json({
-        error: `Invalid action. Valid: ${validActions.join(', ')}`
-      }, 400)
-    }
-
-    // 3. VALIDAR LÍMITES DE USO
-    const usage = await checkDemonioUsage(salonId)
-    if (usage.executions >= usage.limit) {
-      return c.json(
-        {
-          error: 'Demonio limit exceeded',
-          used: usage.executions,
-          limit: usage.limit,
-          message: `Has alcanzado el límite de ${usage.limit} ejecuciones este mes`
-        },
-        429
-      )
-    }
-
-    // 4. GUARDAR TAREA EN BD
-    const taskId = crypto.randomUUID()
-    const supabase = getSupabaseAdmin()
-
-    await supabase.from('demonio_tasks').insert([
-      {
-        id: taskId,
-        salon_id: salonId,
-        user_id: userId,
-        action: action,
-        status: 'pending',
-        data: data,
-        auto_approve: auto_approve,
-        created_at: new Date().toISOString()
-      }
-    ])
-
-    // 5. LLAMAR N8N WEBHOOK
-    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL
-
-    if (!n8nWebhookUrl) {
-      console.warn('[Demonio] N8N_WEBHOOK_URL not configured')
-      // Para dev, retornar mock
-      return c.json({
-        status: 'success_mock',
-        task_id: taskId,
-        message: 'Workflow initiated (mock mode)',
-        polling_url: `/api/demonio/status/${taskId}`
+// ─── Enviar WhatsApp ──────────────────────────────────────────────────────────
+async function sendWhatsApp(to: string, text: string): Promise<boolean> {
+  const res = await fetch(
+    `https://graph.facebook.com/v19.0/${WA_PHONE_ID}/messages`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${WA_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: to.replace(/[^0-9]/g, ''),
+        type: 'text',
+        text: { body: text }
       })
     }
+  );
+  return res.ok;
+}
 
-    try {
-      const response = await fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.DIABOLUS_SERVICE_TOKEN_N8N || ''}`
-        },
-        body: JSON.stringify({
-          task_id: taskId,
-          salon_id: salonId,
-          user_id: userId,
-          action: action,
-          data: data,
-          auto_approve: auto_approve,
-          callback_url: `${process.env.DIABOLUS_API_URL || 'http://localhost:3000'}/api/demonio/callback`
-        })
-      })
+// ─── Telegram alert ───────────────────────────────────────────────────────────
+async function telegramAlert(msg: string) {
+  await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: TG_CHAT, text: msg, parse_mode: 'HTML' })
+  });
+}
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
-        console.error('N8N error:', error)
+// ─── Clasificar intención ─────────────────────────────────────────────────────
+async function clasificarIntencion(
+  mensajeUsuario: string,
+  historial: any[],
+  salonNombre: string
+): Promise<{ intencion: string; respuesta: string }> {
+  const system = `Eres El Demonio, agente de captación de clientes para "${salonNombre}", un salón de belleza/peluquería.
+Tu misión: convertir leads fríos en citas.
+Tono: cercano, natural, nunca agresivo ni de vendedor. Como un amigo que te recomienda un sitio bueno.
+Responde SIEMPRE en español. Máximo 2-3 frases. Sin emojis excesivos.
 
-        await supabase
-          .from('demonio_tasks')
-          .update({
-            status: 'failed',
-            error: error.message || 'N8N workflow failed'
-          })
-          .eq('id', taskId)
+Clasifica la intención en: INTERESADO | PRECIO | DUDA | NO_INTERESA | SILENCIO | CITA_CONFIRMADA
 
-        return c.json(
-          {
-            error: 'N8N workflow failed',
-            details: error.message
-          },
-          500
-        )
-      }
-    } catch (fetchErr) {
-      console.error('[N8N Fetch] Error:', fetchErr)
-    }
+Responde en formato JSON estricto:
+{"intencion": "INTERESADO", "respuesta": "Tu mensaje de respuesta aquí"}`;
 
-    // 6. RETORNAR TASK ID
-    return c.json({
-      status: 'success',
-      task_id: taskId,
-      message: 'Workflow initiated',
-      polling_url: `/api/demonio/status/${taskId}`
-    })
-  } catch (err) {
-    console.error('[Demonio Execute] Error:', err)
-    return c.json({ error: 'Internal error' }, 500)
-  }
-})
-
-/**
- * GET /api/demonio/status/:taskId
- */
-demonioRoutes.get('/status/:taskId', async (c) => {
-  try {
-    const { taskId } = c.req.param()
-
-    const userId = c.get('userId') as string | undefined
-    if (!userId) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
-
-    const supabase = getSupabaseAdmin()
-
-    const { data, error } = await supabase
-      .from('demonio_tasks')
-      .select('*')
-      .eq('id', taskId)
-      .single()
-
-    if (error) {
-      return c.json({ error: 'Task not found' }, 404)
-    }
-
-    if (data.user_id !== userId) {
-      return c.json({ error: 'Unauthorized' }, 403)
-    }
-
-    return c.json({
-      task_id: taskId,
-      status: data.status,
-      action: data.action,
-      result: data.result || null,
-      error: data.error || null,
-      preview: data.preview || null,
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    })
-  } catch (err) {
-    console.error('[Demonio Status] Error:', err)
-    return c.json({ error: 'Internal error' }, 500)
-  }
-})
-
-/**
- * POST /api/demonio/callback
- * N8N llama aquí cuando termina el workflow (sin auth)
- */
-demonioRoutes.post('/callback', async (c) => {
-  try {
-    const body = await c.req.json().catch(() => ({}))
-
-    const { task_id, status, result, error, preview } = body
-
-    if (!task_id || !status) {
-      return c.json({ error: 'Missing task_id or status' }, 400)
-    }
-
-    const supabase = getSupabaseAdmin()
-
-    const { error: updateErr } = await supabase
-      .from('demonio_tasks')
-      .update({
-        status: status,
-        result: result,
-        error: error,
-        preview: preview,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', task_id)
-
-    if (updateErr) {
-      return c.json({ error: 'Failed to update task' }, 500)
-    }
-
-    if (status === 'completed') {
-      const { data: task } = await supabase
-        .from('demonio_tasks')
-        .select('*')
-        .eq('id', task_id)
-        .single()
-
-      if (task) {
-        await supabase.from('audit_log').insert([
-          {
-            user_id: task.user_id,
-            salon_id: task.salon_id,
-            action: `demonio_${task.action}`,
-            changes: result,
-            created_at: new Date().toISOString()
-          }
-        ])
-      }
-    }
-
-    return c.json({ received: true })
-  } catch (err) {
-    console.error('[Demonio Callback] Error:', err)
-    return c.json({ error: 'Internal error' }, 500)
-  }
-})
-
-/**
- * POST /api/demonio/approve/:taskId
- */
-demonioRoutes.post('/approve/:taskId', async (c) => {
-  try {
-    const { taskId } = c.req.param()
-
-    const userId = c.get('userId') as string | undefined
-    if (!userId) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
-
-    const supabase = getSupabaseAdmin()
-
-    const { data: task, error: fetchErr } = await supabase
-      .from('demonio_tasks')
-      .select('*')
-      .eq('id', taskId)
-      .single()
-
-    if (fetchErr || !task) {
-      return c.json({ error: 'Task not found' }, 404)
-    }
-
-    if (task.user_id !== userId) {
-      return c.json({ error: 'Unauthorized' }, 403)
-    }
-
-    if (task.status !== 'requires_approval') {
-      return c.json(
-        {
-          error: 'Task not pending approval',
-          current_status: task.status
-        },
-        400
-      )
-    }
-
-    await supabase
-      .from('demonio_tasks')
-      .update({ status: 'executing' })
-      .eq('id', taskId)
-
-    const approvalWebhook = process.env.N8N_APPROVAL_WEBHOOK
-    if (approvalWebhook) {
-      try {
-        await fetch(approvalWebhook, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task_id: taskId, action: 'approve' })
-        })
-      } catch (err) {
-        console.warn('[N8N Approval] Webhook failed:', err)
-      }
-    }
-
-    return c.json({
-      status: 'approved',
-      task_id: taskId,
-      message: 'Workflow approved and executing'
-    })
-  } catch (err) {
-    console.error('[Demonio Approve] Error:', err)
-    return c.json({ error: 'Internal error' }, 500)
-  }
-})
-
-/**
- * POST /api/demonio/reject/:taskId
- */
-demonioRoutes.post('/reject/:taskId', async (c) => {
-  try {
-    const { taskId } = c.req.param()
-
-    const userId = c.get('userId') as string | undefined
-    if (!userId) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
-
-    const supabase = getSupabaseAdmin()
-
-    const { data: task, error: fetchErr } = await supabase
-      .from('demonio_tasks')
-      .select('*')
-      .eq('id', taskId)
-      .single()
-
-    if (fetchErr || !task) {
-      return c.json({ error: 'Task not found' }, 404)
-    }
-
-    if (task.user_id !== userId) {
-      return c.json({ error: 'Unauthorized' }, 403)
-    }
-
-    await supabase
-      .from('demonio_tasks')
-      .update({
-        status: 'rejected',
-        error: 'User rejected changes'
-      })
-      .eq('id', taskId)
-
-    return c.json({ status: 'rejected', task_id: taskId })
-  } catch (err) {
-    console.error('[Demonio Reject] Error:', err)
-    return c.json({ error: 'Internal error' }, 500)
-  }
-})
-
-/**
- * GET /api/demonio/history
- */
-demonioRoutes.get('/history', async (c) => {
-  try {
-    const userId = c.get('userId') as string | undefined
-    const salonId = c.get('salonId') as string | undefined
-
-    if (!userId || !salonId) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
-
-    const supabase = getSupabaseAdmin()
-
-    const { data, error } = await supabase
-      .from('demonio_tasks')
-      .select('*')
-      .eq('salon_id', salonId)
-      .order('created_at', { ascending: false })
-      .limit(20)
-
-    if (error) {
-      return c.json({ error: 'Failed to fetch history' }, 500)
-    }
-
-    return c.json({
-      tasks: data.map((task) => ({
-        id: task.id,
-        action: task.action,
-        status: task.status,
-        created_at: task.created_at,
-        updated_at: task.updated_at
-      }))
-    })
-  } catch (err) {
-    console.error('[Demonio History] Error:', err)
-    return c.json({ error: 'Internal error' }, 500)
-  }
-})
-
-/**
- * Valida límites de uso por plan
- */
-async function checkDemonioUsage(salonId: string) {
-  const supabase = getSupabaseAdmin()
+  const msgs = [...historial.slice(-6), { role: 'user', content: mensajeUsuario }];
 
   try {
-    const { data: salon } = await supabase
-      .from('salons')
-      .select('subscription_plan')
-      .eq('id', salonId)
-      .single()
-
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-
-    const { count } = await supabase
-      .from('demonio_tasks')
-      .select('*', { count: 'exact' })
-      .eq('salon_id', salonId)
-      .gte('created_at', startOfMonth.toISOString())
-
-    const limits: Record<string, number> = {
-      amigos: 10,
-      profesional: 100,
-      enterprise: 1000
-    }
-
-    const limit = limits[salon?.subscription_plan || 'amigos'] || 10
-
-    return { executions: count || 0, limit: limit }
-  } catch (err) {
-    console.error('[checkDemonioUsage] Error:', err)
-    return { executions: 0, limit: 1000 }
+    const raw = await callHermes(system, msgs);
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+    return { intencion: 'DUDA', respuesta: raw };
+  } catch {
+    return { intencion: 'DUDA', respuesta: '¡Hola! ¿En qué puedo ayudarte?' };
   }
 }
+
+// ─── POST /api/demonio/wa-callback  (webhook WhatsApp vía n8n) ───────────────
+app.post('/wa-callback', async (c) => {
+  let body: any;
+  try { body = await c.req.json(); } catch { return c.json({ ok: false, error: 'bad json' }, 400); }
+
+  const from    = (body.from    || body.wa_id || '').replace(/[^0-9]/g, '');
+  const mensaje = body.message  || body.text  || '';
+  const nombre  = body.nombre   || body.name  || 'Cliente';
+
+  if (!from || !mensaje) return c.json({ ok: false, error: 'missing fields' }, 400);
+
+  // Buscar lead
+  let lead: any = null;
+  try {
+    const { data } = await supabase
+      .from('pacto_leads')
+      .select('*, pacto_campanas(salon_id, salons(nombre))')
+      .eq('whatsapp', from)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    lead = data;
+  } catch {}
+
+  const salonNombre = lead?.pacto_campanas?.salons?.nombre || 'el salón';
+
+  // Historial conversación
+  let historial: any[] = [];
+  if (lead) {
+    try {
+      const { data: msgs } = await supabase
+        .from('demonio_conversaciones')
+        .select('role, content')
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: true })
+        .limit(12);
+      historial = msgs?.map(m => ({ role: m.role, content: m.content })) || [];
+    } catch {}
+  }
+
+  // Clasificar y responder
+  const { intencion, respuesta } = await clasificarIntencion(mensaje, historial, salonNombre);
+
+  if (lead) {
+    try {
+      // Guardar historial
+      await supabase.from('demonio_conversaciones').insert([
+        { lead_id: lead.id, role: 'user',      content: mensaje   },
+        { lead_id: lead.id, role: 'assistant', content: respuesta }
+      ]);
+
+      // Actualizar estado lead
+      let nuevoEstado = lead.estado || 'contactado';
+      if (intencion === 'INTERESADO' || intencion === 'PRECIO') nuevoEstado = 'respondio';
+      if (intencion === 'CITA_CONFIRMADA')                       nuevoEstado = 'cita_agendada';
+      if (intencion === 'NO_INTERESA')                           nuevoEstado = 'descartado';
+
+      await supabase.from('pacto_leads').update({
+        estado: nuevoEstado,
+        ultima_respuesta_at: new Date().toISOString()
+      }).eq('id', lead.id);
+
+      // Alert si lead caliente
+      if (intencion === 'INTERESADO' || intencion === 'CITA_CONFIRMADA') {
+        await telegramAlert(
+          `🔥 <b>Lead caliente — El Demonio</b>\n` +
+          `Salón: ${salonNombre}\n` +
+          `Lead: ${nombre} (+${from})\n` +
+          `Intención: ${intencion}\n` +
+          `Dice: "${mensaje.slice(0, 100)}"`
+        );
+      }
+    } catch {}
+  }
+
+  // Responder por WhatsApp si no ha dicho que no
+  if (intencion !== 'NO_INTERESA') {
+    await sendWhatsApp(from, respuesta);
+  }
+
+  return c.json({ ok: true, intencion, respuesta });
+});
+
+// ─── GET /api/demonio/pipeline  (Kanban por salón) ───────────────────────────
+app.get('/pipeline', async (c) => {
+  const salonId = c.get('salonId');
+  if (!salonId) return c.json({ ok: false, error: 'unauthorized' }, 401);
+
+  try {
+    const { data } = await supabase
+      .from('pacto_leads')
+      .select(`
+        id, nombre, whatsapp, estado, created_at, ultima_respuesta_at, followup_count,
+        pacto_campanas!inner(salon_id)
+      `)
+      .eq('pacto_campanas.salon_id', salonId)
+      .order('ultima_respuesta_at', { ascending: false })
+      .limit(200);
+
+    const leads = data || [];
+    const pipeline = {
+      contactado:    leads.filter(l => l.estado === 'contactado'   || !l.estado),
+      respondio:     leads.filter(l => l.estado === 'respondio'),
+      cita_agendada: leads.filter(l => l.estado === 'cita_agendada'),
+      descartado:    leads.filter(l => l.estado === 'descartado'),
+    };
+
+    return c.json({ ok: true, pipeline, total: leads.length });
+  } catch (e: any) {
+    return c.json({ ok: false, error: e.message }, 500);
+  }
+});
+
+// ─── POST /api/demonio/internal-followup  (trigger schedule n8n) ─────────────
+app.post('/internal-followup', async (c) => {
+  const ahora = new Date();
+  const hace3d = new Date(ahora.getTime() - 3 * 24 * 3600 * 1000).toISOString();
+
+  let leads: any[] = [];
+  try {
+    const { data } = await supabase
+      .from('pacto_leads')
+      .select('*, pacto_campanas(salon_id, salons(nombre))')
+      .in('estado', ['contactado', 'respondio'])
+      .not('whatsapp', 'is', null)
+      .or(`ultima_respuesta_at.lt.${hace3d},and(ultima_respuesta_at.is.null,created_at.lt.${hace3d})`);
+    leads = data || [];
+  } catch {}
+
+  let enviados = 0;
+  for (const lead of leads) {
+    const refDate  = lead.ultima_respuesta_at || lead.created_at;
+    const dias     = Math.floor((ahora.getTime() - new Date(refDate).getTime()) / (24 * 3600 * 1000));
+    const salon    = lead.pacto_campanas?.salons?.nombre || 'nosotros';
+    const followups = lead.followup_count || 0;
+
+    if (followups >= 2) continue; // Max 2 follow-ups
+
+    let msg = '';
+    if (dias >= 7 && followups === 1) {
+      msg = `Hola ${lead.nombre || ''} 👋 Entiendo que quizás no es el momento. Si algún día quieres pasarte por ${salon}, aquí estaremos. ¡Que te vaya bien!`;
+    } else if (dias >= 3 && followups === 0) {
+      msg = `Hola ${lead.nombre || ''}, ¿pudiste echarle un ojo? En ${salon} tenemos hueco esta semana — ¿te cuadra algún día?`;
+    }
+
+    if (msg) {
+      await sendWhatsApp(lead.whatsapp, msg);
+      try {
+        await supabase.from('demonio_conversaciones').insert([
+          { lead_id: lead.id, role: 'assistant', content: msg }
+        ]);
+        await supabase.from('pacto_leads').update({
+          followup_count: followups + 1,
+          ultima_respuesta_at: new Date().toISOString()
+        }).eq('id', lead.id);
+      } catch {}
+      enviados++;
+    }
+  }
+
+  return c.json({ ok: true, leads_procesados: leads.length, enviados });
+});
+
+export const demonioRoutes = app;

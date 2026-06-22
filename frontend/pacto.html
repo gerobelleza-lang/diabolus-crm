@@ -559,6 +559,17 @@
       .form-grid { grid-template-columns: 1fr; }
       .radio-group { grid-template-columns: 1fr; }
     }
+  
+    /* ── Kanban pipeline ── */
+    .kanban-col { background: rgba(255,255,255,.04); border-radius: 10px; overflow: hidden; min-height: 120px; }
+    .kanban-col-header { display:flex; justify-content:space-between; align-items:center; padding:.65rem 1rem; font-size:.8rem; font-weight:600; color:#e5e7eb; }
+    .kanban-count { background:rgba(255,255,255,.15); border-radius:999px; padding:.1rem .5rem; font-size:.75rem; }
+    .kanban-cards { padding:.5rem; display:flex; flex-direction:column; gap:.5rem; }
+    .kanban-card { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:7px; padding:.6rem .8rem; font-size:.78rem; }
+    .kanban-card .k-name { font-weight:600; color:#f3f4f6; margin-bottom:.2rem; }
+    .kanban-card .k-phone { color:#9ca3af; font-size:.72rem; }
+    .kanban-card .k-days { color:#6b7280; font-size:.7rem; margin-top:.2rem; }
+    @media (max-width:768px) { #pipeline-board { grid-template-columns:1fr 1fr !important; } }
   </style>
 </head>
 <body>
@@ -721,6 +732,53 @@
       <div class="empty-campaigns">
         <div class="big">🔥</div>
         <div>El diablo está en reposo.<br>Crea tu primera campaña.</div>
+      </div>
+    </div>
+
+    <!-- ═══ PIPELINE KANBAN ═══ -->
+    <div style="margin-top:2.5rem;">
+      <div class="section-header" style="margin-bottom:1.2rem;">
+        <h2>😈 Pipeline — El Demonio</h2>
+        <button class="btn-secondary" onclick="loadPipeline()" style="font-size:.8rem;padding:.35rem .9rem;">Actualizar</button>
+      </div>
+
+      <div id="pipeline-board" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;">
+        <!-- Contactado -->
+        <div class="kanban-col">
+          <div class="kanban-col-header" style="background:#374151;">
+            <span>📤 Contactado</span>
+            <span class="kanban-count" id="cnt-contactado">0</span>
+          </div>
+          <div class="kanban-cards" id="col-contactado"></div>
+        </div>
+        <!-- Respondió -->
+        <div class="kanban-col">
+          <div class="kanban-col-header" style="background:#1e3a5f;">
+            <span>💬 Respondió</span>
+            <span class="kanban-count" id="cnt-respondio">0</span>
+          </div>
+          <div class="kanban-cards" id="col-respondio"></div>
+        </div>
+        <!-- Cita agendada -->
+        <div class="kanban-col">
+          <div class="kanban-col-header" style="background:#14532d;">
+            <span>📅 Cita Agendada</span>
+            <span class="kanban-count" id="cnt-cita">0</span>
+          </div>
+          <div class="kanban-cards" id="col-cita"></div>
+        </div>
+        <!-- Descartado -->
+        <div class="kanban-col">
+          <div class="kanban-col-header" style="background:#3b1f1f;">
+            <span>🚫 Descartado</span>
+            <span class="kanban-count" id="cnt-descartado">0</span>
+          </div>
+          <div class="kanban-cards" id="col-descartado"></div>
+        </div>
+      </div>
+
+      <div id="pipeline-empty" style="display:none;text-align:center;padding:2rem;color:var(--muted);font-size:.9rem;">
+        😈 El Demonio aún no tiene leads. Lanza una campaña primero.
       </div>
     </div>
 
@@ -1189,6 +1247,47 @@ async function lanzarCampana() {
 }
 
 init()
+</script>
+<script>
+  async function loadPipeline() {
+    try {
+      const auth = JSON.parse(localStorage.getItem('diabolus_auth') || '{}');
+      const token = auth.token || auth.access_token || '';
+      const res = await fetch('https://diabolus-crm-api.vercel.app/api/demonio/pipeline', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!res.ok) return;
+      const { pipeline } = await res.json();
+      const cols = {
+        contactado:    { el:'col-contactado', cnt:'cnt-contactado' },
+        respondio:     { el:'col-respondio',  cnt:'cnt-respondio'  },
+        cita_agendada: { el:'col-cita',       cnt:'cnt-cita'       },
+        descartado:    { el:'col-descartado', cnt:'cnt-descartado' },
+      };
+      let totalLeads = 0;
+      for (const [key, cfg] of Object.entries(cols)) {
+        const leads = pipeline[key] || [];
+        totalLeads += leads.length;
+        document.getElementById(cfg.cnt).textContent = leads.length;
+        const col = document.getElementById(cfg.el);
+        col.innerHTML = leads.length === 0
+          ? '<div style="text-align:center;padding:.8rem;color:#6b7280;font-size:.75rem;">—</div>'
+          : leads.map(l => {
+              const dias = l.ultima_respuesta_at
+                ? Math.floor((Date.now() - new Date(l.ultima_respuesta_at).getTime()) / 86400000)
+                : null;
+              return '<div class="kanban-card">'
+                + '<div class="k-name">' + (l.nombre || 'Sin nombre') + '</div>'
+                + '<div class="k-phone">' + (l.whatsapp ? '+'+l.whatsapp : '—') + '</div>'
+                + (dias !== null ? '<div class="k-days">\u00dalt. actividad: ' + (dias===0?'hoy':'hace '+dias+'d') + '</div>' : '')
+                + '</div>';
+            }).join('');
+      }
+      document.getElementById('pipeline-empty').style.display = totalLeads===0 ? 'block' : 'none';
+      document.getElementById('pipeline-board').style.display  = totalLeads===0 ? 'none' : 'grid';
+    } catch(e) { console.warn('Pipeline error:', e); }
+  }
+  document.addEventListener('DOMContentLoaded', () => setTimeout(loadPipeline, 1500));
 </script>
 </body>
 </html>
