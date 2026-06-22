@@ -82,6 +82,23 @@
   .toast.show{opacity:1}
   .toast-success{background:#10B981;color:#fff}
   .toast-error{background:#EF4444;color:#fff}
+
+  /* Status badges */
+  .status-badge {
+    display: inline-block;
+    padding: .2rem .55rem;
+    border-radius: 1rem;
+    font-size: .75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .15s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .status-badge:hover { opacity: .75; }
+  .status-pendiente  { background: rgba(251,191,36,.15); color: #f59e0b; border: 1px solid rgba(251,191,36,.3); }
+  .status-revisado   { background: rgba(34,197,94,.15);  color: #22c55e; border: 1px solid rgba(34,197,94,.3); }
+  .status-gestoria   { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
 </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
@@ -135,6 +152,15 @@
         <input id="filterTag" type="text" placeholder="ej: campaña verano" onkeydown="if(event.key==='Enter')applyFilters()">
       </div>
       <div class="filter-group">
+        <label>Estado</label>
+        <select id="filterStatus" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option value="pendiente">⏳ Pendiente</option>
+          <option value="revisado">✅ Revisado</option>
+          <option value="enviado_gestoria">📤 En gestoría</option>
+        </select>
+      </div>
+      <div class="filter-group">
         <label>Buscar</label>
         <input id="filterSearch" type="text" placeholder="concepto…" onkeydown="if(event.key==='Enter')applyFilters()">
       </div>
@@ -169,10 +195,11 @@
             <th>Etiquetas</th>
             <th>Importe</th>
             <th>Tipo</th>
+            <th>Estado</th>
           </tr>
         </thead>
         <tbody id="txBody">
-          <tr class="loading-row"><td colspan="7">Cargando transacciones…</td></tr>
+          <tr class="loading-row"><td colspan="8">Cargando transacciones…</td></tr>
         </tbody>
       </table>
       <div class="pagination">
@@ -332,13 +359,14 @@ async function loadTransactions(page = 1) {
   if (activeFilters.search)   params.set('search', activeFilters.search)
   if (activeFilters.date_from) params.set('date_from', activeFilters.date_from)
   if (activeFilters.date_to)   params.set('date_to', activeFilters.date_to)
+  if (activeFilters.status)    params.set('status', activeFilters.status)
 
   const tbody = document.getElementById('txBody')
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Cargando…</td></tr>'
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Cargando…</td></tr>'
 
   const res = await authFetch(`/api/transactions?${params}`)
   if (!res || !res.ok) {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Error al cargar transacciones.</td></tr>'
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Error al cargar transacciones.</td></tr>'
     return
   }
   const { transactions, total, limit } = await res.json()
@@ -349,7 +377,7 @@ async function loadTransactions(page = 1) {
   document.getElementById('btnNext').disabled = currentPage >= totalPages
 
   if (!transactions || transactions.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">📭</div><p>Sin movimientos con estos filtros.</p><a href="chat.html" class="btn btn-primary btn-sm">Registrar movimiento</a></div></td></tr>`
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">📭</div><p>Sin movimientos con estos filtros.</p><a href="chat.html" class="btn btn-primary btn-sm">Registrar movimiento</a></div></td></tr>`
     return
   }
 
@@ -374,6 +402,14 @@ function renderRow(tx) {
     `<span class="tag-pill">${escHtml(tag)}<span class="remove-tag" onclick="removeTag('${tx.id}','${escHtml(tag)}')">✕</span></span>`
   ).join('')
 
+  const statusMap = {
+    pendiente:        { label: '⏳ Pendiente',   cls: 'status-pendiente' },
+    revisado:         { label: '✅ Revisado',     cls: 'status-revisado' },
+    enviado_gestoria: { label: '📤 Gestoría',    cls: 'status-gestoria' }
+  }
+  const txStatus = tx.status || 'pendiente'
+  const statusInfo = statusMap[txStatus] || { label: txStatus, cls: 'status-pendiente' }
+
   return `<tr id="row-${tx.id}">
     <td>${date}</td>
     <td>${escHtml(tx.description || '')}</td>
@@ -391,7 +427,39 @@ function renderRow(tx) {
     </td>
     <td>${amountStr}</td>
     <td>${typebadge}</td>
+    <td>
+      <span class="status-badge ${statusInfo.cls}" onclick="cycleStatus('${tx.id}','${txStatus}')" title="Clic para cambiar estado">
+        ${statusInfo.label}
+      </span>
+    </td>
   </tr>`
+}
+
+// ─── Cambiar estado ──────────────────────────────────────────────────────────
+const STATUS_CYCLE = ['pendiente', 'revisado', 'enviado_gestoria']
+async function cycleStatus(txId, current) {
+  const idx = STATUS_CYCLE.indexOf(current)
+  const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length]
+  const res = await authFetch(`/api/transactions/${txId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: next })
+  })
+  if (!res) return
+  const data = await res.json()
+  if (!res.ok) { showToast(data.error || 'Error al cambiar estado', 'error'); return }
+  const statusMap = {
+    pendiente:        { label: '⏳ Pendiente',   cls: 'status-pendiente' },
+    revisado:         { label: '✅ Revisado',     cls: 'status-revisado' },
+    enviado_gestoria: { label: '📤 Gestoría',    cls: 'status-gestoria' }
+  }
+  const info = statusMap[next]
+  const badge = document.querySelector(`#row-${txId} .status-badge`)
+  if (badge) {
+    badge.className = `status-badge ${info.cls}`
+    badge.textContent = info.label
+    badge.setAttribute('onclick', `cycleStatus('${txId}','${next}')`)
+  }
+  showToast(`Estado → ${info.label} ✅`)
 }
 
 function getCatLabel(slug) {
@@ -536,6 +604,7 @@ function applyFilters() {
     search:    document.getElementById('filterSearch').value.trim(),
     date_from: document.getElementById('filterFrom').value,
     date_to:   document.getElementById('filterTo').value,
+    status:    document.getElementById('filterStatus')?.value || '',
   }
   loadTransactions(1)
 }
@@ -546,6 +615,8 @@ function clearFilters() {
   document.getElementById('filterSearch').value = ''
   document.getElementById('filterFrom').value = ''
   document.getElementById('filterTo').value = ''
+  const fStatus = document.getElementById('filterStatus')
+  if (fStatus) fStatus.value = ''
   activeFilters = {}
   loadTransactions(1)
 }
