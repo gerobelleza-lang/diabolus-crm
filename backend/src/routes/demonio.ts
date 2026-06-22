@@ -92,6 +92,18 @@ Responde en formato JSON estricto:
   }
 }
 
+// ─── GET /api/demonio/wa-verify  (Meta webhook challenge) ────────────────────
+app.get('/wa-verify', (c) => {
+  const mode      = c.req.query('hub.mode');
+  const token     = c.req.query('hub.verify_token');
+  const challenge = c.req.query('hub.challenge');
+  const expected  = process.env.WA_VERIFY_TOKEN || 'diabolus_demonio_2026';
+  if (mode === 'subscribe' && token === expected) {
+    return c.text(challenge || '', 200);
+  }
+  return c.text('Forbidden', 403);
+});
+
 // ─── POST /api/demonio/wa-callback  (webhook WhatsApp vía n8n) ───────────────
 app.post('/wa-callback', async (c) => {
   let body: any;
