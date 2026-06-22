@@ -145,6 +145,143 @@ export function createApp() {
     return new Response('Forbidden', { status: 403 })
   })
 
+  // ─── Public: Meta WhatsApp incoming messages ─────────────────────────────────
+  app.post('/api/demonio/wa-verify', async (c) => {
+    let body: any;
+    try { body = await c.req.json(); } catch { return c.json({ ok: true }); }
+    if (body.object !== 'whatsapp_business_account') return c.json({ ok: true });
+
+    const entry   = body.entry?.[0];
+    const change  = entry?.changes?.[0]?.value;
+    const msg     = change?.messages?.[0];
+    const contact = change?.contacts?.[0];
+    if (!msg || msg.type !== 'text') return c.json({ ok: true });
+
+    const from    = msg.from || '';
+    const mensaje = msg.text?.body || '';
+    const nombre  = contact?.profile?.name || 'Cliente';
+    if (!from || !mensaje) return c.json({ ok: true });
+
+    const SUPABASE_URL = c.env?.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co';
+    const SUPABASE_KEY = c.env?.SUPABASE_SERVICE_ROLE_KEY || '';
+    const OR_KEY       = c.env?.OPENROUTER_API_KEY || '';
+    const WA_TOKEN     = c.env?.WHATSAPP_TOKEN || '';
+    const WA_PHONE_ID  = c.env?.WHATSAPP_PHONE_NUMBER_ID || '1214990365020353';
+    const TG_TOKEN     = c.env?.TELEGRAM_BOT_TOKEN || '';
+    const TG_CHAT      = c.env?.TELEGRAM_CHAT_ID || '8356150792';
+
+    const sb = (path: string, opts?: any) =>
+      fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+          ...opts?.headers
+        },
+        ...opts
+      });
+
+    // Buscar lead por número WA
+    let lead: any = null;
+    try {
+      const r = await sb(`pacto_leads?whatsapp=eq.${from}&order=created_at.desc&limit=1&select=*,pacto_campanas(salon_id,salons(nombre))`);
+      const arr = await r.json();
+      lead = arr?.[0] || null;
+    } catch {}
+
+    const salonNombre = lead?.pacto_campanas?.salons?.nombre || 'el salón';
+
+    // Historial conversación
+    let historial: any[] = [];
+    if (lead) {
+      try {
+        const r = await sb(`demonio_conversaciones?lead_id=eq.${lead.id}&order=created_at.asc&limit=12&select=role,content`);
+        const arr = await r.json();
+        historial = arr?.map((m: any) => ({ role: m.role, content: m.content })) || [];
+      } catch {}
+    }
+
+    // LLM — Hermes 3
+    const systemPrompt = `Eres El Demonio, agente de ventas íntimo y persuasivo de ${salonNombre}. 
+Nunca eres agresivo. Hablas como un amigo de confianza que conoce el sector belleza.
+Clasifica la intención del cliente en: INTERESADO, PRECIO, DUDA, NO_INTERESA, CITA_CONFIRMADA.
+Responde en 2-3 frases naturales, cálidas y directas. Nunca menciones que eres IA.
+Devuelve JSON: {"intencion":"...", "respuesta":"..."}`;
+
+    let intencion = 'DUDA';
+    let respuesta = `¡Hola ${nombre}! 😊 Me alegra que hayas escrito. ¿En qué puedo ayudarte?`;
+
+    try {
+      const llmRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${OR_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'nousresearch/hermes-3-llama-3.1-70b',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...historial,
+            { role: 'user', content: mensaje }
+          ],
+          max_tokens: 300, temperature: 0.7,
+          response_format: { type: 'json_object' }
+        })
+      });
+      const llmJson = await llmRes.json();
+      const parsed = JSON.parse(llmJson.choices?.[0]?.message?.content || '{}');
+      intencion = parsed.intencion || intencion;
+      respuesta = parsed.respuesta || respuesta;
+    } catch {}
+
+    // Guardar historial y actualizar estado
+    if (lead) {
+      try {
+        await sb('demonio_conversaciones', {
+          method: 'POST',
+          body: JSON.stringify([
+            { lead_id: lead.id, role: 'user',      content: mensaje   },
+            { lead_id: lead.id, role: 'assistant', content: respuesta }
+          ])
+        });
+        let nuevoEstado = lead.estado || 'contactado';
+        if (intencion === 'INTERESADO' || intencion === 'PRECIO') nuevoEstado = 'respondio';
+        if (intencion === 'CITA_CONFIRMADA')                       nuevoEstado = 'cita_agendada';
+        if (intencion === 'NO_INTERESA')                           nuevoEstado = 'descartado';
+        await sb(`pacto_leads?id=eq.${lead.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ estado: nuevoEstado, ultima_respuesta_at: new Date().toISOString() })
+        });
+        if (intencion === 'INTERESADO' || intencion === 'CITA_CONFIRMADA') {
+          fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: TG_CHAT,
+              parse_mode: 'HTML',
+              text: `🔥 <b>Lead caliente — El Demonio</b>\nSalón: ${salonNombre}\nLead: ${nombre} (+${from})\nIntención: ${intencion}\nDice: "${mensaje.slice(0,100)}"`
+            })
+          }).catch(() => {});
+        }
+      } catch {}
+    }
+
+    // Responder por WhatsApp
+    if (intencion !== 'NO_INTERESA' && WA_TOKEN) {
+      fetch(`https://graph.facebook.com/v19.0/${WA_PHONE_ID}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${WA_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: from,
+          type: 'text',
+          text: { body: respuesta }
+        })
+      }).catch(() => {});
+    }
+
+    return c.json({ ok: true });
+  })
+
   // ─── Protected Routes ──────────────────────────────────────────────────────
   app.use('/api/*', authMiddleware)
   app.route('/api/dashboard', dashboardRoutes)
