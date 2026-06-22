@@ -12,6 +12,7 @@ import { reportRoutes } from './routes/reports'
 import { stripeRoutes } from './routes/stripe'
 import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
+import { registerPrivacidadRoute } from './routes/privacidad'
 import { telegramRoutes, telegramBotRoutes } from './routes/telegram'
 import { gestorRoutes, gestorPublicRoutes } from './routes/gestor'
 import { chatRoutes } from './routes/chat'
@@ -132,6 +133,9 @@ export function createApp() {
 
   // ─── Internal: Cazador Preview 08:00 (aviso al dueño antes de actuar) ─────
   app.post('/api/internal/cazador/preview', cazadorPreviewRoute)
+
+  // ─── Public: Política de privacidad (requerida por Meta para publicar app) ──
+  registerPrivacidadRoute(app)
 
   // ─── Public: Meta WhatsApp webhook verification (no auth) ──────────────────
   app.get('/api/demonio/wa-verify', async (c) => {
