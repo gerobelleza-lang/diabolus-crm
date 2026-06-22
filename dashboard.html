@@ -52,16 +52,7 @@
       text-overflow: ellipsis;
       max-width: 100%;
     }
-    .sidebar-nav { flex: 1; padding: 0 0.75rem; overflow-y: auto; }
-    .nav-section-label {
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted, #6b7280);
-      padding: 1rem 0.5rem 0.25rem;
-      margin-top: 0.25rem;
-    }
+    .sidebar-nav { flex: 1; padding: 0 0.75rem; }
     .nav-item {
       padding: 0.65rem 1rem;
       margin-bottom: 0.2rem;
@@ -205,6 +196,27 @@
       border-color: rgba(139,92,246,.7);
       box-shadow: 0 0 18px rgba(139,92,246,.3);
     }
+    /* ── Usage widget ── */
+    .usage-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .usage-card.warn  { border-color: rgba(251,191,36,.4); }
+    .usage-card.block { border-color: rgba(239,68,68,.5); }
+    .usage-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem; }
+    .usage-title  { font-size:.75rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; }
+    .usage-badge  { font-size:.72rem; font-weight:600; padding:.2rem .5rem; border-radius:20px; background:rgba(139,92,246,.15); color:var(--violet); }
+    .usage-badge.warn  { background:rgba(251,191,36,.15); color:#fbbf24; }
+    .usage-badge.block { background:rgba(239,68,68,.15); color:#f87171; }
+    .usage-bar-bg   { height:6px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; }
+    .usage-bar-fill { height:100%; background:var(--violet); border-radius:99px; transition:width .6s ease; }
+    .usage-bar-fill.warn  { background:#fbbf24; }
+    .usage-bar-fill.block { background:#f87171; }
+    .usage-meta { font-size:.68rem; color:var(--text-tertiary); margin-top:.45rem; }
+
     .kpi-card.alert {
       border-color: rgba(239,68,68,.5);
       box-shadow: 0 0 12px rgba(239,68,68,.2);
@@ -463,62 +475,6 @@
       .page-header { flex-direction: column; gap: 1rem; }
       .quick-actions { grid-template-columns: 1fr; }
     }
-
-    /* ── CAZADOR BANNER ── */
-    .cazador-banner {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      background: linear-gradient(135deg, rgba(251,146,60,.12) 0%, rgba(239,68,68,.08) 100%);
-      border: 1px solid rgba(251,146,60,.25);
-      border-radius: 0.875rem;
-      padding: 0.875rem 1.25rem;
-      margin-bottom: 1.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-    .cazador-banner:hover {
-      background: linear-gradient(135deg, rgba(251,146,60,.18) 0%, rgba(239,68,68,.12) 100%);
-      border-color: rgba(251,146,60,.4);
-      transform: translateY(-1px);
-    }
-    .cazador-banner-icon {
-      font-size: 1.5rem;
-      flex-shrink: 0;
-      animation: cazador-pulse 2.5s ease-in-out infinite;
-    }
-    @keyframes cazador-pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.08); opacity: 0.85; }
-    }
-    .cazador-banner-body { flex: 1; }
-    .cazador-banner-title {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #fb923c;
-      margin-bottom: 0.2rem;
-    }
-    .cazador-banner-sub {
-      font-size: 0.75rem;
-      color: var(--text-tertiary);
-    }
-    .cazador-banner-badge {
-      background: rgba(251,146,60,.2);
-      border: 1px solid rgba(251,146,60,.35);
-      color: #fb923c;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      font-weight: 700;
-      padding: 0.3rem 0.7rem;
-      border-radius: 2rem;
-      flex-shrink: 0;
-    }
-    .cazador-banner-arrow {
-      color: rgba(251,146,60,.6);
-      font-size: 1rem;
-      flex-shrink: 0;
-    }
   </style>
 </head>
 <body>
@@ -559,50 +515,13 @@
         </div>
         <div class="sidebar-salon" id="salonNameSidebar">—</div>
       </div>
-            <nav class="sidebar-nav">
-
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('mando')">
-            <span>Mando</span><span class="nav-chevron" id="chv-mando">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-mando">
-            <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
-            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente IA</a>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('negocio')">
-            <span>Negocio</span><span class="nav-chevron" id="chv-negocio">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-negocio">
-            <a href="invoices.html" class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
-            <a href="clients.html" class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
-            <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('inteligencia')">
-            <span>Inteligencia</span><span class="nav-chevron" id="chv-inteligencia">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-inteligencia">
-            <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
-            <a href="cazador.html" class="nav-item"><span class="nav-icon">🦅</span> Cazador</a>
-            <a href="pacto.html?v=2" class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('modulos')">
-            <span>Módulos</span><span class="nav-chevron" id="chv-modulos">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-modulos">
-            <a href="documents.html" class="nav-item"><span class="nav-icon">✍️</span> Documentos</a>
-            <a href="legal.html" class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
-          </div>
-        </div>
-
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="chat.html"         class="nav-item"><span class="nav-icon">💬</span> Agente</a>
+        <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+        <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+        <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+        <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
       </nav>
       <div class="sidebar-footer">
         <button class="btn btn-secondary" style="width:100%;" onclick="logout()">Cerrar sesión</button>
@@ -627,17 +546,6 @@
           <div class="avatar" id="userAvatar">?</div>
         </div>
       </div>
-
-      <!-- ── CAZADOR BANNER (solo visible si hay facturas en caza) ── -->
-      <a href="cazador.html" id="cazadorBanner" class="cazador-banner" style="display:none;">
-        <div class="cazador-banner-icon">🦅</div>
-        <div class="cazador-banner-body">
-          <div class="cazador-banner-title" id="cazadorBannerTitle">El Cazador está trabajando</div>
-          <div class="cazador-banner-sub" id="cazadorBannerSub">Cargando…</div>
-        </div>
-        <div class="cazador-banner-badge" id="cazadorBannerBadge">—</div>
-        <div class="cazador-banner-arrow">›</div>
-      </a>
 
       <!-- ══════════════════════════════════════ -->
       <!-- ZONA 1 — FINANZAS                      -->
@@ -665,6 +573,18 @@
             <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
             <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
           </div>
+        </div>
+
+        <!-- 💬 Uso de mensajes del Agente IA -->
+        <div class="usage-card" id="usageCard" style="display:none">
+          <div class="usage-header">
+            <span class="usage-title">💬 Agente IA — mensajes este mes</span>
+            <span class="usage-badge" id="usageBadge">...</span>
+          </div>
+          <div class="usage-bar-bg">
+            <div class="usage-bar-fill" id="usageBarFill" style="width:0%"></div>
+          </div>
+          <div class="usage-meta" id="usageMeta">&nbsp;</div>
         </div>
 
         <!-- Charts -->
@@ -778,12 +698,6 @@
     // ── Auth guard ──
     const auth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null')
     if (!auth?.token) window.location.href = 'index-login.html'
-
-    // ── Mobile → Panel de Mando (salvo que el usuario haya pedido escritorio) ──
-    if (!sessionStorage.getItem('forceDesktop') &&
-        (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768)) {
-      window.location.replace('mobile.html')
-    }
 
     function logout() {
       localStorage.removeItem('diabolus_auth')
@@ -984,33 +898,51 @@
       })
     }
 
-    // ── Cazador Banner ──
-    async function loadCazadorBanner() {
+    loadDashboard()
+    loadUsage()
+
+    // ── Uso del agente IA ──
+    async function loadUsage() {
       try {
-        const res = await fetch(`${API}/api/cazador/stats`, {
+        const res = await fetch(`${API}/api/agent/usage`, {
           headers: { 'Authorization': `Bearer ${auth.token}` }
         })
         if (!res.ok) return
-        const data = await res.json()
-        const count = data.overdue_count ?? 0
-        const total = data.overdue_total ?? 0
-        if (count === 0) return // nada en caza → banner oculto
+        const d = await res.json()
 
-        const banner  = document.getElementById('cazadorBanner')
-        const title   = document.getElementById('cazadorBannerTitle')
-        const sub     = document.getElementById('cazadorBannerSub')
-        const badge   = document.getElementById('cazadorBannerBadge')
+        // Enterprise sin límite → no mostrar
+        if (d.limit === -1) return
 
-        const plural  = count === 1 ? 'factura vencida' : 'facturas vencidas'
-        title.textContent = `El Cazador tiene ${count} ${plural} en seguimiento`
-        sub.textContent   = `${eur(total)} pendientes de cobro · Toca para gestionar`
-        badge.textContent = `${count} en caza`
-        banner.style.display = 'flex'
-      } catch (_) { /* silencioso — el banner simplemente no aparece */ }
+        const card  = document.getElementById('usageCard')
+        const fill  = document.getElementById('usageBarFill')
+        const badge = document.getElementById('usageBadge')
+        const meta  = document.getElementById('usageMeta')
+
+        card.style.display = ''
+
+        const pct  = d.pct || 0
+        const isWarn  = pct >= 80 && pct < 100
+        const isBlock = pct >= 100
+
+        fill.style.width = Math.min(pct, 100) + '%'
+        fill.className   = 'usage-bar-fill' + (isBlock ? ' block' : isWarn ? ' warn' : '')
+        badge.className  = 'usage-badge' + (isBlock ? ' block' : isWarn ? ' warn' : '')
+        card.className   = 'usage-card'  + (isBlock ? ' block' : isWarn ? ' warn' : '')
+
+        const planLabel = { basico:'Básico', pro:'Pro', pro_plus:'Pro+', enterprise:'Enterprise' }[d.plan] || d.plan
+        badge.textContent = `${d.count} / ${d.limit} msgs`
+
+        if (isBlock) {
+          meta.innerHTML = `⛔ Límite alcanzado. <a href="mailto:hola@diabolus.es" style="color:#f87171">Amplía tu plan →</a>`
+        } else if (isWarn) {
+          meta.textContent = `⚠️ Quedan ${d.remaining} mensajes — Plan ${planLabel}`
+        } else {
+          meta.textContent = `Plan ${planLabel} · Quedan ${d.remaining} mensajes este mes`
+        }
+      } catch(e) {
+        // silencioso — no crítico
+      }
     }
-
-    loadDashboard()
-    loadCazadorBanner()
 
     // ── PWA ──
     if ('serviceWorker' in navigator) {
@@ -1021,5 +953,6 @@
       })
     }
   </script>
+<script src="sidebar.js"></script>
 </body>
 </html>
