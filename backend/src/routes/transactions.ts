@@ -8,6 +8,7 @@
  * POST   /api/transactions
  * PATCH  /api/transactions/:id/category     — recategorizar (auditado, sin confirmation card)
  * PATCH  /api/transactions/:id/tags         — actualizar etiquetas libres
+ * PATCH  /api/transactions/:id/status       — cambiar estado del ciclo de vida
  * DELETE /api/transactions/:id
  */
 
@@ -30,6 +31,7 @@ transactionRoutes.get('/', async (c) => {
     search,
     date_from,
     date_to,
+    status,
   } = c.req.query()
 
   const from = (parseInt(page) - 1) * parseInt(limit)
@@ -49,6 +51,7 @@ transactionRoutes.get('/', async (c) => {
   if (date_from) query = query.gte('date', date_from)
   if (date_to)   query = query.lte('date', date_to)
   if (search)    query = query.ilike('description', `%${search}%`)
+  if (status)    query = query.eq('status', status)
 
   const { data, error, count } = await query
   if (error) return c.json({ error: error.message }, 500)
@@ -225,6 +228,37 @@ transactionRoutes.patch('/:id/tags', async (c) => {
   const { data, error } = await supabase
     .from('transactions')
     .update({ tags: newTags })
+    .eq('salon_id', salonId)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return c.json({ error: error.message }, 400)
+  return c.json({ transaction: data })
+})
+
+// ─── PATCH /api/transactions/:id/status ────────────────────────────────────────
+transactionRoutes.patch('/:id/status', async (c) => {
+  const salonId  = c.get('salonId')
+  const { id }   = c.req.param()
+  const supabase = getSupabaseAdmin()
+
+  const body = await c.req.json().catch(() => ({}))
+  const { status } = body
+
+  const VALID = ['pendiente', 'revisado', 'enviado_gestoria']
+  if (!VALID.includes(status)) {
+    return c.json({ error: `Estado inválido. Debe ser uno de: ${VALID.join(', ')}` }, 400)
+  }
+
+  const now = new Date().toISOString()
+  const updates: Record<string, unknown> = { status }
+  if (status === 'revisado')         updates.reviewed_at         = now
+  if (status === 'enviado_gestoria') updates.sent_to_gestoria_at = now
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .update(updates)
     .eq('salon_id', salonId)
     .eq('id', id)
     .select()
