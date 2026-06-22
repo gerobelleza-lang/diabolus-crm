@@ -92,18 +92,51 @@
       <div class="logo">⚡</div>
       <h3>DIABOLUS</h3>
     </div>
-    <nav class="sidebar-nav">
-      <a href="dashboard.html" class="nav-item"><span>📊</span>Dashboard</a>
-      <a href="chat.html" class="nav-item"><span>💬</span>Agente</a>
-      <a href="invoices.html" class="nav-item"><span>📄</span>Facturas</a>
-      <a href="clients.html" class="nav-item"><span>👥</span>Clientes</a>
-      <a href="transactions.html" class="nav-item active"><span>💰</span>Transacciones</a>
-      <a href="reports.html" class="nav-item"><span>📈</span>Reportes</a>
-      <a href="documents.html" class="nav-item"><span>✍️</span>Documentos</a>
-      <a href="cazador.html" class="nav-item"><span>🦅</span>Cazador</a>
-      <a href="legal.html"        class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
-        <a href="pacto.html?v=2"        class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
-    </nav>
+          <nav class="sidebar-nav">
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('mando')">
+            <span>Mando</span><span class="nav-chevron" id="chv-mando">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-mando">
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente IA</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('negocio')">
+            <span>Negocio</span><span class="nav-chevron" id="chv-negocio">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-negocio">
+            <a href="invoices.html" class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+            <a href="clients.html" class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+            <a href="transactions.html" class="nav-item active"><span class="nav-icon">💰</span> Transacciones</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('inteligencia')">
+            <span>Inteligencia</span><span class="nav-chevron" id="chv-inteligencia">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-inteligencia">
+            <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+            <a href="cazador.html" class="nav-item"><span class="nav-icon">🦅</span> Cazador</a>
+            <a href="pacto.html?v=2" class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('modulos')">
+            <span>Módulos</span><span class="nav-chevron" id="chv-modulos">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-modulos">
+            <a href="documents.html" class="nav-item"><span class="nav-icon">✍️</span> Documentos</a>
+            <a href="legal.html" class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
+          </div>
+        </div>
+
+      </nav>
     <div class="sidebar-footer">
       <button class="btn btn-secondary" style="width:100%" onclick="logout()">Cerrar Sesión</button>
     </div>
