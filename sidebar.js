@@ -51,8 +51,8 @@
     var s = {};
     var mobile = window.innerWidth < 768;
     SECTIONS.forEach(function (sec) {
-      var hasCurrent = sec.items.some(function (i) { return i.key === page; });
-      s[sec.key] = !mobile && (sec.key === 'mando' || hasCurrent);
+      // Desktop: todas las secciones abiertas por defecto
+      s[sec.key] = !mobile;
     });
     return s;
   }
