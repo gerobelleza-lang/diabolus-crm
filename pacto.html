@@ -569,20 +569,48 @@
     <span>😈 Diabolus</span>
     <small>Centro de Mando</small>
   </div>
-  <div class="nav-section-label">Mando</div>
-  <a href="dashboard.html"    class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
-  <a href="mobile.html"       class="nav-item"><span class="nav-icon">🤖</span> Agente IA</a>
-  <div class="nav-section-label">Negocio</div>
-  <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
-  <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
-  <a href="transactions.html" class="nav-item"><span class="nav-icon">💳</span> Transacciones</a>
-  <div class="nav-section-label">Inteligencia</div>
-  <a href="reports.html"      class="nav-item"><span class="nav-icon">📊</span> Reportes</a>
-  <a href="cazador.html"      class="nav-item"><span class="nav-icon">🎯</span> Cazador</a>
-  <div class="nav-section-label">Módulos</div>
-  <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
-  <a href="legal.html"        class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
-  <a href="pacto.html"        class="nav-item active"><span class="nav-icon">🔥</span> El Pacto</a>
+
+  <div class="nav-group">
+    <div class="nav-section-label" onclick="toggleNav('mando')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+      <span>Mando</span><span class="nav-chevron" id="chv-mando" style="font-size:.65rem;transition:transform .22s;opacity:.7;">▾</span>
+    </div>
+    <div class="nav-group-items" id="items-mando">
+      <a href="dashboard.html"    class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a href="mobile.html"       class="nav-item"><span class="nav-icon">🤖</span> Agente IA</a>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-section-label" onclick="toggleNav('negocio')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+      <span>Negocio</span><span class="nav-chevron" id="chv-negocio" style="font-size:.65rem;transition:transform .22s;opacity:.7;">▾</span>
+    </div>
+    <div class="nav-group-items" id="items-negocio">
+      <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+      <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+      <a href="transactions.html" class="nav-item"><span class="nav-icon">💳</span> Transacciones</a>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-section-label" onclick="toggleNav('inteligencia')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+      <span>Inteligencia</span><span class="nav-chevron" id="chv-inteligencia" style="font-size:.65rem;transition:transform .22s;opacity:.7;">▾</span>
+    </div>
+    <div class="nav-group-items" id="items-inteligencia">
+      <a href="reports.html"      class="nav-item"><span class="nav-icon">📊</span> Reportes</a>
+      <a href="cazador.html"      class="nav-item"><span class="nav-icon">🎯</span> Cazador</a>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-section-label" onclick="toggleNav('modulos')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+      <span>Módulos</span><span class="nav-chevron" id="chv-modulos" style="font-size:.65rem;transition:transform .22s;opacity:.7;">▾</span>
+    </div>
+    <div class="nav-group-items" id="items-modulos">
+      <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+      <a href="legal.html"        class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
+      <a href="pacto.html"        class="nav-item active"><span class="nav-icon">🔥</span> El Pacto</a>
+    </div>
+  </div>
 </nav>
 
 <!-- ── MAIN ── -->
