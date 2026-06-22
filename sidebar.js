@@ -30,9 +30,9 @@
     {
       key: 'modulos', label: '⚡ Módulos',
       items: [
-        { key: 'cazador', icon: '🗡️', label: 'El Cazador', href: 'dashboard.html#cazador', badge: 'AUTO' },
-        { key: 'pacto',   icon: '🔥', label: 'El Pacto',   href: 'dashboard.html#pacto',  badge: 'LEADS' },
-        { key: 'demonio', icon: '😈', label: 'El Demonio', href: 'dashboard.html#demonio',badge: 'WA' }
+        { key: 'cazador', icon: '🗡️', label: 'El Cazador', href: 'cazador.html', badge: 'AUTO' },
+        { key: 'pacto',   icon: '🔥', label: 'El Pacto',   href: 'pacto.html',  badge: 'LEADS' },
+        { key: 'demonio', icon: '😈', label: 'El Demonio', href: 'demonio.html',badge: 'WA' }
       ]
     }
   ];
