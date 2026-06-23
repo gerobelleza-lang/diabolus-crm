@@ -72,4 +72,5 @@ app.get('/', async (c) => {
   return c.json(data)
 })
 
+export { app as waitlistRoutes }
 export default app
