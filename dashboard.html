@@ -704,6 +704,23 @@
     const auth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null')
     if (!auth?.token) window.location.href = 'index-login.html'
 
+    // ── Onboarding guard (safety net) ──
+    // Si el usuario llega al dashboard sin haber completado el onboarding,
+    // lo redirigimos al wizard. Nunca bloqueamos si el check falla.
+    ;(async () => {
+      try {
+        const r = await fetch(`${API}/api/onboarding/status`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (r.ok) {
+          const s = await r.json()
+          if (s.onboarding_completed === false) {
+            window.location.replace('onboarding.html')
+          }
+        }
+      } catch (_) { /* no bloquear dashboard si check falla */ }
+    })()
+
     function logout() {
       localStorage.removeItem('diabolus_auth')
       window.location.href = 'index-login.html'
