@@ -43,11 +43,11 @@ export const authMiddleware = createMiddleware<{ Variables: Variables }>(
       return c.json({ error: 'Unauthorized: invalid token' }, 401)
     }
 
-    // Resolver salon del usuario
+    // Resolver salon del usuario (columna: user_id)
     const { data: salon } = await supabase
       .from('salons')
       .select('id')
-      .eq('owner_id', user.id)
+      .eq('user_id', user.id)
       .single()
 
     if (!salon) {
