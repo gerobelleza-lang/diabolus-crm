@@ -5,12 +5,112 @@ import { sendWelcomeEmail } from '../integrations/email'
 
 export const authRoutes = new Hono()
 
-// ── POST /auth/register — BETA PRIVADA: registro desactivado ──────────────────
+// ── POST /auth/register — BETA PRIVADA: solo con token de invitación ──────────
 authRoutes.post('/register', async (c) => {
+  const body = await c.req.json().catch(() => null)
+  const betaToken = body?.beta_invite_token
+
+  if (!betaToken) {
+    return c.json({
+      error: 'Registro cerrado — Diabolus está en beta privada. Necesitas una invitación.',
+      code: 'BETA_LOCKED',
+    }, 423)
+  }
+
+  const supabase = getSupabaseAdmin()
+
+  // Validar token de invitación
+  const { data: invite, error: inviteErr } = await supabase
+    .from('beta_invites')
+    .select('id, email_hint, expires_at, used_at')
+    .eq('token', betaToken)
+    .is('used_at', null)
+    .maybeSingle()
+
+  if (inviteErr || !invite) {
+    return c.json({ error: 'Invitación inválida o ya utilizada', code: 'INVALID_INVITE' }, 403)
+  }
+
+  if (new Date(invite.expires_at) < new Date()) {
+    return c.json({ error: 'Esta invitación ha caducado', code: 'INVITE_EXPIRED' }, 403)
+  }
+
+  // Verificar campos obligatorios
+  if (!body?.email || !body?.password || !body?.businessName) {
+    return c.json({ error: 'Email, contraseña y nombre del negocio son obligatorios' }, 400)
+  }
+
+  // Crear usuario en Supabase Auth
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email: body.email,
+    password: body.password,
+    email_confirm: true,
+  })
+
+  if (authError || !authData?.user) {
+    return c.json({ error: authError?.message ?? 'Error al crear la cuenta' }, 400)
+  }
+
+  const userId = authData.user.id
+
+  // Crear salón
+  const { data: salon, error: salonError } = await supabase
+    .from('salons')
+    .insert({
+      user_id: userId,
+      name: body.businessName,
+      onboarding_completed: false,
+      onboarding_step: 1,
+      plan: 'basico',
+    })
+    .select()
+    .single()
+
+  if (salonError) {
+    return c.json({ error: 'Error al crear el negocio' }, 500)
+  }
+
+  // Marcar invitación como usada
+  await supabase
+    .from('beta_invites')
+    .update({ used_at: new Date().toISOString(), used_by: userId })
+    .eq('id', invite.id)
+
+  // Login para obtener token
+  const { data: loginData } = await supabase.auth.signInWithPassword({
+    email: body.email,
+    password: body.password,
+  })
+
+  // Enviar email de bienvenida (no bloqueante)
+  try {
+    await sendWelcomeEmail(body.email, body.businessName)
+  } catch {}
+
   return c.json({
-    error: 'Registro cerrado — Diabolus está en beta privada. Contacta con el equipo para obtener acceso.',
-    code: 'BETA_LOCKED',
-  }, 423)
+    token: loginData?.session?.access_token ?? null,
+    user: { id: userId, email: body.email },
+    salon: { id: salon.id, name: salon.name },
+  })
+})
+
+// ── GET /auth/invites/validate — validar token (público) ─────────────────────
+authRoutes.get('/invites/validate', async (c) => {
+  const token = c.req.query('token')
+  if (!token) return c.json({ valid: false, error: 'Token requerido' }, 400)
+
+  const supabase = getSupabaseAdmin()
+  const { data: invite } = await supabase
+    .from('beta_invites')
+    .select('id, email_hint, expires_at, used_at')
+    .eq('token', token)
+    .is('used_at', null)
+    .maybeSingle()
+
+  if (!invite) return c.json({ valid: false, error: 'Invitación inválida o ya utilizada' })
+  if (new Date(invite.expires_at) < new Date()) return c.json({ valid: false, error: 'Invitación caducada' })
+
+  return c.json({ valid: true, email_hint: invite.email_hint ?? null })
 })
 
 // ── POST /auth/login ──────────────────────────────────────────────────────────
@@ -30,7 +130,7 @@ authRoutes.post('/login', async (c) => {
     return c.json({ error: error?.message ?? 'Credenciales incorrectas' }, 401)
   }
 
-  // Busca el salón del usuario (columna correcta: user_id)
+  // Busca el salón del usuario
   const { data: salon } = await supabase
     .from('salons')
     .select('id, name, onboarding_completed, onboarding_step')
@@ -39,10 +139,7 @@ authRoutes.post('/login', async (c) => {
 
   return c.json({
     token: data.session.access_token,
-    user: {
-      id: data.user.id,
-      email: data.user.email,
-    },
+    user: { id: data.user.id, email: data.user.email },
     salon: salon ?? null,
   })
 })
@@ -56,10 +153,7 @@ authRoutes.get('/me', async (c) => {
 
   const token = auth.slice(7)
   const supabase = getSupabaseAdmin()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token)
+  const { data: { user }, error } = await supabase.auth.getUser(token)
 
   if (error || !user) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -71,10 +165,7 @@ authRoutes.get('/me', async (c) => {
     .eq('user_id', user.id)
     .maybeSingle()
 
-  return c.json({
-    user: { id: user.id, email: user.email },
-    salon: salon ?? null,
-  })
+  return c.json({ user: { id: user.id, email: user.email }, salon: salon ?? null })
 })
 
 // ── POST /auth/logout ─────────────────────────────────────────────────────────

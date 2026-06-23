@@ -7,6 +7,9 @@
  *   GET  /api/admin/usage        — uso de mensajes todos los salones (mes actual)
  *   GET  /api/admin/salons       — lista salones con plan + límite
  *   POST /api/admin/salons/:id/plan — cambiar plan/límite de un salón
+ *   POST /api/admin/invites      — crear invitación beta
+ *   GET  /api/admin/invites      — listar invitaciones
+ *   DELETE /api/admin/invites/:id — revocar invitación
  */
 
 import { Hono }               from 'hono'
@@ -51,13 +54,11 @@ adminRoutes.get('/usage', async (c) => {
     const supabase  = getSupabase()
     const yearMonth = getCurrentYearMonth()
 
-    // Salones con plan y límite
     const { data: salons } = await supabase
       .from('salons')
       .select('id, name, plan, message_limit')
       .order('name')
 
-    // Uso del mes actual
     const { data: usages } = await supabase
       .from('salon_message_usage')
       .select('salon_id, message_count')
@@ -181,6 +182,67 @@ adminRoutes.get('/pacto/stats', async (c) => {
     const ingresos  = activos * 29
 
     return c.json({ ok: true, activos, ingresos_mes: ingresos, salones: data || [] })
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500)
+  }
+})
+
+// ─── POST /api/admin/invites — crear invitación beta ─────────────────────────
+
+adminRoutes.post('/invites', async (c) => {
+  try {
+    const userId = c.get('userId') as string
+    const body = await c.req.json().catch(() => ({}))
+
+    const supabase = getSupabase()
+    const { data: invite, error } = await supabase
+      .from('beta_invites')
+      .insert({
+        email_hint: body.email_hint || null,
+        note: body.note || null,
+        created_by: userId,
+        expires_at: body.expires_days
+          ? new Date(Date.now() + body.expires_days * 86400000).toISOString()
+          : new Date(Date.now() + 30 * 86400000).toISOString(),
+      })
+      .select()
+      .single()
+
+    if (error) return c.json({ error: error.message }, 500)
+
+    const url = `https://diabolus.es/register.html?invite=${invite.token}`
+    return c.json({ ok: true, invite, url })
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500)
+  }
+})
+
+// ─── GET /api/admin/invites — listar invitaciones ────────────────────────────
+
+adminRoutes.get('/invites', async (c) => {
+  try {
+    const supabase = getSupabase()
+    const { data, error } = await supabase
+      .from('beta_invites')
+      .select('id, token, email_hint, note, used_at, expires_at, created_at')
+      .order('created_at', { ascending: false })
+
+    if (error) return c.json({ error: error.message }, 500)
+    return c.json({ ok: true, invites: data || [] })
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500)
+  }
+})
+
+// ─── DELETE /api/admin/invites/:id — revocar invitación ──────────────────────
+
+adminRoutes.delete('/invites/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const supabase = getSupabase()
+    const { error } = await supabase.from('beta_invites').delete().eq('id', id).is('used_at', null)
+    if (error) return c.json({ error: error.message }, 500)
+    return c.json({ ok: true })
   } catch (err: any) {
     return c.json({ error: err.message }, 500)
   }
