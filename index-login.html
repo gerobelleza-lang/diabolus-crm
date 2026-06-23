@@ -189,12 +189,14 @@
           return
         }
 
+        // Guardamos token Y refresh_token para auto-renovar la sesión
         localStorage.setItem('diabolus_auth', JSON.stringify({
-          userId:    data.user.id,
-          email:     data.user.email,
-          salonId:   data.salon?.id   ?? null,
-          salonName: data.salon?.name ?? 'Mi negocio',
-          token:     data.token,
+          userId:       data.user.id,
+          email:        data.user.email,
+          salonId:      data.salon?.id   ?? null,
+          salonName:    data.salon?.name ?? 'Mi negocio',
+          token:        data.token,
+          refreshToken: data.refresh_token ?? null,
         }))
 
         window.location.href = isMobile() ? 'mobile.html' : 'dashboard.html'
