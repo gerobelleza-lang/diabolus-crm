@@ -189,15 +189,29 @@
           return
         }
 
-        // Guardamos token Y refresh_token para auto-renovar la sesión
         localStorage.setItem('diabolus_auth', JSON.stringify({
-          userId:       data.user.id,
-          email:        data.user.email,
-          salonId:      data.salon?.id   ?? null,
-          salonName:    data.salon?.name ?? 'Mi negocio',
-          token:        data.token,
-          refreshToken: data.refresh_token ?? null,
+          userId:    data.user.id,
+          email:     data.user.email,
+          salonId:   data.salon?.id   ?? null,
+          salonName: data.salon?.name ?? 'Mi negocio',
+          token:     data.token,
         }))
+
+        // ── Onboarding check — primer login va al wizard si no está completo ──
+        try {
+          const obRes = await fetch(`${API}/api/onboarding/status`, {
+            headers: { 'Authorization': `Bearer ${data.token}` }
+          })
+          if (obRes.ok) {
+            const ob = await obRes.json()
+            if (!ob.onboarding_completed) {
+              window.location.href = 'onboarding.html'
+              return
+            }
+          }
+        } catch (_) {
+          // Si falla el check no bloqueamos el acceso
+        }
 
         window.location.href = isMobile() ? 'mobile.html' : 'dashboard.html'
 
