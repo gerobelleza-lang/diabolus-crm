@@ -3,111 +3,221 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 
 /**
- * Genera un PDF de factura usando pdf-lib (Edge Runtime compatible).
- * Devuelve Uint8Array para subir a Supabase Storage.
+ * Genera un PDF de factura profesional usando pdf-lib (Edge Runtime compatible).
+ * Devuelve Uint8Array para subir a Supabase Storage o streaming directo.
  */
 export async function generateInvoicePDF(invoice: any): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
   const page = doc.addPage([595, 842]) // A4
 
-  const helveticaBold = await doc.embedFont(StandardFonts.HelveticaBold)
-  const helvetica = await doc.embedFont(StandardFonts.Helvetica)
+  const fontBold    = await doc.embedFont(StandardFonts.HelveticaBold)
+  const font        = await doc.embedFont(StandardFonts.Helvetica)
+  const fontOblique = await doc.embedFont(StandardFonts.HelveticaOblique)
 
   const { width, height } = page.getSize()
-  const margin = 50
+  const margin   = 50
   const colRight = width - margin
 
-  const black = rgb(0.05, 0.05, 0.05)
-  const gray = rgb(0.4, 0.4, 0.4)
-  const accent = rgb(0.55, 0.1, 0.9)
-  const lightGray = rgb(0.95, 0.95, 0.95)
+  // ── Colores ─────────────────────────────────────────────────────
+  const black     = rgb(0.05, 0.05, 0.05)
+  const gray      = rgb(0.45, 0.45, 0.45)
+  const lightGray = rgb(0.92, 0.92, 0.92)
+  const accent    = rgb(0.43, 0.09, 0.57)   // Diabolus purple
+  const accentPale = rgb(0.95, 0.92, 1.0)
+  const white     = rgb(1, 1, 1)
 
-  // Cabecera morada
-  page.drawRectangle({ x: 0, y: height - 80, width, height: 80, color: accent })
+  // ── Datos del salón ──────────────────────────────────────────────
+  const salonName        = invoice.salons?.name           || 'Diabolus CRM'
+  const salonNombreFiscal = invoice.salons?.nombre_fiscal || salonName
+  const salonNif         = invoice.salons?.nif            || ''
+  const salonAddress     = invoice.salons?.address        || ''
+  const salonEmail       = invoice.salons?.email          || ''
+  const salonPhone       = invoice.salons?.phone          || ''
 
-  const salonName = invoice.salons?.name || 'Diabolus CRM'
-  page.drawText(salonName, { x: margin, y: height - 52, size: 22, font: helveticaBold, color: rgb(1,1,1) })
-  page.drawText('FACTURA', { x: colRight - 100, y: height - 52, size: 22, font: helveticaBold, color: rgb(1,1,1) })
-
-  const invoiceNum = invoice.number || `INV-${invoice.id?.slice(0, 8).toUpperCase()}`
+  // ── Datos de factura ────────────────────────────────────────────
+  const invoiceNum = invoice.number || `FAC-${(invoice.id || '').slice(0, 8).toUpperCase()}`
   const invoiceDate = invoice.date
     ? new Date(invoice.date).toLocaleDateString('es-ES')
     : new Date(invoice.created_at).toLocaleDateString('es-ES')
-  const total = Number(invoice.total ?? invoice.amount ?? 0)
+  const dueDate = invoice.due_date
+    ? new Date(invoice.due_date).toLocaleDateString('es-ES')
+    : null
 
-  let y = height - 110
+  const ivaPct    = Number(invoice.iva_pct ?? 21)
+  const total     = Number(invoice.total ?? 0)
+  // base = amount si existe, sino derivar del total
+  const base      = Number(invoice.amount ?? 0) > 0
+    ? Number(invoice.amount)
+    : total / (1 + ivaPct / 100)
+  const ivaAmount = total - base
+  const description = invoice.description || 'Servicios profesionales'
 
-  page.drawText(`Numero: ${invoiceNum}`, { x: margin, y, size: 11, font: helveticaBold, color: black })
-  page.drawText(`Fecha: ${invoiceDate}`, { x: colRight - 150, y, size: 11, font: helvetica, color: gray })
+  // ── HEADER morado ────────────────────────────────────────────────
+  page.drawRectangle({ x: 0, y: height - 115, width, height: 115, color: accent })
+
+  // Nombre del salón
+  page.drawText(salonName, {
+    x: margin, y: height - 52,
+    size: 22, font: fontBold, color: white
+  })
+
+  // Subtítulo fiscal
+  const fiscalLine = [salonNombreFiscal !== salonName ? salonNombreFiscal : '', salonNif].filter(Boolean).join('  ·  ')
+  if (fiscalLine) {
+    page.drawText(fiscalLine, {
+      x: margin, y: height - 70,
+      size: 9, font, color: rgb(0.88, 0.80, 1)
+    })
+  }
+  if (salonAddress) {
+    page.drawText(salonAddress, {
+      x: margin, y: height - 84,
+      size: 8.5, font, color: rgb(0.76, 0.68, 0.92)
+    })
+  }
+  if (salonEmail || salonPhone) {
+    page.drawText([salonEmail, salonPhone].filter(Boolean).join('  ·  '), {
+      x: margin, y: height - 97,
+      size: 8, font, color: rgb(0.70, 0.62, 0.85)
+    })
+  }
+
+  // "FACTURA" top-right
+  const facLabel = 'FACTURA'
+  page.drawText(facLabel, {
+    x: colRight - fontBold.widthOfTextAtSize(facLabel, 24),
+    y: height - 54, size: 24, font: fontBold, color: white
+  })
+  page.drawText(invoiceNum, {
+    x: colRight - font.widthOfTextAtSize(invoiceNum, 11),
+    y: height - 78, size: 11, font, color: rgb(0.90, 0.85, 1)
+  })
+
+  let y = height - 145
+
+  // ── Fila de fechas + estado ───────────────────────────────────────
+  page.drawText('Fecha emisión:', { x: margin,       y, size: 9, font: fontBold, color: gray })
+  page.drawText(invoiceDate,      { x: margin + 90,  y, size: 9, font,           color: black })
+
+  if (dueDate) {
+    page.drawText('Vencimiento:', { x: margin + 210, y, size: 9, font: fontBold, color: gray })
+    page.drawText(dueDate,        { x: margin + 295, y, size: 9, font,           color: black })
+  }
+
+  // Badge de estado
+  const statusMap: Record<string, [string, any]> = {
+    pending: ['PENDIENTE', rgb(0.96, 0.62, 0.04)],
+    paid:    ['COBRADA',   rgb(0.06, 0.73, 0.51)],
+    overdue: ['VENCIDA',   rgb(0.94, 0.27, 0.27)],
+    sent:    ['ENVIADA',   rgb(0.30, 0.60, 0.95)],
+    draft:   ['BORRADOR',  gray],
+  }
+  const [statusLabel, statusColor] = statusMap[invoice.status] || ['BORRADOR', gray]
+  const bw = fontBold.widthOfTextAtSize(statusLabel, 9) + 16
+  page.drawRectangle({ x: colRight - bw, y: y - 4, width: bw, height: 18, color: statusColor, opacity: 0.15 })
+  page.drawText(statusLabel, { x: colRight - bw + 8, y, size: 9, font: fontBold, color: statusColor })
+
+  y -= 22
+  page.drawLine({ start: { x: margin, y }, end: { x: colRight, y }, thickness: 0.5, color: lightGray })
+
+  // ── EMISOR | CLIENTE ─────────────────────────────────────────────
+  const col2 = width / 2 + 10
   y -= 20
-  page.drawText(`Estado: ${(invoice.status || 'draft').toUpperCase()}`, { x: margin, y, size: 10, font: helvetica, color: gray })
+  page.drawText('EMISOR',  { x: margin, y, size: 8, font: fontBold, color: accent })
+  page.drawText('CLIENTE', { x: col2,   y, size: 8, font: fontBold, color: accent })
 
-  y -= 20
-  page.drawLine({ start: { x: margin, y }, end: { x: colRight, y }, thickness: 1, color: lightGray })
+  y -= 15
+  page.drawText(salonNombreFiscal || salonName, { x: margin, y, size: 11, font: fontBold, color: black })
+  page.drawText(invoice.clients?.name || 'Cliente', { x: col2, y, size: 11, font: fontBold, color: black })
 
-  // Cliente
-  y -= 30
-  page.drawText('CLIENTE', { x: margin, y, size: 9, font: helveticaBold, color: accent })
-  y -= 16
-  page.drawText(invoice.clients?.name || 'Cliente', { x: margin, y, size: 13, font: helveticaBold, color: black })
+  y -= 15
+  if (salonNif) {
+    page.drawText(`NIF: ${salonNif}`, { x: margin, y, size: 9, font, color: gray })
+  }
   if (invoice.clients?.email) {
-    y -= 16
-    page.drawText(invoice.clients.email, { x: margin, y, size: 10, font: helvetica, color: gray })
+    page.drawText(invoice.clients.email, { x: col2, y, size: 9, font, color: gray })
+  }
+
+  y -= 13
+  if (salonEmail) {
+    page.drawText(salonEmail, { x: margin, y, size: 9, font, color: gray })
   }
   if (invoice.clients?.phone) {
-    y -= 14
-    page.drawText(invoice.clients.phone, { x: margin, y, size: 10, font: helvetica, color: gray })
+    page.drawText(`Tel: ${invoice.clients.phone}`, { x: col2, y, size: 9, font, color: gray })
   }
 
   y -= 30
-  page.drawLine({ start: { x: margin, y }, end: { x: colRight, y }, thickness: 1, color: lightGray })
+  page.drawLine({ start: { x: margin, y }, end: { x: colRight, y }, thickness: 0.5, color: lightGray })
 
-  // Concepto
-  y -= 30
-  page.drawText('CONCEPTO', { x: margin, y, size: 9, font: helveticaBold, color: accent })
-  page.drawText('IMPORTE', { x: colRight - 80, y, size: 9, font: helveticaBold, color: accent })
-  y -= 20
+  // ── TABLA DE LÍNEAS ──────────────────────────────────────────────
+  y -= 18
+  // Cabecera tabla
+  page.drawRectangle({ x: margin, y: y - 5, width: colRight - margin, height: 22, color: accentPale })
+  page.drawText('CONCEPTO / DESCRIPCIÓN', { x: margin + 8, y,           size: 8.5, font: fontBold, color: accent })
+  page.drawText('BASE',                    { x: colRight - 170, y,       size: 8.5, font: fontBold, color: accent })
+  page.drawText(`IVA (${ivaPct}%)`,        { x: colRight - 110, y,       size: 8.5, font: fontBold, color: accent })
+  page.drawText('TOTAL',                   { x: colRight - 50,  y,       size: 8.5, font: fontBold, color: accent })
 
-  const description = invoice.description || 'Servicios profesionales'
+  y -= 28
+  // Texto del concepto (con word-wrap)
+  const maxDescWidth = colRight - margin - 185
   const words = description.split(' ')
   let line = ''
-  const maxWidth = width - margin * 2 - 100
-  const firstY = y
+  const lineStartY = y
   for (const word of words) {
     const testLine = line ? `${line} ${word}` : word
-    const testWidth = helvetica.widthOfTextAtSize(testLine, 11)
-    if (testWidth > maxWidth && line) {
-      page.drawText(line, { x: margin, y, size: 11, font: helvetica, color: black })
-      y -= 16
-      line = word
+    if (font.widthOfTextAtSize(testLine, 10) > maxDescWidth && line) {
+      page.drawText(line, { x: margin + 8, y, size: 10, font, color: black })
+      y -= 14; line = word
     } else {
       line = testLine
     }
   }
   if (line) {
-    page.drawText(line, { x: margin, y, size: 11, font: helvetica, color: black })
-    y -= 16
+    page.drawText(line, { x: margin + 8, y, size: 10, font, color: black })
   }
-  page.drawText(`EUR${total.toFixed(2)}`, { x: colRight - 80, y: firstY, size: 11, font: helveticaBold, color: black })
 
-  // Totales
-  y -= 30
-  page.drawLine({ start: { x: margin, y }, end: { x: colRight, y }, thickness: 1, color: lightGray })
-  y -= 20
-  const base = total / 1.21
-  const iva = total - base
-  page.drawText('Base imponible:', { x: colRight - 200, y, size: 10, font: helvetica, color: gray })
-  page.drawText(`EUR${base.toFixed(2)}`, { x: colRight - 80, y, size: 10, font: helvetica, color: gray })
-  y -= 16
-  page.drawText('IVA (21%):', { x: colRight - 200, y, size: 10, font: helvetica, color: gray })
-  page.drawText(`EUR${iva.toFixed(2)}`, { x: colRight - 80, y, size: 10, font: helvetica, color: gray })
-  y -= 20
-  page.drawRectangle({ x: colRight - 220, y: y - 8, width: 220 + margin, height: 34, color: accent })
-  page.drawText('TOTAL:', { x: colRight - 200, y: y + 4, size: 13, font: helveticaBold, color: rgb(1,1,1) })
-  page.drawText(`EUR${total.toFixed(2)}`, { x: colRight - 80, y: y + 4, size: 13, font: helveticaBold, color: rgb(1,1,1) })
+  // Importes alineados a la primera línea del concepto
+  page.drawText(`${base.toFixed(2)} €`,      { x: colRight - 170, y: lineStartY, size: 10, font,     color: black })
+  page.drawText(`${ivaAmount.toFixed(2)} €`, { x: colRight - 110, y: lineStartY, size: 10, font,     color: black })
+  page.drawText(`${total.toFixed(2)} €`,     { x: colRight - 50,  y: lineStartY, size: 10, font: fontBold, color: black })
 
-  // Pie
-  page.drawText('Generado con Diabolus CRM', { x: margin, y: 30, size: 8, font: helvetica, color: gray })
+  y -= 20
+  page.drawLine({ start: { x: margin, y }, end: { x: colRight, y }, thickness: 0.5, color: lightGray })
+
+  // ── RESUMEN DE TOTALES ────────────────────────────────────────────
+  y -= 14
+  const totLabelX = colRight - 200
+  const totValX   = colRight - 55
+
+  page.drawText('Base imponible:',    { x: totLabelX, y, size: 10, font,     color: gray })
+  page.drawText(`${base.toFixed(2)} €`, { x: totValX - font.widthOfTextAtSize(`${base.toFixed(2)} €`, 10), y, size: 10, font, color: black })
+
+  y -= 15
+  page.drawText(`IVA (${ivaPct}%):`,  { x: totLabelX, y, size: 10, font,     color: gray })
+  page.drawText(`${ivaAmount.toFixed(2)} €`, { x: totValX - font.widthOfTextAtSize(`${ivaAmount.toFixed(2)} €`, 10), y, size: 10, font, color: black })
+
+  y -= 22
+  // Caja total
+  page.drawRectangle({ x: colRight - 230, y: y - 9, width: 235, height: 34, color: accent })
+  page.drawText('TOTAL A PAGAR:', { x: colRight - 220, y: y + 4, size: 12, font: fontBold, color: white })
+  const totalStr = `${total.toFixed(2)} €`
+  page.drawText(totalStr, {
+    x: colRight - fontBold.widthOfTextAtSize(totalStr, 13) - 5,
+    y: y + 4, size: 13, font: fontBold, color: white
+  })
+
+  // ── PIE ──────────────────────────────────────────────────────────
+  const footerY = 55
+  page.drawLine({ start: { x: margin, y: footerY }, end: { x: colRight, y: footerY }, thickness: 0.5, color: lightGray })
+  page.drawText(
+    `Generado con Diabolus CRM · ${new Date().toLocaleDateString('es-ES')}`,
+    { x: margin, y: footerY - 14, size: 7.5, font, color: gray }
+  )
+  page.drawText(
+    'Documento orientativo. No tiene validez fiscal oficial. Consulte con su gestor.',
+    { x: margin, y: footerY - 26, size: 7.5, font: fontOblique, color: rgb(0.68, 0.68, 0.68) }
+  )
 
   return doc.save()
 }

@@ -14,26 +14,23 @@ async function getSalonOwnerEmail(salonId: string): Promise<string | null> {
     const supabase = getSupabaseAdmin()
     const { data: salon } = await supabase
       .from('salons')
-      .select('owner_id')
+      .select('user_id')
       .eq('id', salonId)
       .single()
-    if (!salon?.owner_id) return null
-    const { data } = await supabase.auth.admin.getUserById(salon.owner_id)
+    if (!salon?.user_id) return null
+    const { data } = await supabase.auth.admin.getUserById(salon.user_id)
     return data?.user?.email ?? null
   } catch {
     return null
   }
 }
 
+// SELECT de salon completo para PDF
+const SALON_PDF_SELECT = 'name, nombre_fiscal, nif, address, email, phone'
+
 // GET /api/invoices/ping
 invoiceRoutes.get('/ping', async (c) => {
-  return c.json({ ok: true, ts: Date.now(), env: {
-    twilio_sid: !!process.env.TWILIO_ACCOUNT_SID,
-    twilio_token: !!process.env.TWILIO_AUTH_TOKEN,
-    twilio_from: process.env.TWILIO_WHATSAPP_FROM || 'not set',
-    supabase_url: !!process.env.SUPABASE_URL,
-    resend: !!process.env.RESEND_API_KEY,
-  }})
+  return c.json({ ok: true, ts: Date.now() })
 })
 
 // GET /api/invoices
@@ -53,6 +50,7 @@ invoiceRoutes.get('/', async (c) => {
 invoiceRoutes.get('/:id', async (c) => {
   const salonId = c.get('salonId')
   const { id } = c.req.param()
+  if (id === 'ping') return c.json({ ok: true })
   const supabase = getSupabaseAdmin()
   const { data, error } = await supabase
     .from('invoices')
@@ -69,16 +67,23 @@ invoiceRoutes.post('/', async (c) => {
   const salonId = c.get('salonId')
   const body = await c.req.json().catch(() => ({}))
   const supabase = getSupabaseAdmin()
+
+  const amount  = Number(body.amount  ?? 0)
+  const ivaPct  = Number(body.iva_pct ?? 21)
+  const total   = Number(body.total   ?? 0) || amount * (1 + ivaPct / 100)
+
   const { data, error } = await supabase
     .from('invoices')
     .insert({
-      salon_id: salonId,
-      client_id: body.client_id,
-      number: body.number || body.invoice_number || `FAC-${Date.now()}`,
-      total: body.total || body.amount || 0,
-      status: body.status || 'pending',
-      date: new Date().toISOString().split('T')[0],
-      due_date: body.due_date || null,
+      salon_id:    salonId,
+      client_id:   body.client_id,
+      number:      body.number || body.invoice_number || `FAC-${Date.now()}`,
+      amount,
+      iva_pct:     ivaPct,
+      total,
+      status:      body.status   || 'pending',
+      date:        new Date().toISOString().split('T')[0],
+      due_date:    body.due_date || null,
       description: body.description || '',
     })
     .select('*, clients(name, email, phone)')
@@ -110,7 +115,7 @@ invoiceRoutes.patch('/:id', async (c) => {
   const { id } = c.req.param()
   const body = await c.req.json().catch(() => ({}))
   const supabase = getSupabaseAdmin()
-  const allowed = ['status', 'description', 'total', 'due_date', 'number', 'pdf_url']
+  const allowed = ['status', 'description', 'total', 'amount', 'iva_pct', 'due_date', 'number', 'pdf_url']
   const update: Record<string, any> = {}
   for (const k of allowed) {
     if (k in body) update[k] = body[k]
@@ -127,29 +132,32 @@ invoiceRoutes.patch('/:id', async (c) => {
   return c.json({ invoice: data })
 })
 
-// GET /api/invoices/:id/pdf
+// GET /api/invoices/:id/pdf  — genera y devuelve el PDF directamente (stream)
 invoiceRoutes.get('/:id/pdf', async (c) => {
   const salonId = c.get('salonId')
   const { id } = c.req.param()
   const supabase = getSupabaseAdmin()
   const { data: invoice, error } = await supabase
     .from('invoices')
-    .select('*, clients(name, email, phone), salons(name)')
+    .select(`*, clients(name, email, phone), salons(${SALON_PDF_SELECT})`)
     .eq('salon_id', salonId)
     .eq('id', id)
     .single()
   if (error || !invoice) return c.json({ error: 'Invoice not found' }, 404)
   try {
     const pdfBytes = await generateInvoicePDF(invoice)
-    const invoiceNum = invoice.number || `INV-${invoice.id.slice(0, 8).toUpperCase()}`
+    const invoiceNum = invoice.number || `FAC-${invoice.id.slice(0, 8).toUpperCase()}`
     return new Response(pdfBytes, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${invoiceNum}.pdf"`,
+        'Content-Disposition': `inline; filename="${invoiceNum}.pdf"`,
         'Content-Length': String(pdfBytes.length),
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': '*',
       },
     })
   } catch (err) {
+    console.error('[PDF] Error:', err)
     return c.json({ error: 'Error generating PDF', details: String(err) }, 500)
   }
 })
@@ -163,7 +171,7 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
 
     const { data: invoice, error } = await supabase
       .from('invoices')
-      .select('*, clients(name, email, phone), salons(name)')
+      .select(`*, clients(name, email, phone), salons(${SALON_PDF_SELECT})`)
       .eq('salon_id', salonId)
       .eq('id', id)
       .single()
@@ -201,7 +209,7 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
       `Factura de ${invoice.salons?.name || 'Diabolus CRM'}\n` +
       `Hola ${invoice.clients?.name || 'cliente'},\n` +
       `Factura: ${invoiceNum}\n` +
-      `Importe: EUR${total.toFixed(2)}\n` +
+      `Importe: ${total.toFixed(2)}€\n` +
       `Fecha: ${invoiceDate}\n`
     if (pdfUrl) messageBody += `PDF: ${pdfUrl}\n`
     messageBody += `Enviado desde Diabolus CRM`
@@ -210,9 +218,9 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
     if (!toPhone.startsWith('+')) toPhone = '+34' + toPhone
     const twilioTo = `whatsapp:${toPhone}`
 
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID
+    const twilioSid   = process.env.TWILIO_ACCOUNT_SID
     const twilioToken = process.env.TWILIO_AUTH_TOKEN
-    const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
+    const twilioFrom  = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
 
     if (!twilioSid || !twilioToken) {
       return c.json({ status: 'demo', mock: true, phone: toPhone, pdf_url: pdfUrl })
@@ -270,18 +278,18 @@ invoiceRoutes.post('/:id/send-whatsapp', async (c) => {
   }
 })
 
-// ─── Helper compartido para enviar recordatorio de cobro ──────────────────────
+// ─── Helper compartido para enviar recordatorio de cobro ─────────────────────
 async function sendReminderWhatsApp(invoice: any) {
   const clientPhone = invoice.clients?.phone
   if (!clientPhone) return { sent: false, error: 'Sin teléfono' }
 
   const invoiceNum = invoice.number || `FAC-${invoice.id.slice(0, 8).toUpperCase()}`
-  const total = Number(invoice.total ?? 0)
-  const dueDate = invoice.due_date
+  const total      = Number(invoice.total ?? 0)
+  const dueDate    = invoice.due_date
     ? new Date(invoice.due_date).toLocaleDateString('es-ES')
     : 'Sin fecha'
   const clientName = invoice.clients?.name || 'cliente'
-  const salonName = invoice.salons?.name || 'Diabolus CRM'
+  const salonName  = invoice.salons?.name  || 'Diabolus CRM'
 
   const reminderMessage =
     `Hola ${clientName},\n\n` +
@@ -296,9 +304,9 @@ async function sendReminderWhatsApp(invoice: any) {
   if (!toPhone.startsWith('+')) toPhone = '+34' + toPhone
   const twilioTo = `whatsapp:${toPhone}`
 
-  const twilioSid = process.env.TWILIO_ACCOUNT_SID
+  const twilioSid   = process.env.TWILIO_ACCOUNT_SID
   const twilioToken = process.env.TWILIO_AUTH_TOKEN
-  const twilioFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
+  const twilioFrom  = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
 
   if (!twilioSid || !twilioToken) {
     return { sent: false, error: 'Sin credenciales Twilio', phone: toPhone, mock: true }
@@ -344,14 +352,14 @@ invoiceRoutes.post('/:id/send-reminder', async (c) => {
       return c.json({ error: 'Solo se pueden enviar recordatorios de facturas pendientes' }, 400)
     }
 
-    const result = await sendReminderWhatsApp(invoice)
+    const result     = await sendReminderWhatsApp(invoice)
     const invoiceNum = invoice.number || `FAC-${invoice.id.slice(0, 8).toUpperCase()}`
-    const total = Number(invoice.total ?? 0)
+    const total      = Number(invoice.total ?? 0)
     const clientName = invoice.clients?.name || 'cliente'
-    const salonName = invoice.salons?.name || 'Diabolus CRM'
+    const salonName  = invoice.salons?.name  || 'Diabolus CRM'
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN
-    const chatId = process.env.TELEGRAM_CHAT_ID
+    const chatId   = process.env.TELEGRAM_CHAT_ID
     if (botToken && chatId) {
       const tgMsg = result.sent
         ? `📤 <b>Recordatorio enviado</b>\n\n👤 Cliente: <b>${clientName}</b>\n📄 Factura: ${invoiceNum}\n💶 Importe: <b>${total.toFixed(2)}€</b>\n📱 WhatsApp: ${result.phone}`
