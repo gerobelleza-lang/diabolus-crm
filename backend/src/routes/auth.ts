@@ -35,12 +35,10 @@ authRoutes.post('/register', async (c) => {
     return c.json({ error: 'Esta invitación ha caducado', code: 'INVITE_EXPIRED' }, 403)
   }
 
-  // Verificar campos obligatorios
   if (!body?.email || !body?.password || !body?.businessName) {
     return c.json({ error: 'Email, contraseña y nombre del negocio son obligatorios' }, 400)
   }
 
-  // Crear usuario en Supabase Auth
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email: body.email,
     password: body.password,
@@ -53,7 +51,6 @@ authRoutes.post('/register', async (c) => {
 
   const userId = authData.user.id
 
-  // Crear salón
   const { data: salon, error: salonError } = await supabase
     .from('salons')
     .insert({
@@ -70,27 +67,25 @@ authRoutes.post('/register', async (c) => {
     return c.json({ error: 'Error al crear el negocio' }, 500)
   }
 
-  // Marcar invitación como usada
   await supabase
     .from('beta_invites')
     .update({ used_at: new Date().toISOString(), used_by: userId })
     .eq('id', invite.id)
 
-  // Login para obtener token
   const { data: loginData } = await supabase.auth.signInWithPassword({
     email: body.email,
     password: body.password,
   })
 
-  // Enviar email de bienvenida (no bloqueante)
   try {
     await sendWelcomeEmail(body.email, body.businessName)
   } catch {}
 
   return c.json({
-    token: loginData?.session?.access_token ?? null,
-    user: { id: userId, email: body.email },
-    salon: { id: salon.id, name: salon.name },
+    token:         loginData?.session?.access_token ?? null,
+    refresh_token: loginData?.session?.refresh_token ?? null,
+    user:          { id: userId, email: body.email },
+    salon:         { id: salon.id, name: salon.name },
   })
 })
 
@@ -130,7 +125,6 @@ authRoutes.post('/login', async (c) => {
     return c.json({ error: error?.message ?? 'Credenciales incorrectas' }, 401)
   }
 
-  // Busca el salón del usuario
   const { data: salon } = await supabase
     .from('salons')
     .select('id, name, onboarding_completed, onboarding_step')
@@ -138,9 +132,38 @@ authRoutes.post('/login', async (c) => {
     .maybeSingle()
 
   return c.json({
-    token: data.session.access_token,
-    user: { id: data.user.id, email: data.user.email },
-    salon: salon ?? null,
+    token:         data.session.access_token,
+    refresh_token: data.session.refresh_token,
+    user:          { id: data.user.id, email: data.user.email },
+    salon:         salon ?? null,
+  })
+})
+
+// ── POST /auth/refresh — renovar access_token con refresh_token ───────────────
+authRoutes.post('/refresh', async (c) => {
+  const body = await c.req.json().catch(() => null)
+  if (!body?.refresh_token) {
+    return c.json({ error: 'refresh_token requerido' }, 400)
+  }
+
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase.auth.refreshSession({ refresh_token: body.refresh_token })
+
+  if (error || !data.session) {
+    return c.json({ error: 'Sesión caducada — inicia sesión de nuevo', code: 'SESSION_EXPIRED' }, 401)
+  }
+
+  const { data: salon } = await supabase
+    .from('salons')
+    .select('id, name')
+    .eq('user_id', data.user.id)
+    .maybeSingle()
+
+  return c.json({
+    token:         data.session.access_token,
+    refresh_token: data.session.refresh_token,
+    user:          { id: data.user.id, email: data.user.email },
+    salon:         salon ?? null,
   })
 })
 
