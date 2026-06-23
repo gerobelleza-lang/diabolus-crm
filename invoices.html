@@ -400,7 +400,7 @@ function renderTable() {
       <td>${badgeHtml(inv.status)}</td>
       <td>
         <div class="actions">
-          ${inv.pdf_url ? `<button class="action-btn btn-pdf" onclick="window.open('${inv.pdf_url}','_blank')">📎 PDF</button>` : ''}
+          <button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}', '${inv.number || inv.id?.slice(0,8) || 'factura'}')">📎 PDF</button>
           <button class="action-btn btn-wp" onclick="sendWhatsApp('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📱 WA</button>
           <button class="action-btn btn-reminder" onclick="sendReminder('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>🔔 Aviso</button>
           ${!isPaid ? `<button class="action-btn btn-paid" onclick="markAsPaid('${inv.id}')">✅ Cobrada</button>` : ''}
@@ -424,6 +424,36 @@ function renderTable() {
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
+}
+
+
+async function downloadPDF(id, invoiceNum) {
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  try {
+    const res = await fetch(`${API}/api/invoices/${id}/pdf`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast('❌ ' + (err.error || 'Error al generar PDF'), 'error');
+      return;
+    }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `${invoiceNum}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('✅ PDF descargado', 'success');
+  } catch(e) {
+    toast('❌ Error al descargar PDF', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📎 PDF'; }
+  }
 }
 
 async function sendWhatsApp(id) {
@@ -507,7 +537,8 @@ async function createInvoice() {
   btn.textContent = 'Creando...';
 
   try {
-    const body = { client_id: clientId, description, amount, total: total || amount, due_date: dueDate, status: 'pending' };
+    const ivaPct = parseFloat(document.getElementById('newIva').value) || 21;
+    const body = { client_id: clientId, description, amount, iva_pct: ivaPct, total: total || amount, due_date: dueDate, status: 'pending' };
     if (invoiceNumber) body.number = invoiceNumber;
 
     const res = await apiPost('/api/invoices', body);
