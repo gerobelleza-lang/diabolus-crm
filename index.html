@@ -107,7 +107,8 @@
       gap: 10px;
     }
     .form-row input { flex: 1; }
-    input {
+    input[type="text"],
+    input[type="email"] {
       background: var(--dark3);
       border: 1px solid var(--border);
       color: var(--text);
@@ -118,8 +119,39 @@
       width: 100%;
       transition: border-color 0.2s;
     }
-    input::placeholder { color: var(--muted); }
-    input:focus { border-color: var(--red); }
+    input[type="text"]::placeholder,
+    input[type="email"]::placeholder { color: var(--muted); }
+    input[type="text"]:focus,
+    input[type="email"]:focus { border-color: var(--red); }
+
+    /* CHECKBOX CONSENT */
+    .consent-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: left;
+    }
+    .consent-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      margin-top: 2px;
+      accent-color: var(--red);
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .consent-row label {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      cursor: pointer;
+    }
+    .consent-row label a {
+      color: var(--red);
+      text-decoration: none;
+    }
+    .consent-row label a:hover { text-decoration: underline; }
+
     .btn-main {
       background: var(--red);
       color: #fff;
@@ -201,9 +233,17 @@
       padding: 40px 24px;
       color: var(--muted);
       font-size: 13px;
+      border-top: 1px solid var(--border);
     }
-    footer a { color: var(--muted); text-decoration: none; }
+    footer a { color: var(--muted); text-decoration: none; margin: 0 8px; }
     footer a:hover { color: var(--text); }
+    .footer-legal {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 4px 0;
+    }
 
     @media (max-width: 600px) {
       nav { padding: 16px 20px; }
@@ -231,6 +271,15 @@
       <input type="text" id="empresa" placeholder="Tu negocio (opcional)" autocomplete="organization">
     </div>
     <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email">
+
+    <div class="consent-row">
+      <input type="checkbox" id="consent" required>
+      <label for="consent">
+        He leído y acepto la <a href="/privacidad.html" target="_blank">Política de Privacidad</a>.
+        Consiento que Diabolus (Gerobelleza SL) trate mis datos para informarme del acceso anticipado.
+      </label>
+    </div>
+
     <button type="submit" class="btn-main" id="submitBtn">
       Quiero ser de los primeros 😈
     </button>
@@ -283,7 +332,12 @@
 </section>
 
 <footer>
-  <p>© 2025 Diabolus · <a href="mailto:hola@diabolus.es">hola@diabolus.es</a> · España 🇪🇸</p>
+  <p>© 2026 Diabolus · Gerobelleza SL · CIF B22665194 · <a href="mailto:hola@diabolus.es">hola@diabolus.es</a></p>
+  <div class="footer-legal">
+    <a href="/aviso-legal.html">Aviso Legal</a>
+    <a href="/privacidad.html">Política de Privacidad</a>
+    <a href="/cookies.html">Política de Cookies</a>
+  </div>
 </footer>
 
 <script>
@@ -295,8 +349,13 @@
     const nombre = document.getElementById('nombre').value.trim()
     const email = document.getElementById('email').value.trim()
     const empresa = document.getElementById('empresa').value.trim()
+    const consent = document.getElementById('consent').checked
 
     if (!email) return
+    if (!consent) {
+      document.getElementById('consent').focus()
+      return
+    }
 
     btn.disabled = true
     btn.textContent = 'Guardando...'
