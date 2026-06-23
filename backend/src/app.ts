@@ -32,6 +32,7 @@ import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 import { accrueCommissions } from './routes/export'
 import { adminRoutes } from './routes/admin'
+import { waitlistRoutes } from './routes/waitlist'
 
 export function createApp() {
   const app = new Hono()
@@ -75,6 +76,9 @@ export function createApp() {
 
   // ─── Public Routes ─────────────────────────────────────────────────────────
   app.route('/auth', authRoutes)
+
+  // ─── Waitlist (Public — sin auth, recoge emails de interesados) ────────────
+  app.route('/api/waitlist', waitlistRoutes)
 
   // ─── Stripe & External Webhooks (Public, no auth) ──────────────────────────
   app.route('/api/stripe', stripeRoutes)
