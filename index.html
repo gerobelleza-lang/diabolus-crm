@@ -1,5 +1,325 @@
-<!doctype html>
-<meta charset="utf-8">
-<title>Diabolus</title>
-<meta http-equiv="refresh" content="0; url=./index-login.html">
-<script>location.replace('./index-login.html')</script>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diabolus — Centro de mando para autónomos</title>
+  <meta name="description" content="Controla tu tesorería, facturas y cobros desde un solo lugar. Sin complicaciones. Sin gestoría que te llame. Diabolus — para autónomos que van en serio.">
+  <meta property="og:title" content="Diabolus — Centro de mando para autónomos">
+  <meta property="og:description" content="Tesorería, facturas y cobros automáticos. Pide acceso anticipado.">
+  <meta property="og:url" content="https://diabolus.es">
+  <meta property="og:type" content="website">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://diabolus.es">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --red: #e63946;
+      --dark: #0d0d0f;
+      --dark2: #141416;
+      --dark3: #1c1c1f;
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f0f0;
+      --muted: #888;
+    }
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(13,13,15,0.95);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+    .logo {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--red); }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+    nav a:hover { color: var(--text); }
+
+    /* HERO */
+    .hero {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 100px 24px 80px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(230,57,70,0.12);
+      border: 1px solid rgba(230,57,70,0.3);
+      color: var(--red);
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 32px;
+    }
+    .badge::before { content: '●'; font-size: 8px; }
+    h1 {
+      font-size: clamp(36px, 6vw, 68px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      margin-bottom: 24px;
+    }
+    h1 span { color: var(--red); }
+    .subtitle {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto 48px;
+      line-height: 1.7;
+    }
+
+    /* FORM */
+    .waitlist-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+    .form-row input { flex: 1; }
+    input {
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    input::placeholder { color: var(--muted); }
+    input:focus { border-color: var(--red); }
+    .btn-main {
+      background: var(--red);
+      color: #fff;
+      border: none;
+      padding: 16px 28px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .btn-main:hover { background: #c82333; transform: translateY(-1px); }
+    .btn-main:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .form-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .success-msg {
+      display: none;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.3);
+      color: #4ade80;
+      padding: 16px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* FEATURES */
+    .features {
+      max-width: 1000px;
+      margin: 80px auto 0;
+      padding: 0 24px 80px;
+    }
+    .features-title {
+      text-align: center;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 48px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover { border-color: rgba(230,57,70,0.4); }
+    .feature-icon { font-size: 28px; margin-bottom: 16px; }
+    .feature-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .feature-card p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+    /* SOCIAL PROOF */
+    .social {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .social p { color: var(--muted); font-size: 14px; }
+    .social strong { color: var(--text); }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 600px) {
+      nav { padding: 16px 20px; }
+      .form-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Dia<span>bolus</span></div>
+  <a href="mailto:hola@diabolus.es">hola@diabolus.es</a>
+</nav>
+
+<section class="hero">
+  <div class="badge">Acceso anticipado · Beta privada</div>
+  <h1>Tu dinero bajo<br><span>control total.</span></h1>
+  <p class="subtitle">
+    Tesorería, facturas y cobros automáticos para autónomos que no tienen tiempo que perder. Sin Excel. Sin susto a fin de mes.
+  </p>
+
+  <form class="waitlist-form" id="waitlistForm">
+    <div class="form-row">
+      <input type="text" id="nombre" placeholder="Tu nombre" autocomplete="given-name">
+      <input type="text" id="empresa" placeholder="Tu negocio (opcional)" autocomplete="organization">
+    </div>
+    <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email">
+    <button type="submit" class="btn-main" id="submitBtn">
+      Quiero ser de los primeros 😈
+    </button>
+    <p class="form-note">Sin spam. Sin tarjeta. Te avisamos cuando abra el acceso.</p>
+  </form>
+
+  <div class="success-msg" id="successMsg">
+    ✅ ¡Apuntado! Serás de los primeros en entrar cuando abramos.
+  </div>
+</section>
+
+<div class="social">
+  <p>Diseñado para <strong>autónomos, freelances y pequeños negocios</strong> en España 🇪🇸</p>
+</div>
+
+<section class="features">
+  <p class="features-title">¿Qué encontrarás dentro?</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <h3>Tesorería en tiempo real</h3>
+      <p>Saldo real del negocio, entradas y salidas, previsión de caja. Todo actualizado sin que toques nada.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧾</div>
+      <h3>Facturas sin drama</h3>
+      <p>Crea y envía facturas en segundos. Con IVA real, numeración automática y PDF profesional.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>Agente Cazador de cobros</h3>
+      <p>Recuerdos automáticos a clientes con facturas vencidas. Nunca más perseguir pagos a mano.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <h3>Diablilla — tu asistente IA</h3>
+      <p>Habla con tu negocio. "¿Cuánto me debe Juan?" y la Diablilla te responde al instante.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Informes para tu gestor</h3>
+      <p>Exporta todo lo que necesita tu gestoría con un clic. Adiós a los correos con adjuntos.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Configurado en minutos</h3>
+      <p>Sin manuales. Sin formación. Entra, pon tu negocio y empieza. Así de simple.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 Diabolus · <a href="mailto:hola@diabolus.es">hola@diabolus.es</a> · España 🇪🇸</p>
+</footer>
+
+<script>
+  const API = 'https://diabolus-crm.vercel.app'
+
+  document.getElementById('waitlistForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const btn = document.getElementById('submitBtn')
+    const nombre = document.getElementById('nombre').value.trim()
+    const email = document.getElementById('email').value.trim()
+    const empresa = document.getElementById('empresa').value.trim()
+
+    if (!email) return
+
+    btn.disabled = true
+    btn.textContent = 'Guardando...'
+
+    try {
+      const res = await fetch(`${API}/api/waitlist/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, empresa })
+      })
+      const data = await res.json()
+
+      document.getElementById('waitlistForm').style.display = 'none'
+      const msg = document.getElementById('successMsg')
+      msg.style.display = 'block'
+      if (data.msg) msg.textContent = '✅ ' + data.msg
+    } catch (err) {
+      btn.disabled = false
+      btn.textContent = 'Quiero ser de los primeros 😈'
+      alert('Error de red. Inténtalo de nuevo.')
+    }
+  })
+</script>
+
+</body>
+</html>
