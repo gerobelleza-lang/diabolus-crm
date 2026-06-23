@@ -525,6 +525,201 @@
     footer a:hover { color: var(--text); }
     .footer-links { margin: 12px 0 8px; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 20px; }
 
+    /* ─── MOBILE SECTION ─── */
+    .mobile-section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .mobile-section h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+    }
+    .mobile-section h2 .accent { color: var(--orange); }
+    .mobile-section .mobile-desc {
+      font-size: clamp(16px, 1.8vw, 19px);
+      color: #bbb;
+      margin-bottom: 40px;
+      line-height: 1.8;
+    }
+    .chat-demo {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 560px;
+      margin: 0 auto 40px;
+      text-align: left;
+    }
+    .chat-demo-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .chat-avatar {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #e63946, #8B0000);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .chat-name { font-weight: 700; font-size: 15px; }
+    .chat-status { font-size: 12px; color: #4ade80; }
+    .chat-bubble {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: flex-end;
+    }
+    .chat-bubble.user { flex-direction: row-reverse; }
+    .bubble-text {
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      border-radius: 16px 16px 16px 4px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #ddd;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+    .chat-bubble.user .bubble-text {
+      background: rgba(230,57,70,0.15);
+      border-color: rgba(230,57,70,0.3);
+      border-radius: 16px 16px 4px 16px;
+      color: #fff;
+    }
+    .bubble-icon { font-size: 20px; flex-shrink: 0; }
+    .mobile-tagline {
+      font-size: clamp(18px, 2vw, 22px);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.5;
+    }
+    .mobile-tagline .accent { color: var(--orange); }
+
+    /* ─── LEGAL/FISCAL SECTION ─── */
+    .fiscal {
+      background: var(--dark2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 100px 24px;
+    }
+    .fiscal-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .fiscal-text h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(26px, 3.5vw, 42px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+    }
+    .fiscal-text h2 .accent { color: var(--orange); }
+    .fiscal-text .fiscal-desc {
+      font-size: 16px;
+      color: #bbb;
+      line-height: 1.75;
+      margin-bottom: 28px;
+    }
+    .fiscal-closing {
+      font-size: 15px;
+      font-style: italic;
+      color: #888;
+      border-left: 2px solid var(--red);
+      padding-left: 16px;
+    }
+    .fiscal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .fiscal-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      transition: border-color 0.25s;
+    }
+    .fiscal-item:hover { border-color: rgba(255,99,71,0.35); }
+    .fiscal-item-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+    .fiscal-item-text { font-size: 15px; color: #ccc; line-height: 1.5; }
+    .fiscal-item-text strong { color: #fff; }
+
+    /* ─── AGENTE LEGAL SECTION ─── */
+    .agente-legal {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .agente-legal h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(26px, 4vw, 46px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+    }
+    .agente-legal h2 .accent { color: var(--orange); }
+    .legal-preguntas {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin: 32px 0;
+    }
+    .legal-q {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 20px;
+      font-size: 14px;
+      color: #ccc;
+      font-style: italic;
+      transition: border-color 0.2s;
+    }
+    .legal-q:hover { border-color: rgba(255,99,71,0.4); color: #fff; }
+    .legal-desc {
+      font-size: clamp(16px, 1.8vw, 18px);
+      color: #bbb;
+      line-height: 1.8;
+      max-width: 680px;
+      margin: 0 auto 24px;
+    }
+    .legal-desc strong { color: #fff; }
+    .legal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(230,57,70,0.1);
+      border: 1px solid rgba(230,57,70,0.3);
+      color: var(--orange);
+      padding: 8px 20px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
     /* ─── RESPONSIVE ─── */
     @media (max-width: 768px) {
       nav { padding: 16px 20px; }
@@ -532,6 +727,8 @@
       .form-row { flex-direction: column; }
       .imagina-item { flex-direction: column; gap: 12px; }
       .features-grid { grid-template-columns: 1fr; }
+      .fiscal-inner { grid-template-columns: 1fr; gap: 40px; }
+      .legal-preguntas { flex-direction: column; align-items: center; }
     }
   </style>
 </head>
@@ -578,6 +775,57 @@
 
   <a href="#acceso" class="btn-hero">Quiero mi plaza en la beta privada 😈</a>
   <p class="btn-hero-note">Solo unas pocas plazas · Sé de los primeros</p>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- SECCIÓN MÓVIL -->
+<section class="mobile-section">
+  <span class="section-label">Solo habla. Diabolus hace el resto.</span>
+  <h2>Tu negocio en el bolsillo.<br><span class="accent">De verdad.</span></h2>
+  <p class="mobile-desc">
+    Abre Diabolus en el móvil y habla con tu <strong>Diablilla</strong> como si le escribieras a un amigo.<br>
+    Ella lo registra, lo calcula, lo organiza y lo archiva. Sin formularios. Sin menús. Sin perder el tiempo.
+  </p>
+
+  <div class="chat-demo">
+    <div class="chat-demo-header">
+      <div class="chat-avatar">😈</div>
+      <div>
+        <div class="chat-name">Diablilla</div>
+        <div class="chat-status">● En línea</div>
+      </div>
+    </div>
+
+    <div class="chat-bubble user">
+      <div class="bubble-text">Acabo de cobrar 1.200€ de Peluquería Rocío</div>
+      <div class="bubble-icon">🧑‍💼</div>
+    </div>
+    <div class="chat-bubble">
+      <div class="bubble-icon">😈</div>
+      <div class="bubble-text">✅ Movimiento registrado: +1.200€ de Peluquería Rocío. ¿Lo asocio a alguna factura pendiente?</div>
+    </div>
+
+    <div class="chat-bubble user">
+      <div class="bubble-text">Añade factura a Carlos García, 450€ más IVA</div>
+      <div class="bubble-icon">🧑‍💼</div>
+    </div>
+    <div class="chat-bubble">
+      <div class="bubble-icon">😈</div>
+      <div class="bubble-text">📄 Factura Nº 2026-047 generada: 450€ + 94,50€ IVA = <strong>544,50€</strong>. PDF listo para enviar. ¿Se la mando a Carlos?</div>
+    </div>
+
+    <div class="chat-bubble user">
+      <div class="bubble-text">¿Cuánto me deben este mes?</div>
+      <div class="bubble-icon">🧑‍💼</div>
+    </div>
+    <div class="chat-bubble">
+      <div class="bubble-icon">😈</div>
+      <div class="bubble-text">📊 Tienes <strong>3 facturas vencidas</strong> por un total de <strong>2.840€</strong>. ¿Activo el Cazador de Cobros?</div>
+    </div>
+  </div>
+
+  <p class="mobile-tagline">Tú hablas. <span class="accent">El programa genera todo.</span></p>
 </section>
 
 <div class="section-divider"></div>
@@ -666,11 +914,72 @@
       <p>Exporta todo con un clic. Tu gestor te querrá (y te cobrará menos horas). Todo ordenado, firmado y listo para presentar.</p>
     </div>
     <div class="feature-card">
+      <div class="feature-icon">⚖️</div>
+      <h3>Agente Legal <span style="font-size:11px;background:rgba(230,57,70,0.15);border:1px solid rgba(230,57,70,0.3);color:var(--orange);padding:2px 8px;border-radius:100px;vertical-align:middle;margin-left:6px;font-weight:600;">Pro +5€/mes</span></h3>
+      <p>Consultas legales 24/7. Legislación española real, artículos exactos del BOE. Tu abogado a las 3 de la mañana.</p>
+    </div>
+    <div class="feature-card">
       <div class="feature-icon">⚡</div>
       <h3>Configurado en minutos</h3>
       <p>Sin manuales. Sin formación. Sin migraciones eternas. Entra, pon tu negocio y empieza. Así de simple.</p>
     </div>
   </div>
+</section>
+
+<!-- FISCAL / LEGAL -->
+<section class="fiscal">
+  <div class="fiscal-inner">
+    <div class="fiscal-text">
+      <span class="section-label">Sin sorpresas fiscales</span>
+      <h2>Todo bajo control,<br>también <span class="accent">lo fiscal</span></h2>
+      <p class="fiscal-desc">
+        Diabolus no sustituye a tu gestor. Pero te mantiene siempre preparado, con los números perfectos antes de que él te los pida.
+      </p>
+      <p class="fiscal-closing">
+        Tú llevas las riendas. Tu gestor firma. Nadie se lleva sorpresas.
+      </p>
+    </div>
+    <div class="fiscal-list">
+      <div class="fiscal-item">
+        <div class="fiscal-item-icon">🧮</div>
+        <div class="fiscal-item-text"><strong>IVA real al céntimo</strong> — 21%, 10%, 4% o exento. Calculado automáticamente en cada factura.</div>
+      </div>
+      <div class="fiscal-item">
+        <div class="fiscal-item-icon">📉</div>
+        <div class="fiscal-item-text"><strong>Retenciones IRPF</strong> incluidas automáticamente cuando aplica. Nada se escapa.</div>
+      </div>
+      <div class="fiscal-item">
+        <div class="fiscal-item-icon">📋</div>
+        <div class="fiscal-item-text"><strong>Exportación perfecta</strong> para tu gestoría: ordenada por trimestre, lista para las declaraciones <strong>303, 130 y 347</strong>.</div>
+      </div>
+      <div class="fiscal-item">
+        <div class="fiscal-item-icon">⏰</div>
+        <div class="fiscal-item-text"><strong>Avisos de vencimientos</strong> — te alertamos antes de cada plazo trimestral de Hacienda. Nunca más un susto.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENTE LEGAL -->
+<section class="agente-legal">
+  <span class="section-label">Agente Legal · Add-on Pro</span>
+  <h2>Tu abogado.<br>Siempre disponible.<br><span class="accent">Gratis a las 3 de la mañana.</span></h2>
+
+  <div class="legal-preguntas">
+    <div class="legal-q">"¿Puedo subir precio sin avisar al cliente?"</div>
+    <div class="legal-q">"¿Qué pasa si no pago la cuota de autónomo este mes?"</div>
+    <div class="legal-q">"¿Necesito contrato para este encargo?"</div>
+    <div class="legal-q">"¿Cuándo prescriben mis facturas impagadas?"</div>
+  </div>
+
+  <p class="legal-desc">
+    Antes buscabas en Google, preguntabas por WhatsApp o pagabas <strong>150€/hora a un abogado</strong>.<br><br>
+    Ahora solo le preguntas a tu <strong>Agente Legal</strong>.<br><br>
+    Formado con legislación española real — Estatuto de los Trabajadores, Ley de Autónomos, Código Civil, normativa fiscal vigente. Te responde citando <strong>artículos exactos del BOE</strong>, en lenguaje claro y directo.<br><br>
+    No reemplaza a tu abogado para casos complejos. Pero te evita el <strong>90% de las consultas</strong> habituales.
+  </p>
+
+  <div class="legal-badge">⚖️ Add-on Pro · +5€/mes</div>
 </section>
 
 <div class="section-divider"></div>
