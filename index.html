@@ -730,7 +730,120 @@
       .fiscal-inner { grid-template-columns: 1fr; gap: 40px; }
       .legal-preguntas { flex-direction: column; align-items: center; }
     }
-  </style>
+  
+/* ── Identidad Section ── */
+.identidad-section {
+  padding: 100px 20px;
+  background: #080808;
+}
+.identidad-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+.identidad-eyebrow {
+  color: #8b1a1a;
+  font-size: 12px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.identidad-title {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #f0e8d0;
+}
+.identidad-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  max-width: 900px;
+  margin: 0 auto 60px;
+}
+@media (max-width: 700px) {
+  .identidad-grid { grid-template-columns: 1fr; }
+}
+.identidad-card {
+  background: #111;
+  border: 1px solid #2a1a0a;
+  border-radius: 12px;
+  padding: 40px 32px;
+}
+.identidad-icon {
+  font-size: 36px;
+  margin-bottom: 16px;
+}
+.identidad-card h3 {
+  font-size: 1.4rem;
+  color: #e0c878;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.identidad-card p {
+  color: #a09070;
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+.identidad-card strong { color: #d4b870; }
+.identidad-quote {
+  color: #8b6914 !important;
+  font-style: italic;
+  font-size: 14px !important;
+  border-left: 2px solid #5a3a0a;
+  padding-left: 14px;
+}
+.identidad-footer {
+  max-width: 600px;
+  margin: 0 auto;
+}
+.plazas-bar-wrap {
+  background: #0f0f0f;
+  border: 1px solid #2a1a0a;
+  border-radius: 10px;
+  padding: 32px;
+}
+.plazas-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.plazas-bar-label { color: #8a7050; font-size: 13px; }
+.plazas-bar-num { color: #e0c878; font-size: 18px; font-weight: 700; }
+.plazas-bar-bg {
+  background: #1a1a1a;
+  border-radius: 4px;
+  height: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.plazas-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b1a1a, #cc2222);
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+.plazas-bar-note {
+  color: #6a5030;
+  font-size: 12px;
+  text-align: center;
+  margin: 0;
+}
+/* ── Hero Counter ── */
+.plazas-counter {
+  margin-top: 14px;
+  color: #8a6030;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.plazas-num {
+  color: #e0c878;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+</style>
 </head>
 <body>
 
@@ -747,7 +860,7 @@
 <section class="hero">
   <div class="hero-bg"></div>
 
-  <div class="hero-badge">Acceso anticipado · Beta privada · Plazas limitadas</div>
+  <div class="hero-badge">Beta privada · <strong style="color:#ff4444;">Solo 100 plazas</strong> · Sin excepciones</div>
 
   <img src="./landing-hero.png" alt="Diabolus — El Pacto" class="hero-image" loading="eager">
 
@@ -771,8 +884,11 @@
 
   <p class="hero-bold">Esto no es software.<br>Es un pacto.<br>Y los que lo tienen, <span class="accent">ya no vuelven atrás.</span></p>
 
-  <a href="#acceso" class="btn-hero">Quiero mi plaza en la beta privada 😈</a>
-  <p class="btn-hero-note">Solo unas pocas plazas · Sé de los primeros</p>
+  <a href="#acceso" class="btn-hero">Quiero firmar el Pacto 😈</a>
+  <div class="plazas-counter" id="hero-counter">
+    <span class="plazas-num" id="hero-num">—</span>
+    <span class="plazas-label"> plazas restantes de 100</span>
+  </div>
 </section>
 
 <div class="section-divider"></div>
@@ -1093,6 +1209,40 @@
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
   })
+</script>
+
+
+<script>
+(async function loadPlazas() {
+  try {
+    const r = await fetch('https://diabolus-crm.vercel.app/api/waitlist/count')
+    const d = await r.json()
+    const remaining = d.remaining ?? 0
+    const total = d.total ?? 0
+    const pct = Math.min(100, Math.round((total / 100) * 100))
+
+    // Hero counter
+    const heroNum = document.getElementById('hero-num')
+    if (heroNum) heroNum.textContent = remaining
+
+    // Bar
+    const taken = document.getElementById('count-taken')
+    if (taken) taken.textContent = total
+    const rem = document.getElementById('count-remaining')
+    if (rem) rem.textContent = remaining
+    const bar = document.getElementById('plazas-bar-fill')
+    if (bar) bar.style.width = pct + '%'
+
+    // Si está completo
+    if (d.closed) {
+      document.querySelectorAll('.btn-hero, .btn-cta').forEach(btn => {
+        btn.textContent = '⛔ El Pacto está completo'
+        btn.style.pointerEvents = 'none'
+        btn.style.opacity = '0.5'
+      })
+    }
+  } catch(e) { /* silencioso */ }
+})()
 </script>
 
 </body>
