@@ -1195,51 +1195,12 @@ function addConfirmationCard(card, opts = {}) {
 // ══════════════════════════════════════════════════════════════════════
 // API
 // ══════════════════════════════════════════════════════════════════════
-// ── Auto-refresh de sesión ───────────────────────────────────────────
-async function refreshSession() {
-  const auth = JSON.parse(localStorage.getItem('diabolus_auth') || '{}')
-  if (!auth.refreshToken) return false
-  try {
-    const res = await fetch(`${API}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: auth.refreshToken }),
-    })
-    if (!res.ok) return false
-    const data = await res.json()
-    if (!data.token) return false
-    auth.token        = data.token
-    auth.refreshToken = data.refresh_token ?? auth.refreshToken
-    localStorage.setItem('diabolus_auth', JSON.stringify(auth))
-    token = data.token
-    return true
-  } catch { return false }
-}
-
 async function apiPost(path, body) {
   const res = await fetch(`${API}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(body),
   })
-  // 401 → intentar refrescar token y reintentar una sola vez
-  if (res.status === 401) {
-    const refreshed = await refreshSession()
-    if (!refreshed) {
-      overlay.classList.remove('hidden')
-      throw new Error('Sesión caducada — vuelve a entrar')
-    }
-    const retry = await fetch(`${API}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(body),
-    })
-    if (!retry.ok) {
-      const err = await retry.json().catch(() => ({}))
-      throw new Error(err.error || `HTTP ${retry.status}`)
-    }
-    return retry.json()
-  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.error || `HTTP ${res.status}`)
@@ -1375,5 +1336,6 @@ inputEl.focus()
     })
   }
 </script>
+<script src="sidebar.js"></script>
 </body>
 </html>
