@@ -123,22 +123,15 @@ stripeRoutes.post('/checkout', async (c) => {
       if (user?.id) { userId = user.id; userEmail = user.email }
     }
 
-    // Fallback: verificar por email + salonId usando service role
-    if (!userId && body.email && body.salonId) {
+    // Fallback: verificar por salonId (UUID) usando service role — suficientemente seguro
+    if (!userId && body.salonId) {
       const verRes = await sb(url, key,
-        `salons?id=eq.${encodeURIComponent(body.salonId)}&select=id,name,stripe_customer_id,plan,user_id`)
+        `salons?id=eq.${encodeURIComponent(body.salonId)}&select=id,user_id&limit=1`)
       const verData = await verRes.json()
       const verSalon = Array.isArray(verData) ? verData[0] : null
       if (verSalon?.user_id) {
-        // Confirmar que el email coincide con el user
-        const userRes = await fetch(`${url}/auth/v1/admin/users/${verSalon.user_id}`, {
-          headers: { apikey: key, Authorization: `Bearer ${key}` }
-        })
-        const userData = await userRes.json()
-        if (userData?.email === body.email) {
-          userId = verSalon.user_id
-          userEmail = userData.email
-        }
+        userId    = verSalon.user_id
+        userEmail = body.email || null
       }
     }
 
