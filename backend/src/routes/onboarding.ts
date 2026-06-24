@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * onboarding.ts — Fase 4, Item 2: Onboarding Wizard endpoints
+ * onboarding.ts — Onboarding Wizard endpoints
  *
  * Endpoints (todos bajo /api/onboarding/*):
  *   GET  /api/onboarding/status           — estado actual + info salon + gestor vinculado
@@ -10,11 +10,7 @@
  *   POST /api/onboarding/skip             — saltar paso actual
  *   POST /api/onboarding/complete         — marcar onboarding_completed = true
  *
- * Flujo:
- *   Paso 1 → PATCH /step1 (obligatorio)
- *   Paso 2 → POST /logo  | POST /skip
- *   Paso 3 → cliente conecta Telegram/WhatsApp en la UI | POST /skip
- *   Paso 4 → primera acción en /api/agent/chat → POST /complete
+ * Auth: authMiddleware (app.ts) ya valida el JWT y expone c.get('salonId') y c.get('userId').
  */
 
 import { Hono } from 'hono'
@@ -22,50 +18,25 @@ import { getSupabaseAdmin } from '../integrations/supabase'
 
 export const onboardingRoutes = new Hono()
 
-// ─── Helper: obtener salon_id del JWT ────────────────────────────────────────
-async function getSalonFromJWT(c: any): Promise<{ salonId: string; userId: string } | null> {
-  const auth = c.req.header('Authorization') ?? ''
-  if (!auth.startsWith('Bearer ')) return null
-  const token = auth.slice(7)
-  const supabase = getSupabaseAdmin()
-  const { data: { user }, error } = await supabase.auth.getUser(token)
-  if (error || !user) return null
-  const { data: salon } = await supabase
-    .from('salons')
-    .select('id')
-    .eq('user_id', user.id)  // columna correcta
-    .single()
-  if (!salon) return null
-  return { salonId: salon.id, userId: user.id }
-}
-
 // ─── GET /api/onboarding/status ───────────────────────────────────────────────
 onboardingRoutes.get('/status', async (c) => {
-  const ctx = await getSalonFromJWT(c)
-  if (!ctx) return c.json({ error: 'No autorizado' }, 401)
+  const salonId = c.get('salonId')
+  if (!salonId) return c.json({ error: 'No autorizado' }, 401)
 
   const supabase = getSupabaseAdmin()
   const { data: salon } = await supabase
     .from('salons')
     .select('id, name, nif, nombre_fiscal, logo_path, onboarding_completed, onboarding_step')
-    .eq('id', ctx.salonId)
+    .eq('id', salonId)
     .single()
 
   if (!salon) return c.json({ error: 'Salon no encontrado' }, 404)
-
-  // ¿Tiene canal vinculado?
-  const { data: channelLink } = await supabase
-    .from('channel_links')
-    .select('id, channel_type')
-    .eq('salon_id', ctx.salonId)
-    .limit(1)
-    .maybeSingle()
 
   // ¿Tiene gestor vinculado?
   const { data: gestorLink } = await supabase
     .from('gestor_salon_links')
     .select('id, gestores(name, email)')
-    .eq('salon_id', ctx.salonId)
+    .eq('salon_id', salonId)
     .eq('status', 'active')
     .maybeSingle()
 
@@ -79,8 +50,6 @@ onboardingRoutes.get('/status', async (c) => {
       nombre_fiscal: salon.nombre_fiscal ?? null,
       has_logo: !!salon.logo_path,
     },
-    channel_linked: !!channelLink,
-    channel_type: channelLink?.channel_type ?? null,
     gestor: gestorLink?.gestores
       ? { name: (gestorLink.gestores as any).name, email: (gestorLink.gestores as any).email }
       : null,
@@ -88,10 +57,9 @@ onboardingRoutes.get('/status', async (c) => {
 })
 
 // ─── PATCH /api/onboarding/step1 ─────────────────────────────────────────────
-// Guardar NIF + nombre_fiscal (obligatorio). Avanza a paso 2.
 onboardingRoutes.patch('/step1', async (c) => {
-  const ctx = await getSalonFromJWT(c)
-  if (!ctx) return c.json({ error: 'No autorizado' }, 401)
+  const salonId = c.get('salonId')
+  if (!salonId) return c.json({ error: 'No autorizado' }, 401)
 
   const body = await c.req.json().catch(() => ({}))
   const nif = (body.nif ?? '').trim().toUpperCase()
@@ -105,19 +73,19 @@ onboardingRoutes.patch('/step1', async (c) => {
   const { error } = await supabase
     .from('salons')
     .update({ nif, nombre_fiscal })
-    .eq('id', ctx.salonId)
+    .eq('id', salonId)
+
+  if (error) return c.json({ error: 'Error guardando datos' }, 500)
 
   // Avanzar paso solo si aún está en 1
   await supabase
     .from('salons')
     .update({ onboarding_step: 2 })
-    .eq('id', ctx.salonId)
+    .eq('id', salonId)
     .lt('onboarding_step', 2)
 
-  if (error) return c.json({ error: 'Error guardando datos' }, 500)
-
   await supabase.from('audit_log').insert([{
-    salon_id: ctx.salonId,
+    salon_id: salonId,
     action: 'onboarding_step1_completed',
     changes: { nif, nombre_fiscal },
     created_at: new Date().toISOString(),
@@ -127,10 +95,9 @@ onboardingRoutes.patch('/step1', async (c) => {
 })
 
 // ─── POST /api/onboarding/logo ────────────────────────────────────────────────
-// Subir logo al bucket privado `logos`. Avanza a paso 3.
 onboardingRoutes.post('/logo', async (c) => {
-  const ctx = await getSalonFromJWT(c)
-  if (!ctx) return c.json({ error: 'No autorizado' }, 401)
+  const salonId = c.get('salonId')
+  if (!salonId) return c.json({ error: 'No autorizado' }, 401)
 
   let formData: FormData
   try {
@@ -151,16 +118,15 @@ onboardingRoutes.post('/logo', async (c) => {
   }
 
   const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
-  const path = `${ctx.salonId}/logo.${ext}`
+  const path = `${salonId}/logo.${ext}`
   const arrayBuffer = await file.arrayBuffer()
 
   const supabase = getSupabaseAdmin()
 
-  // Eliminar logo anterior si existe
   const { data: salon } = await supabase
     .from('salons')
     .select('logo_path')
-    .eq('id', ctx.salonId)
+    .eq('id', salonId)
     .single()
   if (salon?.logo_path) {
     await supabase.storage.from('logos').remove([salon.logo_path])
@@ -168,30 +134,18 @@ onboardingRoutes.post('/logo', async (c) => {
 
   const { error: uploadError } = await supabase.storage
     .from('logos')
-    .upload(path, arrayBuffer, {
-      contentType: file.type,
-      upsert: true,
-    })
+    .upload(path, arrayBuffer, { contentType: file.type, upsert: true })
 
   if (uploadError) {
     console.error('[Onboarding Logo]', uploadError)
     return c.json({ error: 'Error subiendo logo' }, 500)
   }
 
-  await supabase
-    .from('salons')
-    .update({ logo_path: path })
-    .eq('id', ctx.salonId)
-
-  // Avanzar paso si está en 2
-  await supabase
-    .from('salons')
-    .update({ onboarding_step: 3 })
-    .eq('id', ctx.salonId)
-    .lt('onboarding_step', 3)
+  await supabase.from('salons').update({ logo_path: path }).eq('id', salonId)
+  await supabase.from('salons').update({ onboarding_step: 3 }).eq('id', salonId).lt('onboarding_step', 3)
 
   await supabase.from('audit_log').insert([{
-    salon_id: ctx.salonId,
+    salon_id: salonId,
     action: 'onboarding_logo_uploaded',
     changes: { path },
     created_at: new Date().toISOString(),
@@ -201,38 +155,36 @@ onboardingRoutes.post('/logo', async (c) => {
 })
 
 // ─── GET /api/onboarding/logo ─────────────────────────────────────────────────
-// Devuelve URL firmada del logo (5 min). Nil si no hay logo.
 onboardingRoutes.get('/logo', async (c) => {
-  const ctx = await getSalonFromJWT(c)
-  if (!ctx) return c.json({ error: 'No autorizado' }, 401)
+  const salonId = c.get('salonId')
+  if (!salonId) return c.json({ error: 'No autorizado' }, 401)
 
   const supabase = getSupabaseAdmin()
   const { data: salon } = await supabase
     .from('salons')
     .select('logo_path')
-    .eq('id', ctx.salonId)
+    .eq('id', salonId)
     .single()
 
   if (!salon?.logo_path) return c.json({ url: null })
 
   const { data: signed } = await supabase.storage
     .from('logos')
-    .createSignedUrl(salon.logo_path, 300) // 5 minutos
+    .createSignedUrl(salon.logo_path, 300)
 
   return c.json({ url: signed?.signedUrl ?? null })
 })
 
 // ─── POST /api/onboarding/skip ────────────────────────────────────────────────
-// Saltar el paso actual (pasos 2, 3 son skippables). Avanza al siguiente.
 onboardingRoutes.post('/skip', async (c) => {
-  const ctx = await getSalonFromJWT(c)
-  if (!ctx) return c.json({ error: 'No autorizado' }, 401)
+  const salonId = c.get('salonId')
+  if (!salonId) return c.json({ error: 'No autorizado' }, 401)
 
   const supabase = getSupabaseAdmin()
   const { data: salon } = await supabase
     .from('salons')
     .select('onboarding_step, onboarding_completed')
-    .eq('id', ctx.salonId)
+    .eq('id', salonId)
     .single()
 
   if (!salon) return c.json({ error: 'Salon no encontrado' }, 404)
@@ -240,32 +192,28 @@ onboardingRoutes.post('/skip', async (c) => {
 
   const currentStep = salon.onboarding_step
   if (currentStep === 1) {
-    return c.json({ error: 'El paso 1 (NIF + nombre fiscal) es obligatorio y no se puede saltar' }, 400)
+    return c.json({ error: 'El paso 1 (NIF + nombre fiscal) es obligatorio' }, 400)
   }
 
   const nextStep = currentStep + 1
-  await supabase
-    .from('salons')
-    .update({ onboarding_step: nextStep })
-    .eq('id', ctx.salonId)
+  await supabase.from('salons').update({ onboarding_step: nextStep }).eq('id', salonId)
 
   return c.json({ ok: true, next_step: nextStep })
 })
 
 // ─── POST /api/onboarding/complete ───────────────────────────────────────────
-// Marca onboarding como completado. Se llama tras la primera acción en el chat.
 onboardingRoutes.post('/complete', async (c) => {
-  const ctx = await getSalonFromJWT(c)
-  if (!ctx) return c.json({ error: 'No autorizado' }, 401)
+  const salonId = c.get('salonId')
+  if (!salonId) return c.json({ error: 'No autorizado' }, 401)
 
   const supabase = getSupabaseAdmin()
   await supabase
     .from('salons')
     .update({ onboarding_completed: true, onboarding_step: 4 })
-    .eq('id', ctx.salonId)
+    .eq('id', salonId)
 
   await supabase.from('audit_log').insert([{
-    salon_id: ctx.salonId,
+    salon_id: salonId,
     action: 'onboarding_completed',
     changes: {},
     created_at: new Date().toISOString(),
