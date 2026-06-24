@@ -912,7 +912,7 @@
         if (data.url) {
           window.location.href = data.url
         } else {
-          alert('Error al iniciar el pago. Inténtalo de nuevo.')
+          alert('Error Stripe: ' + (data.error || 'Respuesta sin URL: ' + JSON.stringify(data)))
           if (btn) btn.textContent = 'Activar ahora →'
         }
       } catch (e) {
