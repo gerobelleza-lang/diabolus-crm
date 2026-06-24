@@ -578,6 +578,18 @@
             <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
             <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
           </div>
+          <!-- Por cobrar -->
+          <div class="kpi-card" id="kpiPendiente">
+            <div class="kpi-label">🕐 Por cobrar</div>
+            <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
+            <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
+          </div>
+          <!-- Riesgo activo -->
+          <div class="kpi-card" id="kpiVencidas">
+            <div class="kpi-label">🔴 Riesgo vencidas</div>
+            <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
+            <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
+          </div>
         </div>
 
         <!-- 💬 Uso de mensajes del Agente IA -->
@@ -806,14 +818,32 @@
         <div class="kpi-value">${eur(s.month)}</div>
         <div class="kpi-sub">Hoy: ${eur(s.today)} · Semana: ${eur(s.week)}</div>
       `
-      document.getElementById('kpiGastos').innerHTML = `
-        <div class="kpi-card${(s.expenses ?? 0) > (s.month ?? 0) ? ' alert' : ''}">
-          <div class="kpi-label">📉 Gastos mes</div>
-          <div class="kpi-value">${eur(s.expenses)}</div>
-          <div class="kpi-sub${(s.overdue_count ?? 0) > 0 ? ' danger' : ''}">
-            Vencidas: ${eur(s.overdue_amount)} (${s.overdue_count ?? 0})
-          </div>
-        </div>
+      // Fix: kpiGastos is already a kpi-card, no double-wrapper
+      const gastosEl = document.getElementById('kpiGastos')
+      if ((s.expenses ?? 0) > (s.month ?? 0)) gastosEl.classList.add('alert')
+      else gastosEl.classList.remove('alert')
+      gastosEl.innerHTML = `
+        <div class="kpi-label">📉 Gastos mes</div>
+        <div class="kpi-value">${eur(s.expenses)}</div>
+        <div class="kpi-sub">Balance: ${eur(s.month - s.expenses)}</div>
+      `
+      // Por cobrar — facturas sent/pending
+      const pendienteEl = document.getElementById('kpiPendiente')
+      if ((s.pending_count ?? 0) > 0) pendienteEl.classList.add('alert')
+      else pendienteEl.classList.remove('alert')
+      pendienteEl.innerHTML = `
+        <div class="kpi-label">🕐 Por cobrar</div>
+        <div class="kpi-value">${eur(s.pending_amount)}</div>
+        <div class="kpi-sub">${s.pending_count ?? 0} factura${(s.pending_count ?? 0) !== 1 ? 's' : ''} pendiente${(s.pending_count ?? 0) !== 1 ? 's' : ''}</div>
+      `
+      // Riesgo vencidas
+      const vencidasEl = document.getElementById('kpiVencidas')
+      if ((s.overdue_count ?? 0) > 0) vencidasEl.classList.add('alert')
+      else vencidasEl.classList.remove('alert')
+      vencidasEl.innerHTML = `
+        <div class="kpi-label">🔴 Riesgo vencidas</div>
+        <div class="kpi-value" style="${(s.overdue_count ?? 0) > 0 ? 'color:#f87171' : ''}">${eur(s.overdue_amount)}</div>
+        <div class="kpi-sub${(s.overdue_count ?? 0) > 0 ? ' danger' : ''}">${s.overdue_count ?? 0} factura${(s.overdue_count ?? 0) !== 1 ? 's' : ''} vencida${(s.overdue_count ?? 0) !== 1 ? 's' : ''}</div>
       `
     }
 
@@ -822,7 +852,7 @@
       if ((s.overdue_count ?? 0) > 0) {
         alerts.push(`⚠️ ${s.overdue_count} factura${s.overdue_count !== 1 ? 's' : ''} vencida${s.overdue_count !== 1 ? 's' : ''} — ${eur(s.overdue_amount)} pendientes`)
       }
-      if ((s.pending_count ?? 0) > 3) {
+      if ((s.pending_count ?? 0) > 0) {
         alerts.push(`🕐 ${s.pending_count} facturas por cobrar (${eur(s.pending_amount)})`)
       }
 
