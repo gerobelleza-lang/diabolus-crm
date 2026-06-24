@@ -19,7 +19,6 @@
 
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
-import { authMiddleware } from '../middleware/auth'
 
 export const onboardingRoutes = new Hono()
 
@@ -34,7 +33,7 @@ async function getSalonFromJWT(c: any): Promise<{ salonId: string; userId: strin
   const { data: salon } = await supabase
     .from('salons')
     .select('id')
-    .eq('owner_id', user.id)
+    .eq('user_id', user.id)  // columna correcta
     .single()
   if (!salon) return null
   return { salonId: salon.id, userId: user.id }
@@ -48,7 +47,7 @@ onboardingRoutes.get('/status', async (c) => {
   const supabase = getSupabaseAdmin()
   const { data: salon } = await supabase
     .from('salons')
-    .select('id, name, nif, nombre_fiscal, logo_path, onboarding_completed, onboarding_step, notify_channel')
+    .select('id, name, nif, nombre_fiscal, logo_path, onboarding_completed, onboarding_step')
     .eq('id', ctx.salonId)
     .single()
 
@@ -79,7 +78,6 @@ onboardingRoutes.get('/status', async (c) => {
       nif: salon.nif ?? null,
       nombre_fiscal: salon.nombre_fiscal ?? null,
       has_logo: !!salon.logo_path,
-      notify_channel: salon.notify_channel,
     },
     channel_linked: !!channelLink,
     channel_type: channelLink?.channel_type ?? null,
@@ -104,17 +102,10 @@ onboardingRoutes.patch('/step1', async (c) => {
   if (nif.length < 8 || nif.length > 10) return c.json({ error: 'NIF/CIF inválido (8-10 caracteres)' }, 400)
 
   const supabase = getSupabaseAdmin()
-  const { data: salon, error } = await supabase
+  const { error } = await supabase
     .from('salons')
-    .update({
-      nif,
-      nombre_fiscal,
-      onboarding_step: 2,
-      // Si ya estaba en paso > 2, no retroceder
-    })
+    .update({ nif, nombre_fiscal })
     .eq('id', ctx.salonId)
-    .select('onboarding_step')
-    .single()
 
   // Avanzar paso solo si aún está en 1
   await supabase
