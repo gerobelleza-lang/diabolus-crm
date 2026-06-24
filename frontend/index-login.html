@@ -219,11 +219,12 @@
         }
 
         localStorage.setItem('diabolus_auth', JSON.stringify({
-          userId:    data.user.id,
-          email:     data.user.email,
-          salonId:   data.salon?.id   ?? null,
-          salonName: data.salon?.name ?? 'Mi negocio',
-          token:     data.token,
+          userId:       data.user.id,
+          email:        data.user.email,
+          salonId:      data.salon?.id   ?? null,
+          salonName:    data.salon?.name ?? 'Mi negocio',
+          token:        data.token,
+          refresh_token: data.refresh_token ?? null,
         }))
 
         window.location.href = isMobile() ? 'mobile.html' : 'dashboard.html'

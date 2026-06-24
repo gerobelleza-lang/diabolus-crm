@@ -900,6 +900,25 @@
 
     // ── El Pacto: checkout ──
     async function activarPacto() {
+      // Auto-refresh del token Supabase si está caducado
+      try {
+        const storedAuth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null')
+        if (storedAuth?.refresh_token) {
+          const rr = await fetch('https://emygbvxkhfbwyhbapaae.supabase.co/auth/v1/token?grant_type=refresh_token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODM3MjcsImV4cCI6MjA5Njg1OTcyN30.HpcYlWwggML7FGHLKerj17sLwj3CiFmYKZdL4iSV9YM' },
+            body: JSON.stringify({ refresh_token: storedAuth.refresh_token })
+          })
+          const rd = await rr.json()
+          if (rd.access_token) {
+            storedAuth.token = rd.access_token
+            storedAuth.refresh_token = rd.refresh_token || storedAuth.refresh_token
+            localStorage.setItem('diabolus_auth', JSON.stringify(storedAuth))
+            // Actualizar 'auth' en scope global
+            Object.assign(auth, storedAuth)
+          }
+        }
+      } catch(e) { console.warn('Token refresh failed:', e) }
       const btn = document.querySelector('.pacto-banner-cta')
       if (btn) btn.textContent = 'Cargando…'
       try {
