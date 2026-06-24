@@ -922,10 +922,16 @@
       const btn = document.querySelector('.pacto-banner-cta')
       if (btn) btn.textContent = 'Cargando…'
       try {
+        // Re-leer auth del localStorage (token más fresco posible)
+        const freshAuth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null') || auth
         const res = await fetch(`${API}/api/stripe/checkout`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId: 'price_1Tlwsw1UnR4OJAljw7DR4M2R' })
+          headers: { 'Authorization': `Bearer ${freshAuth.token || ''}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            priceId:  'price_1Tlwsw1UnR4OJAljw7DR4M2R',
+            email:    freshAuth.email    || auth.email    || '',
+            salonId:  freshAuth.salonId  || auth.salonId  || '',
+          })
         })
         const data = await res.json()
         if (data.url) {
