@@ -481,7 +481,10 @@ invoiceRoutes.post('/:id/send', async (c) => {
 
     // 4. Telegram — al cliente (si tiene chat_id) + confirmación al owner del salón
     if (channels.includes('telegram')) {
-      const tgToken = process.env.TELEGRAM_BOT_TOKEN || '8895422982:AAGhM6bN4FqbDSgxFSgQHwD79bHlJMpr-3w'
+      const tgToken = process.env.TELEGRAM_BOT_TOKEN
+      if (!tgToken) {
+        results.telegram = { sent: false, error: 'TELEGRAM_BOT_TOKEN no configurado' }
+      } else {
       const tgSendMessage = async (chatId: string, text: string) => {
         return fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
           method: 'POST',
@@ -541,6 +544,7 @@ invoiceRoutes.post('/:id/send', async (c) => {
         }
       }
       results.telegram = tgResults.length > 0 ? tgResults : { sent: false, error: 'Sin chat_ids configurados' }
+      } // end else tgToken
     }
 
     // Marcar factura como enviada
