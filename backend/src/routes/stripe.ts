@@ -119,7 +119,7 @@ stripeRoutes.post('/checkout', async (c) => {
     const salon    = salons?.[0]
 
     // Obtener o crear cliente en Stripe
-    const profileRes = await sb(url, key, `profiles?id=eq.${user.id}&select=stripe_customer_id,plan&limit=1`)
+    const profileRes = await sb(url, key, `salons?user_id=eq.${user.id}&select=stripe_customer_id,plan&limit=1`)
     const profiles   = await profileRes.json()
     const profile    = profiles?.[0]
 
@@ -137,7 +137,7 @@ stripeRoutes.post('/checkout', async (c) => {
       })
       customerId = customer.id
       // Guardar stripe_customer_id en profiles
-      await sb(url, key, `profiles?id=eq.${user.id}`, {
+      await sb(url, key, `salons?user_id=eq.${user.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ stripe_customer_id: customerId }),
       })
@@ -180,7 +180,7 @@ stripeRoutes.get('/subscription', async (c) => {
 
     const profileRes = await sb(
       url, key,
-      `profiles?id=eq.${user.id}&select=plan,stripe_customer_id,stripe_subscription_id,plan_expires_at&limit=1`,
+      `salons?user_id=eq.${user.id}&select=plan,stripe_customer_id,stripe_subscription_id,plan_expires_at&limit=1`,
     )
     const profiles = await profileRes.json()
     const profile  = profiles?.[0]
@@ -236,11 +236,11 @@ stripeRoutes.post('/webhook', async (c) => {
         const subId   = session.subscription
 
         if (userId) {
-          await sb(url, key, `profiles?id=eq.${userId}`, {
+          await sb(url, key, `salons?user_id=eq.${userId}`, {
             method: 'PATCH',
             body: JSON.stringify({
               plan: 'pacto',
-              pacto_active: true,
+              pacto_activo: true,
               stripe_subscription_id: subId,
               payment_failed: false,
               updated_at: new Date().toISOString(),
@@ -260,11 +260,11 @@ stripeRoutes.post('/webhook', async (c) => {
         const userId = sub.metadata?.user_id
         if (userId) {
           const isActive = ['active', 'trialing'].includes(sub.status)
-          await sb(url, key, `profiles?id=eq.${userId}`, {
+          await sb(url, key, `salons?user_id=eq.${userId}`, {
             method: 'PATCH',
             body: JSON.stringify({
               plan:                    isActive ? 'pacto' : 'free',
-              pacto_active:            isActive,
+              pacto_activo:            isActive,
               stripe_subscription_id:  sub.id,
               plan_expires_at:         isActive ? null : new Date(sub.current_period_end * 1000).toISOString(),
               payment_failed:          false,
@@ -280,11 +280,11 @@ stripeRoutes.post('/webhook', async (c) => {
         const sub    = event.data.object
         const userId = sub.metadata?.user_id
         if (userId) {
-          await sb(url, key, `profiles?id=eq.${userId}`, {
+          await sb(url, key, `salons?user_id=eq.${userId}`, {
             method: 'PATCH',
             body: JSON.stringify({
               plan:           'free',
-              pacto_active:   false,
+              pacto_activo:   false,
               plan_expires_at: new Date(sub.current_period_end * 1000).toISOString(),
               updated_at:     new Date().toISOString(),
             }),
@@ -299,7 +299,7 @@ stripeRoutes.post('/webhook', async (c) => {
         const inv    = event.data.object
         const userId = inv.subscription_details?.metadata?.user_id
         if (userId) {
-          await sb(url, key, `profiles?id=eq.${userId}`, {
+          await sb(url, key, `salons?user_id=eq.${userId}`, {
             method: 'PATCH',
             body: JSON.stringify({ payment_failed: false, updated_at: new Date().toISOString() }),
           })
@@ -316,7 +316,7 @@ stripeRoutes.post('/webhook', async (c) => {
         const inv    = event.data.object
         const userId = inv.subscription_details?.metadata?.user_id
         if (userId) {
-          await sb(url, key, `profiles?id=eq.${userId}`, {
+          await sb(url, key, `salons?user_id=eq.${userId}`, {
             method: 'PATCH',
             body: JSON.stringify({ payment_failed: true, updated_at: new Date().toISOString() }),
           })
