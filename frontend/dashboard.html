@@ -464,6 +464,37 @@
       .quick-actions { grid-template-columns: 1fr; }
     }
 
+    /* ── Banner El Pacto (upgrade) ── */
+    .pacto-banner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: linear-gradient(135deg, #1a0a2e 0%, #2d1060 100%);
+      border: 1px solid rgba(139,92,246,.45);
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      margin: 0 0 1.25rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: box-shadow .2s, transform .15s;
+      box-shadow: 0 0 18px rgba(139,92,246,.18);
+    }
+    .pacto-banner:hover { transform: translateY(-2px); box-shadow: 0 0 28px rgba(139,92,246,.35); }
+    .pacto-banner-icon { font-size: 2rem; flex-shrink: 0; }
+    .pacto-banner-body { flex: 1; }
+    .pacto-banner-title { font-size: .92rem; font-weight: 700; color: #e2d9f3; }
+    .pacto-banner-sub   { font-size: .75rem; color: rgba(226,217,243,.6); margin-top: .2rem; }
+    .pacto-banner-cta {
+      flex-shrink: 0;
+      background: var(--violet);
+      color: #fff;
+      font-size: .75rem;
+      font-weight: 700;
+      padding: .45rem .9rem;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
     /* ── CAZADOR BANNER ── */
     .cazador-banner {
       display: flex;
@@ -629,6 +660,16 @@
       </div>
 
       <!-- ── CAZADOR BANNER (solo visible si hay facturas en caza) ── -->
+      <!-- Banner upgrade El Pacto (solo si plan != pacto_activo) -->
+      <div id="pactoBanner" class="pacto-banner" style="display:none;" onclick="activarPacto()">
+        <div class="pacto-banner-icon">🔥</div>
+        <div class="pacto-banner-body">
+          <div class="pacto-banner-title">Activa El Pacto — €49/mes</div>
+          <div class="pacto-banner-sub">Tesorería completa · Diablilla · Cazador · Sin límites</div>
+        </div>
+        <div class="pacto-banner-cta">Activar ahora →</div>
+      </div>
+
       <a href="cazador.html" id="cazadorBanner" class="cazador-banner" style="display:none;">
         <div class="cazador-banner-icon">🦅</div>
         <div class="cazador-banner-body">
@@ -822,6 +863,44 @@
     const eur = (n) =>
       new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(n ?? 0)
 
+    // ── El Pacto: checkout ──
+    async function activarPacto() {
+      const btn = document.querySelector('.pacto-banner-cta')
+      if (btn) btn.textContent = 'Cargando…'
+      try {
+        const res = await fetch(`${API}/api/stripe/checkout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ price_id: 'price_1Tlwsw1UnR4OJAljw7DR4M2R' })
+        })
+        const data = await res.json()
+        if (data.url) {
+          window.location.href = data.url
+        } else {
+          alert('Error al iniciar el pago. Inténtalo de nuevo.')
+          if (btn) btn.textContent = 'Activar ahora →'
+        }
+      } catch (e) {
+        alert('Error de conexión. Inténtalo de nuevo.')
+        if (btn) btn.textContent = 'Activar ahora →'
+      }
+    }
+
+    // ── Comprobar plan ──
+    async function checkPlan() {
+      try {
+        const res = await fetch(`${API}/api/stripe/status`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        const activo = data.pacto_active || data.pacto_activo
+        if (!activo) {
+          document.getElementById('pactoBanner').style.display = 'flex'
+        }
+      } catch (_) { /* silencioso */ }
+    }
+
     // ── Load dashboard ──
     async function loadDashboard() {
       const headers = { 'Authorization': `Bearer ${auth.token}` }
@@ -1010,6 +1089,7 @@
     }
 
     loadDashboard()
+    checkPlan()
     loadCazadorBanner()
 
     // ── PWA ──
