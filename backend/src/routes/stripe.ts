@@ -149,9 +149,9 @@ stripeRoutes.post('/checkout', async (c) => {
     let customerId = salon?.stripe_customer_id
     if (!customerId) {
       const customer = await stripeReq(secret, '/customers', 'POST', {
-        email: user.email,
-        name: salon?.name || user.email,
-        'metadata[user_id]': user.id,
+        email: userEmail || '',
+        name: salon?.name || userEmail || userId,
+        'metadata[user_id]': userId,
         'metadata[salon_id]': salon?.id || '',
       })
       if (customer.error) {
@@ -160,7 +160,7 @@ stripeRoutes.post('/checkout', async (c) => {
       }
       customerId = customer.id
       // Guardar stripe_customer_id
-      await sb(url, key, `salons?user_id=eq.${user.id}`, {
+      await sb(url, key, `salons?user_id=eq.${userId}`, {
         method: 'PATCH',
         body: JSON.stringify({ stripe_customer_id: customerId }),
       })
@@ -172,9 +172,9 @@ stripeRoutes.post('/checkout', async (c) => {
       customer: customerId,
       'line_items[0][price]': STRIPE_PRICE_ID,
       'line_items[0][quantity]': '1',
-      'metadata[user_id]': user.id,
+      'metadata[user_id]': userId,
       'metadata[salon_id]': salon?.id || '',
-      'subscription_data[metadata][user_id]': user.id,
+      'subscription_data[metadata][user_id]': userId,
       'subscription_data[metadata][salon_id]': salon?.id || '',
       success_url: `${APP_URL}/dashboard.html?pacto=ok`,
       cancel_url:  `${APP_URL}/dashboard.html?pacto=cancel`,
@@ -208,7 +208,7 @@ stripeRoutes.get('/subscription', async (c) => {
 
     const profileRes = await sb(
       url, key,
-      `salons?user_id=eq.${user.id}&select=plan,stripe_customer_id,stripe_subscription_id,plan_expires_at&limit=1`,
+      `salons?user_id=eq.${userId}&select=plan,stripe_customer_id,stripe_subscription_id,plan_expires_at&limit=1`,
     )
     const profiles = await profileRes.json()
     const profile  = Array.isArray(profiles) ? profiles[0] : null
