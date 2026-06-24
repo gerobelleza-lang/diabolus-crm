@@ -889,16 +889,18 @@
     // ── Comprobar plan ──
     async function checkPlan() {
       try {
-        const res = await fetch(`${API}/api/stripe/status`, {
+        const res = await fetch(`${API}/api/stripe/subscription`, {
           headers: { 'Authorization': `Bearer ${auth.token}` }
         })
-        if (!res.ok) return
-        const data = await res.json()
-        const activo = data.pacto_active || data.pacto_activo
-        if (!activo) {
+        const data = res.ok ? await res.json() : {}
+        // Mostrar banner si no tiene pacto activo
+        const pactoActivo = data.plan === 'pacto' || data.pacto_activo === true
+        if (!pactoActivo) {
           document.getElementById('pactoBanner').style.display = 'flex'
         }
-      } catch (_) { /* silencioso */ }
+      } catch (_) { /* silencioso — mostrar banner por defecto */
+        document.getElementById('pactoBanner').style.display = 'flex'
+      }
     }
 
     // ── Load dashboard ──
