@@ -496,6 +496,29 @@
     }
 
     /* ── CAZADOR BANNER ── */
+    /* ── Banner Demonio ── */
+    .demonio-banner {
+      display: flex; align-items: center; gap: 1rem;
+      background: linear-gradient(135deg, #3d0a0a 0%, #1a0a0a 100%);
+      border: 1px solid rgba(220,50,50,.35);
+      border-radius: 12px; padding: 1rem 1.25rem;
+      margin-bottom: .75rem; cursor: pointer;
+      text-decoration: none; color: inherit;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .demonio-banner:hover { transform: translateY(-2px); box-shadow: 0 0 24px rgba(220,50,50,.3); }
+    .demonio-banner-icon { font-size: 1.8rem; flex-shrink: 0; animation: demonio-pulse 3s ease-in-out infinite; }
+    @keyframes demonio-pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
+    .demonio-banner-body { flex: 1; }
+    .demonio-banner-title { font-size: .88rem; font-weight: 700; color: #f5c0c0; }
+    .demonio-banner-sub { font-size: .73rem; color: rgba(245,192,192,.6); margin-top: .15rem; }
+    .demonio-banner-stats { display: flex; gap: .6rem; margin-top: .4rem; flex-wrap: wrap; }
+    .demonio-stat {
+      font-size: .7rem; padding: .18rem .5rem; border-radius: 6px;
+      background: rgba(220,50,50,.15); color: #f5c0c0; font-weight: 600;
+    }
+    .demonio-banner-arrow { color: rgba(245,192,192,.5); font-size: 1.4rem; font-weight: 300; }
+
     .cazador-banner {
       display: flex;
       align-items: center;
@@ -620,6 +643,7 @@
           <div class="nav-group-items" id="items-inteligencia">
             <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
             <a href="cazador.html" class="nav-item"><span class="nav-icon">🦅</span> Cazador</a>
+            <a href="demonio.html" class="nav-item"><span class="nav-icon">😈</span> Demonio</a>
             <a href="pacto.html?v=2" class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
           </div>
         </div>
@@ -669,6 +693,17 @@
         </div>
         <div class="pacto-banner-cta">Activar ahora →</div>
       </div>
+
+      <!-- ── Banner Demonio (pipeline de leads) ── -->
+      <a href="demonio.html" id="demonioBanner" class="demonio-banner" style="display:none;">
+        <div class="demonio-banner-icon">😈</div>
+        <div class="demonio-banner-body">
+          <div class="demonio-banner-title" id="demonioBannerTitle">El Demonio está cazando leads</div>
+          <div class="demonio-banner-sub" id="demonioBannerSub">Cargando pipeline…</div>
+          <div class="demonio-banner-stats" id="demonioBannerStats"></div>
+        </div>
+        <div class="demonio-banner-arrow">›</div>
+      </a>
 
       <a href="cazador.html" id="cazadorBanner" class="cazador-banner" style="display:none;">
         <div class="cazador-banner-icon">🦅</div>
@@ -1065,34 +1100,88 @@
       })
     }
 
-    // ── Cazador Banner ──
+    // ── Cazador Banner ── (siempre visible)
     async function loadCazadorBanner() {
+      const banner = document.getElementById('cazadorBanner')
+      const title  = document.getElementById('cazadorBannerTitle')
+      const sub    = document.getElementById('cazadorBannerSub')
+      const badge  = document.getElementById('cazadorBannerBadge')
+      banner.style.display = 'flex' // visible desde el inicio
       try {
         const res = await fetch(`${API}/api/cazador/stats`, {
           headers: { 'Authorization': `Bearer ${auth.token}` }
         })
-        if (!res.ok) return
-        const data = await res.json()
+        if (!res.ok) {
+          title.textContent = 'El Cazador — ver facturas vencidas'
+          sub.textContent   = 'Toca para gestionar cobros'
+          badge.textContent = '🦅'
+          return
+        }
+        const data  = await res.json()
         const count = data.overdue_count ?? 0
         const total = data.overdue_total ?? 0
-        if (count === 0) return // nada en caza → banner oculto
+        if (count === 0) {
+          title.textContent = 'El Cazador — al día'
+          sub.textContent   = 'No hay facturas vencidas · Buen trabajo 💪'
+          badge.textContent = '✓'
+        } else {
+          const plural = count === 1 ? 'factura vencida' : 'facturas vencidas'
+          title.textContent = `El Cazador tiene ${count} ${plural} en seguimiento`
+          sub.textContent   = `${eur(total)} pendientes de cobro · Toca para gestionar`
+          badge.textContent = `${count} en caza`
+        }
+      } catch (_) {
+        title.textContent = 'El Cazador — gestionar cobros'
+        sub.textContent   = 'Ver facturas vencidas'
+        badge.textContent = '🦅'
+      }
+    }
 
-        const banner  = document.getElementById('cazadorBanner')
-        const title   = document.getElementById('cazadorBannerTitle')
-        const sub     = document.getElementById('cazadorBannerSub')
-        const badge   = document.getElementById('cazadorBannerBadge')
-
-        const plural  = count === 1 ? 'factura vencida' : 'facturas vencidas'
-        title.textContent = `El Cazador tiene ${count} ${plural} en seguimiento`
-        sub.textContent   = `${eur(total)} pendientes de cobro · Toca para gestionar`
-        badge.textContent = `${count} en caza`
-        banner.style.display = 'flex'
-      } catch (_) { /* silencioso — el banner simplemente no aparece */ }
+    // ── Demonio Banner ── (siempre visible)
+    async function loadDemonioBanner() {
+      const banner = document.getElementById('demonioBanner')
+      const title  = document.getElementById('demonioBannerTitle')
+      const sub    = document.getElementById('demonioBannerSub')
+      const stats  = document.getElementById('demonioBannerStats')
+      banner.style.display = 'flex' // visible desde el inicio
+      try {
+        const res = await fetch(`${API}/api/demonio/pipeline`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (!res.ok) {
+          title.textContent = 'El Demonio — pipeline de leads'
+          sub.textContent   = 'Toca para ver el estado'
+          return
+        }
+        const data  = await res.json()
+        const pipe  = data.pipeline || {}
+        const total = data.total || 0
+        const activos    = (pipe.contactado?.length || 0) + (pipe.respondio?.length || 0)
+        const citas      = pipe.cita_agendada?.length || 0
+        const descartados = pipe.descartado?.length || 0
+        title.textContent = total === 0
+          ? 'El Demonio — sin leads activos'
+          : `El Demonio tiene ${total} lead${total === 1 ? '' : 's'} en el pipeline`
+        sub.textContent = total === 0
+          ? 'Lanza una campaña desde Demonio'
+          : `${activos} activo${activos === 1 ? '' : 's'} · ${citas} cita${citas === 1 ? '' : 's'} · ${descartados} descartado${descartados === 1 ? '' : 's'}`
+        if (total > 0) {
+          stats.innerHTML = [
+            activos    ? `<span class="demonio-stat">👤 ${activos} activos</span>` : '',
+            citas      ? `<span class="demonio-stat">📅 ${citas} citas</span>` : '',
+            descartados ? `<span class="demonio-stat">✗ ${descartados} desc.</span>` : '',
+          ].join('')
+        }
+      } catch (_) {
+        title.textContent = 'El Demonio — ver pipeline'
+        sub.textContent   = 'Gestiona tus leads'
+      }
     }
 
     loadDashboard()
     checkPlan()
     loadCazadorBanner()
+    loadDemonioBanner()
 
     // ── PWA ──
     if ('serviceWorker' in navigator) {
