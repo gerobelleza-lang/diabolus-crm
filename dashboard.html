@@ -906,7 +906,7 @@
         const res = await fetch(`${API}/api/stripe/checkout`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ price_id: 'price_1Tlwsw1UnR4OJAljw7DR4M2R' })
+          body: JSON.stringify({ priceId: 'price_1Tlwsw1UnR4OJAljw7DR4M2R' })
         })
         const data = await res.json()
         if (data.url) {
