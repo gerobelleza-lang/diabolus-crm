@@ -12,17 +12,17 @@ const SUPABASE_URL_FB = 'https://emygbvxkhfbwyhbapaae.supabase.co'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function stripeKey(c: any): string {
-  return c.env?.STRIPE_SECRET_KEY || ''
+function stripeKey(_c?: any): string {
+  return process.env.STRIPE_SECRET_KEY || ''
 }
-function webhookSecret(c: any): string {
-  return c.env?.STRIPE_WEBHOOK_SECRET || ''
+function webhookSecret(_c?: any): string {
+  return process.env.STRIPE_WEBHOOK_SECRET || ''
 }
-function sbUrl(c: any): string {
-  return c.env?.SUPABASE_URL || SUPABASE_URL_FB
+function sbUrl(_c?: any): string {
+  return process.env.SUPABASE_URL || SUPABASE_URL_FB
 }
-function sbKey(c: any): string {
-  return c.env?.SUPABASE_SERVICE_ROLE_KEY || ''
+function sbKey(_c?: any): string {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 }
 
 /** Llamada a la API de Stripe (form-encoded) */
@@ -114,9 +114,9 @@ stripeRoutes.post('/checkout', async (c) => {
     if (!user?.id) return c.json({ error: 'Invalid token' }, 401)
 
     // Obtener salón del usuario
-    const salonRes = await sb(url, key, `salons?owner_id=eq.${user.id}&select=id,nombre&limit=1`)
+    const salonRes = await sb(url, key, `salons?user_id=eq.${user.id}&select=id,name&limit=1`)
     const salons   = await salonRes.json()
-    const salon    = salons?.[0]
+    const salon    = Array.isArray(salons) ? salons[0] : null
 
     // Obtener o crear cliente en Stripe
     const profileRes = await sb(url, key, `salons?user_id=eq.${user.id}&select=stripe_customer_id,plan&limit=1`)
@@ -131,7 +131,7 @@ stripeRoutes.post('/checkout', async (c) => {
     if (!customerId) {
       const customer = await stripeReq(secret, '/customers', 'POST', {
         email: user.email,
-        name: salon?.nombre || user.email,
+        name: salon?.name || user.email,
         'metadata[user_id]': user.id,
         'metadata[salon_id]': salon?.id || '',
       })
