@@ -718,6 +718,30 @@
       z-index: 50;
       white-space: nowrap;
     }
+
+    /* ── TTS voice button ── */
+    .tts-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 6px;
+      transition: color .15s, background .15s;
+      margin-top: 2px;
+      align-self: flex-start;
+      line-height: 1;
+    }
+    .tts-btn:hover { color: var(--accent); background: rgba(139,92,246,.12); }
+    .tts-btn.playing { color: var(--green); animation: tts-pulse 1s infinite; }
+    .tts-btn.loading { color: var(--text-muted); cursor: wait; opacity: .6; }
+    @keyframes tts-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .5; }
+    }
+    html.cyberpunk .tts-btn:hover { color: var(--accent); background: rgba(0,255,65,.08); }
+    html.cyberpunk .tts-btn.playing { color: var(--green); }
   </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
@@ -1124,11 +1148,75 @@ function addUserPhoto(objectUrl, fileName) {
   scrollToBottom()
 }
 
-function addAgentMsg(text) {
+// ─── TTS globals ────────────────────────────────────────────────────────────
+let _ttsAudio = null
+let _ttsActiveBtn = null
+
+async function speakText(text, btn) {
+  // Si hay audio reproduciéndose, pararlo
+  if (_ttsAudio && !_ttsAudio.ended) {
+    _ttsAudio.pause()
+    _ttsAudio = null
+    if (_ttsActiveBtn) { _ttsActiveBtn.textContent = '🔊'; _ttsActiveBtn.classList.remove('playing') }
+    if (_ttsActiveBtn === btn) { _ttsActiveBtn = null; return }
+  }
+
+  btn.textContent = '⏳'
+  btn.classList.add('loading')
+  btn.disabled = true
+
+  try {
+    const res = await fetch(`${API}/api/agent/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ text })
+    })
+    if (!res.ok) throw new Error('TTS error')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    _ttsAudio = new Audio(url)
+    _ttsActiveBtn = btn
+    btn.textContent = '🔈'
+    btn.classList.remove('loading')
+    btn.classList.add('playing')
+    btn.disabled = false
+    _ttsAudio.play()
+    _ttsAudio.onended = () => {
+      btn.textContent = '🔊'
+      btn.classList.remove('playing')
+      _ttsActiveBtn = null
+      URL.revokeObjectURL(url)
+    }
+  } catch(e) {
+    btn.textContent = '🔊'
+    btn.classList.remove('loading', 'playing')
+    btn.disabled = false
+    showToast('Sin audio: ' + e.message)
+  }
+}
+
+function addAgentMsg(text, withTts = true) {
   const html = escHtml(text).replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
   const row = document.createElement('div')
   row.className = 'msg-row agent'
-  row.innerHTML = `<div class="bubble">${html}</div><span class="msg-time">${now()}</span>`
+
+  const ttsBtn = document.createElement('button')
+  ttsBtn.className = 'tts-btn'
+  ttsBtn.title = 'Escuchar respuesta'
+  ttsBtn.textContent = '🔊'
+  ttsBtn.addEventListener('click', () => speakText(text, ttsBtn))
+
+  const bubble = document.createElement('div')
+  bubble.className = 'bubble'
+  bubble.innerHTML = html
+
+  const time = document.createElement('span')
+  time.className = 'msg-time'
+  time.textContent = now()
+
+  row.appendChild(bubble)
+  row.appendChild(ttsBtn)
+  row.appendChild(time)
   messagesEl.appendChild(row)
   scrollToBottom()
 }
