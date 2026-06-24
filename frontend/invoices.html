@@ -79,6 +79,8 @@
     .btn-paid:hover:not(:disabled) { background: rgba(16, 185, 129, 0.25); }
     .btn-pdf { background: rgba(139, 21, 56, 0.15); color: var(--primary-light); border: 1px solid rgba(139, 21, 56, 0.3); }
     .btn-pdf:hover:not(:disabled) { background: rgba(139, 21, 56, 0.25); }
+    .btn-send { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .btn-send:hover:not(:disabled) { background: rgba(99, 102, 241, 0.25); }
 
     /* MODAL */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
@@ -438,6 +440,7 @@ function renderTable() {
       <td>
         <div class="actions">
           `<button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}')">📎 PDF</button>`
+          <button class="action-btn btn-send" onclick="sendToClient('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📤 Enviar</button>
           <button class="action-btn btn-wp" onclick="sendWhatsApp('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📱 WA</button>
           <button class="action-btn btn-reminder" onclick="sendReminder('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>🔔 Aviso</button>
           ${!isPaid ? `<button class="action-btn btn-paid" onclick="markAsPaid('${inv.id}')">✅ Cobrada</button>` : ''}
@@ -494,6 +497,28 @@ async function sendWhatsApp(id) {
       toast('❌ ' + (res.error || 'Error al enviar'), 'error');
     }
   } catch(e) { toast('❌ Error de conexión', 'error'); }
+}
+
+async function sendToClient(id) {
+  if (!confirm('¿Enviar la factura al cliente por Email + WhatsApp + Telegram?')) return;
+  const btn = document.querySelector(`button[onclick="sendToClient('${id}')"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+  try {
+    const res = await apiPost(`/api/invoices/${id}/send`, {});
+    const sent = [];
+    if (res.email?.sent) sent.push('📧 Email');
+    if (res.whatsapp?.sent) sent.push('📱 WhatsApp');
+    if (res.telegram?.sent) sent.push('📬 Telegram');
+    if (sent.length > 0) {
+      toast(`✅ Enviado por ${sent.join(', ')}`, 'success');
+    } else {
+      toast('⚠️ Enviado (sin canales activos del cliente)', 'info');
+    }
+  } catch(e) {
+    toast('❌ Error al enviar', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Enviar'; }
+  }
 }
 
 async function sendReminder(id) {
