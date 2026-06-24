@@ -5,6 +5,7 @@
  * Price: price_1Tlwsw1UnR4OJAljw7DR4M2R (€49/mes — El Pacto)
  */
 import { Hono } from 'hono'
+import { getSupabaseAdmin } from '../integrations/supabase'
 
 const STRIPE_PRICE_ID = 'price_1Tlwsw1UnR4OJAljw7DR4M2R'
 const APP_URL         = 'https://diabolus.es'
@@ -12,16 +13,16 @@ const SUPABASE_URL_FB = 'https://emygbvxkhfbwyhbapaae.supabase.co'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function stripeKey(_c?: any): string {
+function stripeKey(): string {
   return process.env.STRIPE_SECRET_KEY || ''
 }
-function webhookSecret(_c?: any): string {
+function webhookSecret(): string {
   return process.env.STRIPE_WEBHOOK_SECRET || ''
 }
-function sbUrl(_c?: any): string {
+function sbUrl(): string {
   return process.env.SUPABASE_URL || SUPABASE_URL_FB
 }
-function sbKey(_c?: any): string {
+function sbKey(): string {
   return process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 }
 
@@ -52,13 +53,16 @@ async function sb(url: string, key: string, path: string, opts?: any) {
   })
 }
 
-/** Verifica el JWT de Supabase y devuelve el user */
-async function getUser(token: string, url: string, key: string) {
-  const res = await fetch(`${url}/auth/v1/user`, {
-    headers: { apikey: key, Authorization: `Bearer ${token}` },
-  })
-  if (!res.ok) return null
-  return res.json()
+/** Verifica el JWT con el SDK de Supabase (igual que authMiddleware) */
+async function getUser(token: string) {
+  try {
+    const supabase = getSupabaseAdmin()
+    const { data: { user }, error } = await supabase.auth.getUser(token)
+    if (error || !user) return null
+    return user
+  } catch {
+    return null
+  }
 }
 
 /** Verifica la firma del webhook de Stripe (Web Crypto — Edge-safe) */
@@ -106,28 +110,24 @@ stripeRoutes.post('/checkout', async (c) => {
     const token = c.req.header('Authorization')?.replace('Bearer ', '')
     if (!token) return c.json({ error: 'Unauthorized' }, 401)
 
-    const url = sbUrl(c)
-    const key = sbKey(c)
-    const secret = stripeKey(c)
+    const url    = sbUrl()
+    const key    = sbKey()
+    const secret = stripeKey()
 
-    const user = await getUser(token, url, key)
+    // Auth con SDK (mismo mecanismo que authMiddleware)
+    const user = await getUser(token)
     if (!user?.id) return c.json({ error: 'Invalid token' }, 401)
 
     // Obtener salón del usuario
-    const salonRes = await sb(url, key, `salons?user_id=eq.${user.id}&select=id,name&limit=1`)
+    const salonRes = await sb(url, key, `salons?user_id=eq.${user.id}&select=id,name,stripe_customer_id,plan&limit=1`)
     const salons   = await salonRes.json()
     const salon    = Array.isArray(salons) ? salons[0] : null
 
-    // Obtener o crear cliente en Stripe
-    const profileRes = await sb(url, key, `salons?user_id=eq.${user.id}&select=stripe_customer_id,plan&limit=1`)
-    const profiles   = await profileRes.json()
-    const profile    = profiles?.[0]
-
-    if (profile?.plan === 'pacto') {
+    if (salon?.plan === 'pacto') {
       return c.json({ error: 'Ya tienes El Pacto activo' }, 400)
     }
 
-    let customerId = profile?.stripe_customer_id
+    let customerId = salon?.stripe_customer_id
     if (!customerId) {
       const customer = await stripeReq(secret, '/customers', 'POST', {
         email: user.email,
@@ -135,8 +135,12 @@ stripeRoutes.post('/checkout', async (c) => {
         'metadata[user_id]': user.id,
         'metadata[salon_id]': salon?.id || '',
       })
+      if (customer.error) {
+        console.error('[Stripe] Error creando customer:', customer.error)
+        return c.json({ error: 'Error al crear cliente en Stripe' }, 500)
+      }
       customerId = customer.id
-      // Guardar stripe_customer_id en profiles
+      // Guardar stripe_customer_id
       await sb(url, key, `salons?user_id=eq.${user.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ stripe_customer_id: customerId }),
@@ -149,6 +153,8 @@ stripeRoutes.post('/checkout', async (c) => {
       customer: customerId,
       'line_items[0][price]': STRIPE_PRICE_ID,
       'line_items[0][quantity]': '1',
+      'metadata[user_id]': user.id,
+      'metadata[salon_id]': salon?.id || '',
       'subscription_data[metadata][user_id]': user.id,
       'subscription_data[metadata][salon_id]': salon?.id || '',
       success_url: `${APP_URL}/dashboard.html?pacto=ok`,
@@ -157,7 +163,10 @@ stripeRoutes.post('/checkout', async (c) => {
       locale: 'es',
     })
 
-    if (session.error) return c.json({ error: session.error.message }, 400)
+    if (session.error) {
+      console.error('[Stripe] Error creando sesión:', session.error)
+      return c.json({ error: session.error.message }, 400)
+    }
 
     return c.json({ url: session.url })
   } catch (err: any) {
@@ -172,10 +181,10 @@ stripeRoutes.get('/subscription', async (c) => {
     const token = c.req.header('Authorization')?.replace('Bearer ', '')
     if (!token) return c.json({ error: 'Unauthorized' }, 401)
 
-    const url = sbUrl(c)
-    const key = sbKey(c)
+    const url = sbUrl()
+    const key = sbKey()
 
-    const user = await getUser(token, url, key)
+    const user = await getUser(token)
     if (!user?.id) return c.json({ error: 'Invalid token' }, 401)
 
     const profileRes = await sb(
@@ -183,11 +192,12 @@ stripeRoutes.get('/subscription', async (c) => {
       `salons?user_id=eq.${user.id}&select=plan,stripe_customer_id,stripe_subscription_id,plan_expires_at&limit=1`,
     )
     const profiles = await profileRes.json()
-    const profile  = profiles?.[0]
+    const profile  = Array.isArray(profiles) ? profiles[0] : null
 
     return c.json({
       plan:            profile?.plan || 'free',
       active:          profile?.plan === 'pacto',
+      pacto_activo:    profile?.plan === 'pacto',
       subscription_id: profile?.stripe_subscription_id || null,
       expires_at:      profile?.plan_expires_at || null,
     })
@@ -201,7 +211,7 @@ stripeRoutes.get('/subscription', async (c) => {
 stripeRoutes.post('/webhook', async (c) => {
   try {
     const sig     = c.req.header('stripe-signature') || ''
-    const secret  = webhookSecret(c)
+    const secret  = webhookSecret()
     const rawBody = await c.req.text()
 
     if (!(await verifyWebhookSig(rawBody, sig, secret))) {
@@ -210,8 +220,8 @@ stripeRoutes.post('/webhook', async (c) => {
     }
 
     const event = JSON.parse(rawBody)
-    const url   = sbUrl(c)
-    const key   = sbKey(c)
+    const url   = sbUrl()
+    const key   = sbKey()
 
     const auditEntry = (userId: string, salonId: string | null, action: string, changes: any) =>
       sb(url, key, 'audit_log', {
@@ -230,7 +240,7 @@ stripeRoutes.post('/webhook', async (c) => {
       // ── Pago completado → activar plan ────────────────────────────────────
       case 'checkout.session.completed': {
         const session = event.data.object
-        // El metadata viene en subscription_data.metadata
+        // Buscar userId en session.metadata o subscription_data.metadata
         const userId  = session.metadata?.user_id
         const salonId = session.metadata?.salon_id
         const subId   = session.subscription
