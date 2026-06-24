@@ -333,6 +333,242 @@ async function sendReminderWhatsApp(invoice: any) {
 
 export { sendReminderWhatsApp }
 
+// ─── POST /api/invoices/:id/send — Email + WhatsApp (Meta) + Telegram ────────
+invoiceRoutes.post('/:id/send', async (c) => {
+  try {
+    const salonId = c.get('salonId')
+    const { id }  = c.req.param()
+    const body    = await c.req.json().catch(() => ({}))
+    const channels: string[] = body.channels || ['email', 'whatsapp', 'telegram']
+
+    const supabase = getSupabaseAdmin()
+    const { data: invoice, error } = await supabase
+      .from('invoices')
+      .select(`*, clients(name, email, phone, telegram_chat_id), salons(${SALON_PDF_SELECT}, telegram_chat_id)`)
+      .eq('salon_id', salonId)
+      .eq('id', id)
+      .single()
+    if (error || !invoice) return c.json({ error: 'Invoice not found' }, 404)
+
+    const invoiceNum  = invoice.number || `FAC-${invoice.id.slice(0, 8).toUpperCase()}`
+    const total       = Number(invoice.total ?? invoice.amount ?? 0)
+    const clientName  = invoice.clients?.name || 'cliente'
+    const salonName   = invoice.salons?.name  || 'Diabolus CRM'
+    const invoiceDate = invoice.date
+      ? new Date(invoice.date).toLocaleDateString('es-ES')
+      : new Date(invoice.created_at).toLocaleDateString('es-ES')
+    const dueDate     = invoice.due_date
+      ? new Date(invoice.due_date).toLocaleDateString('es-ES')
+      : null
+
+    // 1. Generar PDF y subir a Supabase Storage
+    let pdfBytes: Uint8Array | null = null
+    let pdfUrl: string | null = null
+    try {
+      pdfBytes = await generateInvoicePDF(invoice)
+      const filePath = `${salonId}/${invoiceNum}.pdf`
+      const { error: uploadErr } = await supabase.storage
+        .from('invoices')
+        .upload(filePath, pdfBytes, { contentType: 'application/pdf', upsert: true })
+      if (!uploadErr) {
+        const { data: signed } = await supabase.storage
+          .from('invoices')
+          .createSignedUrl(filePath, 900) // 15 min
+        pdfUrl = signed?.signedUrl ?? null
+      }
+    } catch (pdfErr) {
+      console.error('[PDF]', String(pdfErr))
+    }
+
+    const results: Record<string, any> = {}
+
+    // 2. Email con Resend + adjunto PDF
+    if (channels.includes('email') && invoice.clients?.email) {
+      try {
+        const pdfB64 = pdfBytes
+          ? Buffer.from(pdfBytes).toString('base64')
+          : null
+        const attachments = pdfB64
+          ? [{ filename: `${invoiceNum}.pdf`, content: pdfB64 }]
+          : []
+        const emailHtml = `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+            <h2 style="color:#8B5CF6;">Factura de ${salonName}</h2>
+            <p>Hola <strong>${clientName}</strong>,</p>
+            <p>Adjuntamos tu factura con los siguientes detalles:</p>
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Número</td><td style="padding:8px;border-bottom:1px solid #eee;"><strong>${invoiceNum}</strong></td></tr>
+              <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Fecha</td><td style="padding:8px;border-bottom:1px solid #eee;">${invoiceDate}</td></tr>
+              <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">Importe</td><td style="padding:8px;border-bottom:1px solid #eee;"><strong style="color:#8B5CF6;">${total.toFixed(2)}€</strong></td></tr>
+              ${dueDate ? `<tr><td style="padding:8px;color:#666;">Vencimiento</td><td style="padding:8px;">${dueDate}</td></tr>` : ''}
+            </table>
+            ${pdfUrl ? `<p style="margin-top:16px;"><a href="${pdfUrl}" style="background:#8B5CF6;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">Descargar PDF</a></p>` : ''}
+            <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+            <p style="color:#999;font-size:12px;">Enviado desde Diabolus CRM · <a href="https://diabolus.es">diabolus.es</a></p>
+          </div>`
+        const resendRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: `${salonName} <noreply@diabolus.es>`,
+            to: [invoice.clients.email],
+            subject: `Factura ${invoiceNum} — ${total.toFixed(2)}€`,
+            html: emailHtml,
+            attachments,
+          }),
+        })
+        const resendData = await resendRes.json()
+        results.email = resendRes.ok
+          ? { sent: true, id: resendData.id }
+          : { sent: false, error: resendData.message }
+      } catch (e) {
+        results.email = { sent: false, error: String(e) }
+      }
+    } else if (channels.includes('email')) {
+      results.email = { sent: false, error: 'Cliente sin email' }
+    }
+
+    // 3. WhatsApp via Meta Cloud API
+    if (channels.includes('whatsapp') && invoice.clients?.phone) {
+      try {
+        let toPhone = (invoice.clients.phone as string).replace(/\s/g, '')
+        if (!toPhone.startsWith('+')) toPhone = '+34' + toPhone
+        const waPhone = toPhone.replace('+', '')
+        const waToken   = process.env.WHATSAPP_TOKEN
+        const waPhoneId = process.env.WHATSAPP_PHONE_ID
+        if (!waToken || !waPhoneId) {
+          results.whatsapp = { sent: false, error: 'Sin credenciales WhatsApp' }
+        } else {
+          const waText =
+            `🧾 *Factura de ${salonName}*\n\n` +
+            `Hola ${clientName},\n` +
+            `Te enviamos tu factura:\n\n` +
+            `📄 Nº: ${invoiceNum}\n` +
+            `📅 Fecha: ${invoiceDate}\n` +
+            `💶 Importe: *${total.toFixed(2)}€*\n` +
+            (dueDate ? `⏰ Vencimiento: ${dueDate}\n` : '') +
+            (pdfUrl ? `\n📥 PDF: ${pdfUrl}` : '')
+          const waRes = await fetch(
+            `https://graph.facebook.com/v21.0/${waPhoneId}/messages`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${waToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                to: waPhone,
+                type: 'text',
+                text: { body: waText },
+              }),
+            }
+          )
+          const waData = await waRes.json()
+          results.whatsapp = waRes.ok
+            ? { sent: true, message_id: waData.messages?.[0]?.id }
+            : { sent: false, error: waData.error?.message }
+        }
+      } catch (e) {
+        results.whatsapp = { sent: false, error: String(e) }
+      }
+    } else if (channels.includes('whatsapp')) {
+      results.whatsapp = { sent: false, error: 'Cliente sin teléfono' }
+    }
+
+    // 4. Telegram — al cliente (si tiene chat_id) + confirmación al owner del salón
+    if (channels.includes('telegram')) {
+      const tgToken = process.env.TELEGRAM_BOT_TOKEN || '8895422982:AAGhM6bN4FqbDSgxFSgQHwD79bHlJMpr-3w'
+      const tgSendMessage = async (chatId: string, text: string) => {
+        return fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+        })
+      }
+      const tgSendDocument = async (chatId: string, docUrl: string, caption: string) => {
+        return fetch(`https://api.telegram.org/bot${tgToken}/sendDocument`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, document: docUrl, caption, parse_mode: 'HTML' }),
+        })
+      }
+
+      const tgResults: any[] = []
+
+      // Al cliente si tiene telegram_chat_id
+      const clientTgId = invoice.clients?.telegram_chat_id
+      if (clientTgId) {
+        try {
+          const clientText =
+            `🧾 <b>Factura de ${salonName}</b>\n\n` +
+            `Hola ${clientName},\n` +
+            `📄 Nº: <b>${invoiceNum}</b>\n` +
+            `📅 Fecha: ${invoiceDate}\n` +
+            `💶 Importe: <b>${total.toFixed(2)}€</b>\n` +
+            (dueDate ? `⏰ Vencimiento: ${dueDate}\n` : '')
+          if (pdfUrl) {
+            const r = await tgSendDocument(clientTgId, pdfUrl, clientText)
+            tgResults.push({ to: 'client', sent: r.ok })
+          } else {
+            const r = await tgSendMessage(clientTgId, clientText)
+            tgResults.push({ to: 'client', sent: r.ok })
+          }
+        } catch (e) {
+          tgResults.push({ to: 'client', sent: false, error: String(e) })
+        }
+      }
+
+      // Confirmación al owner del salón
+      const ownerTgId = invoice.salons?.telegram_chat_id
+      if (ownerTgId) {
+        try {
+          const ownerText =
+            `✅ <b>Factura enviada</b>\n\n` +
+            `👤 Cliente: ${clientName}\n` +
+            `📄 Factura: ${invoiceNum}\n` +
+            `💶 Importe: <b>${total.toFixed(2)}€</b>\n\n` +
+            `📧 Email: ${results.email?.sent ? '✅' : '❌'}\n` +
+            `📱 WhatsApp: ${results.whatsapp?.sent ? '✅' : '❌'}\n` +
+            `📬 Telegram: ${clientTgId ? '✅' : 'Sin chat_id'}`
+          const r = await tgSendMessage(ownerTgId, ownerText)
+          tgResults.push({ to: 'owner', sent: r.ok })
+        } catch (e) {
+          tgResults.push({ to: 'owner', sent: false, error: String(e) })
+        }
+      }
+      results.telegram = tgResults.length > 0 ? tgResults : { sent: false, error: 'Sin chat_ids configurados' }
+    }
+
+    // Marcar factura como enviada
+    const anyOk = [results.email, results.whatsapp].some((r: any) => r?.sent)
+    if (anyOk) {
+      await supabase
+        .from('invoices')
+        .update({
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          ...(pdfUrl ? { pdf_url: pdfUrl } : {}),
+        })
+        .eq('id', id)
+    }
+
+    return c.json({
+      ok: true,
+      invoice_id: id,
+      invoice_number: invoiceNum,
+      client: clientName,
+      pdf_url: pdfUrl,
+      channels: results,
+    })
+  } catch (err) {
+    return c.json({ error: 'Internal error', details: String(err) }, 500)
+  }
+})
+
 // POST /api/invoices/:id/send-reminder — recordatorio de cobro
 invoiceRoutes.post('/:id/send-reminder', async (c) => {
   try {
