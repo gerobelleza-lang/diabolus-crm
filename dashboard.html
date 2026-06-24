@@ -78,6 +78,40 @@
       font-family: var(--font-mono);
     }
 
+    /* ── SIDEBAR ACCORDION ── */
+    .nav-section { margin-bottom: 0.15rem; }
+    .nav-section-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.4rem 1rem;
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      font-size: 0.65rem;
+      font-family: var(--font-display);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      cursor: pointer;
+      border-radius: 0.375rem;
+      transition: color .15s, background .15s;
+      margin-top: 0.3rem;
+    }
+    .nav-section-toggle:hover { color: var(--text-primary); background: rgba(255,255,255,.04); }
+    .nav-section-toggle.open  { color: var(--violet); }
+    .nav-chevron { font-size: 0.6rem; transition: transform .22s; flex-shrink: 0; }
+    .nav-section-toggle.open    .nav-chevron { transform: rotate(0deg); }
+    .nav-section-toggle:not(.open) .nav-chevron { transform: rotate(-90deg); }
+    .nav-section-body {
+      overflow: hidden;
+      max-height: 400px;
+      transition: max-height .28s cubic-bezier(.4,0,.2,1);
+    }
+    .nav-section-body.collapsed { max-height: 0; }
+
+
     /* ── MAIN ── */
     .main-content {
       margin-left: 260px;
@@ -516,17 +550,53 @@
         <div class="sidebar-salon" id="salonNameSidebar">—</div>
       </div>
       <nav class="sidebar-nav">
-        <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
-        <a href="chat.html"         class="nav-item"><span class="nav-icon">💬</span> Agente</a>
-        <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
-        <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
-        <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
-        <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
-        <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
-        <hr style="border-color:rgba(255,255,255,.08);margin:.5rem .5rem">
-        <a href="cazador.html"  class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
-        <a href="pacto.html"    class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
-        <a href="demonio.html"  class="nav-item"><span class="nav-icon">😈</span> El Demonio</a>
+
+        <!-- ── MANDO ── -->
+        <div class="nav-section">
+          <button class="nav-section-toggle open" onclick="toggleSection('mando')">
+            <span>⚡ Mando</span><span class="nav-chevron">▾</span>
+          </button>
+          <div class="nav-section-body" id="sec-mando-body">
+            <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+          </div>
+        </div>
+
+        <!-- ── NEGOCIO ── -->
+        <div class="nav-section">
+          <button class="nav-section-toggle open" onclick="toggleSection('negocio')">
+            <span>💼 Negocio</span><span class="nav-chevron">▾</span>
+          </button>
+          <div class="nav-section-body" id="sec-negocio-body">
+            <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+            <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+            <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+            <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+            <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+          </div>
+        </div>
+
+        <!-- ── INTELIGENCIA ── -->
+        <div class="nav-section">
+          <button class="nav-section-toggle open" onclick="toggleSection('ia')">
+            <span>🧠 Inteligencia</span><span class="nav-chevron">▾</span>
+          </button>
+          <div class="nav-section-body" id="sec-ia-body">
+            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Diablilla</a>
+          </div>
+        </div>
+
+        <!-- ── MÓDULOS ── -->
+        <div class="nav-section">
+          <button class="nav-section-toggle open" onclick="toggleSection('modulos')">
+            <span>😈 Módulos</span><span class="nav-chevron">▾</span>
+          </button>
+          <div class="nav-section-body" id="sec-modulos-body">
+            <a href="cazador.html"  class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
+            <a href="pacto.html"    class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+            <a href="demonio.html"  class="nav-item"><span class="nav-icon">😈</span> El Demonio</a>
+          </div>
+        </div>
+
       </nav>
       <div class="sidebar-footer">
         <button class="btn btn-secondary" style="width:100%;" onclick="logout()">Cerrar sesión</button>
@@ -949,6 +1019,31 @@
         }
       })
     }
+
+
+    // ── Sidebar accordion ──
+    function toggleSection(id) {
+      const body = document.getElementById(`sec-${id}-body`)
+      if (!body) return
+      const btn = body.previousElementSibling
+      const collapsed = body.classList.toggle('collapsed')
+      btn.classList.toggle('open', !collapsed)
+      const state = JSON.parse(localStorage.getItem('diabolus_nav') || '{}')
+      state[id] = !collapsed
+      localStorage.setItem('diabolus_nav', JSON.stringify(state))
+    }
+    function initNav() {
+      const state = JSON.parse(localStorage.getItem('diabolus_nav') || '{}')
+      ;['mando','negocio','ia','modulos'].forEach(id => {
+        const body = document.getElementById(`sec-${id}-body`)
+        if (!body) return
+        const btn = body.previousElementSibling
+        const open = state[id] !== false  // default: all open
+        if (!open) { body.classList.add('collapsed'); btn.classList.remove('open') }
+        else       { body.classList.remove('collapsed'); btn.classList.add('open') }
+      })
+    }
+    initNav()
 
     loadDashboard()
     loadUsage()
