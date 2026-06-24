@@ -79,6 +79,8 @@
     .btn-paid:hover:not(:disabled) { background: rgba(16, 185, 129, 0.25); }
     .btn-pdf { background: rgba(139, 21, 56, 0.15); color: var(--primary-light); border: 1px solid rgba(139, 21, 56, 0.3); }
     .btn-pdf:hover:not(:disabled) { background: rgba(139, 21, 56, 0.25); }
+    .btn-send { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .btn-send:hover:not(:disabled) { background: rgba(99, 102, 241, 0.25); }
 
     /* MODAL */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
@@ -141,14 +143,51 @@
       </div>
       <p style="margin:0;font-size:0.75rem;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%" id="salonName">Cargando...</p>
     </div>
-    <nav class="sidebar-nav">
-      <a href="dashboard.html" class="nav-item"><span>📊</span>Dashboard</a>
-      <a href="chat.html" class="nav-item"><span>💬</span>Agente</a>
-      <a href="invoices.html" class="nav-item active"><span>📄</span>Facturas</a>
-      <a href="clients.html" class="nav-item"><span>👥</span>Clientes</a>
-      <a href="transactions.html" class="nav-item"><span>💰</span>Transacciones</a>
-      <a href="reports.html" class="nav-item"><span>📈</span>Reportes</a>
-    </nav>
+          <nav class="sidebar-nav">
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('mando')">
+            <span>Mando</span><span class="nav-chevron" id="chv-mando">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-mando">
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente IA</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('negocio')">
+            <span>Negocio</span><span class="nav-chevron" id="chv-negocio">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-negocio">
+            <a href="invoices.html" class="nav-item active"><span class="nav-icon">📄</span> Facturas</a>
+            <a href="clients.html" class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+            <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('inteligencia')">
+            <span>Inteligencia</span><span class="nav-chevron" id="chv-inteligencia">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-inteligencia">
+            <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+            <a href="cazador.html" class="nav-item"><span class="nav-icon">🦅</span> Cazador</a>
+            <a href="pacto.html?v=2" class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('modulos')">
+            <span>Módulos</span><span class="nav-chevron" id="chv-modulos">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-modulos">
+            <a href="documents.html" class="nav-item"><span class="nav-icon">✍️</span> Documentos</a>
+            <a href="legal.html" class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
+          </div>
+        </div>
+
+      </nav>
     <div class="sidebar-footer">
       <button class="btn btn-secondary" style="width:100%" onclick="logout()">Cerrar Sesión</button>
       <p style="font-size:0.75rem;color:var(--text-tertiary);margin-top:1rem;text-align:center">v1.0 — Premium UI ✨</p>
@@ -400,7 +439,8 @@ function renderTable() {
       <td>${badgeHtml(inv.status)}</td>
       <td>
         <div class="actions">
-          <button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}', '${inv.number || inv.id?.slice(0,8) || 'factura'}')">📎 PDF</button>
+          `<button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}')">📎 PDF</button>`
+          <button class="action-btn btn-send" onclick="sendToClient('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📤 Enviar</button>
           <button class="action-btn btn-wp" onclick="sendWhatsApp('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📱 WA</button>
           <button class="action-btn btn-reminder" onclick="sendReminder('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>🔔 Aviso</button>
           ${!isPaid ? `<button class="action-btn btn-paid" onclick="markAsPaid('${inv.id}')">✅ Cobrada</button>` : ''}
@@ -426,34 +466,22 @@ function renderTable() {
     </table>`;
 }
 
-
-async function downloadPDF(id, invoiceNum) {
-  const btn = event?.target;
-  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+async function downloadPDF(id) {
+  toast('⏳ Generando PDF...', 'info');
   try {
     const res = await fetch(`${API}/api/invoices/${id}/pdf`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      toast('❌ ' + (err.error || 'Error al generar PDF'), 'error');
-      return;
-    }
+    if (!res.ok) { toast('❌ Error generando PDF', 'error'); return; }
     const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `${invoiceNum}.pdf`;
-    document.body.appendChild(a);
-    a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `factura-${id.slice(0,8)}.pdf`;
+    document.body.appendChild(a); a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast('✅ PDF descargado', 'success');
-  } catch(e) {
-    toast('❌ Error al descargar PDF', 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '📎 PDF'; }
-  }
+  } catch(e) { toast('❌ Error de conexión', 'error'); }
 }
 
 async function sendWhatsApp(id) {
@@ -461,12 +489,36 @@ async function sendWhatsApp(id) {
   toast('📱 Enviando por WhatsApp...', 'success');
   try {
     const res = await apiPost(`/api/invoices/${id}/send-whatsapp`, {});
-    if (res.success || res.messageSid) {
+    if (res.status === 'demo') {
+      toast('ℹ️ Modo demo — WhatsApp requiere Twilio activo', 'info');
+    } else if (res.success) {
       toast('✅ Factura enviada por WhatsApp', 'success');
     } else {
       toast('❌ ' + (res.error || 'Error al enviar'), 'error');
     }
   } catch(e) { toast('❌ Error de conexión', 'error'); }
+}
+
+async function sendToClient(id) {
+  if (!confirm('¿Enviar la factura al cliente por Email + WhatsApp + Telegram?')) return;
+  const btn = document.querySelector(`button[onclick="sendToClient('${id}')"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+  try {
+    const res = await apiPost(`/api/invoices/${id}/send`, {});
+    const sent = [];
+    if (res.email?.sent) sent.push('📧 Email');
+    if (res.whatsapp?.sent) sent.push('📱 WhatsApp');
+    if (res.telegram?.sent) sent.push('📬 Telegram');
+    if (sent.length > 0) {
+      toast(`✅ Enviado por ${sent.join(', ')}`, 'success');
+    } else {
+      toast('⚠️ Enviado (sin canales activos del cliente)', 'info');
+    }
+  } catch(e) {
+    toast('❌ Error al enviar', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Enviar'; }
+  }
 }
 
 async function sendReminder(id) {
@@ -537,8 +589,7 @@ async function createInvoice() {
   btn.textContent = 'Creando...';
 
   try {
-    const ivaPct = parseFloat(document.getElementById('newIva').value) || 21;
-    const body = { client_id: clientId, description, amount, iva_pct: ivaPct, total: total || amount, due_date: dueDate, status: 'pending' };
+    const body = { client_id: clientId, description, amount, total: total || amount, due_date: dueDate, status: 'pending' };
     if (invoiceNumber) body.number = invoiceNumber;
 
     const res = await apiPost('/api/invoices', body);
@@ -583,6 +634,5 @@ loadMe();
       });
     }
   </script>
-<script src="sidebar.js"></script>
 </body>
 </html>
