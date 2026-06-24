@@ -189,6 +189,8 @@
           return
         }
 
+        // Guardar token en AMBAS claves para compatibilidad total
+        localStorage.setItem('diabolus_token', data.token)
         localStorage.setItem('diabolus_auth', JSON.stringify({
           userId:    data.user.id,
           email:     data.user.email,
