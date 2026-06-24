@@ -391,7 +391,6 @@ async function executeCrearCliente(
       nombre_comercial:         p.nombre_comercial || null,
       phone:                    p.telefono         || null,
       email:                    p.email            || null,
-      nif:                      p.nif              || null,
       salon_id:                 salonId,
       registro_completo:        tieneContacto,
       recordatorio_registro_at: recordatorio,
@@ -400,6 +399,11 @@ async function executeCrearCliente(
     .single()
 
   if (error) return { ok: false, message: `Error al crear cliente: ${error.message}` }
+
+  // nif opcional — columna puede no estar en schema cache, ignorar si falla
+  if (data && p.nif) {
+    await supabase.from('clients').update({ nif: p.nif }).eq('id', data.id).eq('salon_id', salonId)
+  }
 
   const avisoIncompleto = tieneContacto
     ? ''

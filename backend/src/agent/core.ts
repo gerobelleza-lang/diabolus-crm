@@ -260,7 +260,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
   if (/nuevo cliente|crear cliente|añadir cliente|agrega.{0,10}cliente|da de alta|registra.{0,15}cliente|alta.{0,10}cliente|registra\s+a\s+[A-ZÁÉÍÓÚÑ]|añade\s+a\s+[A-ZÁÉÍÓÚÑ]|a[ñn]ade\s+a\s+[A-ZÁÉÍÓÚÑ]|mete\s+a\s+[A-ZÁÉÍÓÚÑ]|apunta\s+a\s+[A-ZÁÉÍÓÚÑ]/i.test(userInput)) {
     // Extrae nombre: soporta "nuevo cliente X", "registra a X", "añade a X", etc.
     const mNombre = userInput.match(
-      /(?:cliente|nuevo|añade|crea|registra|alta|mete|apunta)\s+(?:a\s+)?(?:llamad[oa]?\s+)?([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:con|tel\b|telf?\b|tlf\b|teléfono|telefono|email|,|$)|\s*$)/i
+      /(?:cliente|nuevo|añade|crea|registra|alta|mete|apunta)\s+(?:a\s+)?(?:llamad[oa]?\s+)?([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:con|teléfono|telefono|email|,|$)|\s*$)/i
     )
     const nombre = mNombre ? mNombre[1].trim() : ''
     if (!nombre) {
@@ -311,7 +311,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
 
     // 2. Extraer cliente — artículo inicial opcional (el/la/los/las/un/una)
     const mCliente = userInput.match(
-      /\bpara\s+(?:(?:el|la|los|las|un|una)\s+)?([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,55}?)(?:\s+(?:con|por|de|,)|$)/i
+      /(?:para|a)\s+(?:(?:el|la|los|las|un|una)\s+)?([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,55}?)(?:\s+(?:con|por|de|,)|$)/i
     )
     let clienteNombre = mCliente ? mCliente[1].trim() : ''
     // Limpieza artículos residuales
@@ -401,8 +401,16 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     return { card }
   }
 
+  // ── facturas vencidas READ guard (antes de cambiar_estado) ─────────────
+  if (
+    /^facturas?\s+vencidas?$|^ver\s+vencidas?$|^hay\s+vencidas?$|^cu[aá]ntas?\s+vencidas?$/i.test(userInput.trim()) ||
+    /(?:listar?|ver|mostrar|hay|cu[aá]ntas?|qu[eé])\s+facturas?\s+vencidas?/i.test(userInput)
+  ) {
+    return { replyText: await fetchOverdue(salonId) }
+  }
+
   // ── cambiar_estado_factura ───────────────────────────────────────────────
-  if (/paga[dr]a|cobrad[ao]|marca.{0,20}como|cambi.{0,10}estado|factura.{0,20}(pagad|cobrad|vencid|anuld)/i.test(userInput)) {
+  if (/paga[dr]a|cobrad[ao]|marca.{0,20}como|cambi.{0,10}estado|factura.{0,20}(pagad|cobrad|anuld)/i.test(userInput)) {
     let nuevoEstado = 'pagada'
     if (/vencid/i.test(userInput))       nuevoEstado = 'vencida'
     if (/anuld|cancel/i.test(userInput)) nuevoEstado = 'anulada'

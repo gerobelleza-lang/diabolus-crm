@@ -89,7 +89,7 @@ export const STANDARD_CATEGORIES: { slug: string; label: string }[] = [
 
 export function suggestCategory(concepto: string): string {
   const t = (concepto || '').toLowerCase()
-  if (/material|tintura|producto|suministro|peluquer/.test(t)) return 'material'
+  if (/material|tinte|tintura|producto|suministro|peluquer/.test(t)) return 'material'
   if (/alquiler|local|oficina/.test(t))                         return 'alquiler'
   if (/gasolina|transporte|viaje|taxi|combustible/.test(t))     return 'transporte'
   if (/comida|dieta|restaurant|menú|menu|almuerzo/.test(t))     return 'dietas'
