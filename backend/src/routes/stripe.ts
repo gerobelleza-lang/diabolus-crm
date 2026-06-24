@@ -107,19 +107,45 @@ export const stripeRoutes = new Hono()
 // ── POST /api/stripe/checkout ─────────────────────────────────────────────
 stripeRoutes.post('/checkout', async (c) => {
   try {
-    const token = c.req.header('Authorization')?.replace('Bearer ', '')
-    if (!token) return c.json({ error: 'Unauthorized' }, 401)
-
     const url    = sbUrl()
     const key    = sbKey()
     const secret = stripeKey()
 
-    // Auth con SDK (mismo mecanismo que authMiddleware)
-    const user = await getUser(token)
-    if (!user?.id) return c.json({ error: 'Invalid token' }, 401)
+    const body = await c.req.json().catch(() => ({}))
+
+    // ── Autenticación dual: JWT Bearer OR email+salonId ──────────────────
+    let userId: string | null = null
+    let userEmail: string | null = null
+
+    const bearerToken = c.req.header('Authorization')?.replace('Bearer ', '')
+    if (bearerToken) {
+      const user = await getUser(bearerToken)
+      if (user?.id) { userId = user.id; userEmail = user.email }
+    }
+
+    // Fallback: verificar por email + salonId usando service role
+    if (!userId && body.email && body.salonId) {
+      const verRes = await sb(url, key,
+        `salons?id=eq.${encodeURIComponent(body.salonId)}&select=id,name,stripe_customer_id,plan,user_id`)
+      const verData = await verRes.json()
+      const verSalon = Array.isArray(verData) ? verData[0] : null
+      if (verSalon?.user_id) {
+        // Confirmar que el email coincide con el user
+        const userRes = await fetch(`${url}/auth/v1/admin/users/${verSalon.user_id}`, {
+          headers: { apikey: key, Authorization: `Bearer ${key}` }
+        })
+        const userData = await userRes.json()
+        if (userData?.email === body.email) {
+          userId = verSalon.user_id
+          userEmail = userData.email
+        }
+      }
+    }
+
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401)
 
     // Obtener salón del usuario
-    const salonRes = await sb(url, key, `salons?user_id=eq.${user.id}&select=id,name,stripe_customer_id,plan&limit=1`)
+    const salonRes = await sb(url, key, `salons?user_id=eq.${userId}&select=id,name,stripe_customer_id,plan&limit=1`)
     const salons   = await salonRes.json()
     const salon    = Array.isArray(salons) ? salons[0] : null
 
