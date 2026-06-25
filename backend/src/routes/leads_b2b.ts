@@ -244,7 +244,7 @@ protectedApp.post('/launch', async (c) => {
   const sb = getSbFetch(SUPABASE_URL, SUPABASE_KEY);
 
   try {
-    const r = await fetch(`https://api.apify.com/v2/acts/compass~google-maps-scraper/runs?token=${APIFY_TOKEN}`, {
+    const r = await fetch(`https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token=${APIFY_TOKEN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -600,7 +600,7 @@ internalApp.post('/launch', async (c) => {
   const sb = getSbFetch(SUPABASE_URL, SUPABASE_KEY);
 
   try {
-    const r = await fetch(`https://api.apify.com/v2/acts/compass~google-maps-scraper/runs?token=${APIFY_TOKEN}`, {
+    const r = await fetch(`https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token=${APIFY_TOKEN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
