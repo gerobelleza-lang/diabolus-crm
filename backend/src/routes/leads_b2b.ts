@@ -58,7 +58,7 @@ import { Hono } from 'hono';
 const publicApp    = new Hono(); // rutas sin auth (callback Apify)
 const protectedApp = new Hono(); // rutas con auth (launch, pipeline, stats, outreach, followup)
 
-const API_BASE = 'https://diabolus-crm.vercel.app';
+const API_BASE = 'https://diabolus-crm-api.vercel.app';
 
 // ─── Helpers internos ─────────────────────────────────────────────────────────
 
@@ -567,6 +567,138 @@ export async function handleB2BWaInbound(params: {
 
   return true;
 }
+
+
+// ─── Rutas internas (sin user auth — token interno) ──────────────────────────
+// Usadas por triggers programados (Tasklet) y llamadas de sistema.
+// Requieren header: x-internal-secret: <INTERNAL_API_SECRET env var>
+
+const internalApp = new Hono();
+
+internalApp.use('*', async (c, next) => {
+  const secret   = c.req.header('x-internal-secret');
+  const expected = process.env.INTERNAL_API_SECRET;
+  if (!expected || secret !== expected) return c.json({ error: 'Forbidden' }, 403);
+  await next();
+});
+
+// POST /api/internal/leads-b2b/launch — lanza scraping (sin user JWT)
+internalApp.post('/launch', async (c) => {
+  const SUPABASE_URL = process.env.SUPABASE_URL!;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const APIFY_TOKEN  = process.env.APIFY_API_TOKEN!;
+  const TG_TOKEN     = process.env.TELEGRAM_BOT_TOKEN!;
+  const TG_CHAT      = process.env.TELEGRAM_CHAT_ID!;
+
+  if (!APIFY_TOKEN) return c.json({ error: 'APIFY_API_TOKEN no configurado' }, 500);
+
+  let body: any;
+  try { body = await c.req.json(); } catch { return c.json({ error: 'bad json' }, 400); }
+
+  const { sector = 'peluquería', ciudad = 'Madrid', limite = 50 } = body;
+  const searchQuery = `${sector} ${ciudad}`;
+  const sb = getSbFetch(SUPABASE_URL, SUPABASE_KEY);
+
+  try {
+    const r = await fetch(`https://api.apify.com/v2/acts/compass~google-maps-scraper/runs?token=${APIFY_TOKEN}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        searchStringsArray: [searchQuery],
+        maxCrawledPlacesPerSearch: Math.min(Math.max(limite, 10), 200),
+        language: 'es',
+        countryCode: 'es',
+        scrapeContacts: true,
+        includeWebResults: false,
+        webhooks: [{
+          eventTypes: ['ACTOR.RUN.SUCCEEDED', 'ACTOR.RUN.FAILED'],
+          requestUrl: `${API_BASE}/api/leads-b2b/callback`,
+          payloadTemplate: JSON.stringify({
+            runId: '{{runId}}',
+            status: '{{eventType}}',
+            datasetId: '{{defaultDatasetId}}',
+            sector,
+            ciudad,
+          }),
+        }],
+      }),
+    });
+
+    const run = await r.json();
+    if (!r.ok) return c.json({ error: 'Error Apify', details: run }, 500);
+
+    await sb('leads_b2b_runs', {
+      method: 'POST',
+      body: JSON.stringify({ apify_run_id: run.data?.id, sector, ciudad, limite, estado: 'running', created_at: new Date().toISOString() }),
+    }).catch(() => {});
+
+    await tgAlert(
+      `🤖 <b>Agente Leads B2B — Scraping lanzado</b>\n` +
+      `Búsqueda: "${searchQuery}"\nLímite: ${limite} leads\nRun ID: ${run.data?.id}`,
+      TG_TOKEN, TG_CHAT
+    );
+
+    return c.json({ ok: true, run_id: run.data?.id, search: searchQuery, limite });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// POST /api/internal/leads-b2b/followup — follow-up diario (trigger Tasklet)
+internalApp.post('/followup', async (c) => {
+  const sb = getSbFetch(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const WA_TOKEN    = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN!;
+  const WA_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
+  const TG_TOKEN    = process.env.TELEGRAM_BOT_TOKEN!;
+  const TG_CHAT     = process.env.TELEGRAM_CHAT_ID!;
+
+  const ahora = new Date();
+  let leads: any[] = [];
+  try {
+    const r = await sb('leads_b2b?estado=in.(contactado,respondio)&select=*&order=created_at.asc&limit=200');
+    const all = await r.json();
+    leads = (all || []).filter((l: any) => {
+      const ref  = l.ultima_contacto_at || l.created_at;
+      const dias = Math.floor((ahora.getTime() - new Date(ref).getTime()) / (24 * 3600 * 1000));
+      const fc   = l.followup_count || 0;
+      return fc < 2 && dias >= 3 && l.telefono;
+    });
+  } catch { return c.json({ error: 'db error' }, 500); }
+
+  let enviados = 0;
+  for (const lead of leads) {
+    const ref  = lead.ultima_contacto_at || lead.created_at;
+    const dias = Math.floor((ahora.getTime() - new Date(ref).getTime()) / (24 * 3600 * 1000));
+    const fc   = lead.followup_count || 0;
+
+    let msg = '';
+    if (dias >= 7 && fc === 1) {
+      msg = `Hola ${lead.nombre || ''} 👋 Entiendo que quizás ahora no es el mejor momento. Si en algún momento quieres mejorar cómo llevas las cuentas, en Diabolus estaremos aquí. ¡Mucho ánimo con el negocio!`;
+    } else if (dias >= 3 && fc === 0) {
+      msg = `Hola ${lead.nombre || ''}, ¿pudiste echarle un vistazo a Diabolus? Llevamos facturas, cobros y pagos en automático para autónomos — 49€/mes. ¿Hablamos 5 minutos esta semana?`;
+    }
+
+    if (msg) {
+      const sent = await sendWA(lead.telefono, msg, WA_TOKEN, WA_PHONE_ID);
+      if (sent) {
+        await sb(`leads_b2b?id=eq.${lead.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ followup_count: fc + 1, ultima_contacto_at: new Date().toISOString() }),
+        }).catch(() => {});
+        enviados++;
+      }
+    }
+  }
+
+  await tgAlert(
+    `📋 <b>Leads B2B — Follow-up diario</b>\nProcesados: ${leads.length} | WhatsApp enviados: ${enviados}`,
+    TG_TOKEN, TG_CHAT
+  );
+
+  return c.json({ ok: true, procesados: leads.length, enviados });
+});
+
+export const leadsB2bInternalRoutes  = internalApp;
 
 export const leadsB2bPublicRoutes    = publicApp;
 export const leadsB2bProtectedRoutes = protectedApp;

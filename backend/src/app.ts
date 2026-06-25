@@ -34,7 +34,7 @@ import { accrueCommissions } from './routes/export'
 import { adminRoutes } from './routes/admin'
 import { waitlistRoutes } from './routes/waitlist'
 import { monitorRoutes } from './routes/monitor'
-import { leadsB2bPublicRoutes, leadsB2bProtectedRoutes, handleB2BWaInbound } from './routes/leads_b2b'
+import { leadsB2bPublicRoutes, leadsB2bProtectedRoutes, leadsB2bInternalRoutes, handleB2BWaInbound } from './routes/leads_b2b'
 
 export function createApp() {
   const app = new Hono()
@@ -102,6 +102,9 @@ export function createApp() {
 
   // ─── Leads B2B — Apify callback (Public — llamado por Apify, sin user auth) ─
   app.route('/api/leads-b2b', leadsB2bPublicRoutes)
+
+  // ─── Leads B2B — Rutas internas (trigger Tasklet — secret header) ──────────
+  app.route('/api/internal/leads-b2b', leadsB2bInternalRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
