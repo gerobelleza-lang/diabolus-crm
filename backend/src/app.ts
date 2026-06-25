@@ -33,6 +33,7 @@ import { getSupabaseAdmin } from './integrations/supabase'
 import { accrueCommissions } from './routes/export'
 import { adminRoutes } from './routes/admin'
 import { waitlistRoutes } from './routes/waitlist'
+import { monitorRoutes } from './routes/monitor'
 
 export function createApp() {
   const app = new Hono()
@@ -120,6 +121,9 @@ export function createApp() {
       return c.json({ error: 'Internal error' }, 500)
     }
   })
+
+  // ─── Internal: Monitor (Stripe + Health — no user auth) ───────────────────
+  app.route('/api/internal/monitor', monitorRoutes)
 
   // ─── Internal: Commissions Accrue (called by monthly trigger) ─────────────
   app.post('/api/internal/commissions/accrue', async (c) => {
@@ -211,11 +215,7 @@ export function createApp() {
     }
 
     // LLM — Hermes 3
-    const systemPrompt = `Eres El Demonio, agente de ventas íntimo y persuasivo de ${salonNombre}. 
-Nunca eres agresivo. Hablas como un amigo de confianza que conoce el sector belleza.
-Clasifica la intención del cliente en: INTERESADO, PRECIO, DUDA, NO_INTERESA, CITA_CONFIRMADA.
-Responde en 2-3 frases naturales, cálidas y directas. Nunca menciones que eres IA.
-Devuelve JSON: {"intencion":"...", "respuesta":"..."}`;
+    const systemPrompt = `Eres El Demonio, agente de ventas íntimo y persuasivo de ${salonNombre}. \nNunca eres agresivo. Hablas como un amigo de confianza que conoce el sector belleza.\nClasifica la intención del cliente en: INTERESADO, PRECIO, DUDA, NO_INTERESA, CITA_CONFIRMADA.\nResponde en 2-3 frases naturales, cálidas y directas. Nunca menciones que eres IA.\nDevuelve JSON: {"intencion":"...", "respuesta":"..."}`;
 
     let intencion = 'DUDA';
     let respuesta = `¡Hola ${nombre}! 😊 Me alegra que hayas escrito. ¿En qué puedo ayudarte?`;
