@@ -34,6 +34,7 @@ import { accrueCommissions } from './routes/export'
 import { adminRoutes } from './routes/admin'
 import { waitlistRoutes } from './routes/waitlist'
 import { monitorRoutes } from './routes/monitor'
+import { leadsB2bPublicRoutes, leadsB2bProtectedRoutes, handleB2BWaInbound } from './routes/leads_b2b'
 
 export function createApp() {
   const app = new Hono()
@@ -98,6 +99,9 @@ export function createApp() {
 
   // ─── Support Email (Public — auth via x-support-secret) ────────────────────
   app.route('/api/support', supportRoutes)
+
+  // ─── Leads B2B — Apify callback (Public — llamado por Apify, sin user auth) ─
+  app.route('/api/leads-b2b', leadsB2bPublicRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
@@ -194,7 +198,7 @@ export function createApp() {
         ...opts
       });
 
-    // Buscar lead por número WA
+    // Buscar lead de El Pacto por número WA
     let lead: any = null;
     try {
       const r = await sb(`pacto_leads?whatsapp=eq.${from}&order=created_at.desc&limit=1&select=*,pacto_campanas(salon_id,salons(nombre))`);
@@ -202,17 +206,30 @@ export function createApp() {
       lead = arr?.[0] || null;
     } catch {}
 
+    // Si no es lead de El Pacto, intentar como lead B2B
+    if (!lead) {
+      await handleB2BWaInbound({
+        from, nombre, mensaje,
+        sbUrl:     SUPABASE_URL,
+        sbKey:     SUPABASE_KEY,
+        waToken:   WA_TOKEN,
+        waPhoneId: WA_PHONE_ID,
+        tgToken:   TG_TOKEN,
+        tgChat:    TG_CHAT,
+        orKey:     OR_KEY,
+      }).catch(() => {});
+      return c.json({ ok: true });
+    }
+
     const salonNombre = lead?.pacto_campanas?.salons?.nombre || 'el salón';
 
     // Historial conversación
     let historial: any[] = [];
-    if (lead) {
-      try {
-        const r = await sb(`demonio_conversaciones?lead_id=eq.${lead.id}&order=created_at.asc&limit=12&select=role,content`);
-        const arr = await r.json();
-        historial = arr?.map((m: any) => ({ role: m.role, content: m.content })) || [];
-      } catch {}
-    }
+    try {
+      const r = await sb(`demonio_conversaciones?lead_id=eq.${lead.id}&order=created_at.asc&limit=12&select=role,content`);
+      const arr = await r.json();
+      historial = arr?.map((m: any) => ({ role: m.role, content: m.content })) || [];
+    } catch {}
 
     // LLM — Hermes 3
     const systemPrompt = `Eres El Demonio, agente de ventas íntimo y persuasivo de ${salonNombre}. \nNunca eres agresivo. Hablas como un amigo de confianza que conoce el sector belleza.\nClasifica la intención del cliente en: INTERESADO, PRECIO, DUDA, NO_INTERESA, CITA_CONFIRMADA.\nResponde en 2-3 frases naturales, cálidas y directas. Nunca menciones que eres IA.\nDevuelve JSON: {"intencion":"...", "respuesta":"..."}`;
@@ -242,36 +259,34 @@ export function createApp() {
     } catch {}
 
     // Guardar historial y actualizar estado
-    if (lead) {
-      try {
-        await sb('demonio_conversaciones', {
+    try {
+      await sb('demonio_conversaciones', {
+        method: 'POST',
+        body: JSON.stringify([
+          { lead_id: lead.id, role: 'user',      content: mensaje   },
+          { lead_id: lead.id, role: 'assistant', content: respuesta }
+        ])
+      });
+      let nuevoEstado = lead.estado || 'contactado';
+      if (intencion === 'INTERESADO' || intencion === 'PRECIO') nuevoEstado = 'respondio';
+      if (intencion === 'CITA_CONFIRMADA')                       nuevoEstado = 'cita_agendada';
+      if (intencion === 'NO_INTERESA')                           nuevoEstado = 'descartado';
+      await sb(`pacto_leads?id=eq.${lead.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ estado: nuevoEstado, ultima_respuesta_at: new Date().toISOString() })
+      });
+      if (intencion === 'INTERESADO' || intencion === 'CITA_CONFIRMADA') {
+        fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
           method: 'POST',
-          body: JSON.stringify([
-            { lead_id: lead.id, role: 'user',      content: mensaje   },
-            { lead_id: lead.id, role: 'assistant', content: respuesta }
-          ])
-        });
-        let nuevoEstado = lead.estado || 'contactado';
-        if (intencion === 'INTERESADO' || intencion === 'PRECIO') nuevoEstado = 'respondio';
-        if (intencion === 'CITA_CONFIRMADA')                       nuevoEstado = 'cita_agendada';
-        if (intencion === 'NO_INTERESA')                           nuevoEstado = 'descartado';
-        await sb(`pacto_leads?id=eq.${lead.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ estado: nuevoEstado, ultima_respuesta_at: new Date().toISOString() })
-        });
-        if (intencion === 'INTERESADO' || intencion === 'CITA_CONFIRMADA') {
-          fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: TG_CHAT,
-              parse_mode: 'HTML',
-              text: `🔥 <b>Lead caliente — El Demonio</b>\nSalón: ${salonNombre}\nLead: ${nombre} (+${from})\nIntención: ${intencion}\nDice: "${mensaje.slice(0,100)}"`
-            })
-          }).catch(() => {});
-        }
-      } catch {}
-    }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: TG_CHAT,
+            parse_mode: 'HTML',
+            text: `🔥 <b>Lead caliente — El Demonio</b>\nSalón: ${salonNombre}\nLead: ${nombre} (+${from})\nIntención: ${intencion}\nDice: "${mensaje.slice(0,100)}"`
+          })
+        }).catch(() => {});
+      }
+    } catch {}
 
     // Responder por WhatsApp
     if (intencion !== 'NO_INTERESA' && WA_TOKEN) {
@@ -312,6 +327,7 @@ export function createApp() {
   app.route('/api/albaranes', albaranRoute)      // ← Albaranes (Panel Móvil)
   app.route('/api/agent/transcribe', transcribeRoute) // ← Voz → Groq Whisper
   app.post('/api/agent/tts', ttsRoute)               // ← TTS → OpenAI voz
+  app.route('/api/leads-b2b', leadsB2bProtectedRoutes) // ← Agente Leads B2B
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))
