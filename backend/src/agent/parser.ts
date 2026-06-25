@@ -24,9 +24,9 @@ const INCOME_KEYWORDS = [
 const EXPENSE_KEYWORDS = [
   'gasto', 'gastos', 'compra', 'compras', 'salida', 'salidas',
   'expense', 'desembolso',
-  'gasté', 'pagué', 'compré', 'compre', 'aboné',
+  'gasté', 'gaste', 'pagué', 'pague', 'compré', 'compre', 'aboné', 'abone',
   'he pagado', 'he gastado', 'he comprado', 'he abonado',
-  'desembolsé', 'invertí',
+  'desembolsé', 'desembolse', 'invertí', 'inverti',
   'apunta gasto', 'apunta un gasto', 'anota gasto', 'anota un gasto',
   'mete gasto', 'mete un gasto', 'registra gasto', 'registra un gasto',
   'pon gasto', 'pon un gasto', 'añade gasto', 'agrega gasto',
@@ -207,7 +207,13 @@ function parseIncome(input: string, amounts: number[]): ParsedInput {
 function parseExpense(input: string, amounts: number[]): ParsedInput {
   const amount = amounts.find(a => a > 0) || 0;
 
-  const concepts = ['tinturas', 'suministros', 'viaje', 'comida', 'transporte', 'alojamiento', 'materiales', 'gasolina', 'alquiler', 'software', 'telefono', 'teléfono'];
+  const concepts = [
+    'tinte', 'tinturas', 'tintura', 'material', 'materiales', 'producto', 'productos',
+    'suministros', 'viaje', 'comida', 'transporte', 'alojamiento', 'gasolina',
+    'alquiler', 'software', 'telefono', 'teléfono', 'electricidad', 'luz',
+    'agua', 'gas', 'internet', 'nomina', 'nómina', 'gestoría', 'gestoria',
+    'seguro', 'publicidad', 'limpieza', 'dieta', 'dietas', 'herramienta', 'herramientas',
+  ];
   let concept = 'Gasto';
 
   for (const c of concepts) {
@@ -218,12 +224,16 @@ function parseExpense(input: string, amounts: number[]): ParsedInput {
   }
 
   if (concept === 'Gasto') {
-    const porMatch = input.match(/(?:en|por)\s+([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{2,40}?)(?:\s*[,.]|$)/i);
+    // Captura lo que viene tras "en" o "por", excluyendo palabras temporales al final
+    const porMatch = input.match(/(?:en|por)\s+([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:hoy|ayer|mañana|esta semana|este mes|ahora)\b|\s*[,.]|$)/i);
     if (porMatch) {
       concept = porMatch[1].trim().charAt(0).toUpperCase() + porMatch[1].trim().slice(1);
     } else {
       const afterAmt = input.replace(/^[\s\S]*?\d+(?:[.,]\d+)?\s*(?:€|euros?)?\s*/i, '').trim();
-      const stripped = afterAmt.replace(/^(crea|apunta|anota|mete|pon|registra|nuevo|alta|ingreso|gasto|cobro|gasté|pagué)\s*/gi, '').trim();
+      const stripped = afterAmt
+        .replace(/^(crea|apunta|anota|mete|pon|registra|nuevo|alta|ingreso|gasto|cobro|gasté|gaste|pagué|pague)\s*/gi, '')
+        .replace(/\b(hoy|ayer|mañana|esta semana|este mes)\b/gi, '')
+        .trim();
       if (stripped && stripped.length > 2) {
         concept = stripped.charAt(0).toUpperCase() + stripped.slice(1);
       }
