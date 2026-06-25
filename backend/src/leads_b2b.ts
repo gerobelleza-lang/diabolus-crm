@@ -726,6 +726,51 @@ internalApp.post('/followup', async (c) => {
   return c.json({ ok: true, procesados: leads.length, enviados });
 });
 
+internalApp.post('/outreach', async (c) => {
+  const sb = getSbFetch(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const WA_TOKEN    = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN!;
+  const WA_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
+  const TG_TOKEN    = process.env.TELEGRAM_BOT_TOKEN!;
+  const TG_CHAT     = process.env.TELEGRAM_CHAT_ID!;
+
+  const body = await c.req.json().catch(() => ({}));
+  const sector = body.sector || '';
+  const ciudad = body.ciudad || '';
+
+  let query = 'leads_b2b?estado=eq.nuevo&select=*&order=created_at.asc&limit=100';
+  if (sector) query += `&sector=eq.${encodeURIComponent(sector)}`;
+  if (ciudad) query += `&ciudad=eq.${encodeURIComponent(ciudad)}`;
+
+  let leads: any[] = [];
+  try {
+    const r = await sb(query);
+    leads = (await r.json()) || [];
+  } catch { return c.json({ error: 'db error' }, 500); }
+
+  let enviados = 0;
+  for (const lead of leads) {
+    if (!lead.telefono) continue;
+    const nombre = lead.nombre?.split(' ')[0] || 'propietario';
+    const msg = `Hola ${nombre}, soy Miguel de Diabolus 👋 Tenemos una herramienta para autónomos y peluquerías que automatiza facturas, cobros y pagos — 49€/mes sin permanencia. ¿Te interesa echarle un vistazo rápido?`;
+
+    const sent = await sendWA(lead.telefono, msg, WA_TOKEN, WA_PHONE_ID);
+    if (sent) {
+      await sb(`leads_b2b?id=eq.${lead.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ estado: 'contactado', ultima_contacto_at: new Date().toISOString() }),
+      }).catch(() => {});
+      enviados++;
+    }
+  }
+
+  await tgAlert(
+    `🚀 <b>Leads B2B — Outreach inicial</b>\nSector: ${sector} | Ciudad: ${ciudad}\nTotal: ${leads.length} | WhatsApp enviados: ${enviados}`,
+    TG_TOKEN, TG_CHAT
+  );
+
+  return c.json({ ok: true, total: leads.length, enviados });
+});
+
 export const leadsB2bInternalRoutes  = internalApp;
 
 export const leadsB2bPublicRoutes    = publicApp;
