@@ -328,11 +328,11 @@ export function createApp() {
 
     try {
       const [salons, invoicesRaw, txRaw, leads, auditRaw] = await Promise.all([
-        sb('salons?select=id,nombre,plan,is_active,created_at&order=created_at.desc'),
+        sb('salons?select=id,name,plan,is_active,onboarding_completed,created_at,pacto_activo&order=created_at.desc'),
         sb('invoices?select=status,total'),
         sb('transactions?select=type,amount'),
-        sb('leads_b2b?select=id,nombre,estado,ciudad,created_at&order=created_at.desc&limit=50'),
-        sb('audit_log?select=action,created_at&order=created_at.desc&limit=20'),
+        sb('leads_b2b?select=id,nombre,sector,ciudad,telefono,estado,followup_count,ultima_contacto_at,created_at&order=created_at.desc&limit=50'),
+        sb('audit_log?select=tool_name,created_at&order=created_at.desc&limit=20'),
       ])
 
       const safeArray = (v: any) => Array.isArray(v) ? v : []
@@ -358,7 +358,7 @@ export function createApp() {
       const transactionStats = Object.entries(txMap).map(([type, v]) => ({ type, ...v }))
 
       const audit = safeArray(auditRaw).map((a: any) => ({
-        action: a.action,
+        action: a.tool_name,
         created_at: a.created_at,
       }))
 
