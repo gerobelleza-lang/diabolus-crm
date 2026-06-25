@@ -71,6 +71,8 @@
     .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .action-btn { padding: 0.3rem 0.6rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; white-space: nowrap; }
     .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-send { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+    .btn-send:hover:not(:disabled) { background: rgba(139,92,246,0.28); }
     .btn-wp { background: rgba(37, 211, 102, 0.15); color: #25d366; border: 1px solid rgba(37, 211, 102, 0.3); }
     .btn-wp:hover:not(:disabled) { background: rgba(37, 211, 102, 0.25); }
     .btn-reminder { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
@@ -391,8 +393,9 @@ function renderTable() {
   const rows = invoices.map(inv => {
     const clientName = inv.clients?.name || inv.client_name || '—';
     const isPaid = inv.status === 'paid';
+    const invNum = inv.number || inv.invoice_number || inv.id?.slice(0,8) || '—';
     return `<tr>
-      <td class="invoice-num">${inv.number || inv.invoice_number || inv.id?.slice(0,8) || '—'}</td>
+      <td class="invoice-num">${invNum}</td>
       <td class="client-name">${clientName}</td>
       <td class="total-amount">${fmt(inv.total)}</td>
       <td>${fmtDate(inv.created_at)}</td>
@@ -400,7 +403,8 @@ function renderTable() {
       <td>${badgeHtml(inv.status)}</td>
       <td>
         <div class="actions">
-          <button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}', '${inv.number || inv.id?.slice(0,8) || 'factura'}')">📎 PDF</button>
+          <button class="action-btn btn-send" onclick="sendInvoice('${inv.id}', '${invNum}')">📤 Enviar</button>
+          <button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}', '${invNum}')">📎 PDF</button>
           <button class="action-btn btn-wp" onclick="sendWhatsApp('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📱 WA</button>
           <button class="action-btn btn-reminder" onclick="sendReminder('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>🔔 Aviso</button>
           ${!isPaid ? `<button class="action-btn btn-paid" onclick="markAsPaid('${inv.id}')">✅ Cobrada</button>` : ''}
@@ -426,6 +430,28 @@ function renderTable() {
     </table>`;
 }
 
+// ── 📤 Enviar — envío unificado Email + WhatsApp + Telegram ──────────────────
+async function sendInvoice(id, invoiceNum) {
+  if (!confirm(`¿Enviar la factura ${invoiceNum} al cliente por todos los canales (Email + WhatsApp + Telegram)?`)) return;
+  const btn = event?.target;
+  const origText = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  try {
+    const res = await apiPost(`/api/invoices/${id}/send`, {});
+    if (res.success || res.ok || res.message) {
+      toast('✅ Factura enviada al cliente', 'success');
+      // Actualizar sent_at en local
+      const inv = allInvoices.find(i => i.id === id);
+      if (inv) inv.sent_at = new Date().toISOString();
+    } else {
+      toast('❌ ' + (res.error || 'Error al enviar la factura'), 'error');
+    }
+  } catch(e) {
+    toast('❌ Error de conexión', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = origText || '📤 Enviar'; }
+  }
+}
 
 async function downloadPDF(id, invoiceNum) {
   const btn = event?.target;
@@ -487,7 +513,6 @@ async function markAsPaid(id) {
   try {
     const res = await apiPatch(`/api/invoices/${id}`, { status: 'paid' });
     if (res.id || res.invoice) {
-      // Update local data
       const inv = allInvoices.find(i => i.id === id);
       if (inv) inv.status = 'paid';
       toast('✅ Factura marcada como cobrada', 'success');
@@ -572,7 +597,6 @@ loadData();
 loadMe();
 </script>
   <script>
-    // PWA — registro del Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(reg => {
