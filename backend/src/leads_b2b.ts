@@ -266,7 +266,7 @@ protectedApp.post('/launch', async (c) => {
             'bilbao': {lat:43.2630,lng:-2.9350},
           };
           const c = coords[ciudad.toLowerCase()] || {lat:40.4168,lng:-3.7038};
-          return [`https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}/@${c.lat},${c.lng},12z`];
+          return [{url: `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}/@${c.lat},${c.lng},12z`}];
         })(),
         webhooks: [{
           eventTypes: ['ACTOR.RUN.SUCCEEDED', 'ACTOR.RUN.FAILED'],
@@ -636,7 +636,7 @@ internalApp.post('/launch', async (c) => {
             'bilbao': {lat:43.2630,lng:-2.9350},
           };
           const c = coords[ciudad.toLowerCase()] || {lat:40.4168,lng:-3.7038};
-          return [`https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}/@${c.lat},${c.lng},12z`];
+          return [{url: `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}/@${c.lat},${c.lng},12z`}];
         })(),
         webhooks: [{
           eventTypes: ['ACTOR.RUN.SUCCEEDED', 'ACTOR.RUN.FAILED'],
