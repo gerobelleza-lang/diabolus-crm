@@ -328,16 +328,18 @@ export function createApp() {
 
     try {
       const [salons, invoicesRaw, txRaw, leads, auditRaw] = await Promise.all([
-        sb('salons?select=id,name,plan,is_active,pacto_activo,created_at&order=created_at.desc'),
+        sb('salons?select=id,nombre,plan,is_active,created_at&order=created_at.desc'),
         sb('invoices?select=status,total'),
         sb('transactions?select=type,amount'),
         sb('leads_b2b?select=id,nombre,estado,ciudad,created_at&order=created_at.desc&limit=50'),
-        sb('audit_log?select=tool_name,created_at&order=created_at.desc&limit=20'),
+        sb('audit_log?select=action,created_at&order=created_at.desc&limit=20'),
       ])
+
+      const safeArray = (v: any) => Array.isArray(v) ? v : []
 
       // Aggregate invoices by status
       const invMap: Record<string, {count:number,total:number}> = {}
-      for (const inv of (invoicesRaw || [])) {
+      for (const inv of safeArray(invoicesRaw)) {
         const s = inv.status || 'unknown'
         if (!invMap[s]) invMap[s] = { count: 0, total: 0 }
         invMap[s].count++
@@ -347,7 +349,7 @@ export function createApp() {
 
       // Aggregate transactions by type
       const txMap: Record<string, {count:number,total:number}> = {}
-      for (const tx of (txRaw || [])) {
+      for (const tx of safeArray(txRaw)) {
         const t = tx.type || 'unknown'
         if (!txMap[t]) txMap[t] = { count: 0, total: 0 }
         txMap[t].count++
@@ -355,12 +357,12 @@ export function createApp() {
       }
       const transactionStats = Object.entries(txMap).map(([type, v]) => ({ type, ...v }))
 
-      const audit = (auditRaw || []).map((a: any) => ({
-        action: a.tool_name,
+      const audit = safeArray(auditRaw).map((a: any) => ({
+        action: a.action,
         created_at: a.created_at,
       }))
 
-      return c.json({ ok: true, salons, invoiceStats, transactionStats, leads, audit })
+      return c.json({ ok: true, salons: safeArray(salons), invoiceStats, transactionStats, leads: safeArray(leads), audit })
     } catch (err: any) {
       return c.json({ error: err.message }, 500)
     }
