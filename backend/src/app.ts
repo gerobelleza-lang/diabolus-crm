@@ -312,11 +312,11 @@ export function createApp() {
   // ─── Internal: Admin Panel Stats (Miguel — sin user auth, secret requerido) ─
   app.get('/api/internal/admin/panel', async (c) => {
     const secret   = c.req.query('secret') || c.req.header('x-admin-secret') || ''
-    const expected = c.env?.ADMIN_PANEL_SECRET || 'diabolus_admin_2026'
+    const expected = (c.env as any)?.ADMIN_PANEL_SECRET || process.env.ADMIN_PANEL_SECRET || 'diabolus_admin_2026'
     if (secret !== expected) return c.json({ error: 'Forbidden' }, 403)
 
-    const SB_URL = c.env?.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co'
-    const SB_KEY = c.env?.SUPABASE_SERVICE_ROLE_KEY || ''
+    const SB_URL = (c.env as any)?.SUPABASE_URL || process.env.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co'
+    const SB_KEY = (c.env as any)?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTI4MzcyNywiZXhwIjoyMDk2ODU5NzI3fQ.FhTM-kZ9mBtkzHPahbtIAy2IT5rIIrJGZ8bFXDAsy88'
 
     const sb = (path: string) => fetch(`${SB_URL}/rest/v1/${path}`, {
       headers: {
