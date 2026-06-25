@@ -308,6 +308,64 @@ export function createApp() {
     return c.json({ ok: true });
   })
 
+
+  // ─── Internal: Admin Panel Stats (Miguel — sin user auth, secret requerido) ─
+  app.get('/api/internal/admin/panel', async (c) => {
+    const secret   = c.req.query('secret') || c.req.header('x-admin-secret') || ''
+    const expected = c.env?.ADMIN_PANEL_SECRET || 'diabolus_admin_2026'
+    if (secret !== expected) return c.json({ error: 'Forbidden' }, 403)
+
+    const SB_URL = c.env?.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co'
+    const SB_KEY = c.env?.SUPABASE_SERVICE_ROLE_KEY || ''
+
+    const sb = (path: string) => fetch(`${SB_URL}/rest/v1/${path}`, {
+      headers: {
+        'apikey':         SB_KEY,
+        'Authorization':  `Bearer ${SB_KEY}`,
+        'Content-Type':   'application/json',
+      }
+    }).then(r => r.json())
+
+    try {
+      const [salons, invoicesRaw, txRaw, leads, auditRaw] = await Promise.all([
+        sb('salons?select=id,name,plan,is_active,pacto_activo,created_at&order=created_at.desc'),
+        sb('invoices?select=status,total'),
+        sb('transactions?select=type,amount'),
+        sb('leads_b2b?select=id,nombre,estado,ciudad,created_at&order=created_at.desc&limit=50'),
+        sb('audit_log?select=tool_name,created_at&order=created_at.desc&limit=20'),
+      ])
+
+      // Aggregate invoices by status
+      const invMap: Record<string, {count:number,total:number}> = {}
+      for (const inv of (invoicesRaw || [])) {
+        const s = inv.status || 'unknown'
+        if (!invMap[s]) invMap[s] = { count: 0, total: 0 }
+        invMap[s].count++
+        invMap[s].total += parseFloat(inv.total) || 0
+      }
+      const invoiceStats = Object.entries(invMap).map(([status, v]) => ({ status, ...v }))
+
+      // Aggregate transactions by type
+      const txMap: Record<string, {count:number,total:number}> = {}
+      for (const tx of (txRaw || [])) {
+        const t = tx.type || 'unknown'
+        if (!txMap[t]) txMap[t] = { count: 0, total: 0 }
+        txMap[t].count++
+        txMap[t].total += parseFloat(tx.amount) || 0
+      }
+      const transactionStats = Object.entries(txMap).map(([type, v]) => ({ type, ...v }))
+
+      const audit = (auditRaw || []).map((a: any) => ({
+        action: a.tool_name,
+        created_at: a.created_at,
+      }))
+
+      return c.json({ ok: true, salons, invoiceStats, transactionStats, leads, audit })
+    } catch (err: any) {
+      return c.json({ error: err.message }, 500)
+    }
+  })
+
   // ─── Protected Routes ──────────────────────────────────────────────────────
   app.use('/api/*', authMiddleware)
   app.route('/api/dashboard', dashboardRoutes)
