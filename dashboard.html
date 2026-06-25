@@ -59,8 +59,33 @@
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-muted, #6b7280);
-      padding: 1rem 0.5rem 0.25rem;
+      padding: 0.75rem 0.5rem 0.25rem;
       margin-top: 0.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-section-label:hover { color: rgba(255,255,255,.6); }
+    .nav-chevron {
+      font-size: 0.55rem;
+      transition: transform 0.22s ease;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+    .nav-chevron.rotated { transform: rotate(-90deg); }
+    .nav-group-items {
+      overflow: hidden;
+      max-height: 300px;
+      opacity: 1;
+      transition: max-height 0.28s ease, opacity 0.2s ease;
+    }
+    .nav-group-items.collapsed {
+      max-height: 0;
+      opacity: 0;
     }
     .nav-item {
       padding: 0.65rem 1rem;
@@ -1216,6 +1241,16 @@
           .catch(e => console.warn('[SW] error:', e))
       })
     }
-  </script>
+  
+    // ── Acordeón sidebar ──
+    function toggleNav(group) {
+      const items = document.getElementById('items-' + group);
+      const chv   = document.getElementById('chv-' + group);
+      if (!items) return;
+      const isOpen = !items.classList.contains('collapsed');
+      items.classList.toggle('collapsed', isOpen);
+      if (chv) chv.classList.toggle('rotated', isOpen);
+    }
+</script>
 </body>
 </html>
