@@ -316,7 +316,7 @@ export function createApp() {
     if (secret !== expected) return c.json({ error: 'Forbidden' }, 403)
 
     const SB_URL = (c.env as any)?.SUPABASE_URL || process.env.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co'
-    const SB_KEY = (c.env as any)?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTI4MzcyNywiZXhwIjoyMDk2ODU5NzI3fQ.FhTM-kZ9mBtkzHPahbtIAy2IT5rIIrJGZ8bFXDAsy88'
+    const SB_KEY = (c.env as any)?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
     const sb = (path: string) => fetch(`${SB_URL}/rest/v1/${path}`, {
       headers: {
