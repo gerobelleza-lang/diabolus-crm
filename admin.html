@@ -254,7 +254,7 @@ function renderStats(data) {
 
   const totalInvoiced = invoiceStats.reduce((s, i) => s + (parseFloat(i.total) || 0), 0);
   const paidInvoices = invoiceStats.find(i => i.status === 'paid');
-  const paidTotal = parseFloat(paidInvoiced?.total || paidInvoices?.total || 0);
+  const paidTotal = parseFloat(paidInvoices?.total || 0);
   const pendingLeads = leads.filter(l => l.estado === 'nuevo' || l.estado === 'contactado').length;
   const hotLeads = leads.filter(l => l.estado === 'respondio' || l.estado === 'cita_agendada').length;
 
