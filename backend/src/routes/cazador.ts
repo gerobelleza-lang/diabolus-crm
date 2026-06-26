@@ -7,7 +7,6 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'Diabolus CRM <noreply@diabolus.es>
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 
 // ── Identidad y mandato del Agente Cazador ────────────────────────────────
-// Prompt operativo (pronto: base para capa LLM del informe inteligente)
 export const CAZADOR_SYSTEM_PROMPT = `
 # IDENTIDAD Y MISIÓN
 
@@ -164,13 +163,11 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
       let sent = false;
       const channel = config.channel;
 
-      // Validar canal antes de intentar envío
       const hasValidChannel =
         (channel === 'email' && client?.email) ||
         (channel === 'telegram' && salon.telegram_chat_id);
 
       if (!hasValidChannel) {
-        // ANTE DATOS QUE FALTAN, SALTA Y REPORTA — no inventar, no enviar al contacto equivocado
         const emoji = level === 1 ? '🟡' : level === 2 ? '🟠' : '🔴';
         skippedLines.push(`${emoji} ${client?.name || 'Sin nombre'} — ${formatEur(invoice.total || 0)} · Sin canal válido (${channel})`);
         continue;
@@ -201,7 +198,6 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
       }
     }
 
-    // Informe al dueño: factual, breve, sin florituras
     if ((salonEnviados > 0 || skippedLines.length > 0) && salon.telegram_chat_id) {
       const fecha = new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid' });
       const lines = [
@@ -228,7 +224,6 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
 
 export const cazadorRoutes = new Hono();
 
-// GET /api/cazador/config
 cazadorRoutes.get('/config', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
@@ -259,7 +254,6 @@ cazadorRoutes.get('/config', async (c) => {
   return c.json(data);
 });
 
-// PUT /api/cazador/config
 cazadorRoutes.put('/config', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
@@ -287,7 +281,6 @@ cazadorRoutes.put('/config', async (c) => {
   return c.json({ ok: true });
 });
 
-// GET /api/cazador/overdue — facturas vencidas con detalle completo + historial de intentos por factura
 cazadorRoutes.get('/overdue', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
@@ -342,7 +335,6 @@ cazadorRoutes.get('/overdue', async (c) => {
   return c.json({ overdue: result, total_importe, count: result.length });
 });
 
-// GET /api/cazador/stats — resumen rápido + últimos intentos
 cazadorRoutes.get('/stats', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
@@ -374,7 +366,6 @@ cazadorRoutes.get('/stats', async (c) => {
   });
 });
 
-// POST /api/cazador/run — ejecutar cazador manual
 cazadorRoutes.post('/run', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
@@ -386,7 +377,6 @@ cazadorRoutes.post('/run', async (c) => {
   }
 });
 
-// POST /api/internal/cazador/run — trigger diario
 export const cazadorInternalRoute = async (c: any) => {
   try {
     const result = await runCazador();
@@ -396,16 +386,15 @@ export const cazadorInternalRoute = async (c: any) => {
   }
 };
 
-// ── Preview mañanero (08:00) ───────────────────────────────────────────────
+// ── Preview mañanero (08:00) — voz Diablilla ──────────────────────────────
 // Calcula qué haría el Cazador HOY sin enviar nada a clientes.
-// Avisa al dueño por su canal preferido para que corrija antes de las 10:00.
+// La Diablilla avisa al dueño por su canal preferido antes de las 10:00.
 
 async function sendOwnerMessage(salon: any, text: string) {
   const channel = salon.notify_channel || 'telegram';
   if (channel === 'telegram' && salon.telegram_chat_id) {
     await sendTelegram(salon.telegram_chat_id, text);
   } else if (channel === 'whatsapp' && salon.whatsapp_number) {
-    // WhatsApp via Meta API — misma URL que /api/whatsapp
     const WABA_TOKEN = process.env.WHATSAPP_TOKEN;
     const PHONE_ID   = process.env.WHATSAPP_PHONE_ID;
     if (WABA_TOKEN && PHONE_ID) {
@@ -416,12 +405,11 @@ async function sendOwnerMessage(salon: any, text: string) {
           messaging_product: 'whatsapp',
           to: salon.whatsapp_number,
           type: 'text',
-          text: { body: text.replace(/<[^>]+>/g, '') }, // strip HTML tags for WA
+          text: { body: text.replace(/<[^>]+>/g, '') },
         }),
       });
     }
   } else if (salon.telegram_chat_id) {
-    // fallback: si tiene Telegram, úsalo aunque notify_channel sea otro
     await sendTelegram(salon.telegram_chat_id, text);
   }
 }
@@ -443,7 +431,6 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
       .single();
     if (!salon) continue;
 
-    // No tiene ningún canal para avisar al dueño → saltamos
     if (!salon.telegram_chat_id && !salon.whatsapp_number) continue;
 
     const { data: invoices } = await supabase
@@ -466,7 +453,6 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
       else if (dias >= config.level1_days) level = 1;
       if (!level) continue;
 
-      // ¿Ya se envió este nivel?
       const { data: existing } = await supabase
         .from('cobros_cazador')
         .select('id')
@@ -475,7 +461,6 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
         .single();
       if (existing) continue;
 
-      // ¿Ya está pagada?
       const { data: fresh } = await supabase.from('invoices').select('status').eq('id', invoice.id).single();
       if (fresh?.status === 'paid') continue;
 
@@ -483,15 +468,13 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
       const emoji   = level === 1 ? '🟡' : level === 2 ? '🟠' : '🔴';
       const avisoN  = level === 1 ? '1er aviso' : level === 2 ? '2º aviso' : '⚠️ Último aviso';
       previewLines.push(
-        `${emoji} ${client?.name || 'Sin nombre'} — ${formatEur(invoice.total || 0)} — lleva ${dias} día(s) · ${avisoN}`
+        `${emoji} ${client?.name || 'Sin nombre'} — ${formatEur(invoice.total || 0)} — ${dias} día(s) · ${avisoN}`
       );
       totalFacturas++;
     }
 
-    // Construir mensaje para el dueño
     const fecha = new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid' });
 
-    // ── Clientes con registro incompleto cuyo recordatorio ha llegado ──
     const todayISO = today.toISOString();
     const { data: clientesIncompletos } = await supabase
       .from('clients')
@@ -507,33 +490,41 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
       incompleteLines.push(`👤 ${c.name} — sin datos de contacto — ${diasDesde} día(s) pendiente`);
     }
 
+    // ── Mensajes con voz Diablilla ──────────────────────────────────────────
     if (previewLines.length === 0 && incompleteLines.length === 0) {
+      // Todo tranquilo — ella también informa, con actitud
       await sendOwnerMessage(
         salon,
-        `🌅 Buenos días.\n\nHoy el Cazador no tiene facturas que reclamar. ✅ Todo al día.\n\n— Diabolus`
+        `🔥 <b>Buenos días, Jefe.</b>\n\nHe estado vigilando mientras dormías. Hoy no hay morosos que cazar. ✅ Todo al día.\n\nDisfruta la mañana — si alguien se retrasa, aquí estaré. 😈\n\n<i>— Tu Diablilla</i>`
       );
     } else {
       const total = previewLines.length;
       const lines = [
-        `🌅 <b>Buenos días — ${fecha}</b>`,
+        `🔥 <b>Buenos días, Jefe — ${fecha}</b>`,
         ``,
-        ...(previewLines.length > 0 ? [
-          `El Cazador actúa HOY a las 10:00 sobre <b>${total}</b> factura(s):`,
-          ``,
-          ...previewLines,
-          ``,
-          `Si alguna ya está cobrada, márcala en Diabolus <b>antes de las 10:00</b> y no saldrá ningún aviso.`,
-        ] : []),
-        ...(incompleteLines.length > 0 ? [
-          ``,
-          `📋 <b>${incompleteLines.length} cliente(s) con registro incompleto:</b>`,
-          ...incompleteLines,
-          ``,
-          `Completa sus datos o elimínalos para evitar duplicados.`,
-        ] : []),
+        `He estado vigilando mientras dormías.`,
         ``,
-        `<i>diabolus.es</i>`,
       ];
+
+      if (previewLines.length > 0) {
+        lines.push(`Tengo <b>${total}</b> objetivo(s) para esta mañana:`);
+        lines.push(``);
+        lines.push(...previewLines);
+        lines.push(``);
+        lines.push(`A las 10:00 actúo. Si alguno ya pagó, márcalo antes en Diabolus y lo saco de la lista. 😈`);
+      }
+
+      if (incompleteLines.length > 0) {
+        lines.push(``);
+        lines.push(`📋 <b>${incompleteLines.length} cliente(s) a medio registrar:</b>`);
+        lines.push(...incompleteLines);
+        lines.push(``);
+        lines.push(`Completa sus datos. No me gustan los registros a medias.`);
+      }
+
+      lines.push(``);
+      lines.push(`<i>— Tu Diablilla · diabolus.es</i>`);
+
       await sendOwnerMessage(salon, lines.join('\n'));
     }
   }
@@ -541,7 +532,6 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
   return { salones: configs.length, total_facturas: totalFacturas };
 }
 
-// POST /api/internal/cazador/preview — trigger 08:00
 export const cazadorPreviewRoute = async (c: any) => {
   try {
     const result = await runCazadorPreview();
