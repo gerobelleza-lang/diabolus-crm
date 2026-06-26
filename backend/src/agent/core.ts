@@ -185,31 +185,32 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
 
   // ── Saludos y ayuda ──────────────────────────────────────────────────────
   if (/^(hola|hey|buenas|buenos días|buenas tardes|buenas noches|ey|hi|hello|qué hay|qué tal|holi|ola|buenas!|hola!|hey!)\s*[!?]?$/i.test(userInput)) {
-    return { replyText: '¡Hola! 👋 Soy tu asistente de Diabolus. Puedo ayudarte a:\n\n• Registrar cobros y gastos\n• Crear facturas y clientes\n• Consultar tu balance\n• Ver quién te debe dinero\n\nDime qué necesitas o escribe /ayuda para más opciones.' }
+    return { replyText: 'Hola. Soy tu Diablilla. ¿Qué deseas? 😈\n\nPuedo crear facturas, registrar cobros y gastos, avisar a morosos y llevarte las cuentas. Dime qué necesitas.' }
   }
   if (/^(ayuda|help|comandos|opciones|qué puedes hacer|para qué sirves|cómo funciona)\s*[?]?$/i.test(userInput)) {
     return {
       replyText: [
-        '📋 Comandos disponibles:',
+        '😈 <b>Diablilla — Comandos</b>',
         '',
-        '💰 *Finanzas*',
-        '• "cobré 150€ de Ana" → registra ingreso',
+        '🧾 <b>Facturas</b>',
+        '• "factura a López 800€ instalación" → crea factura al instante',
+        '• "crea factura para Ana por 150€ servicios" → ídem',
+        '• "la factura de Ana está pagada" → marca cobrada',
+        '• "manda recordatorio a Ana" → aviso de cobro',
+        '',
+        '💰 <b>Tesorería</b>',
+        '• "cobré 300€ de García" → registra ingreso',
         '• "gasté 80€ en material" → registra gasto',
+        '• "¿cuánto tengo?" → balance del mes',
+        '• "¿quién me debe?" → morosos',
         '',
-        '📄 *Facturas*',
-        '• "crea factura para Ana por 150€"',
-        '• "la factura de Ana está pagada"',
-        '• "manda recordatorio a Ana"',
-        '',
-        '👥 *Clientes*',
+        '👥 <b>Clientes</b>',
         '• "nuevo cliente Ana García tel 612345678"',
         '',
-        '📊 *Consultas*',
-        '• "¿cuánto tengo?" → balance del mes',
-        '• "¿quién me debe?" → cobros pendientes',
-        '• "facturas vencidas"',
+        '📷 <b>Foto</b>',
+        '• Adjunta ticket o factura → leo y registro',
         '',
-        '📷 También puedes *enviar una foto* de ticket o factura.',
+        '/balance /cobros /vencidas /reporte',
       ].join('\n')
     }
   }
@@ -311,7 +312,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
 
     // 2. Extraer cliente — artículo inicial opcional (el/la/los/las/un/una)
     const mCliente = userInput.match(
-      /(?:para|a)\s+(?:(?:el|la|los|las|un|una)\s+)?([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,55}?)(?:\s+(?:con|por|de|,)|$)/i
+      /(?:para|a)\s+(?:(?:el|la|los|las|un|una)\s+)?([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,55}?)(?:\s+(?:con|por|de|,)|\s+\d|$)/i
     )
     let clienteNombre = mCliente ? mCliente[1].trim() : ''
     // Limpieza artículos residuales
@@ -324,7 +325,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       importeNum = parseFloat(mImporteUnit[1].replace(',', '.'))
     }
 
-    // 4. Extraer concepto — entre "concepto de/:" y "con el cif/nif" o fin
+    // 4. Extraer concepto — prioridad: "concepto de X", "por X", texto libre tras el importe
     let concepto = ''
     const mConcepto = userInput.match(
       /(?:concepto\s+(?:de\s+)?)([^,\n]+?)(?:\s+con\s+(?:el\s+)?(?:cif|nif)|,|\s*$)/i
@@ -334,6 +335,21 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     if (mConcepto) {
       concepto = mConcepto[1].trim().replace(/^de\s+/i, '').trim()
       concepto = concepto.charAt(0).toUpperCase() + concepto.slice(1)
+    }
+
+    // Fallback: texto libre DESPUÉS del importe (ej: "factura a López 800€ instalación")
+    if (!concepto && importeNum > 0) {
+      const afterAmtMatch = userInput.match(
+        /\d+(?:[.,]\d{1,2})?\s*(?:€|eur\w*)?\s+([a-záéíóúñA-ZÁÉÍÓÚÑ][^\d,\n]{2,60}?)(?:\s+con\s+(?:el\s+)?(?:cif|nif)|,|\s*$)/i
+      )
+      if (afterAmtMatch) {
+        const raw = afterAmtMatch[1].trim()
+          .replace(/^(?:el|la|los|las|un|una|de|del|para|por)\s+/i, '')
+          .trim()
+        if (raw.length > 2) {
+          concepto = raw.charAt(0).toUpperCase() + raw.slice(1)
+        }
+      }
     }
 
     // 5. Extraer CIF/NIF (letra + 7-8 dígitos, con posible espacio entre letra y número)
@@ -346,13 +362,13 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
 
     // 7. Datos obligatorios — pedir uno a uno
     if (!clienteNombre) {
-      return { needsInfo: '¿Para qué cliente es la factura? Ej: "crea factura para Ana García por 150€"' }
+      return { needsInfo: '¿Para qué cliente es la factura? Ej: "factura a García 800€ instalación"' }
     }
     if (!importeNum) {
-      return { needsInfo: `¿Por qué importe es la factura para ${clienteNombre}? Ej: "150 euros"` }
+      return { needsInfo: `¿Por qué importe es la factura para ${clienteNombre}? Ej: "150€"` }
     }
     if (!concepto) {
-      return { needsInfo: `¿Cuál es el concepto de la factura para ${clienteNombre}? Ej: "servicios de peluquería"` }
+      return { needsInfo: `¿Cuál es el concepto para ${clienteNombre}? Ej: "instalación eléctrica", "consultoría"` }
     }
 
     // 8. Buscar cliente en BD
@@ -364,7 +380,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       .limit(3)
 
     if (!clientes || clientes.length === 0) {
-      return { needsInfo: `No encontré al cliente "${clienteNombre}". ¿Quieres crearlo primero? Di "nuevo cliente ${clienteNombre}".` }
+      return { needsInfo: `No encontré al cliente "${clienteNombre}". ¿Lo creamos? Di "nuevo cliente ${clienteNombre}".` }
     }
 
     const cliente     = clientes[0]
@@ -513,25 +529,20 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
   // ── préstamo / adelanto nómina / anticipo ────────────────────────────────
   if (/pr[eé]stamo|adelanto\s+(?:de\s+)?(?:n[oó]mina|sueldo)|anticipo\s+(?:de\s+)?(?:n[oó]mina|sueldo)|anticipo\s+a\s|presto\s|presté\s/i.test(userInput)) {
 
-    // Determinar dirección: ¿sale dinero (gasto) o entra (ingreso)?
     const esDevolucion = /devuelve|me\s+devuelve|me\s+paga(?!\s+a)|cobr[eé]\s+el\s+pr[eé]stamo|reintegra|descont[oó]|descuent|ya\s+me\s+pag[oó]/i.test(userInput)
-    const esGasto      = !esDevolucion // por defecto: si doy/pago/presto → gasto
-
+    const esGasto      = !esDevolucion
     const isAdelanto   = /adelanto|anticipo\s+(?:de\s+)?(?:n[oó]mina|sueldo)|anticipo\s+a\s/i.test(userInput)
     const isPrestamoBanco = /banco|hipoteca|cr[eé]dito|prestamista/i.test(userInput)
 
-    // Extraer importe (buscar número con o sin €)
     const mImporte = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|eur\w*)/i)
       || userInput.match(/(?:de\s+|por\s+)(\d+(?:[.,]\d{1,2})?)\b/i)
     const importe = mImporte ? parseFloat(mImporte[1].replace(',', '.')) : 0
 
-    // Extraer persona (la que recibe o da)
     const mPersona = userInput.match(
       /(?:a|de|para|con)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,50}?)(?:\s+(?:de|por|un|una|el|la|con|,)|$)/i
     )
     const persona = mPersona ? mPersona[1].trim() : ''
 
-    // Concepto base
     let conceptoBase: string
     if (isAdelanto) {
       conceptoBase = esDevolucion
@@ -547,7 +558,6 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
         : `Préstamo${persona ? ` - ${persona}` : ''}`
     }
 
-    // Pedir importe si falta
     if (!importe || importe <= 0) {
       const tipo = isAdelanto ? 'adelanto de nómina' : 'préstamo'
       return { needsInfo: `¿De qué importe es el ${tipo}${persona ? ` a ${persona}` : ''}? Ej: "500€"` }
@@ -564,7 +574,6 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
 
   // ── gastos recurrentes del negocio (local, suministros, dietas, material) ─
   {
-    // Patrones de suministros y gastos fijos típicos
     const gastoMap: Array<{re: RegExp; concepto: string; categoria: string; ejemploImporte: string}> = [
       { re: /alquiler\s+(?:del?\s+)?local|pago\s+(?:del?\s+)?local|renta\s+(?:del?\s+)?local/i, concepto: 'Alquiler local',    categoria: 'alquiler',      ejemploImporte: '800€'  },
       { re: /\bluz\b|electricidad|factura\s+(?:de\s+)?(?:la\s+)?luz|recibo\s+(?:de\s+)?(?:la\s+)?luz/i, concepto: 'Electricidad', categoria: 'suministros', ejemploImporte: '90€'   },
@@ -580,11 +589,10 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       { re: /gasoil|gasolina|carburante|repostaje|combustible/i,              concepto: 'Combustible',       categoria: 'transporte',    ejemploImporte: '70€'   },
       { re: /peaje|aparcamiento|parking|estacionamiento/i,                    concepto: 'Aparcamiento/Peaje',categoria: 'transporte',    ejemploImporte: '15€'   },
       { re: /publicidad|marketing|redes\s+sociales\s+(?:de\s+)?(?:pago|empresa)|anuncio/i, concepto: 'Publicidad', categoria: 'marketing', ejemploImporte: '100€' },
-      // Nuevas categorías
       { re: /proveedor|compra\s+(?:de\s+)?producto|stock|mercanc[ií]a|género/i,           concepto: 'Compra proveedor',  categoria: 'proveedores',         ejemploImporte: '200€' },
-      { re: /herramienta\s+digital|suscripci[oó]n\s+(?:de\s+)?(?:software|app|servicio)|software|saas|licencia|netflix\s+empresa|spotify\s+empresa/i, concepto: 'Herramienta digital', categoria: 'herramientas_digitales', ejemploImporte: '30€' },
+      { re: /herramienta\s+digital|suscripci[oó]n\s+(?:de\s+)?(?:software|app|servicio)|software|saas|licencia/i, concepto: 'Herramienta digital', categoria: 'herramientas_digitales', ejemploImporte: '30€' },
       { re: /comisi[oó]n\s+banco|comisi[oó]n\s+bancaria|gasto\s+banco|mantenimiento\s+cuenta|cuota\s+(?:tarjeta|cuenta)|tpv|datafono/i, concepto: 'Comisión bancaria', categoria: 'bancos_comisiones', ejemploImporte: '15€' },
-      { re: /impuesto|tasa\s+(?:municipal|local|ayuntamiento)|ibi\b|ibi\s+|basuras|licencia\s+(?:de\s+)?apertura|tasa\s+(?:de\s+)?apertura/i, concepto: 'Impuesto/Tasa', categoria: 'impuestos_tasas', ejemploImporte: '150€' },
+      { re: /impuesto|tasa\s+(?:municipal|local|ayuntamiento)|ibi\b|ibi\s+|basuras|licencia\s+(?:de\s+)?apertura/i, concepto: 'Impuesto/Tasa', categoria: 'impuestos_tasas', ejemploImporte: '150€' },
       { re: /reparaci[oó]n|averia|mantenimiento\s+(?:local|m[aá]quina|equipo)|fontanero|electricista|pintor|albañil/i, concepto: 'Reparación/Mantenimiento', categoria: 'mantenimiento', ejemploImporte: '120€' },
       { re: /formaci[oó]n|curso|taller|capacitaci[oó]n|master|training/i,                  concepto: 'Formación',         categoria: 'formacion',           ejemploImporte: '150€' },
     ]
@@ -595,20 +603,16 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     }
 
     if (matchedGasto) {
-      // Extraer importe
       const mImp = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|eur\w*)/i)
         || userInput.match(/(?:de\s+|por\s+|son\s+|ha\s+sido\s+)(\d+(?:[.,]\d{1,2})?)\b/i)
       const importe = mImp ? parseFloat(mImp[1].replace(',', '.')) : 0
 
-      // Extraer mes mencionado
       const mMes = userInput.match(/(?:de\s+|del?\s+mes\s+de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/i)
       const mes = mMes ? mMes[1] : ''
 
-      // Refinar concepto con mes o extra info
       let concepto = matchedGasto.concepto
       if (mes) concepto += ` ${mes}`
 
-      // Capturar proveedor si se menciona ("de Endesa", "de Iberdrola", "de [Nombre]")
       const proveedorPatterns = [
         /(?:de\s+|con\s+|a\s+|proveedor\s+)([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñÁÉÍÓÚÑ\s&.,]{2,25})(?:\s+(?:son|es|de|por|a)|\s*$)/,
         /([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñÁÉÍÓÚÑ]{2,}\s*(?:S\.?L\.?|S\.?A\.?|S\.?L\.?U\.?)?)/,
@@ -617,7 +621,6 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
         const mProv = userInput.match(pr)
         if (mProv && !concepto.includes(mProv[1].trim())) {
           const nombre = mProv[1].trim()
-          // Evitar falsos positivos con palabras del propio concepto
           const stopWords = ['Alquiler','Electricidad','Internet','Limpieza','Seguro','Material','Gasolina','Gestoría','Formación','Reparación','Comisión','Publicidad','Dieta','Agua','Gas']
           if (!stopWords.some(sw => nombre.toLowerCase().startsWith(sw.toLowerCase()))) {
             concepto += ` - ${nombre}`
@@ -626,7 +629,6 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
         }
       }
 
-      // Para dietas, capturar descripción extra si hay
       if (matchedGasto.categoria === 'dietas') {
         const mDesc = userInput.match(/(?:en\s+|de\s+)([A-Za-záéíóúñÁÉÍÓÚÑ\s]{3,30})$/i)
         if (mDesc) concepto += ` - ${mDesc[1].trim()}`
@@ -655,11 +657,9 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     const isNomina   = /n[oó]mina\s+de|pago\s+n[oó]mina/i.test(userInput)
     const isCuotaSS  = /cuota\s+aut[oó]nomo|cuota\s+reta|seguridad\s+social|cuota\s+ss\b/i.test(userInput)
 
-    // Extraer mes (si lo menciona)
     const mMes = userInput.match(/(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/i)
     const mes  = mMes ? mMes[1] : ''
 
-    // Extraer persona (para nómina)
     const mPersona = userInput.match(
       /n[oó]mina\s+de\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:de|por|,)|$)/i
     )
@@ -757,15 +757,17 @@ async function generateL0ReadResponse(
     default:
       return [
         'Puedo ayudarte con:',
-        '• *"gasté 45€ en material hoy"* → registra el gasto',
-        '• *"cobré 300€ de Ana por corte"* → registra el ingreso',
-        '• 📷 Adjunta una foto de ticket o factura',
-        '• *"nuevo cliente Ana García tel 612345678"* → crea cliente',
-        '• *"crea factura para Ana por 150€"* → prepara factura borrador',
-        '• *"la factura de Ana está pagada"* → actualiza estado',
-        '• *"manda recordatorio a Ana"* → envía aviso de cobro',
-        '• *"¿cuánto tengo?"* → balance del mes',
-        '• *"¿quién me debe?"* → cobros pendientes',
+        '• <b>"factura a García 800€ instalación"</b> → crea factura al instante',
+        '• <b>"cobré 300€ de Ana por corte"</b> → registra ingreso',
+        '• <b>"gasté 45€ en material"</b> → registra gasto',
+        '• 📷 Adjunta foto de ticket o factura',
+        '• <b>"nuevo cliente Ana García tel 612345678"</b> → crea cliente',
+        '• <b>"la factura de Ana está pagada"</b> → actualiza estado',
+        '• <b>"manda recordatorio a Ana"</b> → aviso de cobro',
+        '• <b>"¿cuánto tengo?"</b> → balance del mes',
+        '• <b>"¿quién me debe?"</b> → cobros pendientes',
+        '',
+        '/ayuda para ver todos los comandos',
       ].join('\n')
   }
 }
@@ -815,7 +817,6 @@ async function fetchWhoOwes(salonId: string): Promise<string> {
       .eq('salon_id', salonId).in('status', ['sent', 'pending'])
       .order('due_date', { ascending: true }).limit(8)
     if (!invoices?.length) return 'No hay cobros pendientes.'
-    const now   = new Date()
     const lines = invoices.map(i => {
       const name = (i.clients as any)?.name || 'Cliente'
       const due  = i.due_date ? new Date(i.due_date).toLocaleDateString('es-ES') : 'sin vencimiento'
