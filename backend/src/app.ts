@@ -37,6 +37,7 @@ import { monitorRoutes } from './routes/monitor'
 import { leadsB2bPublicRoutes, leadsB2bProtectedRoutes, leadsB2bInternalRoutes, handleB2BWaInbound } from './routes/leads_b2b'
 import { informeBatallaRoutes } from './routes/informe_batalla'
 import { cobroEntranteRoute } from './routes/cobro_entrante'
+import { salonsRoutes } from './routes/salons'
 
 export function createApp() {
   const app = new Hono()
@@ -243,7 +244,7 @@ export function createApp() {
     } catch {}
 
     // LLM — Hermes 3
-    const systemPrompt = `Eres El Demonio, agente de ventas íntimo y persuasivo de ${salonNombre}. \nNunca eres agresivo. Hablas como un amigo de confianza que conoce el sector belleza.\nClasifica la intención del cliente en: INTERESADO, PRECIO, DUDA, NO_INTERESA, CITA_CONFIRMADA.\nResponde en 2-3 frases naturales, cálidas y directas. Nunca menciones que eres IA.\nDevuelve JSON: {"intencion":"...", "respuesta":"..."}`;
+    const systemPrompt = `Eres El Demonio, agente de ventas íntimo y persuasivo de ${salonNombre}. \nNunca eres agresivo. Hablas como un amigo de confianza que conoce el sector belleza.\nClasifica la intención del cliente en: INTERESADO, PRECIO, DUDA, NO_INTERESA, CITA_CONFIRMADA.\nResponde en 2-3 frases naturales, cálidas y directas. Nunca menciones que eres IA.\nDevuelve JSON: {\"intencion\":\"...\", \"respuesta\":\"...\"}`;
 
     let intencion = 'DUDA';
     let respuesta = `¡Hola ${nombre}! 😊 Me alegra que hayas escrito. ¿En qué puedo ayudarte?`;
@@ -392,13 +393,14 @@ export function createApp() {
   app.route('/api/notifications/telegram', telegramRoutes)
   app.route('/api/documents', documentsRoutes)
   app.route('/api/cazador', cazadorRoutes)
-  app.route('/api/legal', legalRoutes)       // ← Módulo Legal
-  app.route('/api/pacto', pactoRoutes)       // ← El Pacto del Diablo
-  app.route('/api/admin', adminRoutes)       // ← Super Admin: usage, planes
-  app.route('/api/albaranes', albaranRoute)      // ← Albaranes (Panel Móvil)
-  app.route('/api/agent/transcribe', transcribeRoute) // ← Voz → Groq Whisper
-  app.post('/api/agent/tts', ttsRoute)               // ← TTS → OpenAI voz
-  app.route('/api/leads-b2b', leadsB2bProtectedRoutes) // ← Agente Leads B2B
+  app.route('/api/legal', legalRoutes)
+  app.route('/api/pacto', pactoRoutes)
+  app.route('/api/admin', adminRoutes)
+  app.route('/api/albaranes', albaranRoute)
+  app.route('/api/agent/transcribe', transcribeRoute)
+  app.post('/api/agent/tts', ttsRoute)
+  app.route('/api/leads-b2b', leadsB2bProtectedRoutes)
+  app.route('/api/salons', salonsRoutes)   // ← Selector multiempresa
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))
