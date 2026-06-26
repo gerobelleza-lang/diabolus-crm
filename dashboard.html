@@ -52,41 +52,7 @@
       text-overflow: ellipsis;
       max-width: 100%;
     }
-    .sidebar-nav { flex: 1; padding: 0 0.75rem; overflow-y: auto; }
-    .nav-section-label {
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted, #6b7280);
-      padding: 0.75rem 0.5rem 0.25rem;
-      margin-top: 0.25rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      user-select: none;
-      border-radius: 0.35rem;
-      transition: color 0.15s;
-    }
-    .nav-section-label:hover { color: rgba(255,255,255,.6); }
-    .nav-chevron {
-      font-size: 0.55rem;
-      transition: transform 0.22s ease;
-      opacity: 0.5;
-      flex-shrink: 0;
-    }
-    .nav-chevron.rotated { transform: rotate(-90deg); }
-    .nav-group-items {
-      overflow: hidden;
-      max-height: 300px;
-      opacity: 1;
-      transition: max-height 0.28s ease, opacity 0.2s ease;
-    }
-    .nav-group-items.collapsed {
-      max-height: 0;
-      opacity: 0;
-    }
+    .sidebar-nav { flex: 1; padding: 0 0.75rem; }
     .nav-item {
       padding: 0.65rem 1rem;
       margin-bottom: 0.2rem;
@@ -111,6 +77,40 @@
       margin-top: 0.5rem;
       font-family: var(--font-mono);
     }
+
+    /* ── SIDEBAR ACCORDION ── */
+    .nav-section { margin-bottom: 0.15rem; }
+    .nav-section-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.4rem 1rem;
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      font-size: 0.65rem;
+      font-family: var(--font-display);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      cursor: pointer;
+      border-radius: 0.375rem;
+      transition: color .15s, background .15s;
+      margin-top: 0.3rem;
+    }
+    .nav-section-toggle:hover { color: var(--text-primary); background: rgba(255,255,255,.04); }
+    .nav-section-toggle.open  { color: var(--violet); }
+    .nav-chevron { font-size: 0.6rem; transition: transform .22s; flex-shrink: 0; }
+    .nav-section-toggle.open    .nav-chevron { transform: rotate(0deg); }
+    .nav-section-toggle:not(.open) .nav-chevron { transform: rotate(-90deg); }
+    .nav-section-body {
+      overflow: hidden;
+      max-height: 400px;
+      transition: max-height .28s cubic-bezier(.4,0,.2,1);
+    }
+    .nav-section-body.collapsed { max-height: 0; }
+
 
     /* ── MAIN ── */
     .main-content {
@@ -230,6 +230,27 @@
       border-color: rgba(139,92,246,.7);
       box-shadow: 0 0 18px rgba(139,92,246,.3);
     }
+    /* ── Usage widget ── */
+    .usage-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .usage-card.warn  { border-color: rgba(251,191,36,.4); }
+    .usage-card.block { border-color: rgba(239,68,68,.5); }
+    .usage-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem; }
+    .usage-title  { font-size:.75rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; }
+    .usage-badge  { font-size:.72rem; font-weight:600; padding:.2rem .5rem; border-radius:20px; background:rgba(139,92,246,.15); color:var(--violet); }
+    .usage-badge.warn  { background:rgba(251,191,36,.15); color:#fbbf24; }
+    .usage-badge.block { background:rgba(239,68,68,.15); color:#f87171; }
+    .usage-bar-bg   { height:6px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; }
+    .usage-bar-fill { height:100%; background:var(--violet); border-radius:99px; transition:width .6s ease; }
+    .usage-bar-fill.warn  { background:#fbbf24; }
+    .usage-bar-fill.block { background:#f87171; }
+    .usage-meta { font-size:.68rem; color:var(--text-tertiary); margin-top:.45rem; }
+
     .kpi-card.alert {
       border-color: rgba(239,68,68,.5);
       box-shadow: 0 0 12px rgba(239,68,68,.2);
@@ -489,115 +510,60 @@
       .quick-actions { grid-template-columns: 1fr; }
     }
 
-    /* ── Banner El Pacto (upgrade) ── */
-    .pacto-banner {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      background: linear-gradient(135deg, #1a0a2e 0%, #2d1060 100%);
-      border: 1px solid rgba(139,92,246,.45);
-      border-radius: 14px;
-      padding: 1rem 1.25rem;
-      margin: 0 0 1.25rem;
-      cursor: pointer;
-      text-decoration: none;
-      transition: box-shadow .2s, transform .15s;
-      box-shadow: 0 0 18px rgba(139,92,246,.18);
-    }
-    .pacto-banner:hover { transform: translateY(-2px); box-shadow: 0 0 28px rgba(139,92,246,.35); }
-    .pacto-banner-icon { font-size: 2rem; flex-shrink: 0; }
-    .pacto-banner-body { flex: 1; }
-    .pacto-banner-title { font-size: .92rem; font-weight: 700; color: #e2d9f3; }
-    .pacto-banner-sub   { font-size: .75rem; color: rgba(226,217,243,.6); margin-top: .2rem; }
-    .pacto-banner-cta {
-      flex-shrink: 0;
-      background: var(--violet);
-      color: #fff;
-      font-size: .75rem;
-      font-weight: 700;
-      padding: .45rem .9rem;
-      border-radius: 8px;
-      white-space: nowrap;
-    }
-
-    /* ── CAZADOR BANNER ── */
-    /* ── Banner Demonio ── */
-    .demonio-banner {
-      display: flex; align-items: center; gap: 1rem;
-      background: linear-gradient(135deg, #3d0a0a 0%, #1a0a0a 100%);
-      border: 1px solid rgba(220,50,50,.35);
-      border-radius: 12px; padding: 1rem 1.25rem;
-      margin-bottom: .75rem; cursor: pointer;
-      text-decoration: none; color: inherit;
-      transition: transform .15s, box-shadow .15s;
-    }
-    .demonio-banner:hover { transform: translateY(-2px); box-shadow: 0 0 24px rgba(220,50,50,.3); }
-    .demonio-banner-icon { font-size: 1.8rem; flex-shrink: 0; animation: demonio-pulse 3s ease-in-out infinite; }
-    @keyframes demonio-pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
-    .demonio-banner-body { flex: 1; }
-    .demonio-banner-title { font-size: .88rem; font-weight: 700; color: #f5c0c0; }
-    .demonio-banner-sub { font-size: .73rem; color: rgba(245,192,192,.6); margin-top: .15rem; }
-    .demonio-banner-stats { display: flex; gap: .6rem; margin-top: .4rem; flex-wrap: wrap; }
-    .demonio-stat {
-      font-size: .7rem; padding: .18rem .5rem; border-radius: 6px;
-      background: rgba(220,50,50,.15); color: #f5c0c0; font-weight: 600;
-    }
-    .demonio-banner-arrow { color: rgba(245,192,192,.5); font-size: 1.4rem; font-weight: 300; }
-
-    .cazador-banner {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      background: linear-gradient(135deg, rgba(251,146,60,.12) 0%, rgba(239,68,68,.08) 100%);
-      border: 1px solid rgba(251,146,60,.25);
-      border-radius: 0.875rem;
-      padding: 0.875rem 1.25rem;
-      margin-bottom: 1.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-    .cazador-banner:hover {
-      background: linear-gradient(135deg, rgba(251,146,60,.18) 0%, rgba(239,68,68,.12) 100%);
-      border-color: rgba(251,146,60,.4);
-      transform: translateY(-1px);
-    }
-    .cazador-banner-icon {
-      font-size: 1.5rem;
-      flex-shrink: 0;
-      animation: cazador-pulse 2.5s ease-in-out infinite;
-    }
-    @keyframes cazador-pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.08); opacity: 0.85; }
-    }
-    .cazador-banner-body { flex: 1; }
-    .cazador-banner-title {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #fb923c;
-      margin-bottom: 0.2rem;
-    }
-    .cazador-banner-sub {
-      font-size: 0.75rem;
-      color: var(--text-tertiary);
-    }
-    .cazador-banner-badge {
-      background: rgba(251,146,60,.2);
-      border: 1px solid rgba(251,146,60,.35);
-      color: #fb923c;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      font-weight: 700;
-      padding: 0.3rem 0.7rem;
-      border-radius: 2rem;
-      flex-shrink: 0;
-    }
-    .cazador-banner-arrow {
-      color: rgba(251,146,60,.6);
-      font-size: 1rem;
-      flex-shrink: 0;
-    }
+  /* ── SALON SWITCHER ── */
+  .salon-switcher { position: relative; }
+  .salon-switcher-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    font-family: var(--font-body);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .salon-switcher-btn:hover { background: rgba(255,255,255,.06); color: var(--text-primary); }
+  .salon-switcher-btn .salon-name { overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: left; }
+  .salon-switcher-btn .salon-chevron { font-size: 0.55rem; flex-shrink: 0; }
+  .salon-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: -12px; right: -12px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 300;
+    box-shadow: 0 8px 24px rgba(0,0,0,.6);
+    display: none;
+  }
+  .salon-dropdown.open { display: block; }
+  .salon-dropdown-item {
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background .12s;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-body);
+  }
+  .salon-dropdown-item:hover { background: rgba(255,255,255,.06); color: var(--text-primary); }
+  .salon-dropdown-item.current { color: var(--violet); font-weight: 600; }
+  .salon-dropdown-item.add-new { border-top: 1px solid #2a2a2a; color: var(--violet); }
   </style>
 </head>
 <body>
@@ -636,50 +602,59 @@
             <path d="M610 168 Q640 162 655 155" stroke="#E3BE7A" stroke-width=".9" fill="none" stroke-linecap="round" filter="url(#gf-g)" opacity=".7"/>
           </svg>
         </div>
-        <div class="sidebar-salon" id="salonNameSidebar">—</div>
+        <div class="salon-switcher" id="salonSwitcher">
+          <button class="salon-switcher-btn" id="salonSwitcherBtn" onclick="toggleSalonDropdown()" title="Cambiar empresa">
+            <span class="salon-name" id="salonNameSidebar">—</span>
+            <span class="salon-chevron" id="salonChevron" style="display:none">▾</span>
+          </button>
+          <div class="salon-dropdown" id="salonDropdown"></div>
+        </div>
       </div>
-            <nav class="sidebar-nav">
+      <nav class="sidebar-nav">
 
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('mando')">
-            <span>Mando</span><span class="nav-chevron" id="chv-mando">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-mando">
+        <!-- ── MANDO ── -->
+        <div class="nav-section">
+          <button class="nav-section-toggle open" onclick="toggleSection('mando')">
+            <span>⚡ Mando</span><span class="nav-chevron">▾</span>
+          </button>
+          <div class="nav-section-body" id="sec-mando-body">
             <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
-            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente IA</a>
           </div>
         </div>
 
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('negocio')">
-            <span>Negocio</span><span class="nav-chevron" id="chv-negocio">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-negocio">
-            <a href="invoices.html" class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
-            <a href="clients.html" class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+        <!-- ── NEGOCIO ── -->
+        <div class="nav-section">
+          <button class="nav-section-toggle open" onclick="toggleSection('negocio')">
+            <span>💼 Negocio</span><span class="nav-chevron">▾</span>
+          </button>
+          <div class="nav-section-body" id="sec-negocio-body">
+            <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+            <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
             <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+            <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+            <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
           </div>
         </div>
 
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('inteligencia')">
-            <span>Inteligencia</span><span class="nav-chevron" id="chv-inteligencia">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-inteligencia">
-            <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
-            <a href="cazador.html" class="nav-item"><span class="nav-icon">🦅</span> Cazador</a>
-            <a href="demonio.html" class="nav-item"><span class="nav-icon">😈</span> Demonio</a>
-            <a href="pacto.html?v=2" class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+        <!-- ── INTELIGENCIA ── -->
+        <div class="nav-section">
+          <button class="nav-section-toggle open" onclick="toggleSection('ia')">
+            <span>🧠 Inteligencia</span><span class="nav-chevron">▾</span>
+          </button>
+          <div class="nav-section-body" id="sec-ia-body">
+            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Diablilla</a>
           </div>
         </div>
 
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('modulos')">
-            <span>Módulos</span><span class="nav-chevron" id="chv-modulos">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-modulos">
-            <a href="documents.html" class="nav-item"><span class="nav-icon">✍️</span> Documentos</a>
-            <a href="legal.html" class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
+        <!-- ── MÓDULOS ── -->
+        <div class="nav-section">
+          <button class="nav-section-toggle open" onclick="toggleSection('modulos')">
+            <span>😈 Módulos</span><span class="nav-chevron">▾</span>
+          </button>
+          <div class="nav-section-body" id="sec-modulos-body">
+            <a href="cazador.html"  class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
+            <a href="pacto.html"    class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+            <a href="demonio.html"  class="nav-item"><span class="nav-icon">😈</span> El Demonio</a>
           </div>
         </div>
 
@@ -708,38 +683,6 @@
         </div>
       </div>
 
-      <!-- ── CAZADOR BANNER (solo visible si hay facturas en caza) ── -->
-      <!-- Banner upgrade El Pacto (solo si plan != pacto_activo) -->
-      <div id="pactoBanner" class="pacto-banner" style="display:none;" onclick="activarPacto()">
-        <div class="pacto-banner-icon">🔥</div>
-        <div class="pacto-banner-body">
-          <div class="pacto-banner-title">Activa El Pacto — €49/mes</div>
-          <div class="pacto-banner-sub">Tesorería completa · Diablilla · Cazador · Sin límites</div>
-        </div>
-        <div class="pacto-banner-cta">Activar ahora →</div>
-      </div>
-
-      <!-- ── Banner Demonio (pipeline de leads) ── -->
-      <a href="demonio.html" id="demonioBanner" class="demonio-banner" style="display:none;">
-        <div class="demonio-banner-icon">😈</div>
-        <div class="demonio-banner-body">
-          <div class="demonio-banner-title" id="demonioBannerTitle">El Demonio está cazando leads</div>
-          <div class="demonio-banner-sub" id="demonioBannerSub">Cargando pipeline…</div>
-          <div class="demonio-banner-stats" id="demonioBannerStats"></div>
-        </div>
-        <div class="demonio-banner-arrow">›</div>
-      </a>
-
-      <a href="cazador.html" id="cazadorBanner" class="cazador-banner" style="display:none;">
-        <div class="cazador-banner-icon">🦅</div>
-        <div class="cazador-banner-body">
-          <div class="cazador-banner-title" id="cazadorBannerTitle">El Cazador está trabajando</div>
-          <div class="cazador-banner-sub" id="cazadorBannerSub">Cargando…</div>
-        </div>
-        <div class="cazador-banner-badge" id="cazadorBannerBadge">—</div>
-        <div class="cazador-banner-arrow">›</div>
-      </a>
-
       <!-- ══════════════════════════════════════ -->
       <!-- ZONA 1 — FINANZAS                      -->
       <!-- ══════════════════════════════════════ -->
@@ -766,6 +709,30 @@
             <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
             <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
           </div>
+          <!-- Por cobrar -->
+          <div class="kpi-card" id="kpiPendiente">
+            <div class="kpi-label">🕐 Por cobrar</div>
+            <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
+            <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
+          </div>
+          <!-- Riesgo activo -->
+          <div class="kpi-card" id="kpiVencidas">
+            <div class="kpi-label">🔴 Riesgo vencidas</div>
+            <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
+            <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
+          </div>
+        </div>
+
+        <!-- 💬 Uso de mensajes del Agente IA -->
+        <div class="usage-card" id="usageCard" style="display:none">
+          <div class="usage-header">
+            <span class="usage-title">💬 Agente IA — mensajes este mes</span>
+            <span class="usage-badge" id="usageBadge">...</span>
+          </div>
+          <div class="usage-bar-bg">
+            <div class="usage-bar-fill" id="usageBarFill" style="width:0%"></div>
+          </div>
+          <div class="usage-meta" id="usageMeta">&nbsp;</div>
         </div>
 
         <!-- Charts -->
@@ -880,11 +847,22 @@
     const auth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null')
     if (!auth?.token) window.location.href = 'index-login.html'
 
-    // ── Mobile → Panel de Mando (salvo que el usuario haya pedido escritorio) ──
-    if (!sessionStorage.getItem('forceDesktop') &&
-        (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768)) {
-      window.location.replace('mobile.html')
-    }
+    // ── Onboarding guard (safety net) ──
+    // Si el usuario llega al dashboard sin haber completado el onboarding,
+    // lo redirigimos al wizard. Nunca bloqueamos si el check falla.
+    ;(async () => {
+      try {
+        const r = await fetch(`${API}/api/onboarding/status`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (r.ok) {
+          const s = await r.json()
+          if (s.onboarding_completed === false) {
+            window.location.replace('onboarding.html')
+          }
+        }
+      } catch (_) { /* no bloquear dashboard si check falla */ }
+    })()
 
     function logout() {
       localStorage.removeItem('diabolus_auth')
@@ -892,13 +870,93 @@
     }
 
     // ── Populate static UI ──
-    const salonName = auth?.salonName || auth?.salonname || 'Mi negocio'
+    const currentSalonName = auth?.salon?.name || auth?.salonName || auth?.salonname || 'Mi negocio'
     const email     = auth?.email || ''
     const initials  = email.slice(0, 2).toUpperCase() || 'U'
-    document.getElementById('salonNameSidebar').textContent = salonName
-    document.getElementById('salonNameHeader').textContent  = salonName
+    document.getElementById('salonNameHeader').textContent  = currentSalonName
     document.getElementById('userEmailDisplay').textContent = email
     document.getElementById('userAvatar').textContent       = initials
+
+    // ── Selector multiempresa ──
+    let _allSalons = []
+    async function loadSalonSwitcher() {
+      try {
+        const res = await fetch(`${API}/api/salons/mine`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (!res.ok) {
+          document.getElementById('salonNameSidebar').textContent = currentSalonName
+          return
+        }
+        const data = await res.json()
+        _allSalons = data.salons ?? []
+
+        const currentId = auth?.salon?.id
+        const nameEl    = document.getElementById('salonNameSidebar')
+        const chevronEl = document.getElementById('salonChevron')
+        const dropdown  = document.getElementById('salonDropdown')
+        if (!nameEl) return
+
+        const currentSalon = _allSalons.find(s => s.id === currentId) || _allSalons[0]
+        nameEl.textContent = currentSalon?.name || currentSalonName
+
+        if (_allSalons.length <= 1) return // solo 1 negocio, sin dropdown
+
+        // Múltiples negocios — activar switcher
+        chevronEl.style.display = ''
+        dropdown.innerHTML = _allSalons.map(s => `
+          <button class="salon-dropdown-item ${s.id === currentId ? 'current' : ''}" onclick="switchSalon('${s.id}','${s.name.replace(/'/g,"\'")}')">
+            <span style="width:14px;text-align:center">${s.id === currentId ? '✓' : ''}</span>
+            <span>${s.name}</span>
+          </button>
+        `).join('') + `
+          <button class="salon-dropdown-item add-new" onclick="showAddSalonModal()">
+            <span style="width:14px;text-align:center">＋</span><span>Añadir empresa</span>
+          </button>
+        `
+      } catch (_) {
+        document.getElementById('salonNameSidebar').textContent = currentSalonName
+      }
+    }
+
+    function toggleSalonDropdown() {
+      if (_allSalons.length <= 1) return
+      document.getElementById('salonDropdown').classList.toggle('open')
+    }
+
+    function switchSalon(salonId, salonName) {
+      const updated = { ...auth, salon: { ...(auth.salon||{}), id: salonId, name: salonName }, salonName, salonname: salonName }
+      localStorage.setItem('diabolus_auth', JSON.stringify(updated))
+      document.getElementById('salonDropdown').classList.remove('open')
+      window.location.reload()
+    }
+
+    function showAddSalonModal() {
+      document.getElementById('salonDropdown').classList.remove('open')
+      const nombre = prompt('Nombre del nuevo negocio:')
+      if (!nombre?.trim()) return
+      addSalon(nombre.trim())
+    }
+
+    async function addSalon(nombre) {
+      try {
+        const res = await fetch(`${API}/api/salons`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: nombre })
+        })
+        if (!res.ok) { alert('Error al crear el negocio'); return }
+        const data = await res.json()
+        switchSalon(data.salon.id, data.salon.name)
+      } catch { alert('Error al crear el negocio') }
+    }
+
+    document.addEventListener('click', (e) => {
+      const sw = document.getElementById('salonSwitcher')
+      if (sw && !sw.contains(e.target)) {
+        document.getElementById('salonDropdown')?.classList.remove('open')
+      }
+    })
 
     // ── Date ──
     const now = new Date()
@@ -922,71 +980,6 @@
     // ── Utils ──
     const eur = (n) =>
       new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(n ?? 0)
-
-    // ── El Pacto: checkout ──
-    async function activarPacto() {
-      // Auto-refresh del token Supabase si está caducado
-      try {
-        const storedAuth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null')
-        if (storedAuth?.refresh_token) {
-          const rr = await fetch('https://emygbvxkhfbwyhbapaae.supabase.co/auth/v1/token?grant_type=refresh_token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODM3MjcsImV4cCI6MjA5Njg1OTcyN30.HpcYlWwggML7FGHLKerj17sLwj3CiFmYKZdL4iSV9YM' },
-            body: JSON.stringify({ refresh_token: storedAuth.refresh_token })
-          })
-          const rd = await rr.json()
-          if (rd.access_token) {
-            storedAuth.token = rd.access_token
-            storedAuth.refresh_token = rd.refresh_token || storedAuth.refresh_token
-            localStorage.setItem('diabolus_auth', JSON.stringify(storedAuth))
-            // Actualizar 'auth' en scope global
-            Object.assign(auth, storedAuth)
-          }
-        }
-      } catch(e) { console.warn('Token refresh failed:', e) }
-      const btn = document.querySelector('.pacto-banner-cta')
-      if (btn) btn.textContent = 'Cargando…'
-      try {
-        // Re-leer auth del localStorage (token más fresco posible)
-        const freshAuth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null') || auth
-        const res = await fetch(`${API}/api/stripe/checkout`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${freshAuth.token || ''}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            priceId:  'price_1Tlwsw1UnR4OJAljw7DR4M2R',
-            email:    freshAuth.email    || auth.email    || '',
-            salonId:  freshAuth.salonId  || auth.salonId  || '',
-          })
-        })
-        const data = await res.json()
-        if (data.url) {
-          window.location.href = data.url
-        } else {
-          alert('Error Stripe: ' + (data.error || 'Respuesta sin URL: ' + JSON.stringify(data)))
-          if (btn) btn.textContent = 'Activar ahora →'
-        }
-      } catch (e) {
-        alert('Error de conexión. Inténtalo de nuevo.')
-        if (btn) btn.textContent = 'Activar ahora →'
-      }
-    }
-
-    // ── Comprobar plan ──
-    async function checkPlan() {
-      try {
-        const res = await fetch(`${API}/api/stripe/subscription`, {
-          headers: { 'Authorization': `Bearer ${auth.token}` }
-        })
-        const data = res.ok ? await res.json() : {}
-        // Mostrar banner si no tiene pacto activo
-        const pactoActivo = data.plan === 'pacto' || data.pacto_activo === true
-        if (!pactoActivo) {
-          document.getElementById('pactoBanner').style.display = 'flex'
-        }
-      } catch (_) { /* silencioso — mostrar banner por defecto */
-        document.getElementById('pactoBanner').style.display = 'flex'
-      }
-    }
 
     // ── Load dashboard ──
     async function loadDashboard() {
@@ -1036,14 +1029,32 @@
         <div class="kpi-value">${eur(s.month)}</div>
         <div class="kpi-sub">Hoy: ${eur(s.today)} · Semana: ${eur(s.week)}</div>
       `
-      document.getElementById('kpiGastos').innerHTML = `
-        <div class="kpi-card${(s.expenses ?? 0) > (s.month ?? 0) ? ' alert' : ''}">
-          <div class="kpi-label">📉 Gastos mes</div>
-          <div class="kpi-value">${eur(s.expenses)}</div>
-          <div class="kpi-sub${(s.overdue_count ?? 0) > 0 ? ' danger' : ''}">
-            Vencidas: ${eur(s.overdue_amount)} (${s.overdue_count ?? 0})
-          </div>
-        </div>
+      // Fix: kpiGastos is already a kpi-card, no double-wrapper
+      const gastosEl = document.getElementById('kpiGastos')
+      if ((s.expenses ?? 0) > (s.month ?? 0)) gastosEl.classList.add('alert')
+      else gastosEl.classList.remove('alert')
+      gastosEl.innerHTML = `
+        <div class="kpi-label">📉 Gastos mes</div>
+        <div class="kpi-value">${eur(s.expenses)}</div>
+        <div class="kpi-sub">Balance: ${eur(s.month - s.expenses)}</div>
+      `
+      // Por cobrar — facturas sent/pending
+      const pendienteEl = document.getElementById('kpiPendiente')
+      if ((s.pending_count ?? 0) > 0) pendienteEl.classList.add('alert')
+      else pendienteEl.classList.remove('alert')
+      pendienteEl.innerHTML = `
+        <div class="kpi-label">🕐 Por cobrar</div>
+        <div class="kpi-value">${eur(s.pending_amount)}</div>
+        <div class="kpi-sub">${s.pending_count ?? 0} factura${(s.pending_count ?? 0) !== 1 ? 's' : ''} pendiente${(s.pending_count ?? 0) !== 1 ? 's' : ''}</div>
+      `
+      // Riesgo vencidas
+      const vencidasEl = document.getElementById('kpiVencidas')
+      if ((s.overdue_count ?? 0) > 0) vencidasEl.classList.add('alert')
+      else vencidasEl.classList.remove('alert')
+      vencidasEl.innerHTML = `
+        <div class="kpi-label">🔴 Riesgo vencidas</div>
+        <div class="kpi-value" style="${(s.overdue_count ?? 0) > 0 ? 'color:#f87171' : ''}">${eur(s.overdue_amount)}</div>
+        <div class="kpi-sub${(s.overdue_count ?? 0) > 0 ? ' danger' : ''}">${s.overdue_count ?? 0} factura${(s.overdue_count ?? 0) !== 1 ? 's' : ''} vencida${(s.overdue_count ?? 0) !== 1 ? 's' : ''}</div>
       `
     }
 
@@ -1052,7 +1063,7 @@
       if ((s.overdue_count ?? 0) > 0) {
         alerts.push(`⚠️ ${s.overdue_count} factura${s.overdue_count !== 1 ? 's' : ''} vencida${s.overdue_count !== 1 ? 's' : ''} — ${eur(s.overdue_amount)} pendientes`)
       }
-      if ((s.pending_count ?? 0) > 3) {
+      if ((s.pending_count ?? 0) > 0) {
         alerts.push(`🕐 ${s.pending_count} facturas por cobrar (${eur(s.pending_amount)})`)
       }
 
@@ -1150,88 +1161,77 @@
       })
     }
 
-    // ── Cazador Banner ── (siempre visible)
-    async function loadCazadorBanner() {
-      const banner = document.getElementById('cazadorBanner')
-      const title  = document.getElementById('cazadorBannerTitle')
-      const sub    = document.getElementById('cazadorBannerSub')
-      const badge  = document.getElementById('cazadorBannerBadge')
-      banner.style.display = 'flex' // visible desde el inicio
-      try {
-        const res = await fetch(`${API}/api/cazador/stats`, {
-          headers: { 'Authorization': `Bearer ${auth.token}` }
-        })
-        if (!res.ok) {
-          title.textContent = 'El Cazador — ver facturas vencidas'
-          sub.textContent   = 'Toca para gestionar cobros'
-          badge.textContent = '🦅'
-          return
-        }
-        const data  = await res.json()
-        const count = data.overdue_count ?? 0
-        const total = data.overdue_total ?? 0
-        if (count === 0) {
-          title.textContent = 'El Cazador — al día'
-          sub.textContent   = 'No hay facturas vencidas · Buen trabajo 💪'
-          badge.textContent = '✓'
-        } else {
-          const plural = count === 1 ? 'factura vencida' : 'facturas vencidas'
-          title.textContent = `El Cazador tiene ${count} ${plural} en seguimiento`
-          sub.textContent   = `${eur(total)} pendientes de cobro · Toca para gestionar`
-          badge.textContent = `${count} en caza`
-        }
-      } catch (_) {
-        title.textContent = 'El Cazador — gestionar cobros'
-        sub.textContent   = 'Ver facturas vencidas'
-        badge.textContent = '🦅'
-      }
-    }
 
-    // ── Demonio Banner ── (siempre visible)
-    async function loadDemonioBanner() {
-      const banner = document.getElementById('demonioBanner')
-      const title  = document.getElementById('demonioBannerTitle')
-      const sub    = document.getElementById('demonioBannerSub')
-      const stats  = document.getElementById('demonioBannerStats')
-      banner.style.display = 'flex' // visible desde el inicio
-      try {
-        const res = await fetch(`${API}/api/demonio/pipeline`, {
-          headers: { 'Authorization': `Bearer ${auth.token}` }
-        })
-        if (!res.ok) {
-          title.textContent = 'El Demonio — pipeline de leads'
-          sub.textContent   = 'Toca para ver el estado'
-          return
-        }
-        const data  = await res.json()
-        const pipe  = data.pipeline || {}
-        const total = data.total || 0
-        const activos    = (pipe.contactado?.length || 0) + (pipe.respondio?.length || 0)
-        const citas      = pipe.cita_agendada?.length || 0
-        const descartados = pipe.descartado?.length || 0
-        title.textContent = total === 0
-          ? 'El Demonio — sin leads activos'
-          : `El Demonio tiene ${total} lead${total === 1 ? '' : 's'} en el pipeline`
-        sub.textContent = total === 0
-          ? 'Lanza una campaña desde Demonio'
-          : `${activos} activo${activos === 1 ? '' : 's'} · ${citas} cita${citas === 1 ? '' : 's'} · ${descartados} descartado${descartados === 1 ? '' : 's'}`
-        if (total > 0) {
-          stats.innerHTML = [
-            activos    ? `<span class="demonio-stat">👤 ${activos} activos</span>` : '',
-            citas      ? `<span class="demonio-stat">📅 ${citas} citas</span>` : '',
-            descartados ? `<span class="demonio-stat">✗ ${descartados} desc.</span>` : '',
-          ].join('')
-        }
-      } catch (_) {
-        title.textContent = 'El Demonio — ver pipeline'
-        sub.textContent   = 'Gestiona tus leads'
-      }
+    // ── Sidebar accordion ──
+    function toggleSection(id) {
+      const body = document.getElementById(`sec-${id}-body`)
+      if (!body) return
+      const btn = body.previousElementSibling
+      const collapsed = body.classList.toggle('collapsed')
+      btn.classList.toggle('open', !collapsed)
+      const state = JSON.parse(localStorage.getItem('diabolus_nav') || '{}')
+      state[id] = !collapsed
+      localStorage.setItem('diabolus_nav', JSON.stringify(state))
     }
+    function initNav() {
+      const state = JSON.parse(localStorage.getItem('diabolus_nav') || '{}')
+      ;['mando','negocio','ia','modulos'].forEach(id => {
+        const body = document.getElementById(`sec-${id}-body`)
+        if (!body) return
+        const btn = body.previousElementSibling
+        const open = state[id] !== false  // default: all open
+        if (!open) { body.classList.add('collapsed'); btn.classList.remove('open') }
+        else       { body.classList.remove('collapsed'); btn.classList.add('open') }
+      })
+    }
+    initNav()
 
     loadDashboard()
-    checkPlan()
-    loadCazadorBanner()
-    loadDemonioBanner()
+    loadUsage()
+    loadSalonSwitcher()
+
+    // ── Uso del agente IA ──
+    async function loadUsage() {
+      try {
+        const res = await fetch(`${API}/api/agent/usage`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (!res.ok) return
+        const d = await res.json()
+
+        // Enterprise sin límite → no mostrar
+        if (d.limit === -1) return
+
+        const card  = document.getElementById('usageCard')
+        const fill  = document.getElementById('usageBarFill')
+        const badge = document.getElementById('usageBadge')
+        const meta  = document.getElementById('usageMeta')
+
+        card.style.display = ''
+
+        const pct  = d.pct || 0
+        const isWarn  = pct >= 80 && pct < 100
+        const isBlock = pct >= 100
+
+        fill.style.width = Math.min(pct, 100) + '%'
+        fill.className   = 'usage-bar-fill' + (isBlock ? ' block' : isWarn ? ' warn' : '')
+        badge.className  = 'usage-badge' + (isBlock ? ' block' : isWarn ? ' warn' : '')
+        card.className   = 'usage-card'  + (isBlock ? ' block' : isWarn ? ' warn' : '')
+
+        const planLabel = { basico:'Básico', pro:'Pro', pro_plus:'Pro+', enterprise:'Enterprise' }[d.plan] || d.plan
+        badge.textContent = `${d.count} / ${d.limit} msgs`
+
+        if (isBlock) {
+          meta.innerHTML = `⛔ Límite alcanzado. <a href="mailto:hola@diabolus.es" style="color:#f87171">Amplía tu plan →</a>`
+        } else if (isWarn) {
+          meta.textContent = `⚠️ Quedan ${d.remaining} mensajes — Plan ${planLabel}`
+        } else {
+          meta.textContent = `Plan ${planLabel} · Quedan ${d.remaining} mensajes este mes`
+        }
+      } catch(e) {
+        // silencioso — no crítico
+      }
+    }
 
     // ── PWA ──
     if ('serviceWorker' in navigator) {
@@ -1241,16 +1241,7 @@
           .catch(e => console.warn('[SW] error:', e))
       })
     }
-  
-    // ── Acordeón sidebar ──
-    function toggleNav(group) {
-      const items = document.getElementById('items-' + group);
-      const chv   = document.getElementById('chv-' + group);
-      if (!items) return;
-      const isOpen = !items.classList.contains('collapsed');
-      items.classList.toggle('collapsed', isOpen);
-      if (chv) chv.classList.toggle('rotated', isOpen);
-    }
-</script>
+  </script>
+<script src="sidebar.js"></script>
 </body>
 </html>
