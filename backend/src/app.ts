@@ -36,6 +36,7 @@ import { waitlistRoutes } from './routes/waitlist'
 import { monitorRoutes } from './routes/monitor'
 import { leadsB2bPublicRoutes, leadsB2bProtectedRoutes, leadsB2bInternalRoutes, handleB2BWaInbound } from './routes/leads_b2b'
 import { informeBatallaRoutes } from './routes/informe_batalla'
+import { cobroEntranteRoute } from './routes/cobro_entrante'
 
 export function createApp() {
   const app = new Hono()
@@ -109,6 +110,9 @@ export function createApp() {
 
   // ─── Internal: Informe de Batalla 20:00 (Diablilla — sin user auth) ────────
   app.route('/api/internal/informe-batalla', informeBatallaRoutes)
+
+  // ─── Internal: Cobro Entrante (Supabase DB Webhook → Telegram tiempo real) ──
+  app.route('/api/internal/cobro-entrante', cobroEntranteRoute)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
