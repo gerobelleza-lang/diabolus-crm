@@ -96,7 +96,7 @@ Return JSON only: {"vendor":"name","amount":123.45,"category":"category","dueDat
     headers: {
       Authorization: `Bearer ${openrouterKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://diabolus-crm-api.vercel.app'
+      'HTTP-Referer': 'https://diabolus-crm.vercel.app'
     },
     body: JSON.stringify({
       model: 'openai/gpt-4o-mini',

@@ -19,7 +19,6 @@ import { chatRoutes } from './routes/chat'
 import { exportPublicRoutes } from './routes/export'
 import { onboardingRoutes } from './routes/onboarding'
 import { categoriesRoutes } from './routes/categories'
-import { whatsappRoutes } from './routes/whatsapp'
 import { documentsRoutes, documentsPublicRoutes } from './routes/documents'
 import { cazadorRoutes, cazadorInternalRoute, cazadorPreviewRoute } from './routes/cazador'
 import { supportRoutes } from './routes/support'
@@ -88,7 +87,6 @@ export function createApp() {
   // ─── Stripe & External Webhooks (Public, no auth) ──────────────────────────
   app.route('/api/stripe', stripeRoutes)
   app.route('/webhooks', webhookRoutes)
-  app.route('/webhooks/whatsapp', whatsappRoutes)
   app.route('/telegram', telegramBotRoutes)
 
   // ─── Export Downloads (Public — validado por token firmado 15 min) ─────────
