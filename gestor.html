@@ -126,6 +126,17 @@
   .inv-row .inv-info{font-size:12px;color:#aaa}
   .inv-row .inv-amount{font-size:13px;font-weight:600}
 
+  /* Export section */
+  .export-section{background:#0e0e0e;border:1px solid #1e1e1e;border-radius:10px;padding:18px;margin-top:8px}
+  .export-section h4{font-size:12px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px}
+  .export-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .export-row label{font-size:12px;color:#888}
+  .export-month-input{background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:13px;width:150px}
+  .export-month-input:focus{outline:none;border-color:#dc2626}
+  .btn-export{background:transparent;border:1px solid #333;color:#aaa;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+  .btn-export:hover{border-color:#dc2626;color:#dc2626}
+  .btn-export:disabled{opacity:0.4;cursor:not-allowed}
+
   /* Commissions */
   .commission-placeholder{text-align:center;padding:48px;background:#111;border:1px solid #1e1e1e;border-radius:12px}
   .commission-placeholder .icon{font-size:40px;margin-bottom:16px}
@@ -147,7 +158,7 @@
 </head>
 <body>
 
-<!-- ── AUTH ────────────────────────────────────────────────────────────────── -->
+<!-- ── AUTH ────────────────────────────────────────────────────────────────────────── -->
 <div id="auth-container">
   <div class="auth-card">
     <div class="auth-logo">
@@ -174,7 +185,7 @@
       <div class="success-msg" id="register-success"></div>
       <form id="register-form">
         <div class="field"><label>Tu nombre</label><input type="text" id="r-name" placeholder="María López" required></div>
-        <div class="field"><label>Nombre de la asesoría <span style="color:#555">(opcional)</span></label><input type="text" id="r-company" placeholder="Asesoría López & Asociados"></div>
+        <div class="field"><label>Nombre de la asesoría <span style="color:#555">(opcional)</span></label><input type="text" id="r-company" placeholder="Asesoría López &amp; Asociados"></div>
         <div class="field"><label>Email</label><input type="email" id="r-email" placeholder="tu@asesoria.com" required autocomplete="email"></div>
         <div class="field"><label>Contraseña (mín. 8 caracteres)</label><input type="password" id="r-password" placeholder="••••••••" required autocomplete="new-password"></div>
         <button class="btn-primary" type="submit" id="register-btn">Crear cuenta</button>
@@ -184,7 +195,7 @@
   </div>
 </div>
 
-<!-- ── PANEL ────────────────────────────────────────────────────────────────── -->
+<!-- ── PANEL ───────────────────────────────────────────────────────────────────────── -->
 <div id="panel-container" style="display:none">
   <header>
     <div class="header-left">
@@ -253,10 +264,10 @@
   </div>
 </div>
 
-<!-- ── INVITE MODAL ─────────────────────────────────────────────────────────── -->
+<!-- ── INVITE MODAL ────────────────────────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="invite-modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('invite-modal')">✕</button>
+    <button class="modal-close" onclick="closeModal('invite-modal')">&#x2715;</button>
     <h3>Invitar cliente</h3>
     <p class="modal-sub">Le enviaremos un email con un enlace para que vincule su cuenta de Diabolus contigo.</p>
     <div class="error-msg" id="invite-error"></div>
@@ -268,15 +279,15 @@
   </div>
 </div>
 
-<!-- ── REPORT MODAL ─────────────────────────────────────────────────────────── -->
+<!-- ── REPORT MODAL ────────────────────────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="report-modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('report-modal')">✕</button>
+    <button class="modal-close" onclick="closeModal('report-modal')">&#x2715;</button>
     <div id="report-content"><div class="loading"><span class="spinner"></span>Cargando informe…</div></div>
   </div>
 </div>
 
-<!-- ── TOAST ────────────────────────────────────────────────────────────────── -->
+<!-- ── TOAST ──────────────────────────────────────────────────────────────────────────── -->
 <div id="toast"></div>
 
 <script>
@@ -284,8 +295,9 @@ const API = 'https://diabolus-crm-api.vercel.app'
 const STORAGE_KEY = 'diabolus_gestor_jwt'
 let gestorToken = localStorage.getItem(STORAGE_KEY)
 let gestorData = null
+let currentReportSalonId = null  // para el exportador
 
-// ── Init ────────────────────────────────────────────────────────────────────
+// ── Init ────────────────────────────────────────────────────────────────────────────
 
 async function init() {
   if (gestorToken) {
@@ -301,7 +313,7 @@ async function init() {
   }
 }
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
+// ── Auth ────────────────────────────────────────────────────────────────────────────
 
 function showView(view) {
   document.getElementById('login-view').style.display = view === 'login' ? 'block' : 'none'
@@ -372,7 +384,7 @@ function logout() {
   location.reload()
 }
 
-// ── Panel ─────────────────────────────────────────────────────────────────────
+// ── Panel ────────────────────────────────────────────────────────────────────────────
 
 async function loadPanel() {
   const res = await fetch(`${API}/gestor/me`, { headers: { Authorization: `Bearer ${gestorToken}` } })
@@ -391,7 +403,7 @@ async function loadPanel() {
   await loadClients()
 }
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
+// ── Tabs ────────────────────────────────────────────────────────────────────────────
 
 function switchTab(tab) {
   document.getElementById('tab-clients').style.display = tab === 'clients' ? 'block' : 'none'
@@ -402,7 +414,7 @@ function switchTab(tab) {
   if (tab === 'commissions') loadCommissions()
 }
 
-// ── Clients ───────────────────────────────────────────────────────────────────
+// ── Clients ────────────────────────────────────────────────────────────────────────────
 
 async function loadClients() {
   document.getElementById('clients-loading').style.display = 'block'
@@ -434,7 +446,7 @@ async function loadClients() {
       <td style="color:#555;font-size:12px">${c.accepted_at ? new Date(c.accepted_at).toLocaleDateString('es-ES') : '—'}</td>
       <td>
         <div class="action-btns">
-          ${c.salon_id ? `<button class="btn-sm btn-view" onclick="viewReport('${c.salon_id}','${c.salon_name || c.invited_email}')">Ver informe</button>` : ''}
+          ${c.salon_id ? `<button class="btn-sm btn-view" onclick="viewReport('${c.salon_id}','${(c.salon_name || c.invited_email).replace(/'/g,"\\'")}')">Ver informe</button>` : ''}
           ${c.status !== 'inactive' ? `<button class="btn-sm btn-deactivate" onclick="deactivateLink('${c.link_id}')">Desvincular</button>` : ''}
         </div>
       </td>
@@ -460,7 +472,7 @@ async function deactivateLink(linkId) {
   else toast('Error desvinculando', 'err')
 }
 
-// ── Invite ────────────────────────────────────────────────────────────────────
+// ── Invite ────────────────────────────────────────────────────────────────────────────
 
 function openInviteModal() {
   document.getElementById('invite-email').value = ''
@@ -500,9 +512,10 @@ document.getElementById('invite-form').onsubmit = async (e) => {
   await loadClients()
 }
 
-// ── Report ────────────────────────────────────────────────────────────────────
+// ── Report ────────────────────────────────────────────────────────────────────────────
 
 async function viewReport(salonId, salonName) {
+  currentReportSalonId = salonId
   document.getElementById('report-content').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando informe…</div>'
   document.getElementById('report-modal').classList.add('open')
 
@@ -517,6 +530,10 @@ async function viewReport(salonId, salonName) {
   const { period, summary, invoices } = data
   const net = summary.net_profit
   const netColor = net >= 0 ? 'income' : 'expense'
+
+  // Mes actual como valor por defecto del exportador
+  const now = new Date()
+  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
   document.getElementById('report-content').innerHTML = `
     <h3>${data.salon}</h3>
@@ -556,10 +573,62 @@ async function viewReport(salonId, salonName) {
         </div>
       ` : '<p style="font-size:13px;color:#555">Sin facturas en este período.</p>'}
     </div>
+
+    <!-- ── EXPORTACIÓN MENSUAL ── -->
+    <div class="export-section">
+      <h4>📥 Exportar cierre mensual</h4>
+      <div class="export-row">
+        <label>Mes:</label>
+        <input type="month" id="export-month-input" class="export-month-input" value="${defaultMonth}" max="${defaultMonth}">
+        <button class="btn-export" id="btn-export-csv" onclick="exportMonth('csv')">📄 CSV</button>
+        <button class="btn-export" id="btn-export-xlsx" onclick="exportMonth('xlsx')">&#x1F4CA; XLSX</button>
+        <button class="btn-export" id="btn-export-pdf" onclick="exportMonth('pdf')">&#x1F4CB; PDF</button>
+      </div>
+      <p style="font-size:11px;color:#555;margin-top:10px">El enlace de descarga caduca en 15 minutos. IVA real por factura incluido.</p>
+    </div>
   `
 }
 
-// ── Commissions ───────────────────────────────────────────────────────────────
+// ── Export ────────────────────────────────────────────────────────────────────────────
+
+async function exportMonth(format) {
+  if (!currentReportSalonId) return
+  const monthInput = document.getElementById('export-month-input')
+  const month = monthInput ? monthInput.value : null
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+    toast('Selecciona un mes válido', 'err')
+    return
+  }
+
+  const btnId = `btn-export-${format}`
+  const btn = document.getElementById(btnId)
+  const originalText = btn ? btn.innerHTML : ''
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando…' }
+
+  try {
+    const res = await fetch(`${API}/gestor/export/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gestorToken}` },
+      body: JSON.stringify({ salonId: currentReportSalonId, month, format })
+    })
+    const data = await res.json()
+
+    if (!res.ok) {
+      toast(data.error || 'Error generando exportación', 'err')
+      return
+    }
+
+    // Abrir URL de descarga firmada (caduca en 15 min)
+    window.open(data.downloadUrl, '_blank')
+    toast(`✅ Descargando ${format.toUpperCase()}… (válido 15 min)`, 'ok')
+  } catch (e) {
+    toast('Error de conexión', 'err')
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalText }
+  }
+}
+
+// ── Commissions ────────────────────────────────────────────────────────────────────────────
 
 async function loadCommissions() {
   const res = await fetch(`${API}/gestor/commissions`, { headers: { Authorization: `Bearer ${gestorToken}` } })
@@ -569,12 +638,12 @@ async function loadCommissions() {
   }
 }
 
-// ── Modals ────────────────────────────────────────────────────────────────────
+// ── Modals ────────────────────────────────────────────────────────────────────────────
 
 function closeModal(id) { document.getElementById(id).classList.remove('open') }
 document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open') }))
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
+// ── Toast ────────────────────────────────────────────────────────────────────────────
 
 function toast(msg, type = 'ok') {
   const el = document.getElementById('toast')
@@ -584,7 +653,7 @@ function toast(msg, type = 'ok') {
   setTimeout(() => el.style.display = 'none', 3500)
 }
 
-// ── Legacy token support ──────────────────────────────────────────────────────
+// ── Legacy token support ──────────────────────────────────────────────────────────────────
 // Si viene ?token=xxx (enlace viejo de 30d), redirigir al informe legacy
 
 const urlToken = new URLSearchParams(location.search).get('token')
