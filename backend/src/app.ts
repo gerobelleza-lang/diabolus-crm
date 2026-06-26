@@ -37,6 +37,7 @@ import { leadsB2bPublicRoutes, leadsB2bProtectedRoutes, leadsB2bInternalRoutes, 
 import { informeBatallaRoutes } from './routes/informe_batalla'
 import { cobroEntranteRoute } from './routes/cobro_entrante'
 import { salonsRoutes } from './routes/salons'
+import { boeSemanalRoute } from './routes/boe_semanal'
 
 export function createApp() {
   const app = new Hono()
@@ -112,6 +113,9 @@ export function createApp() {
 
   // ─── Internal: Cobro Entrante (Supabase DB Webhook → Telegram tiempo real) ──
   app.route('/api/internal/cobro-entrante', cobroEntranteRoute)
+
+  // ─── Internal: BOE Semanal (lunes — resumen legal autónomos → Telegram) ───
+  app.route('/api/internal/boe-semanal', boeSemanalRoute)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
