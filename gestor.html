@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diabolus CRM — Portal del Gestor</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
+  input,button,select,textarea{font-family:inherit}
+  a{color:#dc2626;text-decoration:none}
+
+  /* Auth */
+  #auth-container{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .auth-card{background:#111;border:1px solid #222;border-radius:16px;padding:40px;width:100%;max-width:420px}
+  .auth-logo{text-align:center;margin-bottom:32px}
+  .auth-logo h1{font-size:26px;font-weight:800;color:#dc2626;letter-spacing:-0.5px}
+  .auth-logo p{color:#555;font-size:13px;margin-top:6px}
+  .auth-card h2{font-size:18px;font-weight:700;margin-bottom:24px;color:#eee}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:12px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px}
+  .field input{width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px 14px;color:#fff;font-size:14px;transition:border-color .2s}
+  .field input:focus{outline:none;border-color:#dc2626}
+  .btn-primary{width:100%;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+  .btn-primary:hover{background:#b91c1c}
+  .btn-primary:disabled{background:#333;color:#666;cursor:not-allowed}
+  .auth-switch{text-align:center;margin-top:20px;font-size:13px;color:#666}
+  .auth-switch span{color:#dc2626;cursor:pointer}
+  .auth-switch span:hover{text-decoration:underline}
+  .error-msg{background:#1a0505;border:1px solid #7f1d1d;border-radius:8px;padding:12px;font-size:13px;color:#fca5a5;margin-bottom:16px;display:none}
+  .success-msg{background:#052e16;border:1px solid #166534;border-radius:8px;padding:12px;font-size:13px;color:#4ade80;margin-bottom:16px;display:none}
+
+  /* Panel */
+  #panel-container{display:none;flex-direction:column;min-height:100vh}
+  header{background:#111;border-bottom:1px solid #1e1e1e;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .header-left{display:flex;align-items:center;gap:12px}
+  .header-logo{font-size:16px;font-weight:800;color:#dc2626}
+  .header-sep{color:#333}
+  .header-title{font-size:14px;color:#888}
+  .header-right{display:flex;align-items:center;gap:12px}
+  .affiliate-badge{background:#1a0a0a;border:1px solid #3d1515;border-radius:6px;padding:5px 10px;font-size:11px;color:#dc2626;font-weight:600;letter-spacing:1px}
+  .gestor-name{font-size:13px;color:#aaa}
+  .btn-logout{background:transparent;border:1px solid #333;color:#888;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;transition:all .2s}
+  .btn-logout:hover{border-color:#dc2626;color:#dc2626}
+
+  /* Tabs */
+  nav.tabs{background:#0e0e0e;border-bottom:1px solid #1e1e1e;padding:0 24px;display:flex;gap:0}
+  .tab-btn{background:none;border:none;color:#666;font-size:13px;font-weight:500;padding:14px 20px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+  .tab-btn:hover{color:#ccc}
+  .tab-btn.active{color:#dc2626;border-bottom-color:#dc2626}
+
+  /* Main content */
+  .tab-content{padding:32px 24px;max-width:1100px;margin:0 auto;width:100%}
+  .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+  .page-header h2{font-size:20px;font-weight:700}
+  .btn-invite{background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s}
+  .btn-invite:hover{background:#b91c1c}
+
+  /* Stats row */
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
+  .stat-card{background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:20px}
+  .stat-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+  .stat-value{font-size:26px;font-weight:800;color:#fff}
+  .stat-value.green{color:#4ade80}
+  .stat-sub{font-size:11px;color:#555;margin-top:4px}
+
+  /* Table */
+  .table-wrap{background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden}
+  table{width:100%;border-collapse:collapse}
+  thead th{padding:12px 16px;text-align:left;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1e1e1e;background:#0e0e0e}
+  tbody tr{border-bottom:1px solid #161616;transition:background .15s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:#141414}
+  td{padding:14px 16px;font-size:13px;color:#ccc}
+  td.salon-name{color:#fff;font-weight:500}
+
+  /* Status badges */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px}
+  .badge-active{background:#052e16;color:#4ade80;border:1px solid #166534}
+  .badge-pending{background:#1c1107;color:#fbbf24;border:1px solid #92400e}
+  .badge-inactive{background:#1a1a1a;color:#555;border:1px solid #333}
+
+  /* Actions */
+  .action-btns{display:flex;gap:8px}
+  .btn-sm{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid;transition:all .15s}
+  .btn-view{background:transparent;border-color:#333;color:#aaa}
+  .btn-view:hover{border-color:#dc2626;color:#dc2626}
+  .btn-deactivate{background:transparent;border-color:#333;color:#555}
+  .btn-deactivate:hover{border-color:#7f1d1d;color:#ef4444}
+
+  /* Empty state */
+  .empty-state{text-align:center;padding:60px 20px}
+  .empty-state .icon{font-size:48px;margin-bottom:16px}
+  .empty-state h3{font-size:16px;color:#aaa;margin-bottom:8px}
+  .empty-state p{font-size:13px;color:#555;max-width:300px;margin:0 auto 20px}
+
+  /* Modals */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;padding:20px}
+  .modal-overlay.open{display:flex}
+  .modal{background:#111;border:1px solid #222;border-radius:16px;padding:32px;width:100%;max-width:480px;position:relative}
+  .modal h3{font-size:17px;font-weight:700;margin-bottom:8px}
+  .modal p.modal-sub{font-size:13px;color:#666;margin-bottom:24px}
+  .modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:#555;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:4px}
+  .modal-close:hover{color:#fff}
+
+  /* Report modal */
+  #report-modal .modal{max-width:700px;max-height:90vh;overflow-y:auto}
+  .report-section{margin-bottom:24px}
+  .report-section h4{font-size:12px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #1e1e1e}
+  .report-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .report-metric{background:#0e0e0e;border:1px solid #1e1e1e;border-radius:8px;padding:14px}
+  .report-metric .label{font-size:11px;color:#666;margin-bottom:6px}
+  .report-metric .value{font-size:20px;font-weight:700}
+  .report-metric .value.income{color:#4ade80}
+  .report-metric .value.expense{color:#ef4444}
+  .report-metric .value.neutral{color:#fff}
+  .report-inv-list{display:flex;flex-direction:column;gap:6px}
+  .inv-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#0e0e0e;border-radius:6px;border:1px solid #1a1a1a}
+  .inv-row .inv-info{font-size:12px;color:#aaa}
+  .inv-row .inv-amount{font-size:13px;font-weight:600}
+
+  /* Export section */
+  .export-section{background:#0e0e0e;border:1px solid #1e1e1e;border-radius:10px;padding:18px;margin-top:8px}
+  .export-section h4{font-size:12px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px}
+  .export-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .export-row label{font-size:12px;color:#888}
+  .export-month-input{background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:13px;width:150px}
+  .export-month-input:focus{outline:none;border-color:#dc2626}
+  .btn-export{background:transparent;border:1px solid #333;color:#aaa;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+  .btn-export:hover{border-color:#dc2626;color:#dc2626}
+  .btn-export:disabled{opacity:0.4;cursor:not-allowed}
+
+  /* Commissions */
+  .commission-placeholder{text-align:center;padding:48px;background:#111;border:1px solid #1e1e1e;border-radius:12px}
+  .commission-placeholder .icon{font-size:40px;margin-bottom:16px}
+  .commission-placeholder h3{font-size:15px;color:#aaa;margin-bottom:8px}
+  .commission-placeholder p{font-size:13px;color:#555;max-width:360px;margin:0 auto}
+  .commission-active-count{font-size:32px;font-weight:800;color:#dc2626;margin:16px 0 4px}
+
+  /* Loading */
+  .loading{text-align:center;padding:40px;color:#555;font-size:14px}
+  .spinner{display:inline-block;width:20px;height:20px;border:2px solid #333;border-top-color:#dc2626;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Notification toast */
+  #toast{position:fixed;bottom:24px;right:24px;background:#111;border:1px solid #333;border-radius:10px;padding:14px 18px;font-size:13px;color:#fff;z-index:999;display:none;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+  #toast.ok{border-color:#166534;color:#4ade80}
+  #toast.err{border-color:#7f1d1d;color:#fca5a5}
+</style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
+</head>
+<body>
+
+<!-- ── AUTH ────────────────────────────────────────────────────────────────────────── -->
+<div id="auth-container">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>🔥 DIABOLUS CRM</h1>
+      <p>Portal del Gestor</p>
+    </div>
+
+    <!-- Login -->
+    <div id="login-view">
+      <h2>Entrar</h2>
+      <div class="error-msg" id="login-error"></div>
+      <form id="login-form">
+        <div class="field"><label>Email</label><input type="email" id="l-email" placeholder="tu@asesoria.com" required autocomplete="email"></div>
+        <div class="field"><label>Contraseña</label><input type="password" id="l-password" placeholder="••••••••" required autocomplete="current-password"></div>
+        <button class="btn-primary" type="submit" id="login-btn">Entrar</button>
+      </form>
+      <div class="auth-switch">¿No tienes cuenta? <span onclick="showView('register')">Crear cuenta de gestor</span></div>
+    </div>
+
+    <!-- Register -->
+    <div id="register-view" style="display:none">
+      <h2>Crear cuenta</h2>
+      <div class="error-msg" id="register-error"></div>
+      <div class="success-msg" id="register-success"></div>
+      <form id="register-form">
+        <div class="field"><label>Tu nombre</label><input type="text" id="r-name" placeholder="María López" required></div>
+        <div class="field"><label>Nombre de la asesoría <span style="color:#555">(opcional)</span></label><input type="text" id="r-company" placeholder="Asesoría López &amp; Asociados"></div>
+        <div class="field"><label>Email</label><input type="email" id="r-email" placeholder="tu@asesoria.com" required autocomplete="email"></div>
+        <div class="field"><label>Contraseña (mín. 8 caracteres)</label><input type="password" id="r-password" placeholder="••••••••" required autocomplete="new-password"></div>
+        <button class="btn-primary" type="submit" id="register-btn">Crear cuenta</button>
+      </form>
+      <div class="auth-switch">¿Ya tienes cuenta? <span onclick="showView('login')">Entrar</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PANEL ───────────────────────────────────────────────────────────────────────── -->
+<div id="panel-container" style="display:none">
+  <header>
+    <div class="header-left">
+      <span class="header-logo">🔥 DIABOLUS</span>
+      <span class="header-sep">|</span>
+      <span class="header-title">Portal del Gestor</span>
+    </div>
+    <div class="header-right">
+      <span class="gestor-name" id="hdr-name"></span>
+      <span class="affiliate-badge" id="hdr-code" title="Código de afiliado"></span>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('clients')" id="tab-clients-btn">👥 Mis Clientes</button>
+    <button class="tab-btn" onclick="switchTab('commissions')" id="tab-commissions-btn">💶 Comisiones</button>
+  </nav>
+
+  <!-- ── Clients Tab ── -->
+  <div id="tab-clients" class="tab-content">
+    <div class="page-header">
+      <h2>Mis Clientes</h2>
+      <button class="btn-invite" onclick="openInviteModal()">+ Invitar cliente</button>
+    </div>
+
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card"><div class="stat-label">Clientes activos</div><div class="stat-value" id="st-active">—</div></div>
+      <div class="stat-card"><div class="stat-label">Invitaciones pendientes</div><div class="stat-value" id="st-pending">—</div></div>
+      <div class="stat-card"><div class="stat-label">Código de afiliado</div><div class="stat-value" style="font-size:18px;letter-spacing:2px" id="st-code">—</div><div class="stat-sub">Compártelo con tus clientes</div></div>
+    </div>
+
+    <div class="table-wrap" id="clients-table-wrap">
+      <div class="loading" id="clients-loading"><span class="spinner"></span>Cargando clientes…</div>
+      <table id="clients-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Email invitado</th>
+            <th>Estado</th>
+            <th>Vinculado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="clients-tbody"></tbody>
+      </table>
+      <div class="empty-state" id="clients-empty" style="display:none">
+        <div class="icon">👥</div>
+        <h3>Sin clientes aún</h3>
+        <p>Invita a tus clientes por email y verás sus datos ordenados aquí.</p>
+        <button class="btn-invite" onclick="openInviteModal()" style="margin:0 auto">+ Invitar primer cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Commissions Tab ── -->
+  <div id="tab-commissions" class="tab-content" style="display:none">
+    <div class="page-header"><h2>Comisiones</h2></div>
+    <div class="commission-placeholder">
+      <div class="icon">💶</div>
+      <h3>Comisiones activas por cliente</h3>
+      <div class="commission-active-count" id="comm-active-count">—</div>
+      <p style="color:#dc2626;font-size:12px;margin-bottom:12px">clientes activos generando comisión</p>
+      <p>Las comisiones se calcularán y pagarán cuando se active la facturación (previsto para el lanzamiento). Cada cliente activo genera comisión recurrente mientras mantenga su suscripción.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── INVITE MODAL ────────────────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('invite-modal')">&#x2715;</button>
+    <h3>Invitar cliente</h3>
+    <p class="modal-sub">Le enviaremos un email con un enlace para que vincule su cuenta de Diabolus contigo.</p>
+    <div class="error-msg" id="invite-error"></div>
+    <div class="success-msg" id="invite-success"></div>
+    <form id="invite-form">
+      <div class="field"><label>Email del cliente</label><input type="email" id="invite-email" placeholder="cliente@sunegocio.com" required></div>
+      <button class="btn-primary" type="submit" id="invite-btn">Enviar invitación</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── REPORT MODAL ────────────────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('report-modal')">&#x2715;</button>
+    <div id="report-content"><div class="loading"><span class="spinner"></span>Cargando informe…</div></div>
+  </div>
+</div>
+
+<!-- ── TOAST ──────────────────────────────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script>
+const API = 'https://diabolus-crm-api.vercel.app'
+const STORAGE_KEY = 'diabolus_gestor_jwt'
+let gestorToken = localStorage.getItem(STORAGE_KEY)
+let gestorData = null
+let currentReportSalonId = null  // para el exportador
+
+// ── Init ────────────────────────────────────────────────────────────────────────────
+
+async function init() {
+  if (gestorToken) {
+    try {
+      await loadPanel()
+    } catch (e) {
+      localStorage.removeItem(STORAGE_KEY)
+      gestorToken = null
+      showView('login')
+    }
+  } else {
+    document.getElementById('auth-container').style.display = 'flex'
+  }
+}
+
+// ── Auth ────────────────────────────────────────────────────────────────────────────
+
+function showView(view) {
+  document.getElementById('login-view').style.display = view === 'login' ? 'block' : 'none'
+  document.getElementById('register-view').style.display = view === 'register' ? 'block' : 'none'
+}
+
+document.getElementById('login-form').onsubmit = async (e) => {
+  e.preventDefault()
+  const btn = document.getElementById('login-btn')
+  const errEl = document.getElementById('login-error')
+  errEl.style.display = 'none'
+  btn.disabled = true; btn.textContent = 'Entrando…'
+
+  const res = await fetch(`${API}/gestor/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: document.getElementById('l-email').value, password: document.getElementById('l-password').value })
+  })
+  const data = await res.json()
+
+  if (!res.ok) {
+    errEl.textContent = data.error || 'Error al iniciar sesión'
+    errEl.style.display = 'block'
+    btn.disabled = false; btn.textContent = 'Entrar'
+    return
+  }
+
+  gestorToken = data.token
+  localStorage.setItem(STORAGE_KEY, gestorToken)
+  await loadPanel()
+}
+
+document.getElementById('register-form').onsubmit = async (e) => {
+  e.preventDefault()
+  const btn = document.getElementById('register-btn')
+  const errEl = document.getElementById('register-error')
+  const okEl = document.getElementById('register-success')
+  errEl.style.display = 'none'; okEl.style.display = 'none'
+  btn.disabled = true; btn.textContent = 'Creando cuenta…'
+
+  const res = await fetch(`${API}/gestor/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: document.getElementById('r-email').value,
+      password: document.getElementById('r-password').value,
+      name: document.getElementById('r-name').value,
+      company_name: document.getElementById('r-company').value || undefined
+    })
+  })
+  const data = await res.json()
+
+  if (!res.ok) {
+    errEl.textContent = data.error || 'Error creando cuenta'
+    errEl.style.display = 'block'
+    btn.disabled = false; btn.textContent = 'Crear cuenta'
+    return
+  }
+
+  gestorToken = data.token
+  localStorage.setItem(STORAGE_KEY, gestorToken)
+  await loadPanel()
+}
+
+function logout() {
+  localStorage.removeItem(STORAGE_KEY)
+  gestorToken = null
+  location.reload()
+}
+
+// ── Panel ────────────────────────────────────────────────────────────────────────────
+
+async function loadPanel() {
+  const res = await fetch(`${API}/gestor/me`, { headers: { Authorization: `Bearer ${gestorToken}` } })
+  if (!res.ok) throw new Error('Auth expired')
+  const data = await res.json()
+  gestorData = data.gestor
+
+  document.getElementById('auth-container').style.display = 'none'
+  document.getElementById('panel-container').style.display = 'flex'
+
+  const name = gestorData.company_name || gestorData.name
+  document.getElementById('hdr-name').textContent = name
+  document.getElementById('hdr-code').textContent = gestorData.affiliate_code
+  document.getElementById('st-code').textContent = gestorData.affiliate_code
+
+  await loadClients()
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  document.getElementById('tab-clients').style.display = tab === 'clients' ? 'block' : 'none'
+  document.getElementById('tab-commissions').style.display = tab === 'commissions' ? 'block' : 'none'
+  document.getElementById('tab-clients-btn').classList.toggle('active', tab === 'clients')
+  document.getElementById('tab-commissions-btn').classList.toggle('active', tab === 'commissions')
+
+  if (tab === 'commissions') loadCommissions()
+}
+
+// ── Clients ────────────────────────────────────────────────────────────────────────────
+
+async function loadClients() {
+  document.getElementById('clients-loading').style.display = 'block'
+  document.getElementById('clients-table').style.display = 'none'
+  document.getElementById('clients-empty').style.display = 'none'
+
+  const res = await fetch(`${API}/gestor/clients`, { headers: { Authorization: `Bearer ${gestorToken}` } })
+  const data = await res.json()
+  document.getElementById('clients-loading').style.display = 'none'
+
+  const clients = data.clients ?? []
+  const active = clients.filter(c => c.status === 'active').length
+  const pending = clients.filter(c => c.status === 'pending').length
+
+  document.getElementById('st-active').textContent = active
+  document.getElementById('st-pending').textContent = pending
+
+  if (!clients.length) {
+    document.getElementById('clients-empty').style.display = 'block'
+    return
+  }
+
+  const tbody = document.getElementById('clients-tbody')
+  tbody.innerHTML = clients.map(c => `
+    <tr>
+      <td class="salon-name">${c.salon_name || '—'}</td>
+      <td style="color:#888">${c.invited_email}</td>
+      <td>${badgeHTML(c.status)}</td>
+      <td style="color:#555;font-size:12px">${c.accepted_at ? new Date(c.accepted_at).toLocaleDateString('es-ES') : '—'}</td>
+      <td>
+        <div class="action-btns">
+          ${c.salon_id ? `<button class="btn-sm btn-view" onclick="viewReport('${c.salon_id}','${(c.salon_name || c.invited_email).replace(/'/g,"\\'")}')">Ver informe</button>` : ''}
+          ${c.status !== 'inactive' ? `<button class="btn-sm btn-deactivate" onclick="deactivateLink('${c.link_id}')">Desvincular</button>` : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('')
+
+  document.getElementById('clients-table').style.display = 'table'
+}
+
+function badgeHTML(status) {
+  const map = { active: ['badge-active','Activo'], pending: ['badge-pending','Pendiente'], inactive: ['badge-inactive','Inactivo'] }
+  const [cls, label] = map[status] || ['badge-inactive', status]
+  return `<span class="badge ${cls}">${label}</span>`
+}
+
+async function deactivateLink(linkId) {
+  if (!confirm('¿Desvincular este cliente? El gestor perderá acceso a sus datos.')) return
+  const res = await fetch(`${API}/gestor/clients/${linkId}/deactivate`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${gestorToken}` }
+  })
+  if (res.ok) { toast('Cliente desvinculado', 'ok'); await loadClients() }
+  else toast('Error desvinculando', 'err')
+}
+
+// ── Invite ────────────────────────────────────────────────────────────────────────────
+
+function openInviteModal() {
+  document.getElementById('invite-email').value = ''
+  document.getElementById('invite-error').style.display = 'none'
+  document.getElementById('invite-success').style.display = 'none'
+  document.getElementById('invite-btn').disabled = false
+  document.getElementById('invite-btn').textContent = 'Enviar invitación'
+  document.getElementById('invite-modal').classList.add('open')
+}
+
+document.getElementById('invite-form').onsubmit = async (e) => {
+  e.preventDefault()
+  const btn = document.getElementById('invite-btn')
+  const errEl = document.getElementById('invite-error')
+  const okEl = document.getElementById('invite-success')
+  errEl.style.display = 'none'; okEl.style.display = 'none'
+  btn.disabled = true; btn.textContent = 'Enviando…'
+
+  const email = document.getElementById('invite-email').value
+  const res = await fetch(`${API}/gestor/clients/invite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gestorToken}` },
+    body: JSON.stringify({ email })
+  })
+  const data = await res.json()
+
+  if (!res.ok) {
+    errEl.textContent = data.error || 'Error enviando invitación'
+    errEl.style.display = 'block'
+    btn.disabled = false; btn.textContent = 'Enviar invitación'
+    return
+  }
+
+  okEl.textContent = `✅ Invitación enviada a ${email}. Válida 7 días.`
+  okEl.style.display = 'block'
+  btn.textContent = 'Enviado ✓'
+  await loadClients()
+}
+
+// ── Report ────────────────────────────────────────────────────────────────────────────
+
+async function viewReport(salonId, salonName) {
+  currentReportSalonId = salonId
+  document.getElementById('report-content').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando informe…</div>'
+  document.getElementById('report-modal').classList.add('open')
+
+  const res = await fetch(`${API}/gestor/client/${salonId}/report`, { headers: { Authorization: `Bearer ${gestorToken}` } })
+  const data = await res.json()
+
+  if (!res.ok) {
+    document.getElementById('report-content').innerHTML = `<p style="color:#ef4444">${data.error || 'Error cargando informe'}</p>`
+    return
+  }
+
+  const { period, summary, invoices } = data
+  const net = summary.net_profit
+  const netColor = net >= 0 ? 'income' : 'expense'
+
+  // Mes actual como valor por defecto del exportador
+  const now = new Date()
+  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+  document.getElementById('report-content').innerHTML = `
+    <h3>${data.salon}</h3>
+    <p class="modal-sub">${period.label} · ${period.from} → ${period.to}</p>
+
+    <div class="report-section">
+      <h4>Resumen del trimestre</h4>
+      <div class="report-metrics">
+        <div class="report-metric"><div class="label">Ingresos</div><div class="value income">+${summary.income.toFixed(2)}€</div></div>
+        <div class="report-metric"><div class="label">Gastos</div><div class="value expense">-${summary.expenses.toFixed(2)}€</div></div>
+        <div class="report-metric"><div class="label">Resultado</div><div class="value ${netColor}">${net >= 0 ? '+' : ''}${net.toFixed(2)}€</div></div>
+      </div>
+    </div>
+
+    <div class="report-section">
+      <h4>Facturas · Total ${invoices.total_invoiced.toFixed(2)}€</h4>
+      <div style="display:flex;gap:16px;margin-bottom:12px">
+        <span class="badge badge-active">✓ ${invoices.paid} pagadas</span>
+        <span class="badge badge-pending">⏳ ${invoices.pending} pendientes</span>
+        ${invoices.overdue > 0 ? `<span class="badge" style="background:#1a0505;color:#ef4444;border:1px solid #7f1d1d">⚠ ${invoices.overdue} vencidas</span>` : ''}
+      </div>
+      ${invoices.list.length ? `
+        <div class="report-inv-list">
+          ${invoices.list.slice(0, 10).map(i => `
+            <div class="inv-row">
+              <div>
+                <div style="font-size:13px;color:#ddd">${i.number || '—'} · ${i.client}</div>
+                <div class="inv-info">${i.issue_date}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="inv-amount">${(i.total || 0).toFixed(2)}€</span>
+                ${badgeHTML(i.status)}
+              </div>
+            </div>
+          `).join('')}
+          ${invoices.list.length > 10 ? `<p style="text-align:center;font-size:12px;color:#555;padding:8px">+${invoices.list.length - 10} facturas más</p>` : ''}
+        </div>
+      ` : '<p style="font-size:13px;color:#555">Sin facturas en este período.</p>'}
+    </div>
+
+    <!-- ── EXPORTACIÓN MENSUAL ── -->
+    <div class="export-section">
+      <h4>📥 Exportar cierre mensual</h4>
+      <div class="export-row">
+        <label>Mes:</label>
+        <input type="month" id="export-month-input" class="export-month-input" value="${defaultMonth}" max="${defaultMonth}">
+        <button class="btn-export" id="btn-export-csv" onclick="exportMonth('csv')">📄 CSV</button>
+        <button class="btn-export" id="btn-export-xlsx" onclick="exportMonth('xlsx')">&#x1F4CA; XLSX</button>
+        <button class="btn-export" id="btn-export-pdf" onclick="exportMonth('pdf')">&#x1F4CB; PDF</button>
+      </div>
+      <p style="font-size:11px;color:#555;margin-top:10px">El enlace de descarga caduca en 15 minutos. IVA real por factura incluido.</p>
+    </div>
+  `
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────────────
+
+async function exportMonth(format) {
+  if (!currentReportSalonId) return
+  const monthInput = document.getElementById('export-month-input')
+  const month = monthInput ? monthInput.value : null
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+    toast('Selecciona un mes válido', 'err')
+    return
+  }
+
+  const btnId = `btn-export-${format}`
+  const btn = document.getElementById(btnId)
+  const originalText = btn ? btn.innerHTML : ''
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando…' }
+
+  try {
+    const res = await fetch(`${API}/gestor/export/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gestorToken}` },
+      body: JSON.stringify({ salonId: currentReportSalonId, month, format })
+    })
+    const data = await res.json()
+
+    if (!res.ok) {
+      toast(data.error || 'Error generando exportación', 'err')
+      return
+    }
+
+    // Abrir URL de descarga firmada (caduca en 15 min)
+    window.open(data.downloadUrl, '_blank')
+    toast(`✅ Descargando ${format.toUpperCase()}… (válido 15 min)`, 'ok')
+  } catch (e) {
+    toast('Error de conexión', 'err')
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalText }
+  }
+}
+
+// ── Commissions ────────────────────────────────────────────────────────────────────────────
+
+async function loadCommissions() {
+  const res = await fetch(`${API}/gestor/commissions`, { headers: { Authorization: `Bearer ${gestorToken}` } })
+  const data = await res.json()
+  if (data.ok) {
+    document.getElementById('comm-active-count').textContent = data.active_clients
+  }
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────────────────
+
+function closeModal(id) { document.getElementById(id).classList.remove('open') }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open') }))
+
+// ── Toast ────────────────────────────────────────────────────────────────────────────
+
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.className = type
+  el.style.display = 'block'
+  setTimeout(() => el.style.display = 'none', 3500)
+}
+
+// ── Legacy token support ──────────────────────────────────────────────────────────────────
+// Si viene ?token=xxx (enlace viejo de 30d), redirigir al informe legacy
+
+const urlToken = new URLSearchParams(location.search).get('token')
+if (urlToken && !gestorToken) {
+  // Mostrar informe legacy en modo solo lectura
+  document.getElementById('auth-container').innerHTML = `
+    <div class="auth-card" style="max-width:600px">
+      <div class="auth-logo"><h1>🔥 DIABOLUS CRM</h1><p>Informe del gestor</p></div>
+      <div class="loading" id="legacy-loading"><span class="spinner"></span>Cargando informe…</div>
+      <div id="legacy-content" style="display:none"></div>
+      <p style="text-align:center;margin-top:24px;font-size:13px;color:#555">
+        ¿Eres gestor de Diabolus? <a href="gestor.html" style="color:#dc2626">Accede a tu panel completo →</a>
+      </p>
+    </div>
+  `
+  fetch(`${API}/gestor/report?token=${encodeURIComponent(urlToken)}`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('legacy-loading').style.display = 'none'
+      const el = document.getElementById('legacy-content')
+      if (!data.ok) { el.innerHTML = `<p style="color:#ef4444">${data.error}</p>`; el.style.display = 'block'; return }
+      el.innerHTML = `
+        <h3 style="font-size:16px;margin-bottom:4px">${data.salon}</h3>
+        <p style="color:#555;font-size:13px;margin-bottom:20px">${data.period.label}</p>
+        <div class="report-metrics" style="margin-bottom:20px">
+          <div class="report-metric"><div class="label">Ingresos</div><div class="value income">+${data.summary.income.toFixed(2)}€</div></div>
+          <div class="report-metric"><div class="label">Gastos</div><div class="value expense">-${data.summary.expenses.toFixed(2)}€</div></div>
+          <div class="report-metric"><div class="label">Resultado</div><div class="value neutral">${data.summary.net_profit.toFixed(2)}€</div></div>
+        </div>
+        <p style="font-size:12px;color:#555">IVA a liquidar estimado: ${data.fiscal.iva_a_liquidar.toFixed(2)}€ · IRPF: ${data.fiscal.irpf_fraccionado.toFixed(2)}€</p>
+      `
+      el.style.display = 'block'
+    })
+    .catch(() => {
+      document.getElementById('legacy-loading').innerHTML = '<p style="color:#ef4444">Error cargando informe</p>'
+    })
+} else {
+  init()
+}
+</script>
+  <script>
+    // PWA — registro del Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[SW] registrado:', reg.scope);
+        }).catch(err => {
+          console.warn('[SW] error al registrar:', err);
+        });
+      });
+    }
+  </script>
+<script src="sidebar.js"></script>
+</body>
+</html>
