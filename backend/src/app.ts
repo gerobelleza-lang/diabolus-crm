@@ -38,6 +38,7 @@ import { informeBatallaRoutes } from './routes/informe_batalla'
 import { cobroEntranteRoute } from './routes/cobro_entrante'
 import { salonsRoutes } from './routes/salons'
 import { boeSemanalRoute } from './routes/boe_semanal'
+import { driveExportRoute } from './routes/drive_export'
 
 export function createApp() {
   const app = new Hono()
@@ -116,6 +117,9 @@ export function createApp() {
 
   // ─── Internal: BOE Semanal (lunes — resumen legal autónomos → Telegram) ───
   app.route('/api/internal/boe-semanal', boeSemanalRoute)
+
+  // ─── Internal: Drive Export (día 1 mes — cierre mensual → Google Drive) ───
+  app.route('/api/internal/drive-export', driveExportRoute)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
