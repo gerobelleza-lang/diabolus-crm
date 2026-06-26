@@ -1,12 +1,13 @@
 // @ts-nocheck
-// POST /api/agent/tts — ElevenLabs TTS proxy (Edge Runtime)
+// POST /api/agent/tts — OpenAI TTS proxy (Edge Runtime)
+// Voz oficial: nova (femenina, cálida) — decisión 26 Jun 2026
 // Body: { text: string }
 // Returns: audio/mpeg
 
 export const config = { runtime: 'edge' };
 
-const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // Adam — male, multilingual
-const MODEL_ID = 'eleven_multilingual_v2';
+const VOICE = 'nova';
+const MODEL = 'tts-1';
 const MAX_CHARS = 800;
 
 export async function ttsRoute(req: Request): Promise<Response> {
@@ -34,7 +35,7 @@ export async function ttsRoute(req: Request): Promise<Response> {
       });
     }
 
-    const apiKey = process.env.ELEVENLABS_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return new Response(JSON.stringify({ error: 'TTS no configurado' }), {
         status: 500,
@@ -60,32 +61,23 @@ export async function ttsRoute(req: Request): Promise<Response> {
       });
     }
 
-    const ttsRes = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-      {
-        method: 'POST',
-        headers: {
-          'xi-api-key': apiKey,
-          'Content-Type': 'application/json',
-          'Accept': 'audio/mpeg',
-        },
-        body: JSON.stringify({
-          text: clean,
-          model_id: MODEL_ID,
-          voice_settings: {
-            stability: 0.38,
-            similarity_boost: 0.82,
-            style: 0.45,
-            use_speaker_boost: true,
-          },
-          output_format: 'mp3_44100_128',
-        }),
-      }
-    );
+    const ttsRes = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        input: clean,
+        voice: VOICE,
+        response_format: 'mp3',
+      }),
+    });
 
     if (!ttsRes.ok) {
       const err = await ttsRes.text();
-      console.error('ElevenLabs TTS error:', err);
+      console.error('OpenAI TTS error:', err);
       return new Response(JSON.stringify({ error: 'Error generando audio' }), {
         status: 502,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
