@@ -766,6 +766,18 @@
             <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
             <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
           </div>
+          <!-- Por cobrar -->
+          <div class="kpi-card" id="kpiPendientes" style="grid-column:span 2;">
+            <div class="kpi-label">🕐 Por cobrar</div>
+            <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
+            <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
+          </div>
+          <!-- Vencidas -->
+          <div class="kpi-card" id="kpiVencidas" style="grid-column:span 2;">
+            <div class="kpi-label">🔴 Vencidas</div>
+            <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
+            <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
+          </div>
         </div>
 
         <!-- Charts -->
@@ -1021,9 +1033,11 @@
     }
 
     function renderFinanzas(s) {
-      const balance   = (s.month ?? 0) - (s.expenses ?? 0)
+      const balance    = (s.month ?? 0) - (s.expenses ?? 0)
       const isPositive = balance >= 0
+      const hasOverdue = (s.overdue_count ?? 0) > 0
 
+      // Hero: Balance
       document.getElementById('heroBalance').innerHTML = `
         <div class="hero-label">💰 Balance neto del mes</div>
         <div class="hero-value">${eur(balance)}</div>
@@ -1031,22 +1045,43 @@
           ${isPositive ? '▲ Positivo' : '▼ Negativo'} · ${new Date().toLocaleDateString('es-ES', { month:'long', year:'numeric' })}
         </div>
       `
+
+      // KPI: Ingresos
       document.getElementById('kpiIngresos').innerHTML = `
         <div class="kpi-label">📈 Ingresos mes</div>
         <div class="kpi-value">${eur(s.month)}</div>
         <div class="kpi-sub">Hoy: ${eur(s.today)} · Semana: ${eur(s.week)}</div>
       `
-      document.getElementById('kpiGastos').innerHTML = `
-        <div class="kpi-card${(s.expenses ?? 0) > (s.month ?? 0) ? ' alert' : ''}">
-          <div class="kpi-label">📉 Gastos mes</div>
-          <div class="kpi-value">${eur(s.expenses)}</div>
-          <div class="kpi-sub${(s.overdue_count ?? 0) > 0 ? ' danger' : ''}">
-            Vencidas: ${eur(s.overdue_amount)} (${s.overdue_count ?? 0})
-          </div>
-        </div>
+
+      // KPI: Gastos (corregido — sin div anidado)
+      const gastoEl = document.getElementById('kpiGastos')
+      if ((s.expenses ?? 0) > (s.month ?? 0)) gastoEl.classList.add('alert')
+      gastoEl.innerHTML = `
+        <div class="kpi-label">📉 Gastos mes</div>
+        <div class="kpi-value">${eur(s.expenses)}</div>
+        <div class="kpi-sub">Balance: <span style="color:${isPositive?'#4ade80':'#f87171'}">${eur(balance)}</span></div>
+      `
+
+      // KPI: Por cobrar (facturas pendientes)
+      const pendCount = s.pending_count ?? 0
+      const pendLabel = pendCount === 1 ? '1 factura pendiente' : `${pendCount} facturas pendientes`
+      document.getElementById('kpiPendientes').innerHTML = `
+        <div class="kpi-label">🕐 Por cobrar</div>
+        <div class="kpi-value">${eur(s.pending_amount)}</div>
+        <div class="kpi-sub">${pendLabel}</div>
+      `
+
+      // KPI: Vencidas (riesgo activo)
+      const ovdEl = document.getElementById('kpiVencidas')
+      if (hasOverdue) ovdEl.classList.add('alert')
+      const ovdCount = s.overdue_count ?? 0
+      const ovdLabel = ovdCount === 0 ? 'Sin facturas vencidas ✓' : `${ovdCount} factura${ovdCount !== 1 ? 's' : ''} sin cobrar`
+      ovdEl.innerHTML = `
+        <div class="kpi-label">🔴 Vencidas</div>
+        <div class="kpi-value">${eur(s.overdue_amount)}</div>
+        <div class="kpi-sub${hasOverdue ? ' danger' : ''}">${ovdLabel}</div>
       `
     }
-
     function renderFiscalAlerts(s) {
       const alerts = []
       if ((s.overdue_count ?? 0) > 0) {
