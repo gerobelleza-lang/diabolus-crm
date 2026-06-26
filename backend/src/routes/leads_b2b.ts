@@ -58,7 +58,7 @@ import { Hono } from 'hono';
 const publicApp    = new Hono(); // rutas sin auth (callback Apify)
 const protectedApp = new Hono(); // rutas con auth (launch, pipeline, stats, outreach, followup)
 
-const API_BASE = 'https://diabolus-crm-api.vercel.app';
+const API_BASE = 'https://diabolus-crm.vercel.app';
 
 // ─── Helpers internos ─────────────────────────────────────────────────────────
 
