@@ -20,7 +20,7 @@
  */
 
 import { parseUserInput }                                          from './parser'
-import { routeToLLM, callOpenRouter, buildSystemPrompt, BRAIN_MODELS } from './llm-router'
+import { routeToLLM, callOpenRouter, buildSystemPrompt, BRAIN_MODELS, getTimeContext } from './llm-router'
 import { createClient }                                            from '@supabase/supabase-js'
 import { createPendingAction, executePendingAction, cancelPendingAction } from './confirmation'
 import type { ConfirmationCard }                                   from './confirmation'
@@ -226,7 +226,23 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
 
   // ── Saludos y ayuda ──────────────────────────────────────────────────────
   if (/^(hola|hey|buenas|buenos días|buenas tardes|buenas noches|ey|hi|hello|qué hay|qué tal|holi|ola|buenas!|hola!|hey!)[\s]*[!?]?$/i.test(userInput)) {
-    return { replyText: 'Hola. Soy tu Diablilla. ¿Qué deseas? 😈\n\nPuedo crear facturas, registrar cobros y gastos, avisar a morosos y llevarte las cuentas. Dime qué necesitas.' }
+    // Dynamic greeting based on time of day
+    const tc = getTimeContext()
+    let greeting: string
+    if (tc.esLunes) {
+      greeting = `${tc.saludo}. Lunes — nueva semana. ¿Arrancamos por los cobros pendientes? 😈`
+    } else if (tc.esViernes && tc.hora >= 14) {
+      greeting = `${tc.saludo}. Viernes. ¿Repasamos cómo ha ido la semana?`
+    } else if (tc.esFinDeMes) {
+      greeting = `${tc.saludo}. Fin de mes — hay que cerrar cobros. ¿Qué movemos?`
+    } else if (tc.esPrincipioMes) {
+      greeting = `${tc.saludo}. Mes nuevo. ¿Registramos los gastos fijos?`
+    } else if (tc.hora >= 22 || tc.hora < 6) {
+      greeting = `${tc.saludo}. Si puede esperar a mañana, descansa. Si no, dime.`
+    } else {
+      greeting = `${tc.saludo}. ¿Qué movemos? 😈`
+    }
+    return { replyText: greeting }
   }
   if (/^(ayuda|help|comandos|opciones|qué puedes hacer|para qué sirves|cómo funciona)[\s]*[?]?$/i.test(userInput)) {
     return {
@@ -725,7 +741,7 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
         buildMemoryContext(tenantId),
         getDashboardContext(tenantId),
       ])
-      const systemPrompt = buildSystemPrompt(routing.label, memoryCtx, dashCtx)
+      const systemPrompt = buildSystemPrompt(routing.label, memoryCtx, dashCtx, userInput)
       finalResponse = await callOpenRouter(routing.model, userInput, systemPrompt)
     } catch (err) {
       console.warn('[Core] LLM error, fallback to L0:', err)
