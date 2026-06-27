@@ -85,6 +85,13 @@
     .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
     .badge-paid { background: rgba(16, 185, 129, 0.15); color: #10b981; }
     .badge-overdue { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    .btn-preview { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .btn-preview:hover:not(:disabled) { background: rgba(59, 130, 246, 0.25); }
+    .btn-duplicate { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .btn-duplicate:hover:not(:disabled) { background: rgba(168, 85, 247, 0.25); }
+    .preview-modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; width: 95vw; max-width: 860px; max-height: 95vh; display: flex; flex-direction: column; gap: 1rem; }
+    .preview-modal iframe { width: 100%; flex: 1; border: none; border-radius: 0.5rem; background: #fff; min-height: 520px; }
     @media (max-width: 768px) { .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); } .main-content { margin-left: 0; } .form-row { grid-template-columns: 1fr; } .actions { flex-direction: column; } }
   </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
@@ -166,6 +173,18 @@
   </main>
 </div>
 
+<div class="modal-overlay" id="previewModal">
+  <div class="preview-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="margin:0;" id="previewTitle">👁️ Vista Previa PDF</h2>
+      <div style="display:flex;gap:0.75rem;">
+        <button class="btn btn-primary" id="previewDownloadBtn" onclick="confirmDownload()">📥 Descargar</button>
+        <button class="btn btn-secondary" onclick="closePreviewModal()">Cerrar</button>
+      </div>
+    </div>
+    <iframe id="previewFrame" src="about:blank"></iframe>
+  </div>
+</div>
 <div class="modal-overlay" id="createModal">
   <div class="modal">
     <h2>📄 Nueva Factura</h2>
@@ -256,8 +275,10 @@ function renderTable() {
       <td>${fmtDate(inv.due_date)}</td>
       <td>${badgeHtml(inv.status)}</td>
       <td><div class="actions">
+        <button class="action-btn btn-preview" onclick="previewPDF('${inv.id}', '${invNum}')">👁️ Ver</button>
         <button class="action-btn btn-send" onclick="sendInvoice('${inv.id}', '${invNum}')">📤 Enviar</button>
         <button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}', '${invNum}')">📎 PDF</button>
+        <button class="action-btn btn-duplicate" onclick="duplicateInvoice('${inv.id}')">📋 Clonar</button>
         <button class="action-btn btn-wp" onclick="sendWhatsApp('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📱 WA</button>
         <button class="action-btn btn-reminder" onclick="sendReminder('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>🔔 Aviso</button>
         ${!isPaid ? `<button class="action-btn btn-paid" onclick="markAsPaid('${inv.id}')">✅ Cobrada</button>` : ''}
@@ -322,7 +343,18 @@ async function markAsPaid(id) {
   } catch(e) { toast('❌ Error de conexión', 'error'); }
 }
 function calcIva() { const amount = parseFloat(document.getElementById('newAmount').value) || 0; const iva = parseFloat(document.getElementById('newIva').value) || 0; document.getElementById('newTotal').value = (amount * (1 + iva / 100)).toFixed(2); }
-function openCreateModal() { document.getElementById('createModal').classList.add('open'); }
+function openCreateModal(prefill) {
+  document.getElementById('createModal').classList.add('open');
+  if (prefill) {
+    document.getElementById('newDescription').value = prefill.description || '';
+    document.getElementById('newAmount').value = prefill.amount || '';
+    document.getElementById('newIva').value = prefill.iva_pct || 21;
+    if (prefill.iva_pct) calcIva();
+    if (prefill.client_id) document.getElementById('newClientId').value = prefill.client_id;
+    const dd = new Date(); dd.setDate(dd.getDate() + 30);
+    document.getElementById('newDueDate').value = dd.toISOString().split('T')[0];
+  }
+}
 function closeCreateModal() { document.getElementById('createModal').classList.remove('open'); document.getElementById('newClientId').value = ''; document.getElementById('newDescription').value = ''; document.getElementById('newAmount').value = ''; document.getElementById('newTotal').value = ''; document.getElementById('newInvoiceNumber').value = ''; }
 async function createInvoice() {
   const clientId = document.getElementById('newClientId').value;
@@ -355,6 +387,52 @@ async function loadMe() {
     if (me?.salon?.name) document.getElementById('salonName').textContent = me.salon.name;
   } catch(e) {}
 }
+
+let _previewCurrentId = null;
+let _previewCurrentNum = null;
+let _previewBlobUrl = null;
+
+async function previewPDF(id, invoiceNum) {
+  _previewCurrentId = id;
+  _previewCurrentNum = invoiceNum;
+  const modal = document.getElementById('previewModal');
+  const frame = document.getElementById('previewFrame');
+  document.getElementById('previewTitle').textContent = '👁️ Vista previa — ' + invoiceNum;
+  frame.src = 'about:blank';
+  modal.classList.add('open');
+  try {
+    const res = await fetch(`${API}/api/invoices/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) { toast('❌ Error al cargar PDF', 'error'); closePreviewModal(); return; }
+    const blob = await res.blob();
+    if (_previewBlobUrl) URL.revokeObjectURL(_previewBlobUrl);
+    _previewBlobUrl = URL.createObjectURL(blob);
+    frame.src = _previewBlobUrl;
+  } catch(e) { toast('❌ Error al cargar PDF', 'error'); closePreviewModal(); }
+}
+
+function closePreviewModal() {
+  document.getElementById('previewModal').classList.remove('open');
+  document.getElementById('previewFrame').src = 'about:blank';
+  if (_previewBlobUrl) { URL.revokeObjectURL(_previewBlobUrl); _previewBlobUrl = null; }
+}
+
+async function confirmDownload() {
+  if (!_previewCurrentId) return;
+  await downloadPDF(_previewCurrentId, _previewCurrentNum);
+}
+
+async function duplicateInvoice(id) {
+  const inv = allInvoices.find(i => i.id === id);
+  if (!inv) { toast('❌ Factura no encontrada', 'error'); return; }
+  openCreateModal({
+    client_id: inv.client_id,
+    description: inv.description ? inv.description + ' (copia)' : '',
+    amount: inv.amount,
+    iva_pct: inv.iva_pct || 21,
+  });
+  toast('📋 Datos copiados — revisa y crea la nueva factura', 'success');
+}
+
 loadData(); loadMe();
 </script>
 <script>
