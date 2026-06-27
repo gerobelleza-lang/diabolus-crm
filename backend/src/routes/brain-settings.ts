@@ -6,44 +6,14 @@ import { Hono } from 'hono'
 
 const app = new Hono()
 
-function getSupabase() {
-  const url = process.env.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co'
+const SUPABASE_URL = 'https://emygbvxkhfbwyhbapaae.supabase.co'
+
+function getHeaders() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
   return {
-    async from(table: string) {
-      return {
-        async select(columns: string) {
-          return {
-            async eq(field: string, value: string) {
-              return {
-                async single() {
-                  const res = await fetch(
-                    `${url}/rest/v1/${table}?${field}=eq.${value}&select=${columns}&limit=1`,
-                    { headers: { apikey: key, Authorization: `Bearer ${key}` } }
-                  )
-                  const arr = await res.json()
-                  return { data: arr?.[0] || null, error: null }
-                }
-              }
-            }
-          }
-        },
-        async upsert(data: any) {
-          const res = await fetch(`${url}/rest/v1/${table}`, {
-            method: 'POST',
-            headers: {
-              apikey: key,
-              Authorization: `Bearer ${key}`,
-              'Content-Type': 'application/json',
-              Prefer: 'resolution=merge-duplicates,return=representation',
-            },
-            body: JSON.stringify(data),
-          })
-          const result = await res.json()
-          return { data: result, error: res.ok ? null : result }
-        }
-      }
-    }
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    'Content-Type': 'application/json',
   }
 }
 
@@ -52,23 +22,23 @@ type BrainTier = typeof VALID_TIERS[number]
 
 const BRAIN_INFO: Record<BrainTier, { name: string; emoji: string; desc: string; model: string; tier_required: string }> = {
   rapida: {
-    name: 'Rápida',
+    name: 'Rapida',
     emoji: '⚡',
-    desc: 'Respuestas veloces para el día a día. Gemini 2.5 Flash.',
+    desc: 'Respuestas veloces para el dia a dia. Gemini 2.5 Flash.',
     model: 'google/gemini-2.5-flash',
     tier_required: 'purgatorio',
   },
   inteligente: {
     name: 'Inteligente',
     emoji: '🧠',
-    desc: 'Más contexto, mejor razonamiento. GPT-4.1 Mini.',
+    desc: 'Mas contexto, mejor razonamiento. GPT-4.1 Mini.',
     model: 'openai/gpt-4.1-mini',
     tier_required: 'pacto',
   },
   brillante: {
     name: 'Brillante',
     emoji: '👑',
-    desc: 'La mente más potente. Análisis profundo. Claude Sonnet 4.',
+    desc: 'La mente mas potente. Analisis profundo. Claude Sonnet 4.',
     model: 'anthropic/claude-sonnet-4',
     tier_required: 'infierno',
   },
@@ -79,11 +49,12 @@ app.get('/', async (c) => {
   const salonId = (c as any).get?.('salonId') || c.req.header('x-salon-id') || ''
   if (!salonId) return c.json({ error: 'No salon context' }, 400)
 
-  const sb = getSupabase()
-  const table = await sb.from('salon_ai_config')
-  const query = await table.select('*')
-  const result = await query.eq('salon_id', salonId)
-  const { data } = await result.single()
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/salon_ai_config?salon_id=eq.${salonId}&select=*&limit=1`,
+    { headers: getHeaders() }
+  )
+  const rows = await res.json()
+  const data = Array.isArray(rows) ? rows[0] : null
 
   const currentTier: BrainTier = data?.brain_tier || 'rapida'
 
@@ -111,15 +82,25 @@ app.post('/', async (c) => {
     return c.json({ error: `Invalid brain tier. Must be one of: ${VALID_TIERS.join(', ')}` }, 400)
   }
 
-  const sb = getSupabase()
-  const table = await sb.from('salon_ai_config')
-  const { error } = await table.upsert({
-    salon_id: salonId,
-    brain_tier: newTier,
-    updated_at: new Date().toISOString(),
+  // Use on_conflict=salon_id so PostgREST knows which constraint to merge on
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/salon_ai_config?on_conflict=salon_id`, {
+    method: 'POST',
+    headers: {
+      ...getHeaders(),
+      'Prefer': 'resolution=merge-duplicates,return=representation',
+    },
+    body: JSON.stringify({
+      salon_id: salonId,
+      brain_tier: newTier,
+      updated_at: new Date().toISOString(),
+    }),
   })
 
-  if (error) return c.json({ error: 'Failed to update brain tier' }, 500)
+  if (!res.ok) {
+    const err = await res.text()
+    console.error('brain-settings upsert error:', err)
+    return c.json({ error: 'Failed to update brain tier' }, 500)
+  }
 
   const info = BRAIN_INFO[newTier]
   return c.json({
