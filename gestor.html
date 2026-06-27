@@ -51,17 +51,24 @@
   .btn-logout:hover{border-color:#dc2626;color:#dc2626}
 
   /* Tabs */
-  nav.tabs{background:#0e0e0e;border-bottom:1px solid #1e1e1e;padding:0 24px;display:flex;gap:0}
-  .tab-btn{background:none;border:none;color:#666;font-size:13px;font-weight:500;padding:14px 20px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+  nav.tabs{background:#0e0e0e;border-bottom:1px solid #1e1e1e;padding:0 24px;display:flex;gap:0;overflow-x:auto}
+  .tab-btn{background:none;border:none;color:#666;font-size:13px;font-weight:500;padding:14px 20px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;position:relative}
   .tab-btn:hover{color:#ccc}
   .tab-btn.active{color:#dc2626;border-bottom-color:#dc2626}
+  .tab-badge{background:#dc2626;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:5px}
 
   /* Main content */
   .tab-content{padding:32px 24px;max-width:1100px;margin:0 auto;width:100%}
-  .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+  .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
   .page-header h2{font-size:20px;font-weight:700}
   .btn-invite{background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s}
   .btn-invite:hover{background:#b91c1c}
+
+  /* Search bar */
+  .search-bar{position:relative;margin-bottom:20px}
+  .search-bar input{width:100%;background:#111;border:1px solid #222;border-radius:8px;padding:10px 14px 10px 36px;color:#fff;font-size:13px;transition:border-color .2s}
+  .search-bar input:focus{outline:none;border-color:#dc2626}
+  .search-bar::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px}
 
   /* Stats row */
   .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
@@ -69,6 +76,8 @@
   .stat-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
   .stat-value{font-size:26px;font-weight:800;color:#fff}
   .stat-value.green{color:#4ade80}
+  .stat-value.red{color:#ef4444}
+  .stat-value.yellow{color:#fbbf24}
   .stat-sub{font-size:11px;color:#555;margin-top:4px}
 
   /* Table */
@@ -86,9 +95,11 @@
   .badge-active{background:#052e16;color:#4ade80;border:1px solid #166534}
   .badge-pending{background:#1c1107;color:#fbbf24;border:1px solid #92400e}
   .badge-inactive{background:#1a1a1a;color:#555;border:1px solid #333}
+  .badge-paid{background:#052e16;color:#4ade80;border:1px solid #166534}
+  .badge-overdue{background:#1a0505;color:#ef4444;border:1px solid #7f1d1d}
 
   /* Actions */
-  .action-btns{display:flex;gap:8px}
+  .action-btns{display:flex;gap:8px;flex-wrap:wrap}
   .btn-sm{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid;transition:all .15s}
   .btn-view{background:transparent;border-color:#333;color:#aaa}
   .btn-view:hover{border-color:#dc2626;color:#dc2626}
@@ -101,6 +112,31 @@
   .empty-state h3{font-size:16px;color:#aaa;margin-bottom:8px}
   .empty-state p{font-size:13px;color:#555;max-width:300px;margin:0 auto 20px}
 
+  /* Resumen global */
+  .resumen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:32px}
+  .resumen-card{background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px}
+  .resumen-card .rc-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+  .resumen-card .rc-value{font-size:30px;font-weight:800}
+  .resumen-card .rc-sub{font-size:12px;color:#555;margin-top:6px}
+  .resumen-card.highlight{border-color:#3d1515;background:#110808}
+
+  /* Comisiones panel */
+  .comm-resumen{background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:24px;margin-bottom:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}
+  .comm-metric .cm-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+  .comm-metric .cm-value{font-size:24px;font-weight:800}
+  .comm-metric .cm-value.accent{color:#dc2626}
+  .comm-note{font-size:12px;color:#444;margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;grid-column:1/-1}
+
+  /* Comparativa */
+  .comparison-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+  .comp-col{background:#0e0e0e;border:1px solid #1a1a1a;border-radius:8px;padding:14px;text-align:center}
+  .comp-col .cc-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px}
+  .comp-col .cc-value{font-size:20px;font-weight:700}
+  .comp-col .cc-delta{font-size:11px;margin-top:4px}
+  .delta-up{color:#4ade80}
+  .delta-down{color:#ef4444}
+  .delta-neutral{color:#555}
+
   /* Modals */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;padding:20px}
   .modal-overlay.open{display:flex}
@@ -111,7 +147,7 @@
   .modal-close:hover{color:#fff}
 
   /* Report modal */
-  #report-modal .modal{max-width:700px;max-height:90vh;overflow-y:auto}
+  #report-modal .modal{max-width:740px;max-height:92vh;overflow-y:auto}
   .report-section{margin-bottom:24px}
   .report-section h4{font-size:12px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #1e1e1e}
   .report-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -126,6 +162,14 @@
   .inv-row .inv-info{font-size:12px;color:#aaa}
   .inv-row .inv-amount{font-size:13px;font-weight:600}
 
+  /* Month picker */
+  .month-nav{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .month-nav label{font-size:12px;color:#666;text-transform:uppercase;letter-spacing:0.4px}
+  .month-select{background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 10px;color:#fff;font-size:13px}
+  .month-select:focus{outline:none;border-color:#dc2626}
+  .btn-month-load{background:#dc2626;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s}
+  .btn-month-load:hover{background:#b91c1c}
+
   /* Export section */
   .export-section{background:#0e0e0e;border:1px solid #1e1e1e;border-radius:10px;padding:18px;margin-top:8px}
   .export-section h4{font-size:12px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px}
@@ -137,13 +181,6 @@
   .btn-export:hover{border-color:#dc2626;color:#dc2626}
   .btn-export:disabled{opacity:0.4;cursor:not-allowed}
 
-  /* Commissions */
-  .commission-placeholder{text-align:center;padding:48px;background:#111;border:1px solid #1e1e1e;border-radius:12px}
-  .commission-placeholder .icon{font-size:40px;margin-bottom:16px}
-  .commission-placeholder h3{font-size:15px;color:#aaa;margin-bottom:8px}
-  .commission-placeholder p{font-size:13px;color:#555;max-width:360px;margin:0 auto}
-  .commission-active-count{font-size:32px;font-weight:800;color:#dc2626;margin:16px 0 4px}
-
   /* Loading */
   .loading{text-align:center;padding:40px;color:#555;font-size:14px}
   .spinner{display:inline-block;width:20px;height:20px;border:2px solid #333;border-top-color:#dc2626;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
@@ -153,6 +190,13 @@
   #toast{position:fixed;bottom:24px;right:24px;background:#111;border:1px solid #333;border-radius:10px;padding:14px 18px;font-size:13px;color:#fff;z-index:999;display:none;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
   #toast.ok{border-color:#166534;color:#4ade80}
   #toast.err{border-color:#7f1d1d;color:#fca5a5}
+
+  /* Comisiones history */
+  .history-table{width:100%;border-collapse:collapse;font-size:13px}
+  .history-table th{padding:10px 12px;text-align:left;font-size:11px;color:#555;text-transform:uppercase;border-bottom:1px solid #1e1e1e;background:#0e0e0e}
+  .history-table td{padding:10px 12px;border-bottom:1px solid #161616;color:#ccc}
+  .history-table tr:last-child td{border-bottom:none}
+  .history-table tr:hover td{background:#141414}
 </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
@@ -212,6 +256,7 @@
 
   <nav class="tabs">
     <button class="tab-btn active" onclick="switchTab('clients')" id="tab-clients-btn">👥 Mis Clientes</button>
+    <button class="tab-btn" onclick="switchTab('resumen')" id="tab-resumen-btn">📊 Resumen Global</button>
     <button class="tab-btn" onclick="switchTab('commissions')" id="tab-commissions-btn">💶 Comisiones</button>
   </nav>
 
@@ -226,6 +271,10 @@
       <div class="stat-card"><div class="stat-label">Clientes activos</div><div class="stat-value" id="st-active">—</div></div>
       <div class="stat-card"><div class="stat-label">Invitaciones pendientes</div><div class="stat-value" id="st-pending">—</div></div>
       <div class="stat-card"><div class="stat-label">Código de afiliado</div><div class="stat-value" style="font-size:18px;letter-spacing:2px" id="st-code">—</div><div class="stat-sub">Compártelo con tus clientes</div></div>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="client-search" placeholder="Buscar por nombre o email…" oninput="filterClients(this.value)">
     </div>
 
     <div class="table-wrap" id="clients-table-wrap">
@@ -251,15 +300,83 @@
     </div>
   </div>
 
+  <!-- ── Resumen Global Tab ── -->
+  <div id="tab-resumen" class="tab-content" style="display:none">
+    <div class="page-header"><h2>Resumen Global</h2><span id="resumen-month" style="font-size:13px;color:#555"></span></div>
+    <div id="resumen-loading" class="loading"><span class="spinner"></span>Cargando datos…</div>
+    <div id="resumen-content" style="display:none">
+      <div class="resumen-grid">
+        <div class="resumen-card">
+          <div class="rc-label">Clientes activos</div>
+          <div class="rc-value" id="rs-clients">—</div>
+          <div class="rc-sub">negocios bajo tu gestión</div>
+        </div>
+        <div class="resumen-card">
+          <div class="rc-label">Ingresos este mes</div>
+          <div class="rc-value green" id="rs-income">—</div>
+          <div class="rc-sub">suma de todos tus clientes</div>
+        </div>
+        <div class="resumen-card">
+          <div class="rc-label">Gastos este mes</div>
+          <div class="rc-value" id="rs-expenses">—</div>
+          <div class="rc-sub">suma de todos tus clientes</div>
+        </div>
+        <div class="resumen-card highlight">
+          <div class="rc-label">Por cobrar (pendiente)</div>
+          <div class="rc-value yellow" id="rs-pending">—</div>
+          <div class="rc-sub">facturas sin cobrar</div>
+        </div>
+        <div class="resumen-card highlight">
+          <div class="rc-label">Vencido (moroso)</div>
+          <div class="rc-value red" id="rs-overdue">—</div>
+          <div class="rc-sub">requiere atención</div>
+        </div>
+        <div class="resumen-card">
+          <div class="rc-label">Balance neto mes</div>
+          <div class="rc-value" id="rs-net">—</div>
+          <div class="rc-sub">ingresos - gastos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Commissions Tab ── -->
   <div id="tab-commissions" class="tab-content" style="display:none">
     <div class="page-header"><h2>Comisiones</h2></div>
-    <div class="commission-placeholder">
-      <div class="icon">💶</div>
-      <h3>Comisiones activas por cliente</h3>
-      <div class="commission-active-count" id="comm-active-count">—</div>
-      <p style="color:#dc2626;font-size:12px;margin-bottom:12px">clientes activos generando comisión</p>
-      <p>Las comisiones se calcularán y pagarán cuando se active la facturación (previsto para el lanzamiento). Cada cliente activo genera comisión recurrente mientras mantenga su suscripción.</p>
+    <div id="comm-loading" class="loading"><span class="spinner"></span>Cargando comisiones…</div>
+    <div id="comm-content" style="display:none">
+      <div class="comm-resumen" id="comm-resumen-grid">
+        <div class="comm-metric">
+          <div class="cm-label">Clientes activos</div>
+          <div class="cm-value accent" id="cm-active">—</div>
+        </div>
+        <div class="comm-metric">
+          <div class="cm-label">Total devengado</div>
+          <div class="cm-value" id="cm-total">—</div>
+        </div>
+        <div class="comm-metric">
+          <div class="cm-label">Sin tarifa fijada</div>
+          <div class="cm-value yellow" id="cm-pending-tarifa">—</div>
+        </div>
+        <div class="comm-note" id="cm-note"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Activo desde</th>
+              <th>Meses</th>
+              <th>% Comisión</th>
+              <th>Cuota cliente</th>
+              <th>Dev. mensual</th>
+              <th>Dev. total</th>
+            </tr>
+          </thead>
+          <tbody id="comm-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -295,18 +412,16 @@ const API = 'https://diabolus-crm-api.vercel.app'
 const STORAGE_KEY = 'diabolus_gestor_jwt'
 let gestorToken = localStorage.getItem(STORAGE_KEY)
 let gestorData = null
-let currentReportSalonId = null  // para el exportador
+let currentReportSalonId = null
+let currentReportSalonName = ''
+let allClients = []
 
 // ── Init ────────────────────────────────────────────────────────────────────────────
 
 async function init() {
   if (gestorToken) {
-    try {
-      await loadPanel()
-    } catch (e) {
-      localStorage.removeItem(STORAGE_KEY)
-      gestorToken = null
-      showView('login')
+    try { await loadPanel() } catch (e) {
+      localStorage.removeItem(STORAGE_KEY); gestorToken = null; showView('login')
     }
   } else {
     document.getElementById('auth-container').style.display = 'flex'
@@ -326,63 +441,25 @@ document.getElementById('login-form').onsubmit = async (e) => {
   const errEl = document.getElementById('login-error')
   errEl.style.display = 'none'
   btn.disabled = true; btn.textContent = 'Entrando…'
-
-  const res = await fetch(`${API}/gestor/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: document.getElementById('l-email').value, password: document.getElementById('l-password').value })
-  })
+  const res = await fetch(`${API}/gestor/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: document.getElementById('l-email').value, password: document.getElementById('l-password').value }) })
   const data = await res.json()
-
-  if (!res.ok) {
-    errEl.textContent = data.error || 'Error al iniciar sesión'
-    errEl.style.display = 'block'
-    btn.disabled = false; btn.textContent = 'Entrar'
-    return
-  }
-
-  gestorToken = data.token
-  localStorage.setItem(STORAGE_KEY, gestorToken)
-  await loadPanel()
+  if (!res.ok) { errEl.textContent = data.error || 'Error al iniciar sesión'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Entrar'; return }
+  gestorToken = data.token; localStorage.setItem(STORAGE_KEY, gestorToken); await loadPanel()
 }
 
 document.getElementById('register-form').onsubmit = async (e) => {
   e.preventDefault()
   const btn = document.getElementById('register-btn')
-  const errEl = document.getElementById('register-error')
-  const okEl = document.getElementById('register-success')
+  const errEl = document.getElementById('register-error'); const okEl = document.getElementById('register-success')
   errEl.style.display = 'none'; okEl.style.display = 'none'
   btn.disabled = true; btn.textContent = 'Creando cuenta…'
-
-  const res = await fetch(`${API}/gestor/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email: document.getElementById('r-email').value,
-      password: document.getElementById('r-password').value,
-      name: document.getElementById('r-name').value,
-      company_name: document.getElementById('r-company').value || undefined
-    })
-  })
+  const res = await fetch(`${API}/gestor/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: document.getElementById('r-email').value, password: document.getElementById('r-password').value, name: document.getElementById('r-name').value, company_name: document.getElementById('r-company').value || undefined }) })
   const data = await res.json()
-
-  if (!res.ok) {
-    errEl.textContent = data.error || 'Error creando cuenta'
-    errEl.style.display = 'block'
-    btn.disabled = false; btn.textContent = 'Crear cuenta'
-    return
-  }
-
-  gestorToken = data.token
-  localStorage.setItem(STORAGE_KEY, gestorToken)
-  await loadPanel()
+  if (!res.ok) { errEl.textContent = data.error || 'Error creando cuenta'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Crear cuenta'; return }
+  gestorToken = data.token; localStorage.setItem(STORAGE_KEY, gestorToken); await loadPanel()
 }
 
-function logout() {
-  localStorage.removeItem(STORAGE_KEY)
-  gestorToken = null
-  location.reload()
-}
+function logout() { localStorage.removeItem(STORAGE_KEY); gestorToken = null; location.reload() }
 
 // ── Panel ────────────────────────────────────────────────────────────────────────────
 
@@ -391,27 +468,24 @@ async function loadPanel() {
   if (!res.ok) throw new Error('Auth expired')
   const data = await res.json()
   gestorData = data.gestor
-
   document.getElementById('auth-container').style.display = 'none'
   document.getElementById('panel-container').style.display = 'flex'
-
   const name = gestorData.company_name || gestorData.name
   document.getElementById('hdr-name').textContent = name
   document.getElementById('hdr-code').textContent = gestorData.affiliate_code
   document.getElementById('st-code').textContent = gestorData.affiliate_code
-
   await loadClients()
 }
 
 // ── Tabs ────────────────────────────────────────────────────────────────────────────
 
 function switchTab(tab) {
-  document.getElementById('tab-clients').style.display = tab === 'clients' ? 'block' : 'none'
-  document.getElementById('tab-commissions').style.display = tab === 'commissions' ? 'block' : 'none'
-  document.getElementById('tab-clients-btn').classList.toggle('active', tab === 'clients')
-  document.getElementById('tab-commissions-btn').classList.toggle('active', tab === 'commissions')
-
-  if (tab === 'commissions') loadCommissions()
+  ['clients','resumen','commissions'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none'
+    document.getElementById(`tab-${t}-btn`).classList.toggle('active', t === tab)
+  })
+  if (tab === 'resumen') loadResumen()
+  if (tab === 'commissions') loadComisiones()
 }
 
 // ── Clients ────────────────────────────────────────────────────────────────────────────
@@ -420,23 +494,17 @@ async function loadClients() {
   document.getElementById('clients-loading').style.display = 'block'
   document.getElementById('clients-table').style.display = 'none'
   document.getElementById('clients-empty').style.display = 'none'
-
   const res = await fetch(`${API}/gestor/clients`, { headers: { Authorization: `Bearer ${gestorToken}` } })
   const data = await res.json()
   document.getElementById('clients-loading').style.display = 'none'
+  allClients = data.clients ?? []
+  document.getElementById('st-active').textContent = allClients.filter(c => c.status === 'active').length
+  document.getElementById('st-pending').textContent = allClients.filter(c => c.status === 'pending').length
+  renderClients(allClients)
+}
 
-  const clients = data.clients ?? []
-  const active = clients.filter(c => c.status === 'active').length
-  const pending = clients.filter(c => c.status === 'pending').length
-
-  document.getElementById('st-active').textContent = active
-  document.getElementById('st-pending').textContent = pending
-
-  if (!clients.length) {
-    document.getElementById('clients-empty').style.display = 'block'
-    return
-  }
-
+function renderClients(clients) {
+  if (!clients.length) { document.getElementById('clients-empty').style.display = 'block'; return }
   const tbody = document.getElementById('clients-tbody')
   tbody.innerHTML = clients.map(c => `
     <tr>
@@ -446,28 +514,31 @@ async function loadClients() {
       <td style="color:#555;font-size:12px">${c.accepted_at ? new Date(c.accepted_at).toLocaleDateString('es-ES') : '—'}</td>
       <td>
         <div class="action-btns">
-          ${c.salon_id ? `<button class="btn-sm btn-view" onclick="viewReport('${c.salon_id}','${(c.salon_name || c.invited_email).replace(/'/g,"\\'")}')">Ver informe</button>` : ''}
+          ${c.salon_id ? `<button class="btn-sm btn-view" onclick="openMonthlyReport('${c.salon_id}','${(c.salon_name||c.invited_email).replace(/'/g,"\\'")}')">Ver informe</button>` : ''}
           ${c.status !== 'inactive' ? `<button class="btn-sm btn-deactivate" onclick="deactivateLink('${c.link_id}')">Desvincular</button>` : ''}
         </div>
       </td>
     </tr>
   `).join('')
-
   document.getElementById('clients-table').style.display = 'table'
+  document.getElementById('clients-empty').style.display = 'none'
+}
+
+function filterClients(q) {
+  if (!q.trim()) { renderClients(allClients); return }
+  const lq = q.toLowerCase()
+  renderClients(allClients.filter(c => (c.salon_name||'').toLowerCase().includes(lq) || (c.invited_email||'').toLowerCase().includes(lq)))
 }
 
 function badgeHTML(status) {
-  const map = { active: ['badge-active','Activo'], pending: ['badge-pending','Pendiente'], inactive: ['badge-inactive','Inactivo'] }
+  const map = { active: ['badge-active','Activo'], pending: ['badge-pending','Pendiente'], inactive: ['badge-inactive','Inactivo'], paid: ['badge-paid','Pagada'], overdue: ['badge-overdue','Vencida'] }
   const [cls, label] = map[status] || ['badge-inactive', status]
   return `<span class="badge ${cls}">${label}</span>`
 }
 
 async function deactivateLink(linkId) {
   if (!confirm('¿Desvincular este cliente? El gestor perderá acceso a sus datos.')) return
-  const res = await fetch(`${API}/gestor/clients/${linkId}/deactivate`, {
-    method: 'PATCH',
-    headers: { Authorization: `Bearer ${gestorToken}` }
-  })
+  const res = await fetch(`${API}/gestor/clients/${linkId}/deactivate`, { method: 'PATCH', headers: { Authorization: `Bearer ${gestorToken}` } })
   if (res.ok) { toast('Cliente desvinculado', 'ok'); await loadClients() }
   else toast('Error desvinculando', 'err')
 }
@@ -486,82 +557,151 @@ function openInviteModal() {
 document.getElementById('invite-form').onsubmit = async (e) => {
   e.preventDefault()
   const btn = document.getElementById('invite-btn')
-  const errEl = document.getElementById('invite-error')
-  const okEl = document.getElementById('invite-success')
+  const errEl = document.getElementById('invite-error'); const okEl = document.getElementById('invite-success')
   errEl.style.display = 'none'; okEl.style.display = 'none'
   btn.disabled = true; btn.textContent = 'Enviando…'
-
   const email = document.getElementById('invite-email').value
-  const res = await fetch(`${API}/gestor/clients/invite`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gestorToken}` },
-    body: JSON.stringify({ email })
-  })
+  const res = await fetch(`${API}/gestor/clients/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gestorToken}` }, body: JSON.stringify({ email }) })
   const data = await res.json()
-
-  if (!res.ok) {
-    errEl.textContent = data.error || 'Error enviando invitación'
-    errEl.style.display = 'block'
-    btn.disabled = false; btn.textContent = 'Enviar invitación'
-    return
-  }
-
+  if (!res.ok) { errEl.textContent = data.error || 'Error enviando invitación'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Enviar invitación'; return }
   okEl.textContent = `✅ Invitación enviada a ${email}. Válida 7 días.`
-  okEl.style.display = 'block'
-  btn.textContent = 'Enviado ✓'
+  okEl.style.display = 'block'; btn.textContent = 'Enviado ✓'
   await loadClients()
 }
 
-// ── Report ────────────────────────────────────────────────────────────────────────────
+// ── Resumen Global ────────────────────────────────────────────────────────────────────────────
 
-async function viewReport(salonId, salonName) {
-  currentReportSalonId = salonId
-  document.getElementById('report-content').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando informe…</div>'
-  document.getElementById('report-modal').classList.add('open')
-
-  const res = await fetch(`${API}/gestor/client/${salonId}/report`, { headers: { Authorization: `Bearer ${gestorToken}` } })
-  const data = await res.json()
-
-  if (!res.ok) {
-    document.getElementById('report-content').innerHTML = `<p style="color:#ef4444">${data.error || 'Error cargando informe'}</p>`
-    return
+async function loadResumen() {
+  document.getElementById('resumen-loading').style.display = 'block'
+  document.getElementById('resumen-content').style.display = 'none'
+  try {
+    const res = await fetch(`${API}/gestor/summary`, { headers: { Authorization: `Bearer ${gestorToken}` } })
+    const data = await res.json()
+    if (!data.ok) { document.getElementById('resumen-loading').innerHTML = '<p style="color:#ef4444">Error cargando resumen</p>'; return }
+    document.getElementById('resumen-loading').style.display = 'none'
+    document.getElementById('resumen-content').style.display = 'block'
+    document.getElementById('resumen-month').textContent = data.month ? `Mes actual: ${data.month}` : ''
+    document.getElementById('rs-clients').textContent = data.client_count
+    document.getElementById('rs-income').textContent = `+${(data.totals.income||0).toFixed(2)}€`
+    document.getElementById('rs-expenses').textContent = `-${(data.totals.expenses||0).toFixed(2)}€`
+    document.getElementById('rs-pending').textContent = `${(data.totals.pending||0).toFixed(2)}€`
+    document.getElementById('rs-overdue').textContent = `${(data.totals.overdue||0).toFixed(2)}€`
+    const net = data.totals.net || 0
+    const netEl = document.getElementById('rs-net')
+    netEl.textContent = `${net >= 0 ? '+' : ''}${net.toFixed(2)}€`
+    netEl.className = `rc-value ${net >= 0 ? 'green' : 'red'}`
+  } catch (e) {
+    document.getElementById('resumen-loading').innerHTML = '<p style="color:#ef4444">Error de conexión</p>'
   }
+}
 
-  const { period, summary, invoices } = data
-  const net = summary.net_profit
-  const netColor = net >= 0 ? 'income' : 'expense'
+// ── Comisiones ────────────────────────────────────────────────────────────────────────────
 
-  // Mes actual como valor por defecto del exportador
+async function loadComisiones() {
+  document.getElementById('comm-loading').style.display = 'block'
+  document.getElementById('comm-content').style.display = 'none'
+  try {
+    const res = await fetch(`${API}/gestor/commissions/panel`, { headers: { Authorization: `Bearer ${gestorToken}` } })
+    const data = await res.json()
+    document.getElementById('comm-loading').style.display = 'none'
+    document.getElementById('comm-content').style.display = 'block'
+    const r = data.resumen || {}
+    document.getElementById('cm-active').textContent = r.total_activos ?? '—'
+    document.getElementById('cm-total').textContent = r.total_devengado != null ? `${r.total_devengado.toFixed(2)}€` : '—'
+    const pendT = r.pendientes_tarifa ?? 0
+    document.getElementById('cm-pending-tarifa').textContent = pendT
+    document.getElementById('cm-note').textContent = r.nota || ''
+    const tbody = document.getElementById('comm-tbody')
+    tbody.innerHTML = (data.clientes || []).map(c => `
+      <tr>
+        <td style="font-weight:500;color:#fff">${c.salon_name}</td>
+        <td style="color:#555;font-size:12px">${c.active_since ? new Date(c.active_since).toLocaleDateString('es-ES') : '—'}</td>
+        <td>${c.months_active ?? '—'}</td>
+        <td>${c.commission_rate != null ? (c.commission_rate * 100).toFixed(0) + '%' : '<span style="color:#555">Sin fijar</span>'}</td>
+        <td>${c.precio_mantenimiento != null ? c.precio_mantenimiento.toFixed(2) + '€' : '—'}</td>
+        <td style="color:#4ade80">${c.devengado_mensual != null ? c.devengado_mensual.toFixed(2) + '€' : '—'}</td>
+        <td style="font-weight:600">${c.devengado_total != null ? c.devengado_total.toFixed(2) + '€' : '—'}</td>
+      </tr>
+    `).join('')
+    if (!data.clientes || !data.clientes.length) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#555;padding:32px">Sin clientes activos</td></tr>'
+  } catch (e) {
+    document.getElementById('comm-loading').innerHTML = '<p style="color:#ef4444">Error cargando comisiones</p>'
+  }
+}
+
+// ── Monthly Report ────────────────────────────────────────────────────────────────────────────
+
+function openMonthlyReport(salonId, salonName) {
+  currentReportSalonId = salonId
+  currentReportSalonName = salonName
   const now = new Date()
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  document.getElementById('report-content').innerHTML = buildMonthPickerHTML(defaultMonth, salonName)
+  document.getElementById('report-modal').classList.add('open')
+  loadMonthlyReport(salonId, defaultMonth)
+}
 
-  document.getElementById('report-content').innerHTML = `
-    <h3>${data.salon}</h3>
-    <p class="modal-sub">${period.label} · ${period.from} → ${period.to}</p>
-
-    <div class="report-section">
-      <h4>Resumen del trimestre</h4>
-      <div class="report-metrics">
-        <div class="report-metric"><div class="label">Ingresos</div><div class="value income">+${summary.income.toFixed(2)}€</div></div>
-        <div class="report-metric"><div class="label">Gastos</div><div class="value expense">-${summary.expenses.toFixed(2)}€</div></div>
-        <div class="report-metric"><div class="label">Resultado</div><div class="value ${netColor}">${net >= 0 ? '+' : ''}${net.toFixed(2)}€</div></div>
-      </div>
+function buildMonthPickerHTML(selectedMonth, salonName) {
+  const now = new Date()
+  const maxMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  return `
+    <h3>${salonName}</h3>
+    <div class="month-nav">
+      <label>Mes:</label>
+      <input type="month" id="month-picker" class="month-select" value="${selectedMonth}" max="${maxMonth}">
+      <button class="btn-month-load" onclick="loadMonthlyReport('${currentReportSalonId}', document.getElementById('month-picker').value)">Cargar</button>
     </div>
+    <div id="monthly-data"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+  `
+}
 
-    <div class="report-section">
-      <h4>Facturas · Total ${invoices.total_invoiced.toFixed(2)}€</h4>
-      <div style="display:flex;gap:16px;margin-bottom:12px">
-        <span class="badge badge-active">✓ ${invoices.paid} pagadas</span>
-        <span class="badge badge-pending">⏳ ${invoices.pending} pendientes</span>
-        ${invoices.overdue > 0 ? `<span class="badge" style="background:#1a0505;color:#ef4444;border:1px solid #7f1d1d">⚠ ${invoices.overdue} vencidas</span>` : ''}
+async function loadMonthlyReport(salonId, month) {
+  const el = document.getElementById('monthly-data')
+  if (!el) return
+  el.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando informe…</div>'
+  try {
+    const res = await fetch(`${API}/gestor/client/${salonId}/monthly?month=${month}`, { headers: { Authorization: `Bearer ${gestorToken}` } })
+    const data = await res.json()
+    if (!res.ok) { el.innerHTML = `<p style="color:#ef4444">${data.error || 'Error cargando informe'}</p>`; return }
+
+    const curr = data.current
+    const prev = data.previous
+    const delta = data.delta || {}
+    const invs = data.invoices || []
+    const exportMonth = month
+
+    el.innerHTML = `
+      <div class="report-section">
+        <h4>Resultados — ${data.month?.label || month}</h4>
+        <div class="comparison-grid">
+          <div class="comp-col">
+            <div class="cc-label">Ingresos</div>
+            <div class="cc-value income">+${curr.income.toFixed(2)}€</div>
+            ${delta.income != null ? `<div class="cc-delta ${delta.income >= 0 ? 'delta-up' : 'delta-down'}">${delta.income >= 0 ? '▲' : '▼'} ${Math.abs(delta.income)}% vs ${prev.label}</div>` : '<div class="cc-delta delta-neutral">—</div>'}
+          </div>
+          <div class="comp-col">
+            <div class="cc-label">Gastos</div>
+            <div class="cc-value expense">-${curr.expenses.toFixed(2)}€</div>
+            ${delta.expenses != null ? `<div class="cc-delta ${delta.expenses <= 0 ? 'delta-up' : 'delta-down'}">${delta.expenses >= 0 ? '▲' : '▼'} ${Math.abs(delta.expenses)}% vs ${prev.label}</div>` : '<div class="cc-delta delta-neutral">—</div>'}
+          </div>
+          <div class="comp-col">
+            <div class="cc-label">Neto</div>
+            <div class="cc-value ${curr.net >= 0 ? 'income' : 'expense'}">${curr.net >= 0 ? '+' : ''}${curr.net.toFixed(2)}€</div>
+            ${delta.net != null ? `<div class="cc-delta ${delta.net >= 0 ? 'delta-up' : 'delta-down'}">${delta.net >= 0 ? '▲' : '▼'} ${Math.abs(delta.net)}% vs ${prev.label}</div>` : '<div class="cc-delta delta-neutral">—</div>'}
+          </div>
+        </div>
+        <p style="font-size:11px;color:#333;margin-top:10px;text-align:center">Mes anterior (${prev.label}): ingresos ${prev.income.toFixed(2)}€ / gastos ${prev.expenses.toFixed(2)}€</p>
       </div>
-      ${invoices.list.length ? `
+
+      ${invs.length ? `
+      <div class="report-section">
+        <h4>Facturas del mes (${invs.length})</h4>
         <div class="report-inv-list">
-          ${invoices.list.slice(0, 10).map(i => `
+          ${invs.slice(0, 12).map(i => `
             <div class="inv-row">
               <div>
-                <div style="font-size:13px;color:#ddd">${i.number || '—'} · ${i.client}</div>
-                <div class="inv-info">${i.issue_date}</div>
+                <div style="font-size:13px;color:#ddd">${i.number || '—'} · ${i.client || '—'}</div>
+                <div class="inv-info">${i.issue_date || ''}${i.due_date ? ' · vence ' + i.due_date : ''}</div>
               </div>
               <div style="display:flex;align-items:center;gap:10px">
                 <span class="inv-amount">${(i.total || 0).toFixed(2)}€</span>
@@ -569,24 +709,26 @@ async function viewReport(salonId, salonName) {
               </div>
             </div>
           `).join('')}
-          ${invoices.list.length > 10 ? `<p style="text-align:center;font-size:12px;color:#555;padding:8px">+${invoices.list.length - 10} facturas más</p>` : ''}
+          ${invs.length > 12 ? `<p style="text-align:center;font-size:12px;color:#555;padding:8px">+${invs.length - 12} facturas más</p>` : ''}
         </div>
-      ` : '<p style="font-size:13px;color:#555">Sin facturas en este período.</p>'}
-    </div>
-
-    <!-- ── EXPORTACIÓN MENSUAL ── -->
-    <div class="export-section">
-      <h4>📥 Exportar cierre mensual</h4>
-      <div class="export-row">
-        <label>Mes:</label>
-        <input type="month" id="export-month-input" class="export-month-input" value="${defaultMonth}" max="${defaultMonth}">
-        <button class="btn-export" id="btn-export-csv" onclick="exportMonth('csv')">📄 CSV</button>
-        <button class="btn-export" id="btn-export-xlsx" onclick="exportMonth('xlsx')">&#x1F4CA; XLSX</button>
-        <button class="btn-export" id="btn-export-pdf" onclick="exportMonth('pdf')">&#x1F4CB; PDF</button>
       </div>
-      <p style="font-size:11px;color:#555;margin-top:10px">El enlace de descarga caduca en 15 minutos. IVA real por factura incluido.</p>
-    </div>
-  `
+      ` : ''}
+
+      <div class="export-section">
+        <h4>📥 Exportar cierre mensual</h4>
+        <div class="export-row">
+          <label>Mes:</label>
+          <input type="month" id="export-month-input" class="export-month-input" value="${exportMonth}" max="${exportMonth}">
+          <button class="btn-export" id="btn-export-csv" onclick="exportMonth('csv')">📄 CSV</button>
+          <button class="btn-export" id="btn-export-xlsx" onclick="exportMonth('xlsx')">📊 XLSX</button>
+          <button class="btn-export" id="btn-export-pdf" onclick="exportMonth('pdf')">📋 PDF</button>
+        </div>
+        <p style="font-size:11px;color:#555;margin-top:10px">El enlace de descarga caduca en 15 minutos. IVA real por factura incluido.</p>
+      </div>
+    `
+  } catch (e) {
+    el.innerHTML = '<p style="color:#ef4444">Error de conexión</p>'
+  }
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────────────
@@ -595,47 +737,19 @@ async function exportMonth(format) {
   if (!currentReportSalonId) return
   const monthInput = document.getElementById('export-month-input')
   const month = monthInput ? monthInput.value : null
-  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-    toast('Selecciona un mes válido', 'err')
-    return
-  }
-
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) { toast('Selecciona un mes válido', 'err'); return }
   const btnId = `btn-export-${format}`
   const btn = document.getElementById(btnId)
   const originalText = btn ? btn.innerHTML : ''
   if (btn) { btn.disabled = true; btn.textContent = 'Generando…' }
-
   try {
-    const res = await fetch(`${API}/gestor/export/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gestorToken}` },
-      body: JSON.stringify({ salonId: currentReportSalonId, month, format })
-    })
+    const res = await fetch(`${API}/gestor/export/token`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gestorToken}` }, body: JSON.stringify({ salonId: currentReportSalonId, month, format }) })
     const data = await res.json()
-
-    if (!res.ok) {
-      toast(data.error || 'Error generando exportación', 'err')
-      return
-    }
-
-    // Abrir URL de descarga firmada (caduca en 15 min)
+    if (!res.ok) { toast(data.error || 'Error generando exportación', 'err'); return }
     window.open(data.downloadUrl, '_blank')
     toast(`✅ Descargando ${format.toUpperCase()}… (válido 15 min)`, 'ok')
-  } catch (e) {
-    toast('Error de conexión', 'err')
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = originalText }
-  }
-}
-
-// ── Commissions ────────────────────────────────────────────────────────────────────────────
-
-async function loadCommissions() {
-  const res = await fetch(`${API}/gestor/commissions`, { headers: { Authorization: `Bearer ${gestorToken}` } })
-  const data = await res.json()
-  if (data.ok) {
-    document.getElementById('comm-active-count').textContent = data.active_clients
-  }
+  } catch (e) { toast('Error de conexión', 'err') }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = originalText } }
 }
 
 // ── Modals ────────────────────────────────────────────────────────────────────────────
@@ -647,63 +761,42 @@ document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('cli
 
 function toast(msg, type = 'ok') {
   const el = document.getElementById('toast')
-  el.textContent = msg
-  el.className = type
-  el.style.display = 'block'
+  el.textContent = msg; el.className = type; el.style.display = 'block'
   setTimeout(() => el.style.display = 'none', 3500)
 }
 
 // ── Legacy token support ──────────────────────────────────────────────────────────────────
-// Si viene ?token=xxx (enlace viejo de 30d), redirigir al informe legacy
 
 const urlToken = new URLSearchParams(location.search).get('token')
 if (urlToken && !gestorToken) {
-  // Mostrar informe legacy en modo solo lectura
   document.getElementById('auth-container').innerHTML = `
     <div class="auth-card" style="max-width:600px">
       <div class="auth-logo"><h1>🔥 DIABOLUS CRM</h1><p>Informe del gestor</p></div>
       <div class="loading" id="legacy-loading"><span class="spinner"></span>Cargando informe…</div>
       <div id="legacy-content" style="display:none"></div>
-      <p style="text-align:center;margin-top:24px;font-size:13px;color:#555">
-        ¿Eres gestor de Diabolus? <a href="gestor.html" style="color:#dc2626">Accede a tu panel completo →</a>
-      </p>
+      <p style="text-align:center;margin-top:24px;font-size:13px;color:#555">¿Eres gestor de Diabolus? <a href="gestor.html" style="color:#dc2626">Accede a tu panel completo →</a></p>
     </div>
   `
-  fetch(`${API}/gestor/report?token=${encodeURIComponent(urlToken)}`)
-    .then(r => r.json())
-    .then(data => {
-      document.getElementById('legacy-loading').style.display = 'none'
-      const el = document.getElementById('legacy-content')
-      if (!data.ok) { el.innerHTML = `<p style="color:#ef4444">${data.error}</p>`; el.style.display = 'block'; return }
-      el.innerHTML = `
-        <h3 style="font-size:16px;margin-bottom:4px">${data.salon}</h3>
-        <p style="color:#555;font-size:13px;margin-bottom:20px">${data.period.label}</p>
-        <div class="report-metrics" style="margin-bottom:20px">
-          <div class="report-metric"><div class="label">Ingresos</div><div class="value income">+${data.summary.income.toFixed(2)}€</div></div>
-          <div class="report-metric"><div class="label">Gastos</div><div class="value expense">-${data.summary.expenses.toFixed(2)}€</div></div>
-          <div class="report-metric"><div class="label">Resultado</div><div class="value neutral">${data.summary.net_profit.toFixed(2)}€</div></div>
-        </div>
-        <p style="font-size:12px;color:#555">IVA a liquidar estimado: ${data.fiscal.iva_a_liquidar.toFixed(2)}€ · IRPF: ${data.fiscal.irpf_fraccionado.toFixed(2)}€</p>
-      `
-      el.style.display = 'block'
-    })
-    .catch(() => {
-      document.getElementById('legacy-loading').innerHTML = '<p style="color:#ef4444">Error cargando informe</p>'
-    })
-} else {
-  init()
-}
+  fetch(`${API}/gestor/report?token=${encodeURIComponent(urlToken)}`).then(r => r.json()).then(data => {
+    document.getElementById('legacy-loading').style.display = 'none'
+    const el = document.getElementById('legacy-content')
+    if (!data.ok) { el.innerHTML = `<p style="color:#ef4444">${data.error}</p>`; el.style.display = 'block'; return }
+    el.innerHTML = `
+      <h3 style="font-size:16px;margin-bottom:4px">${data.salon}</h3>
+      <p style="color:#555;font-size:13px;margin-bottom:20px">${data.period?.label}</p>
+      <div class="report-metrics" style="margin-bottom:20px">
+        <div class="report-metric"><div class="label">Ingresos</div><div class="value income">+${data.summary.income.toFixed(2)}€</div></div>
+        <div class="report-metric"><div class="label">Gastos</div><div class="value expense">-${data.summary.expenses.toFixed(2)}€</div></div>
+        <div class="report-metric"><div class="label">Resultado</div><div class="value neutral">${data.summary.net_profit.toFixed(2)}€</div></div>
+      </div>
+    `
+    el.style.display = 'block'
+  }).catch(() => { document.getElementById('legacy-loading').innerHTML = '<p style="color:#ef4444">Error cargando informe</p>' })
+} else { init() }
 </script>
   <script>
-    // PWA — registro del Service Worker
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-          console.log('[SW] registrado:', reg.scope);
-        }).catch(err => {
-          console.warn('[SW] error al registrar:', err);
-        });
-      });
+      window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}) })
     }
   </script>
 <script src="sidebar.js"></script>
