@@ -39,6 +39,7 @@ import { cobroEntranteRoute } from './routes/cobro_entrante'
 import { salonsRoutes } from './routes/salons'
 import { boeSemanalRoute } from './routes/boe_semanal'
 import { driveExportRoute } from './routes/drive_export'
+import { invoiceNumberingRoutes } from './routes/invoice_numbering'
 import { calendarHitosRoute } from './routes/calendar_hitos'
 
 export function createApp() {
@@ -393,6 +394,8 @@ export function createApp() {
   app.route('/api/clients', clientRoutes)
   app.route('/api/transactions', transactionRoutes)
   app.route('/api/invoices', invoiceRoutes)
+// ─── Numeración configurable de facturas ──────────────────────────────────────
+app.route('/api/invoices', invoiceNumberingRoutes)
   app.route('/api/agent', agentRoutes)
   app.route('/api/reports', reportRoutes)
   app.route('/api/demonio', demonioRoutes)

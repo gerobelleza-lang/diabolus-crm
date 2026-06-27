@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { generateInvoicePDF } from '../utils/invoice-pdf'
 import { sendInvoiceSentEmail, sendReminderSentEmail } from '../integrations/email'
+import { reserveNextInvoiceNumber } from './invoice_numbering'
 
 type Variables = { userId: string; salonId: string }
 
@@ -77,7 +78,7 @@ invoiceRoutes.post('/', async (c) => {
     .insert({
       salon_id:    salonId,
       client_id:   body.client_id,
-      number:      body.number || body.invoice_number || `FAC-${Date.now()}`,
+      number:      body.number || body.invoice_number || await reserveNextInvoiceNumber(salonId),
       amount,
       iva_pct:     ivaPct,
       total,
