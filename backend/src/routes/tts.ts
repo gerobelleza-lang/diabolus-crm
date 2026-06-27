@@ -2,74 +2,54 @@
 // Voz oficial: nova (femenina, cálida) — Diablilla V2
 // Body: { text: string, speed?: number, hd?: boolean }
 // Returns: audio/mpeg
+// @ts-nocheck
 
-export const config = { runtime: 'edge' };
+import { Hono } from 'hono'
 
 const VOICE = 'nova';
 const MODEL_STD = 'tts-1';
 const MODEL_HD  = 'tts-1-hd';
 const MAX_CHARS = 1000;
 
-export async function ttsRoute(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-    });
-  }
+const app = new Hono()
 
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
-
+app.post('/', async (c) => {
   try {
-    const body = await req.json();
+    const body = await c.req.json();
     const { text, speed, hd } = body;
 
     if (!text || typeof text !== 'string') {
-      return new Response(JSON.stringify({ error: 'text requerido' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return c.json({ error: 'text requerido' }, 400);
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = (c.env as any)?.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'TTS no configurado' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return c.json({ error: 'TTS no configurado' }, 500);
     }
 
     // Limpiar texto para voz natural
     const clean = text
-      .replace(/[*_~`#>]/g, '')                            // Markdown
-      .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')              // Emojis block 1
-      .replace(/[\u{2600}-\u{27BF}]/gu, '')                // Emojis block 2
-      .replace(/[\u{FE00}-\u{FE0F}]/gu, '')                // Variation selectors
-      .replace(/[\u{200D}]/gu, '')                          // Zero-width joiner
-      .replace(/💡|😈|🔥|⚠️|✅|❌|📊|💰|🧾|📈|📉/g, '')   // Common Diablilla emojis
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1')                   // Links
-      .replace(/<[^>]+>/g, '')                              // HTML tags
-      .replace(/\n+/g, '. ')                                // Newlines to pauses
-      .replace(/\.{2,}/g, '.')                              // Multiple dots
-      .replace(/€(\d)/g, '$1 euros')                        // €500 → 500 euros
-      .replace(/\s{2,}/g, ' ')                              // Multiple spaces
+      .replace(/[*_~`#>]/g, '')
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+      .replace(/[\u{2600}-\u{27BF}]/gu, '')
+      .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
+      .replace(/[\u{200D}]/gu, '')
+      .replace(/💡|😈|🔥|⚠️|✅|❌|📊|💰|🧾|📈|📉/g, '')
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\n+/g, '. ')
+      .replace(/\.{2,}/g, '.')
+      .replace(/€(\d)/g, '$1 euros')
+      .replace(/\s{2,}/g, ' ')
       .trim()
       .slice(0, MAX_CHARS);
 
     if (!clean) {
-      return new Response(JSON.stringify({ error: 'texto vacío tras limpiar' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return c.json({ error: 'texto vacío tras limpiar' }, 400);
     }
 
     const model = hd ? MODEL_HD : MODEL_STD;
-    const ttsSpeed = Math.min(4.0, Math.max(0.25, speed || 1.05)); // Diablilla: slightly snappy
+    const ttsSpeed = Math.min(4.0, Math.max(0.25, speed || 1.05));
 
     const costPerChar = model === MODEL_HD ? 0.00003 : 0.000015;
     const cost = (clean.length * costPerChar).toFixed(4);
@@ -94,10 +74,7 @@ export async function ttsRoute(req: Request): Promise<Response> {
     if (!ttsRes.ok) {
       const err = await ttsRes.text();
       console.error('OpenAI TTS error:', err);
-      return new Response(JSON.stringify({ error: 'Error generando audio' }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return c.json({ error: 'Error generando audio' }, 502);
     }
 
     return new Response(ttsRes.body, {
@@ -113,9 +90,8 @@ export async function ttsRoute(req: Request): Promise<Response> {
 
   } catch (e) {
     console.error('TTS route error:', e);
-    return new Response(JSON.stringify({ error: 'Error interno' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
+    return c.json({ error: 'Error interno' }, 500);
   }
-}
+})
+
+export const ttsRoute = app

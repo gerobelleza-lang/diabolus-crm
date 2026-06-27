@@ -412,7 +412,7 @@ export function createApp() {
   app.route('/api/admin', adminRoutes)
   app.route('/api/albaranes', albaranRoute)
   app.route('/api/agent/transcribe', transcribeRoute)
-  app.post('/api/agent/tts', ttsRoute)
+  app.route('/api/agent/tts', ttsRoute)
   app.route('/api/agent/brain', brainSettingsRoutes)
   app.route('/api/leads-b2b', leadsB2bProtectedRoutes)
   app.route('/api/salons', salonsRoutes)   // ← Selector multiempresa
