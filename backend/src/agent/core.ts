@@ -20,7 +20,7 @@
  */
 
 import { parseUserInput }                                          from './parser'
-import { routeToLLM, callOpenRouter, buildSystemPrompt, BRAIN_MODELS, getTimeContext } from './llm-router'
+import { routeToLLM, callOpenRouter, buildSystemPrompt, BRAIN_MODELS, getTimeContext, generateProactiveInsights } from './llm-router'
 import { createClient }                                            from '@supabase/supabase-js'
 import { createPendingAction, executePendingAction, cancelPendingAction } from './confirmation'
 import type { ConfirmationCard }                                   from './confirmation'
@@ -737,12 +737,31 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
   } else {
     try {
       // Load memory and dashboard context in parallel
-      const [memoryCtx, dashCtx] = await Promise.all([
+      const [memoryCtx, dashData] = await Promise.all([
         buildMemoryContext(tenantId),
         getDashboardContext(tenantId),
       ])
-      const systemPrompt = buildSystemPrompt(routing.label, memoryCtx, dashCtx, userInput)
+      const systemPrompt = buildSystemPrompt(routing.label, memoryCtx, dashData.text, userInput)
       finalResponse = await callOpenRouter(routing.model, userInput, systemPrompt)
+
+      // Append proactive insight (30% chance, max 1 per message)
+      if (Math.random() < 0.3) {
+        const tc = getTimeContext()
+        const insights = generateProactiveInsights({
+          timeContext: tc,
+          pendingCount: dashData.structured.pendingCount,
+          pendingAmount: dashData.structured.pendingAmount,
+          overdueCount: dashData.structured.overdueCount,
+          overdueAmount: dashData.structured.overdueAmount,
+          monthIncome: dashData.structured.monthIncome,
+          monthExpenses: dashData.structured.monthExpenses,
+          lastMonthIncome: dashData.structured.lastMonthIncome,
+        })
+        if (insights.length > 0) {
+          const pick = insights[Math.floor(Math.random() * insights.length)]
+          finalResponse += `\n\n💡 ${pick.text}`
+        }
+      }
     } catch (err) {
       console.warn('[Core] LLM error, fallback to L0:', err)
       finalResponse = await generateL0ReadResponse(parsed, tenantId)
@@ -762,35 +781,83 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
 
 // ─── Dashboard context ────────────────────────────────────────────────────────
 
-async function getDashboardContext(salonId: string): Promise<string> {
+interface DashboardData {
+  text: string
+  structured: {
+    pendingCount: number
+    pendingAmount: number
+    overdueCount: number
+    overdueAmount: number
+    monthIncome: number
+    monthExpenses: number
+    lastMonthIncome: number
+  }
+}
+
+async function getDashboardContext(salonId: string): Promise<DashboardData> {
+  const empty: DashboardData = {
+    text: 'Datos no disponibles en este momento',
+    structured: {
+      pendingCount: 0, pendingAmount: 0,
+      overdueCount: 0, overdueAmount: 0,
+      monthIncome: 0, monthExpenses: 0, lastMonthIncome: 0,
+    },
+  }
   try {
     const supabase      = getSupabase()
     const now           = new Date()
     const startOfMonth  = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const [{ data: invoices }, { data: txns }] = await Promise.all([
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+
+    const [{ data: invoices }, { data: txns }, { data: lastMonthTxns }] = await Promise.all([
       supabase.from('invoices').select('total, status, due_date').eq('salon_id', salonId),
       supabase.from('transactions').select('amount, type').eq('salon_id', salonId).gte('created_at', startOfMonth),
+      supabase.from('transactions').select('amount, type').eq('salon_id', salonId)
+        .gte('created_at', startOfLastMonth).lt('created_at', startOfMonth),
     ])
+
     let pendingAmount = 0, pendingCount = 0, overdueAmount = 0, overdueCount = 0
     for (const inv of invoices || []) {
       if (['sent', 'pending'].includes(inv.status)) {
         pendingAmount += inv.total || 0; pendingCount++
-        if (inv.due_date && new Date(inv.due_date) < now) { overdueAmount += inv.total || 0; overdueCount++ }
+        if (inv.due_date && new Date(inv.due_date) < now) {
+          overdueAmount += inv.total || 0; overdueCount++
+        }
       }
     }
+
     let income = 0, expenses = 0
     for (const t of txns || []) {
       if (t.type === 'income') income += t.amount || 0
       else if (t.type === 'expense') expenses += t.amount || 0
     }
-    return [
-      `- Ingresos mes actual: €${income.toFixed(2)}`,
-      `- Gastos mes actual: €${expenses.toFixed(2)}`,
-      `- Balance: €${(income - expenses).toFixed(2)}`,
-      `- Pendiente de cobro: €${pendingAmount.toFixed(2)} (${pendingCount} facturas)`,
-      `- Vencido sin cobrar: €${overdueAmount.toFixed(2)} (${overdueCount} facturas)`,
-    ].join('\n')
-  } catch { return 'Datos no disponibles en este momento' }
+
+    let lastMonthIncome = 0
+    for (const t of lastMonthTxns || []) {
+      if (t.type === 'income') lastMonthIncome += t.amount || 0
+    }
+
+    const structured = {
+      pendingCount, pendingAmount,
+      overdueCount, overdueAmount,
+      monthIncome: income, monthExpenses: expenses,
+      lastMonthIncome,
+    }
+
+    return {
+      text: [
+        \`- Ingresos mes actual: €\${income.toFixed(2)}\`,
+        \`- Gastos mes actual: €\${expenses.toFixed(2)}\`,
+        \`- Balance: €\${(income - expenses).toFixed(2)}\`,
+        \`- Pendiente de cobro: €\${pendingAmount.toFixed(2)} (\${pendingCount} facturas)\`,
+        \`- Vencido sin cobrar: €\${overdueAmount.toFixed(2)} (\${overdueCount} facturas)\`,
+        \`- Ingresos mes anterior: €\${lastMonthIncome.toFixed(2)}\`,
+      ].join('\n'),
+      structured,
+    }
+  } catch {
+    return empty
+  }
 }
 
 // ─── L0 read responses ────────────────────────────────────────────────────────

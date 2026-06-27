@@ -1,14 +1,14 @@
-// @ts-nocheck
 // POST /api/agent/tts — OpenAI TTS proxy (Edge Runtime)
-// Voz oficial: nova (femenina, cálida) — decisión 26 Jun 2026
-// Body: { text: string }
+// Voz oficial: nova (femenina, cálida) — Diablilla V2
+// Body: { text: string, speed?: number, hd?: boolean }
 // Returns: audio/mpeg
 
 export const config = { runtime: 'edge' };
 
 const VOICE = 'nova';
-const MODEL = 'tts-1';
-const MAX_CHARS = 800;
+const MODEL_STD = 'tts-1';
+const MODEL_HD  = 'tts-1-hd';
+const MAX_CHARS = 1000;
 
 export async function ttsRoute(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
@@ -26,7 +26,8 @@ export async function ttsRoute(req: Request): Promise<Response> {
   }
 
   try {
-    const { text } = await req.json();
+    const body = await req.json();
+    const { text, speed, hd } = body;
 
     if (!text || typeof text !== 'string') {
       return new Response(JSON.stringify({ error: 'text requerido' }), {
@@ -43,23 +44,37 @@ export async function ttsRoute(req: Request): Promise<Response> {
       });
     }
 
-    // Limpiar texto: quitar emojis y markdown para voz más natural
+    // Limpiar texto para voz natural
     const clean = text
-      .replace(/[*_~`#>]/g, '')
-      .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
-      .replace(/[\u{2600}-\u{27BF}]/gu, '')
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
-      .replace(/\n+/g, '. ')
-      .replace(/\.{2,}/g, '.')
+      .replace(/[*_~`#>]/g, '')                            // Markdown
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')              // Emojis block 1
+      .replace(/[\u{2600}-\u{27BF}]/gu, '')                // Emojis block 2
+      .replace(/[\u{FE00}-\u{FE0F}]/gu, '')                // Variation selectors
+      .replace(/[\u{200D}]/gu, '')                          // Zero-width joiner
+      .replace(/💡|😈|🔥|⚠️|✅|❌|📊|💰|🧾|📈|📉/g, '')   // Common Diablilla emojis
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1')                   // Links
+      .replace(/<[^>]+>/g, '')                              // HTML tags
+      .replace(/\n+/g, '. ')                                // Newlines to pauses
+      .replace(/\.{2,}/g, '.')                              // Multiple dots
+      .replace(/€(\d)/g, '$1 euros')                        // €500 → 500 euros
+      .replace(/\s{2,}/g, ' ')                              // Multiple spaces
       .trim()
       .slice(0, MAX_CHARS);
 
     if (!clean) {
-      return new Response(JSON.stringify({ error: 'texto vacío' }), {
+      return new Response(JSON.stringify({ error: 'texto vacío tras limpiar' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
     }
+
+    const model = hd ? MODEL_HD : MODEL_STD;
+    const ttsSpeed = Math.min(4.0, Math.max(0.25, speed || 1.05)); // Diablilla: slightly snappy
+
+    const costPerChar = model === MODEL_HD ? 0.00003 : 0.000015;
+    const cost = (clean.length * costPerChar).toFixed(4);
+
+    console.log(`[TTS] model=${model} speed=${ttsSpeed} chars=${clean.length} cost=$${cost}`);
 
     const ttsRes = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
@@ -68,9 +83,10 @@ export async function ttsRoute(req: Request): Promise<Response> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         input: clean,
         voice: VOICE,
+        speed: ttsSpeed,
         response_format: 'mp3',
       }),
     });
@@ -89,6 +105,9 @@ export async function ttsRoute(req: Request): Promise<Response> {
         'Content-Type': 'audio/mpeg',
         'Cache-Control': 'no-store',
         'Access-Control-Allow-Origin': '*',
+        'X-Diablilla-Voice': VOICE,
+        'X-TTS-Model': model,
+        'X-TTS-Cost': `$${cost}`,
       },
     });
 
