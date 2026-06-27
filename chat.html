@@ -742,6 +742,73 @@
     }
     html.cyberpunk .tts-btn:hover { color: var(--accent); background: rgba(0,255,65,.08); }
     html.cyberpunk .tts-btn.playing { color: var(--green); }
+
+    /* ── Brain selector ── */
+    .brain-selector {
+      position: relative;
+    }
+    #brain-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    #brain-btn:hover { border-color: var(--accent); color: var(--accent); }
+    html.cyberpunk #brain-btn:hover { color: var(--accent); border-color: var(--accent); }
+    
+    .brain-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 6px;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      z-index: 30;
+      min-width: 240px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    }
+    .brain-dropdown.open { display: block; }
+    .brain-dropdown-header {
+      padding: 10px 14px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .brain-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background .15s;
+      border-bottom: 1px solid var(--border);
+    }
+    .brain-option:last-child { border-bottom: none; }
+    .brain-option:hover { background: rgba(139,92,246,.1); }
+    html.cyberpunk .brain-option:hover { background: rgba(0,255,65,.08); }
+    .brain-option.active { background: rgba(139,92,246,.15); border-left: 3px solid var(--accent); }
+    html.cyberpunk .brain-option.active { background: rgba(0,255,65,.1); border-left-color: var(--accent); }
+    .brain-option-icon { font-size: 20px; flex-shrink: 0; }
+    .brain-option-info { flex: 1; }
+    .brain-option-name { font-size: 13px; font-weight: 600; color: var(--agent-text); }
+    .brain-option-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .brain-option-check { font-size: 14px; color: var(--green); visibility: hidden; }
+    .brain-option.active .brain-option-check { visibility: visible; }
+
   </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
@@ -764,6 +831,7 @@
       <p id="status-text">● en línea</p>
     </div>
     <div class="header-actions">
+      <div class="brain-selector"><button id="brain-btn" title="Cambiar cerebro de Diablilla">⚡ Rápida</button><div class="brain-dropdown" id="brain-dropdown"><div class="brain-dropdown-header">🧠 Cerebro de Diablilla</div><div class="brain-option active" data-tier="rapida"><span class="brain-option-icon">⚡</span><div class="brain-option-info"><div class="brain-option-name">Rápida</div><div class="brain-option-desc">Veloces para el día a día</div></div><span class="brain-option-check">✓</span></div><div class="brain-option" data-tier="inteligente"><span class="brain-option-icon">🧠</span><div class="brain-option-info"><div class="brain-option-name">Inteligente</div><div class="brain-option-desc">Más contexto, mejor razonamiento</div></div><span class="brain-option-check">✓</span></div><div class="brain-option" data-tier="brillante"><span class="brain-option-icon">👑</span><div class="brain-option-info"><div class="brain-option-name">Brillante</div><div class="brain-option-desc">La mente más potente</div></div><span class="brain-option-check">✓</span></div></div></div>
       <button id="cyber-toggle" title="Activar modo cyberpunk">⚡ CYBER</button>
       <a href="dashboard.html" class="btn-dashboard">⬡ Dashboard</a>
     </div>
@@ -1415,6 +1483,87 @@ Antes de guardar cualquier cosa, verás una tarjeta para confirmar. ✅`)
 
 scrollToBottom(false)
 inputEl.focus()
+</script>
+
+<script>
+
+// ══════════════════════════════════════════════════════════════════════
+// SELECTOR DE CEREBRO
+// ══════════════════════════════════════════════════════════════════════
+const brainBtn = document.getElementById('brain-btn')
+const brainDropdown = document.getElementById('brain-dropdown')
+let currentBrain = localStorage.getItem('diabolus_brain') || 'rapida'
+
+const BRAIN_EMOJIS = { rapida: '⚡', inteligente: '🧠', brillante: '👑' }
+const BRAIN_NAMES  = { rapida: 'Rápida', inteligente: 'Inteligente', brillante: 'Brillante' }
+
+function updateBrainUI(tier) {
+  currentBrain = tier
+  localStorage.setItem('diabolus_brain', tier)
+  brainBtn.textContent = (BRAIN_EMOJIS[tier] || '⚡') + ' ' + (BRAIN_NAMES[tier] || 'Rápida')
+  brainDropdown.querySelectorAll('.brain-option').forEach(opt => {
+    opt.classList.toggle('active', opt.dataset.tier === tier)
+  })
+}
+
+// Toggle dropdown
+brainBtn.addEventListener('click', (e) => {
+  e.stopPropagation()
+  brainDropdown.classList.toggle('open')
+})
+
+// Close on outside click
+document.addEventListener('click', (e) => {
+  if (!brainDropdown.contains(e.target) && e.target !== brainBtn) {
+    brainDropdown.classList.remove('open')
+  }
+})
+
+// Select brain
+brainDropdown.querySelectorAll('.brain-option').forEach(opt => {
+  opt.addEventListener('click', async () => {
+    const tier = opt.dataset.tier
+    if (tier === currentBrain) { brainDropdown.classList.remove('open'); return }
+
+    brainDropdown.classList.remove('open')
+    updateBrainUI(tier)
+
+    try {
+      const res = await fetch(API + '/api/agent/brain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ brain_tier: tier })
+      })
+      const data = await res.json()
+      if (data.ok) {
+        addAgentMsg(data.message || '✅ Cerebro actualizado.')
+      } else {
+        showToast(data.error || 'Error cambiando cerebro')
+        updateBrainUI('rapida')
+      }
+    } catch (err) {
+      showToast('Error: ' + err.message)
+      updateBrainUI('rapida')
+    }
+  })
+})
+
+// Load initial brain from server
+async function loadBrainConfig() {
+  try {
+    const res = await fetch(API + '/api/agent/brain', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.current) updateBrainUI(data.current)
+    }
+  } catch {}
+}
+
+if (token) loadBrainConfig()
+updateBrainUI(currentBrain)
+
 </script>
 
 <script>
