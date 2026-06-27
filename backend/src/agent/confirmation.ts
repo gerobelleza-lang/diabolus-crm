@@ -541,41 +541,41 @@ async function enviarWhatsApp(
   p: Record<string, any>,
   mensaje: string
 ): Promise<{ ok: boolean; message: string }> {
-  const sid   = process.env.TWILIO_ACCOUNT_SID
-  const token = process.env.TWILIO_AUTH_TOKEN
-  const from  = process.env.TWILIO_FROM || '+14155238886'
-  const to    = p.cliente_phone
+  const waToken   = process.env.WHATSAPP_ACCESS_TOKEN
+  const waPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID
+  const to        = p.cliente_phone
 
-  if (!sid || !token) {
-    return { ok: false, message: 'WhatsApp no configurado (faltan credenciales Twilio).' }
+  if (!waToken || !waPhoneId) {
+    return { ok: false, message: 'WhatsApp no configurado (faltan WHATSAPP_ACCESS_TOKEN o WHATSAPP_PHONE_NUMBER_ID).' }
   }
   if (!to) {
     return { ok: false, message: 'El cliente no tiene número de WhatsApp registrado.' }
   }
 
-  const phone = to.startsWith('+') ? to : `+34${to.replace(/\s/g, '')}`
-
-  const body = new URLSearchParams({
-    From: `whatsapp:${from}`,
-    To:   `whatsapp:${phone}`,
-    Body: mensaje,
-  })
+  // Normalizar número: solo dígitos, con prefijo 34 si no lo tiene
+  const digits = to.replace(/[^0-9]/g, '')
+  const phoneE164 = digits.startsWith('34') ? digits : `34${digits}`
 
   const resp = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+    `https://graph.facebook.com/v19.0/${waPhoneId}/messages`,
     {
-      method:  'POST',
+      method: 'POST',
       headers: {
-        'Content-Type':  'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${btoa(`${sid}:${token}`)}`,
+        'Authorization': `Bearer ${waToken}`,
+        'Content-Type':  'application/json',
       },
-      body: body.toString(),
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to:                phoneE164,
+        type:              'text',
+        text:              { body: mensaje },
+      }),
     }
   )
 
   if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}))
-    return { ok: false, message: `Error WhatsApp: ${err.message || resp.status}` }
+    const err = await resp.json().catch(() => ({})) as any
+    return { ok: false, message: `Error WhatsApp: ${err?.error?.message || resp.status}` }
   }
 
   // Registrar sent_at en la factura
@@ -589,7 +589,9 @@ async function enviarWhatsApp(
 
   return {
     ok: true,
-    message: `✅ Recordatorio enviado por WhatsApp\n• Para: ${p.cliente_nombre || phone}\n• Factura: ${p.factura_numero || '—'}`,
+    message: `✅ Recordatorio enviado por WhatsApp
+• Para: ${p.cliente_nombre || phoneE164}
+• Factura: ${p.factura_numero || '—'}`,
   }
 }
 
