@@ -1,5 +1,3 @@
-// @ts-nocheck
-// TODO: Remove @ts-nocheck — refactor to fix TS errors and report unresolvable ones to Miguel
 /**
  * core.ts — Núcleo agéntico channel-agnostic (Bloque A, Rebanada 4)
  *
@@ -749,17 +747,14 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
         const tc = getTimeContext()
         const insights = generateProactiveInsights({
           timeContext: tc,
-          pendingCount: dashData.structured.pendingCount,
-          pendingAmount: dashData.structured.pendingAmount,
-          overdueCount: dashData.structured.overdueCount,
-          overdueAmount: dashData.structured.overdueAmount,
-          monthIncome: dashData.structured.monthIncome,
-          monthExpenses: dashData.structured.monthExpenses,
-          lastMonthIncome: dashData.structured.lastMonthIncome,
+          facturasPendientes: dashData.structured.pendingCount,
+          facturasVencidas: dashData.structured.overdueCount,
+          balanceMes: dashData.structured.monthIncome - dashData.structured.monthExpenses,
+          balanceMesAnterior: dashData.structured.lastMonthIncome,
         })
         if (insights.length > 0) {
           const pick = insights[Math.floor(Math.random() * insights.length)]
-          finalResponse += `\n\n💡 ${pick.text}`
+          finalResponse += `\n\n💡 ${pick.texto}`
         }
       }
     } catch (err) {
@@ -857,6 +852,29 @@ async function getDashboardContext(salonId: string): Promise<DashboardData> {
     }
   } catch {
     return empty
+  }
+}
+
+
+// ─── L0 Read Response (direct DB queries, no LLM) ─────────────────────────────
+
+async function generateL0ReadResponse(parsed: { intent: string; data: any }, salonId: string): Promise<string> {
+  switch (parsed.intent) {
+    case 'query_balance':
+      return fetchBalance(salonId)
+    case 'query_income':
+      return fetchIncome(salonId)
+    case 'query_expense':
+      return fetchExpenses(salonId)
+    case 'query_overdue':
+      return fetchOverdue(salonId)
+    case 'query_who_owes':
+    case 'query_debtors':
+      return fetchWhoOwes(salonId)
+    case 'query_pending':
+      return fetchPending(salonId)
+    default:
+      return fetchBalance(salonId)
   }
 }
 
