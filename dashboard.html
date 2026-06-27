@@ -78,40 +78,6 @@
       font-family: var(--font-mono);
     }
 
-    /* ── SIDEBAR ACCORDION ── */
-    .nav-section { margin-bottom: 0.15rem; }
-    .nav-section-toggle {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.4rem 1rem;
-      background: none;
-      border: none;
-      color: var(--text-tertiary);
-      font-size: 0.65rem;
-      font-family: var(--font-display);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.09em;
-      cursor: pointer;
-      border-radius: 0.375rem;
-      transition: color .15s, background .15s;
-      margin-top: 0.3rem;
-    }
-    .nav-section-toggle:hover { color: var(--text-primary); background: rgba(255,255,255,.04); }
-    .nav-section-toggle.open  { color: var(--violet); }
-    .nav-chevron { font-size: 0.6rem; transition: transform .22s; flex-shrink: 0; }
-    .nav-section-toggle.open    .nav-chevron { transform: rotate(0deg); }
-    .nav-section-toggle:not(.open) .nav-chevron { transform: rotate(-90deg); }
-    .nav-section-body {
-      overflow: hidden;
-      max-height: 400px;
-      transition: max-height .28s cubic-bezier(.4,0,.2,1);
-    }
-    .nav-section-body.collapsed { max-height: 0; }
-
-
     /* ── MAIN ── */
     .main-content {
       margin-left: 260px;
@@ -509,61 +475,6 @@
       .page-header { flex-direction: column; gap: 1rem; }
       .quick-actions { grid-template-columns: 1fr; }
     }
-
-  /* ── SALON SWITCHER ── */
-  .salon-switcher { position: relative; }
-  .salon-switcher-btn {
-    width: 100%;
-    background: none;
-    border: none;
-    color: var(--text-tertiary);
-    font-size: 0.75rem;
-    font-family: var(--font-body);
-    cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    transition: background .15s, color .15s;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-  .salon-switcher-btn:hover { background: rgba(255,255,255,.06); color: var(--text-primary); }
-  .salon-switcher-btn .salon-name { overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: left; }
-  .salon-switcher-btn .salon-chevron { font-size: 0.55rem; flex-shrink: 0; }
-  .salon-dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: -12px; right: -12px;
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 8px;
-    overflow: hidden;
-    z-index: 300;
-    box-shadow: 0 8px 24px rgba(0,0,0,.6);
-    display: none;
-  }
-  .salon-dropdown.open { display: block; }
-  .salon-dropdown-item {
-    padding: 10px 14px;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: background .12s;
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
-    font-family: var(--font-body);
-  }
-  .salon-dropdown-item:hover { background: rgba(255,255,255,.06); color: var(--text-primary); }
-  .salon-dropdown-item.current { color: var(--violet); font-weight: 600; }
-  .salon-dropdown-item.add-new { border-top: 1px solid #2a2a2a; color: var(--violet); }
   </style>
 </head>
 <body>
@@ -602,62 +513,20 @@
             <path d="M610 168 Q640 162 655 155" stroke="#E3BE7A" stroke-width=".9" fill="none" stroke-linecap="round" filter="url(#gf-g)" opacity=".7"/>
           </svg>
         </div>
-        <div class="salon-switcher" id="salonSwitcher">
-          <button class="salon-switcher-btn" id="salonSwitcherBtn" onclick="toggleSalonDropdown()" title="Cambiar empresa">
-            <span class="salon-name" id="salonNameSidebar">—</span>
-            <span class="salon-chevron" id="salonChevron" style="display:none">▾</span>
-          </button>
-          <div class="salon-dropdown" id="salonDropdown"></div>
-        </div>
+        <div class="sidebar-salon" id="salonNameSidebar">—</div>
       </div>
       <nav class="sidebar-nav">
-
-        <!-- ── MANDO ── -->
-        <div class="nav-section">
-          <button class="nav-section-toggle open" onclick="toggleSection('mando')">
-            <span>⚡ Mando</span><span class="nav-chevron">▾</span>
-          </button>
-          <div class="nav-section-body" id="sec-mando-body">
-            <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
-          </div>
-        </div>
-
-        <!-- ── NEGOCIO ── -->
-        <div class="nav-section">
-          <button class="nav-section-toggle open" onclick="toggleSection('negocio')">
-            <span>💼 Negocio</span><span class="nav-chevron">▾</span>
-          </button>
-          <div class="nav-section-body" id="sec-negocio-body">
-            <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
-            <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
-            <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
-            <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
-            <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
-          </div>
-        </div>
-
-        <!-- ── INTELIGENCIA ── -->
-        <div class="nav-section">
-          <button class="nav-section-toggle open" onclick="toggleSection('ia')">
-            <span>🧠 Inteligencia</span><span class="nav-chevron">▾</span>
-          </button>
-          <div class="nav-section-body" id="sec-ia-body">
-            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Diablilla</a>
-          </div>
-        </div>
-
-        <!-- ── MÓDULOS ── -->
-        <div class="nav-section">
-          <button class="nav-section-toggle open" onclick="toggleSection('modulos')">
-            <span>😈 Módulos</span><span class="nav-chevron">▾</span>
-          </button>
-          <div class="nav-section-body" id="sec-modulos-body">
-            <a href="cazador.html"  class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
-            <a href="pacto.html"    class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
-            <a href="demonio.html"  class="nav-item"><span class="nav-icon">😈</span> El Demonio</a>
-          </div>
-        </div>
-
+        <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="chat.html"         class="nav-item"><span class="nav-icon">💬</span> Agente</a>
+        <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+        <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+        <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+        <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+        <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+        <hr style="border-color:rgba(255,255,255,.08);margin:.5rem .5rem">
+        <a href="cazador.html"  class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
+        <a href="pacto.html"    class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+        <a href="demonio.html"  class="nav-item"><span class="nav-icon">😈</span> El Demonio</a>
       </nav>
       <div class="sidebar-footer">
         <button class="btn btn-secondary" style="width:100%;" onclick="logout()">Cerrar sesión</button>
@@ -870,93 +739,13 @@
     }
 
     // ── Populate static UI ──
-    const currentSalonName = auth?.salon?.name || auth?.salonName || auth?.salonname || 'Mi negocio'
+    const salonName = auth?.salonName || auth?.salonname || 'Mi negocio'
     const email     = auth?.email || ''
     const initials  = email.slice(0, 2).toUpperCase() || 'U'
-    document.getElementById('salonNameHeader').textContent  = currentSalonName
+    document.getElementById('salonNameSidebar').textContent = salonName
+    document.getElementById('salonNameHeader').textContent  = salonName
     document.getElementById('userEmailDisplay').textContent = email
     document.getElementById('userAvatar').textContent       = initials
-
-    // ── Selector multiempresa ──
-    let _allSalons = []
-    async function loadSalonSwitcher() {
-      try {
-        const res = await fetch(`${API}/api/salons/mine`, {
-          headers: { 'Authorization': `Bearer ${auth.token}` }
-        })
-        if (!res.ok) {
-          document.getElementById('salonNameSidebar').textContent = currentSalonName
-          return
-        }
-        const data = await res.json()
-        _allSalons = data.salons ?? []
-
-        const currentId = auth?.salon?.id
-        const nameEl    = document.getElementById('salonNameSidebar')
-        const chevronEl = document.getElementById('salonChevron')
-        const dropdown  = document.getElementById('salonDropdown')
-        if (!nameEl) return
-
-        const currentSalon = _allSalons.find(s => s.id === currentId) || _allSalons[0]
-        nameEl.textContent = currentSalon?.name || currentSalonName
-
-        if (_allSalons.length <= 1) return // solo 1 negocio, sin dropdown
-
-        // Múltiples negocios — activar switcher
-        chevronEl.style.display = ''
-        dropdown.innerHTML = _allSalons.map(s => `
-          <button class="salon-dropdown-item ${s.id === currentId ? 'current' : ''}" onclick="switchSalon('${s.id}','${s.name.replace(/'/g,"\'")}')">
-            <span style="width:14px;text-align:center">${s.id === currentId ? '✓' : ''}</span>
-            <span>${s.name}</span>
-          </button>
-        `).join('') + `
-          <button class="salon-dropdown-item add-new" onclick="showAddSalonModal()">
-            <span style="width:14px;text-align:center">＋</span><span>Añadir empresa</span>
-          </button>
-        `
-      } catch (_) {
-        document.getElementById('salonNameSidebar').textContent = currentSalonName
-      }
-    }
-
-    function toggleSalonDropdown() {
-      if (_allSalons.length <= 1) return
-      document.getElementById('salonDropdown').classList.toggle('open')
-    }
-
-    function switchSalon(salonId, salonName) {
-      const updated = { ...auth, salon: { ...(auth.salon||{}), id: salonId, name: salonName }, salonName, salonname: salonName }
-      localStorage.setItem('diabolus_auth', JSON.stringify(updated))
-      document.getElementById('salonDropdown').classList.remove('open')
-      window.location.reload()
-    }
-
-    function showAddSalonModal() {
-      document.getElementById('salonDropdown').classList.remove('open')
-      const nombre = prompt('Nombre del nuevo negocio:')
-      if (!nombre?.trim()) return
-      addSalon(nombre.trim())
-    }
-
-    async function addSalon(nombre) {
-      try {
-        const res = await fetch(`${API}/api/salons`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: nombre })
-        })
-        if (!res.ok) { alert('Error al crear el negocio'); return }
-        const data = await res.json()
-        switchSalon(data.salon.id, data.salon.name)
-      } catch { alert('Error al crear el negocio') }
-    }
-
-    document.addEventListener('click', (e) => {
-      const sw = document.getElementById('salonSwitcher')
-      if (sw && !sw.contains(e.target)) {
-        document.getElementById('salonDropdown')?.classList.remove('open')
-      }
-    })
 
     // ── Date ──
     const now = new Date()
@@ -1161,34 +950,8 @@
       })
     }
 
-
-    // ── Sidebar accordion ──
-    function toggleSection(id) {
-      const body = document.getElementById(`sec-${id}-body`)
-      if (!body) return
-      const btn = body.previousElementSibling
-      const collapsed = body.classList.toggle('collapsed')
-      btn.classList.toggle('open', !collapsed)
-      const state = JSON.parse(localStorage.getItem('diabolus_nav') || '{}')
-      state[id] = !collapsed
-      localStorage.setItem('diabolus_nav', JSON.stringify(state))
-    }
-    function initNav() {
-      const state = JSON.parse(localStorage.getItem('diabolus_nav') || '{}')
-      ;['mando','negocio','ia','modulos'].forEach(id => {
-        const body = document.getElementById(`sec-${id}-body`)
-        if (!body) return
-        const btn = body.previousElementSibling
-        const open = state[id] !== false  // default: all open
-        if (!open) { body.classList.add('collapsed'); btn.classList.remove('open') }
-        else       { body.classList.remove('collapsed'); btn.classList.add('open') }
-      })
-    }
-    initNav()
-
     loadDashboard()
     loadUsage()
-    loadSalonSwitcher()
 
     // ── Uso del agente IA ──
     async function loadUsage() {
