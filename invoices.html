@@ -153,6 +153,7 @@
         <p style="margin:0.25rem 0 0;color:var(--text-secondary);font-size:0.875rem" id="dateLabel"></p>
       </div>
       <button class="btn btn-primary" onclick="openCreateModal()">+ Nueva Factura</button>
+      <button class="btn btn-secondary" onclick="openSeriesModal()" title="Configurar numeración" style="padding:0.5rem 0.75rem;font-size:0.85rem;">⚙️ Serie</button>
     </div>
     <div class="stats-bar">
       <div class="stat-mini"><div class="label">📄 Total facturas</div><div class="value" id="statTotal">—</div></div>
@@ -345,6 +346,7 @@ async function markAsPaid(id) {
 function calcIva() { const amount = parseFloat(document.getElementById('newAmount').value) || 0; const iva = parseFloat(document.getElementById('newIva').value) || 0; document.getElementById('newTotal').value = (amount * (1 + iva / 100)).toFixed(2); }
 function openCreateModal(prefill) {
   document.getElementById('createModal').classList.add('open');
+  prefillInvoiceNumber();
   if (prefill) {
     document.getElementById('newDescription').value = prefill.description || '';
     document.getElementById('newAmount').value = prefill.amount || '';
@@ -444,6 +446,115 @@ loadData(); loadMe();
     });
   }
 </script>
-<script src="sidebar.js"></script>
+<script src="sidebar.js">
+// ── Numeración configurable ──────────────────────────────────────────────────
+let _seriesCfg = null
+
+function updateSeriesPreview() {
+  const prefix   = (document.getElementById('seriesPrefix')?.value || 'FAC').toUpperCase()
+  const sep      = document.getElementById('seriesSeparator')?.value ?? '-'
+  const inclYear = document.getElementById('seriesIncludeYear')?.checked ?? true
+  const pad      = Number(document.getElementById('seriesPadDigits')?.value || 4)
+  const next     = Number(document.getElementById('seriesNextNumber')?.value || 1)
+  const seq      = String(next).padStart(pad, '0')
+  const year     = new Date().getFullYear()
+  const preview  = inclYear ? `${prefix}${sep}${year}${sep}${seq}` : `${prefix}${sep}${seq}`
+  const el = document.getElementById('seriesPreview')
+  if (el) el.textContent = preview
+}
+
+async function openSeriesModal() {
+  try {
+    const r = await apiGet('/api/invoices/numbering')
+    _seriesCfg = r.config
+    document.getElementById('seriesPrefix').value        = r.config.prefix       || 'FAC'
+    document.getElementById('seriesSeparator').value     = r.config.separator    ?? '-'
+    document.getElementById('seriesIncludeYear').checked = r.config.include_year ?? true
+    document.getElementById('seriesPadDigits').value     = String(r.config.pad_digits || 4)
+    document.getElementById('seriesNextNumber').value    = String(r.config.next_number || 1)
+    document.getElementById('seriesPreview').textContent = r.preview
+  } catch(e) {}
+  document.getElementById('seriesModal').style.display = 'flex'
+}
+
+function closeSeriesModal() {
+  document.getElementById('seriesModal').style.display = 'none'
+}
+
+async function saveSeriesConfig() {
+  const payload = {
+    prefix:       document.getElementById('seriesPrefix').value.toUpperCase() || 'FAC',
+    separator:    document.getElementById('seriesSeparator').value,
+    include_year: document.getElementById('seriesIncludeYear').checked,
+    pad_digits:   Number(document.getElementById('seriesPadDigits').value),
+    next_number:  Number(document.getElementById('seriesNextNumber').value) || 1,
+  }
+  try {
+    const r = await apiPost('/api/invoices/numbering', payload)
+    toast('✅ Serie guardada: ' + r.preview, 'success')
+    closeSeriesModal()
+    prefillInvoiceNumber()
+  } catch(e) {
+    toast('❌ Error guardando serie', 'error')
+  }
+}
+
+async function prefillInvoiceNumber() {
+  try {
+    const r = await apiGet('/api/invoices/next-number')
+    const el = document.getElementById('newInvoiceNumber')
+    if (el && !el.value) el.value = r.number
+    else if (el) el.placeholder = r.number
+  } catch(e) {}
+}
+
+</script>
+
+<!-- Modal: Configurar Serie de Numeración -->
+<div class="modal-overlay" id="seriesModal" style="display:none;align-items:center;justify-content:center;">
+  <div class="modal" style="max-width:420px;">
+    <h2>⚙️ Numeración de Facturas</h2>
+    <div class="form-group">
+      <label>Prefijo <span style="color:#a78bfa;font-size:0.8rem;">(ej: FAC, 2026, A)</span></label>
+      <input id="seriesPrefix" type="text" maxlength="10" placeholder="FAC" oninput="updateSeriesPreview()">
+    </div>
+    <div class="form-group">
+      <label>Separador</label>
+      <select id="seriesSeparator" onchange="updateSeriesPreview()">
+        <option value="-">Guion ( - )</option>
+        <option value="/">/</option>
+        <option value=".">Punto ( . )</option>
+        <option value="">Sin separador</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex-direction:row;align-items:center;gap:0.75rem;">
+      <input id="seriesIncludeYear" type="checkbox" checked style="width:18px;height:18px;accent-color:#8B5CF6;" onchange="updateSeriesPreview()">
+      <label style="margin:0;">Incluir año en el número</label>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Dígitos</label>
+        <select id="seriesPadDigits" onchange="updateSeriesPreview()">
+          <option value="3">3 (001)</option>
+          <option value="4" selected>4 (0001)</option>
+          <option value="5">5 (00001)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Próximo número</label>
+        <input id="seriesNextNumber" type="number" min="1" placeholder="1" oninput="updateSeriesPreview()">
+      </div>
+    </div>
+    <div style="background:#1a1a2e;border-radius:8px;padding:0.75rem 1rem;text-align:center;margin-bottom:1rem;">
+      <div style="color:#9ca3af;font-size:0.8rem;">Vista previa:</div>
+      <div id="seriesPreview" style="color:#a78bfa;font-family:monospace;font-size:1.2rem;font-weight:700;margin-top:4px;">FAC-2026-0001</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeSeriesModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSeriesConfig()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
