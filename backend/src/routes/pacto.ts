@@ -1,8 +1,10 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 
-export const pactoRoutes = new Hono()
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
+
+export const pactoRoutes = new Hono<{ Variables: Variables }>()
 
 const APIFY_TOKEN    = process.env.APIFY_API_KEY      || ''
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || ''
@@ -414,7 +416,7 @@ pactoRoutes.delete('/campanas/:id', async (c) => {
 pactoRoutes.get('/status', async (c) => {
   try {
     const salonId = c.get('salonId')
-    const supabase = getSupabase()
+    const supabase = getSupabaseAdmin()
     const { data } = await supabase
       .from('salons')
       .select('pacto_activo, pacto_activado_at')
@@ -430,15 +432,15 @@ pactoRoutes.get('/status', async (c) => {
 pactoRoutes.post('/solicitar', async (c) => {
   try {
     const salonId = c.get('salonId')
-    const supabase = getSupabase()
+    const supabase = getSupabaseAdmin()
     const { data: salon } = await supabase
       .from('salons')
       .select('name')
       .eq('id', salonId)
       .single()
 
-    const tgToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
-    const chatId  = Deno.env.get('TELEGRAM_CHAT_ID')
+    const tgToken = process.env.TELEGRAM_BOT_TOKEN
+    const chatId  = process.env.TELEGRAM_CHAT_ID
     if (tgToken && chatId) {
       await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
         method: 'POST',

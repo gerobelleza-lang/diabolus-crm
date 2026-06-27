@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * transactions.ts — F4-3 update: filtros por categoría/etiqueta, recategorización auditada, stats
  *

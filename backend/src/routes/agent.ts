@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * agent.ts — Adaptador web del núcleo agéntico.
  *
@@ -14,7 +13,10 @@ import { Hono }                from 'hono'
 import { processAgentInput }   from '../agent/core'
 import { getUsage, incrementUsage, usageLimitMiddleware } from '../middleware/usage'
 
-export const agentRoutes = new Hono()
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
+
+export const agentRoutes = new Hono<{ Variables: Variables }>()
 
 // ─── GET /api/agent/usage — uso del mes actual ─────────────────────────────────
 

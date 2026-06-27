@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * stripe.ts — Módulo de suscripciones Diabolus
  * Edge Runtime ONLY — fetch directo, sin SDK de Stripe
@@ -208,7 +207,7 @@ stripeRoutes.get('/subscription', async (c) => {
 
     const profileRes = await sb(
       url, key,
-      `salons?user_id=eq.${userId}&select=plan,stripe_customer_id,stripe_subscription_id,plan_expires_at&limit=1`,
+      `salons?user_id=eq.${user.id}&select=plan,stripe_customer_id,stripe_subscription_id,plan_expires_at&limit=1`,
     )
     const profiles = await profileRes.json()
     const profile  = Array.isArray(profiles) ? profiles[0] : null

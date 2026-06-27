@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * usage.ts — Middleware contador de mensajes por salón
  *

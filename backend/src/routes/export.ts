@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * export.ts — Bloque B4: Exportación en un clic (CSV / XLSX / PDF)
  *
@@ -14,8 +13,11 @@ import { jwtVerify, SignJWT } from 'jose'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
-export const exportPublicRoutes = new Hono()
-export const exportGestorRoutes = new Hono()
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
+
+export const exportPublicRoutes = new Hono<{ Variables: Variables }>()
+export const exportGestorRoutes = new Hono<{ Variables: Variables }>()
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? ''
@@ -516,7 +518,7 @@ exportPublicRoutes.get('/download', async (c) => {
   if (format === 'xlsx') {
     try {
       const xlsx = await generateXLSX(data)
-      return new Response(xlsx, {
+      return new Response(xlsx as unknown as BodyInit, {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="${filename}.xlsx"`,
@@ -536,7 +538,7 @@ exportPublicRoutes.get('/download', async (c) => {
 
   if (format === 'pdf') {
     const pdf = await generatePDF(data)
-    return new Response(pdf, {
+    return new Response(pdf as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}.pdf"`,

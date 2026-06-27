@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Email transaccional via Resend (Edge-compatible — pure fetch)
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Catálogo tipado de herramientas del agente Diabolus.
  * Cada herramienta está marcada como 'read', 'write' o 'send'.

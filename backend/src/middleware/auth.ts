@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createMiddleware } from 'hono/factory'
 import { getSupabaseAdmin } from '../integrations/supabase'
 

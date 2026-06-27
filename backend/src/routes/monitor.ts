@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * monitor.ts — Monitor interno de Diabolus
  * 
@@ -16,8 +15,8 @@ export const monitorRoutes = new Hono()
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function sbAdmin(c: any) {
-  const url = c.env?.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co'
-  const key = c.env?.SUPABASE_SERVICE_ROLE_KEY || ''
+  const url = (process.env.SUPABASE_URL as string) || 'https://emygbvxkhfbwyhbapaae.supabase.co'
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY as string) || ''
   return (path: string, opts?: any) =>
     fetch(`${url}/rest/v1/${path}`, {
       headers: {
@@ -42,9 +41,9 @@ async function sendTelegram(token: string, chatId: string, text: string) {
 
 monitorRoutes.post('/stripe/monitor', async (c) => {
   try {
-    const STRIPE_SECRET = c.env?.STRIPE_SECRET_KEY || ''
-    const TG_TOKEN      = c.env?.TELEGRAM_BOT_TOKEN || ''
-    const TG_CHAT       = c.env?.TELEGRAM_CHAT_ID   || '8356150792'
+    const STRIPE_SECRET = (process.env.STRIPE_SECRET_KEY as string) || ''
+    const TG_TOKEN      = (process.env.TELEGRAM_BOT_TOKEN as string) || ''
+    const TG_CHAT       = (process.env.TELEGRAM_CHAT_ID as string)   || '8356150792'
 
     if (!STRIPE_SECRET) {
       return c.json({ error: 'STRIPE_SECRET_KEY not configured' }, 500)
@@ -167,8 +166,8 @@ monitorRoutes.post('/stripe/monitor', async (c) => {
 
 monitorRoutes.post('/diabolus/health', async (c) => {
   try {
-    const TG_TOKEN = c.env?.TELEGRAM_BOT_TOKEN || ''
-    const TG_CHAT  = c.env?.TELEGRAM_CHAT_ID   || '8356150792'
+    const TG_TOKEN = (process.env.TELEGRAM_BOT_TOKEN as string) || ''
+    const TG_CHAT  = (process.env.TELEGRAM_CHAT_ID as string)   || '8356150792'
     const sb = sbAdmin(c)
 
     // Verificar que los servicios responden

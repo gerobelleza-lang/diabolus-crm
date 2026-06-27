@@ -1,4 +1,3 @@
-// @ts-nocheck
 // L0 Parser - Deterministic, no LLM cost
 // Extracts intent and data from user input using regex + dictionaries
 

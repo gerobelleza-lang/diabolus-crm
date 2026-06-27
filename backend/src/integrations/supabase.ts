@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-let adminClient: ReturnType<typeof createClient> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let adminClient: any = null
 
 /**
  * Devuelve un cliente Supabase con service_role key.
  * Singleton — se crea una sola vez por instancia de función.
+ *
+ * TODO: Generate database types with `supabase gen types typescript`
+ * and replace `any` with the generated Database type.
  */
 export function getSupabaseAdmin() {
   if (!adminClient) {

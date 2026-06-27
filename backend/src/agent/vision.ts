@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * vision.ts — Extractor de tickets/facturas mediante modelo de visión.
  *

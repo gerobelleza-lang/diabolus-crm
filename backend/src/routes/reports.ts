@@ -1,4 +1,3 @@
-// @ts-nocheck
 // backend/src/routes/reports.ts — añade GET /api/reports/monthly-summary
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
@@ -173,7 +172,7 @@ reportRoutes.get('/trimestral', async (c) => {
 
   const pdfBytes = await pdfDoc.save()
 
-  return new Response(pdfBytes, {
+  return new Response(pdfBytes as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="diabolus-informe-T${quarter}-${year}.pdf"`,
@@ -427,7 +426,7 @@ reportRoutes.get('/monthly-summary', async (c) => {
 
   const pdfBytes = await pdfDoc.save()
 
-  return new Response(pdfBytes, {
+  return new Response(pdfBytes as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="diabolus-resumen-${year}-${String(month).padStart(2,'0')}.pdf"`,

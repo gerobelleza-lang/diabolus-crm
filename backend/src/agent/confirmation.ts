@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Gate de confirmación — el corazón del Bloque A.
  *

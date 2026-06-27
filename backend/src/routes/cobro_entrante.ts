@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * cobro_entrante.ts — Diablilla avisa cuando llega un cobro en tiempo real
  *

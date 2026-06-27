@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { generateInvoicePDF } from '../utils/invoice-pdf'
@@ -148,7 +147,7 @@ invoiceRoutes.get('/:id/pdf', async (c) => {
   try {
     const pdfBytes = await generateInvoicePDF(invoice)
     const invoiceNum = invoice.number || `FAC-${invoice.id.slice(0, 8).toUpperCase()}`
-    return new Response(pdfBytes, {
+    return new Response(pdfBytes as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="${invoiceNum}.pdf"`,

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
@@ -178,7 +177,7 @@ export function createApp() {
     const mode      = c.req.query('hub.mode')
     const token     = c.req.query('hub.verify_token')
     const challenge = c.req.query('hub.challenge')
-    const expected  = c.env?.WA_VERIFY_TOKEN || 'diabolus_demonio_2026'
+    const expected  = (process.env.WA_VERIFY_TOKEN as string) || 'diabolus_demonio_2026'
     if (mode === 'subscribe' && token === expected) {
       return new Response(challenge, { status: 200, headers: { 'Content-Type': 'text/plain' } })
     }
@@ -202,13 +201,13 @@ export function createApp() {
     const nombre  = contact?.profile?.name || 'Cliente';
     if (!from || !mensaje) return c.json({ ok: true });
 
-    const SUPABASE_URL = c.env?.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co';
-    const SUPABASE_KEY = c.env?.SUPABASE_SERVICE_ROLE_KEY || '';
-    const OR_KEY       = c.env?.OPENROUTER_API_KEY || '';
-    const WA_TOKEN     = c.env?.WHATSAPP_TOKEN || '';
-    const WA_PHONE_ID  = c.env?.WHATSAPP_PHONE_NUMBER_ID || '1214990365020353';
-    const TG_TOKEN     = c.env?.TELEGRAM_BOT_TOKEN || '';
-    const TG_CHAT      = c.env?.TELEGRAM_CHAT_ID || '8356150792';
+    const SUPABASE_URL = (process.env.SUPABASE_URL as string) || 'https://emygbvxkhfbwyhbapaae.supabase.co';
+    const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY as string) || '';
+    const OR_KEY       = (process.env.OPENROUTER_API_KEY as string) || '';
+    const WA_TOKEN     = (process.env.WHATSAPP_TOKEN as string) || '';
+    const WA_PHONE_ID  = (process.env.WHATSAPP_PHONE_NUMBER_ID as string) || '1214990365020353';
+    const TG_TOKEN     = (process.env.TELEGRAM_BOT_TOKEN as string) || '';
+    const TG_CHAT      = (process.env.TELEGRAM_CHAT_ID as string) || '8356150792';
 
     const sb = (path: string, opts?: any) =>
       fetch(`${SUPABASE_URL}/rest/v1/${path}`, {

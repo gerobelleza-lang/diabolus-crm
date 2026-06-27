@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Diabolus CRM — Transcripción de audio con Groq Whisper
  * POST /api/agent/transcribe

@@ -1,11 +1,13 @@
-// @ts-nocheck
 import { Hono } from 'hono';
 import { getSupabaseAdmin } from '../integrations/supabase';
+
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-export const legalRoutes = new Hono();
+export const legalRoutes = new Hono<{ Variables: Variables }>();
 
 // ── GET /api/legal/templates ──────────────────────────────────────
 legalRoutes.get('/templates', async (c) => {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * informe_batalla.ts — Informe de Batalla de la Diablilla
  *
@@ -17,8 +16,8 @@ export const informeBatallaRoutes = new Hono()
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function sbAdmin(c: any) {
-  const url = c.env?.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co'
-  const key = c.env?.SUPABASE_SERVICE_ROLE_KEY || ''
+  const url = (process.env.SUPABASE_URL as string) || 'https://emygbvxkhfbwyhbapaae.supabase.co'
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY as string) || ''
   return (path: string, opts?: RequestInit) =>
     fetch(`${url}/rest/v1/${path}`, {
       headers: {
@@ -54,9 +53,9 @@ function hoy(): { inicio: string; fin: string } {
 
 informeBatallaRoutes.post('/', async (c) => {
   try {
-    const INTERNAL_SECRET = c.env?.INTERNAL_SECRET || 'diabolus-internal-2026'
-    const TG_TOKEN        = c.env?.TELEGRAM_BOT_TOKEN || '8895422982:AAH__LXR19NuZsZqkIAdxuZNqNCJYA005Xc'
-    const TG_CHAT         = c.env?.TELEGRAM_CHAT_ID   || '8356150792'
+    const INTERNAL_SECRET = (process.env.INTERNAL_SECRET as string) || 'diabolus-internal-2026'
+    const TG_TOKEN        = (process.env.TELEGRAM_BOT_TOKEN as string) || '8895422982:AAH__LXR19NuZsZqkIAdxuZNqNCJYA005Xc'
+    const TG_CHAT         = (process.env.TELEGRAM_CHAT_ID as string)   || '8356150792'
 
     // Auth
     const secret = c.req.header('x-internal-secret')

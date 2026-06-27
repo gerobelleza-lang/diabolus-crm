@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || ''

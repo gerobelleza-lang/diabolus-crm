@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 
 const BOE_API = 'https://www.boe.es/datosabiertos/api/boe/sumario'

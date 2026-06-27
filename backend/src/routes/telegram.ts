@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * telegram.ts — Adaptador Telegram del núcleo agéntico (Rebanada 4).
  *

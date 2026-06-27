@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { Hono } from 'hono';
 
 export function registerPrivacidadRoute(app: Hono) {

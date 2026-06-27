@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * leads_b2b.ts — Agente de Leads B2B para Diabolus
  *

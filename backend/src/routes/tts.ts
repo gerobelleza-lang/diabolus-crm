@@ -2,7 +2,6 @@
 // Voz oficial: nova (femenina, cálida) — Diablilla V2
 // Body: { text: string, speed?: number, hd?: boolean }
 // Returns: audio/mpeg
-// @ts-nocheck
 
 import { Hono } from 'hono'
 

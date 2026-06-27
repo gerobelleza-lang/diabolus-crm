@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * onboarding.ts — Onboarding Wizard endpoints
  *
@@ -16,7 +15,10 @@
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 
-export const onboardingRoutes = new Hono()
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
+
+export const onboardingRoutes = new Hono<{ Variables: Variables }>()
 
 // ─── GET /api/onboarding/status ───────────────────────────────────────────────
 onboardingRoutes.get('/status', async (c) => {

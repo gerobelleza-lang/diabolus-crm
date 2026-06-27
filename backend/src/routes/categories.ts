@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * categories.ts — F4-3: Categorías estándar + custom por tenant
  *

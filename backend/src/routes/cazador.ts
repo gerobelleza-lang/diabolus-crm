@@ -1,6 +1,8 @@
-// @ts-nocheck
 import { Hono } from 'hono';
 import { getSupabaseAdmin } from '../integrations/supabase';
+
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY!;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Diabolus CRM <noreply@diabolus.es>';
@@ -222,7 +224,7 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 
-export const cazadorRoutes = new Hono();
+export const cazadorRoutes = new Hono<{ Variables: Variables }>();
 
 cazadorRoutes.get('/config', async (c) => {
   const salon_id = c.get('salon_id');

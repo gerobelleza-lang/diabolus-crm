@@ -1,4 +1,3 @@
-// @ts-nocheck
 // POST /api/agent/tts — OpenAI TTS HD proxy (Edge Runtime)
 // Body: { text: string }
 // Returns: audio/mpeg

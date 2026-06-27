@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * gestor.ts — Portal del Gestor v2 (Bloque B, Rebanada B1)
  *
@@ -24,8 +23,11 @@ import { getSupabaseAdmin } from '../integrations/supabase'
 import { SignJWT, jwtVerify } from 'jose'
 import { sendGestorInviteEmail, sendChatNotificationClient } from '../integrations/email'
 
-export const gestorPublicRoutes = new Hono()
-export const gestorRoutes = new Hono()
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
+
+export const gestorPublicRoutes = new Hono<{ Variables: Variables }>()
+export const gestorRoutes = new Hono<{ Variables: Variables }>()
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? ''

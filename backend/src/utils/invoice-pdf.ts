@@ -1,4 +1,3 @@
-// @ts-nocheck
 // invoice-pdf.ts — Edge Runtime compatible (pdf-lib, no Node.js APIs)
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 

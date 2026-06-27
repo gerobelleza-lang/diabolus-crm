@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * chat.ts — Bloque B3: Chat gestor↔cliente — lado cliente (salon JWT)
  *
@@ -16,7 +15,10 @@ import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { sendChatNotificationGestor } from '../integrations/email'
 
-export const chatRoutes = new Hono()
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
+
+export const chatRoutes = new Hono<{ Variables: Variables }>()
 
 // ─── Constantes de validación ──────────────────────────────────────────────────
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Diabolus CRM — Ruta de Albaranes
  * POST /api/albaranes           → crear + email + registrar
@@ -12,7 +11,10 @@
 import { Hono } from 'hono'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import { createClient } from '@supabase/supabase-js'
-const app = new Hono()
+
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
+const app = new Hono<{ Variables: Variables }>()
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,

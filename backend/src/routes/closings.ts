@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * closings.ts — Bloque B2: Entrega mensual al gestor
  *
@@ -34,13 +33,11 @@ export const closingReviewRoutes = new Hono()
 export const closingGestorRoutes = new Hono()
 
 const JWT_SECRET = new TextEncoder().encode(
-  (typeof Deno !== 'undefined' ? Deno?.env?.get?.('JWT_SECRET') : null)
-    ?? process.env.JWT_SECRET ?? ''
+  process.env.JWT_SECRET ?? ''
 )
 
 const SUPABASE_SERVICE_ROLE =
-  (typeof Deno !== 'undefined' ? Deno?.env?.get?.('SUPABASE_SERVICE_ROLE_KEY') : null)
-    ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

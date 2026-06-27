@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * admin.ts — Panel de administración Super Admin
  *
@@ -15,7 +14,10 @@
 import { Hono }               from 'hono'
 import { createClient }       from '@supabase/supabase-js'
 
-export const adminRoutes = new Hono()
+type Variables = { userId: string; salonId: string; userEmail: string; gestorId: string; usageWarning: boolean; salon_id: string }
+
+
+export const adminRoutes = new Hono<{ Variables: Variables }>()
 
 function getSupabase() {
   return createClient(
