@@ -39,6 +39,7 @@ import { cobroEntranteRoute } from './routes/cobro_entrante'
 import { salonsRoutes } from './routes/salons'
 import { boeSemanalRoute } from './routes/boe_semanal'
 import { driveExportRoute } from './routes/drive_export'
+import { calendarHitosRoute } from './routes/calendar_hitos'
 
 export function createApp() {
   const app = new Hono()
@@ -120,6 +121,9 @@ export function createApp() {
 
   // ─── Internal: Drive Export (día 1 mes — cierre mensual → Google Drive) ───
   app.route('/api/internal/drive-export', driveExportRoute)
+
+  // ─── Internal: Calendar Hitos (día 1 mes — vencimientos + plazos AEAT → ICS/Drive) ──
+  app.route('/api/internal/calendar-hitos', calendarHitosRoute)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
