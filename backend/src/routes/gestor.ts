@@ -798,6 +798,72 @@ gestorPublicRoutes.get('/commissions/history', async (c) => {
   return c.json({ ledger: data || [] })
 })
 
+// ─── GET /gestor/summary ─────────────────────────────────────────────────────
+// KPIs globales agregados de todos los clientes activos del gestor
+
+gestorPublicRoutes.get('/summary', async (c) => {
+  const g = await getGestorFromRequest(c)
+  if (!g) return c.json({ error: 'No autorizado' }, 401)
+  const supabase = getSupabaseAdmin()
+  const { data: links } = await supabase.from('gestor_salon_links').select('salon_id').eq('gestor_id', g.gestorId).eq('status', 'active')
+  const salonIds = (links ?? []).map((l: any) => l.salon_id)
+  if (!salonIds.length) return c.json({ ok: true, client_count: 0, totals: { income: 0, expenses: 0, net: 0, pending: 0, overdue: 0 } })
+  const now = new Date()
+  const monthFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+  const today = now.toISOString().split('T')[0]
+  const [{ data: txs }, { data: pendingInv }] = await Promise.all([
+    supabase.from('transactions').select('type, amount').in('salon_id', salonIds).gte('date', monthFrom).lte('date', today),
+    supabase.from('invoices').select('total, due_date').in('salon_id', salonIds).in('status', ['pending', 'overdue']),
+  ])
+  const income = (txs ?? []).filter((t: any) => t.type === 'income').reduce((s: number, t: any) => s + (t.amount || 0), 0)
+  const expenses = (txs ?? []).filter((t: any) => t.type === 'expense').reduce((s: number, t: any) => s + (t.amount || 0), 0)
+  const pending = (pendingInv ?? []).reduce((s: number, i: any) => s + (i.total || 0), 0)
+  const overdue = (pendingInv ?? []).filter((i: any) => i.due_date && i.due_date < today).reduce((s: number, i: any) => s + (i.total || 0), 0)
+  const r = (n: number) => Math.round(n * 100) / 100
+  return c.json({ ok: true, client_count: salonIds.length, month: monthFrom.slice(0, 7), totals: { income: r(income), expenses: r(expenses), net: r(income - expenses), pending: r(pending), overdue: r(overdue) } })
+})
+
+// ─── GET /gestor/client/:salonId/monthly?month=YYYY-MM ───────────────────────
+// Informe mensual con comparativa vs mes anterior
+
+gestorPublicRoutes.get('/client/:salonId/monthly', async (c) => {
+  const g = await getGestorFromRequest(c)
+  if (!g) return c.json({ error: 'No autorizado' }, 401)
+  const salonId = c.req.param('salonId')
+  const monthParam = c.req.query('month')
+  if (!monthParam || !/^\d{4}-\d{2}$/.test(monthParam)) return c.json({ error: 'Parámetro month requerido (YYYY-MM)' }, 400)
+  const supabase = getSupabaseAdmin()
+  const { data: link } = await supabase.from('gestor_salon_links').select('id').eq('gestor_id', g.gestorId).eq('salon_id', salonId).eq('status', 'active').single()
+  if (!link) return c.json({ error: 'Acceso denegado' }, 403)
+  const [year, mon] = monthParam.split('-').map(Number)
+  const from = `${year}-${String(mon).padStart(2, '0')}-01`
+  const lastDay = new Date(year, mon, 0).getDate()
+  const to = `${year}-${String(mon).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+  const prevDate = new Date(year, mon - 2, 1)
+  const prevYear = prevDate.getFullYear(); const prevMon = prevDate.getMonth() + 1
+  const prevFrom = `${prevYear}-${String(prevMon).padStart(2, '0')}-01`
+  const prevLastDay = new Date(prevYear, prevMon, 0).getDate()
+  const prevTo = `${prevYear}-${String(prevMon).padStart(2, '0')}-${String(prevLastDay).padStart(2, '0')}`
+  const [salonRes, txCurr, txPrev, invCurr] = await Promise.all([
+    supabase.from('salons').select('name').eq('id', salonId).single(),
+    supabase.from('transactions').select('type, amount, description, date, category').eq('salon_id', salonId).gte('date', from).lte('date', to).order('date', { ascending: false }),
+    supabase.from('transactions').select('type, amount').eq('salon_id', salonId).gte('date', prevFrom).lte('date', prevTo),
+    supabase.from('invoices').select('number, total, status, issue_date, due_date, client_name').eq('salon_id', salonId).gte('issue_date', from).lte('issue_date', to).order('issue_date', { ascending: false }),
+  ])
+  const calc = (txs: any[]) => ({ income: (txs ?? []).filter((t: any) => t.type === 'income').reduce((s: number, t: any) => s + (t.amount || 0), 0), expenses: (txs ?? []).filter((t: any) => t.type === 'expense').reduce((s: number, t: any) => s + (t.amount || 0), 0) })
+  const curr = calc(txCurr.data ?? []); const prev = calc(txPrev.data ?? [])
+  const r = (n: number) => Math.round(n * 100) / 100
+  const delta = (a: number, b: number) => b === 0 ? null : Math.round(((a - b) / b) * 100)
+  return c.json({
+    ok: true, salon: salonRes.data?.name ?? 'Negocio',
+    month: { year, month: mon, label: `${String(mon).padStart(2, '0')}/${year}`, from, to },
+    current: { income: r(curr.income), expenses: r(curr.expenses), net: r(curr.income - curr.expenses) },
+    previous: { income: r(prev.income), expenses: r(prev.expenses), net: r(prev.income - prev.expenses), label: `${String(prevMon).padStart(2, '0')}/${prevYear}` },
+    delta: { income: delta(curr.income, prev.income), expenses: delta(curr.expenses, prev.expenses), net: delta(curr.income - curr.expenses, prev.income - prev.expenses) },
+    invoices: (invCurr.data ?? []).map((i: any) => ({ number: i.number, total: i.total, status: i.status, issue_date: i.issue_date, due_date: i.due_date, client: i.client_name })),
+  })
+})
+
 // ─── B4: Export token endpoint ────────────────────────────────────────────────
 gestorPublicRoutes.post('/export/token', async (c) => {
   const gestorId = c.get('gestorId') as string
