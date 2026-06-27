@@ -1,9 +1,15 @@
 // @ts-nocheck
+// TODO: Remove @ts-nocheck — refactor to fix TS errors and report unresolvable ones to Miguel
 /**
  * core.ts — Núcleo agéntico channel-agnostic (Bloque A, Rebanada 4)
  *
  * Recibe AgentInput normalizado → devuelve AgentOutput normalizado.
  * No sabe de qué canal viene (web / telegram / whatsapp).
+ *
+ * v2 — 27 Jun 2026:
+ *  ✅ Memoria conversacional (historial + resúmenes automáticos)
+ *  ✅ 3 cerebros (Rápida/Inteligente/Brillante) por salón
+ *  ✅ Modelo base cambiado de Hermes 3 70B a Gemini 2.5 Flash
  *
  * Flujo:
  *  action_response → executePendingAction | cancelPendingAction
@@ -14,12 +20,20 @@
  */
 
 import { parseUserInput }                                          from './parser'
-import { routeToLLM, callOpenRouter, DIABOLUS_SYSTEM_PROMPT }     from './llm-router'
+import { routeToLLM, callOpenRouter, buildSystemPrompt, BRAIN_MODELS } from './llm-router'
 import { createClient }                                            from '@supabase/supabase-js'
 import { createPendingAction, executePendingAction, cancelPendingAction } from './confirmation'
 import type { ConfirmationCard }                                   from './confirmation'
 import { suggestCategory }                                         from './tools'
 import { extractFromImage }                                        from './vision'
+import {
+  saveMessage,
+  buildMemoryContext,
+  shouldGenerateSummary,
+  generateAndStoreSummary,
+  getSalonAIConfig,
+} from './memory'
+import type { BrainTier } from './memory'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,7 +58,7 @@ export interface AgentOutput {
   source?:        'photo' | 'text'
   camposDudosos?: string[]
   confianza?:     'alta' | 'media' | 'baja'
-  routing?:       { level: string; model: string; estimatedCost: string }
+  routing?:       { level: string; model: string; label: string; estimatedCost: string }
 }
 
 // ─── Supabase ────────────────────────────────────────────────────────────────
@@ -58,10 +72,6 @@ function getSupabase() {
 
 // ─── Channel link helpers (seguridad: externo → tenant) ──────────────────────
 
-/**
- * Resuelve el salon_id a partir de (channel, external_id).
- * Devuelve null si no hay enlace verificado → el adaptador rechaza la petición.
- */
 export async function resolveTenant(
   channel: 'telegram' | 'whatsapp',
   externalId: string
@@ -76,9 +86,6 @@ export async function resolveTenant(
   return data?.salon_id ?? null
 }
 
-/**
- * Guarda el último pending_action_id para capturar SÍ/NO de WhatsApp.
- */
 export async function storeLastPending(
   channel: string,
   externalId: string,
@@ -92,9 +99,6 @@ export async function storeLastPending(
     .eq('external_id', externalId)
 }
 
-/**
- * Recupera el último pending_action_id para un canal/usuario.
- */
 export async function getLastPending(
   channel: string,
   externalId: string
@@ -109,9 +113,46 @@ export async function getLastPending(
   return data?.last_pending_action_id ?? null
 }
 
-// ─── Main entry ──────────────────────────────────────────────────────────────
+// ─── Main entry (with memory wrapper) ────────────────────────────────────────
 
 export async function processAgentInput(input: AgentInput): Promise<AgentOutput> {
+  // Save user message to memory (fire and forget for text inputs)
+  if (input.type === 'text' && input.text) {
+    saveMessage({
+      salon_id: input.tenantId,
+      user_id:  input.userId || null,
+      channel:  input.channel,
+      role:     'user',
+      content:  input.text,
+    }).catch(() => {})
+  }
+
+  // Process the input
+  const result = await processAgentInputInternal(input)
+
+  // Save assistant response to memory (fire and forget)
+  const replyContent = result.replyText || result.needsInfo || result.card?.summary || ''
+  if (replyContent && input.type !== 'action_response') {
+    saveMessage({
+      salon_id: input.tenantId,
+      user_id:  input.userId || null,
+      channel:  input.channel,
+      role:     'assistant',
+      content:  replyContent,
+    }).catch(() => {})
+
+    // Check if we need to generate a summary (every ~20 messages)
+    shouldGenerateSummary(input.tenantId)
+      .then(needed => { if (needed) generateAndStoreSummary(input.tenantId) })
+      .catch(() => {})
+  }
+
+  return result
+}
+
+// ─── Internal processing ─────────────────────────────────────────────────────
+
+async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput> {
   const { tenantId, type, userId } = input
 
   // ── 1. Confirm / Cancel ────────────────────────────────────────────────────
@@ -184,10 +225,10 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
   if (!userInput) return { needsInfo: '¿Qué necesitas? Escribe /ayuda para ver los comandos.' }
 
   // ── Saludos y ayuda ──────────────────────────────────────────────────────
-  if (/^(hola|hey|buenas|buenos días|buenas tardes|buenas noches|ey|hi|hello|qué hay|qué tal|holi|ola|buenas!|hola!|hey!)\s*[!?]?$/i.test(userInput)) {
+  if (/^(hola|hey|buenas|buenos días|buenas tardes|buenas noches|ey|hi|hello|qué hay|qué tal|holi|ola|buenas!|hola!|hey!)[\s]*[!?]?$/i.test(userInput)) {
     return { replyText: 'Hola. Soy tu Diablilla. ¿Qué deseas? 😈\n\nPuedo crear facturas, registrar cobros y gastos, avisar a morosos y llevarte las cuentas. Dime qué necesitas.' }
   }
-  if (/^(ayuda|help|comandos|opciones|qué puedes hacer|para qué sirves|cómo funciona)\s*[?]?$/i.test(userInput)) {
+  if (/^(ayuda|help|comandos|opciones|qué puedes hacer|para qué sirves|cómo funciona)[\s]*[?]?$/i.test(userInput)) {
     return {
       replyText: [
         '😈 <b>Diablilla — Comandos</b>',
@@ -229,7 +270,6 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       }
     }
 
-    // Concepto SIEMPRE obligatorio — nunca usar defaults genéricos
     if (!parsed.data.concept) {
       return { needsInfo: isIncome
         ? `¿De qué servicio son los ${parsed.data.amount}€? Ej: "corte", "color", "manicura". ¿El importe lleva IVA incluido?`
@@ -259,7 +299,6 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
 
   // ── crear_cliente ────────────────────────────────────────────────────────
   if (/nuevo cliente|crear cliente|añadir cliente|agrega.{0,10}cliente|da de alta|registra.{0,15}cliente|alta.{0,10}cliente|registra\s+a\s+[A-ZÁÉÍÓÚÑ]|añade\s+a\s+[A-ZÁÉÍÓÚÑ]|a[ñn]ade\s+a\s+[A-ZÁÉÍÓÚÑ]|mete\s+a\s+[A-ZÁÉÍÓÚÑ]|apunta\s+a\s+[A-ZÁÉÍÓÚÑ]/i.test(userInput)) {
-    // Extrae nombre: soporta "nuevo cliente X", "registra a X", "añade a X", etc.
     const mNombre = userInput.match(
       /(?:nuevo\s+cliente|cliente|añade|crea|registra|alta|mete|apunta)\s+(?:a\s+)?(?:llamad[oa]?\s+)?([A-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,40}?)(?:\s+(?:con|tel\b|telf?\b|tlf\b|teléfono|telefono|email|,|$)|\s*$)/i
     )
@@ -270,11 +309,10 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     const mPhone    = userInput.match(/(?:teléfono|telefono|telf?|móvil|movil|tlf)[\s:]+([+0-9\s]{7,15})/i)
     const mEmail    = userInput.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
     const mNif      = userInput.match(/(?:nif|cif|dni)[\s:]+([A-Z0-9]{7,9})/i)
-    // Nombre comercial: "panadería X", "bar X", "negocio X", "empresa X", "tienda X"
     const mComercial = userInput.match(/(?:panadería|panaderia|bar|restaurante|cafetería|cafeteria|peluquería|peluqueria|tienda|negocio|empresa|clínica|clinica|farmacia|taller|academia|gimnasio|gym)\s+([A-Za-záéíóúñÁÉÍÓÚÑ\s]{2,30})/i)
     const nombreComercial = mComercial ? mComercial[0].trim() : undefined
 
-    // ── Anti-duplicados: buscar si ya existe un cliente con nombre similar ──
+    // Anti-duplicados
     try {
       const supabase = getSupabase()
       const { data: existentes } = await supabase
@@ -302,30 +340,24 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     return { card }
   }
 
-  // ── crear_factura / enviar_factura (crear + enviar en un paso) ───────────
+  // ── crear_factura / enviar_factura ───────────────────────────────────────
   if (/crea.{0,10}factura|nueva factura|factura para|hazme.{0,10}factura|factura a\s|apunta.{0,10}factura|registra.{0,10}factura|hacer.{0,10}factura|pon.{0,10}factura|mete.{0,10}factura|generar?.{0,10}factura/i.test(userInput)) {
 
-    // 1. ¿Quiere NO enviar explícitamente?
     const noEnviar     = /no env[íi]|sin enviar|solo crea|solo borrador/i.test(userInput)
-    // ¿Pide envío explícito? (para forzarlo aunque no haya email en BD)
     const userWantsSend = !noEnviar && /env[íi]a|manda(?:l[ao])?|por\s+email|al\s+correo/i.test(userInput)
 
-    // 2. Extraer cliente — artículo inicial opcional (el/la/los/las/un/una)
     const mCliente = userInput.match(
       /(?:para|a)\s+(?:(?:el|la|los|las|un|una)\s+)?([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{1,55}?)(?:\s+(?:con|por|de|,)|\s+\d|$)/i
     )
     let clienteNombre = mCliente ? mCliente[1].trim() : ''
-    // Limpieza artículos residuales
     clienteNombre = clienteNombre.replace(/^(?:el|la|los|las|un|una)\s+/i, '').trim()
 
-    // 3. Extraer importe — busca número seguido de €/eur* (evita "500 ml", CIFs, años)
     let importeNum = 0
     const mImporteUnit = userInput.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|eur\w*)/i)
     if (mImporteUnit) {
       importeNum = parseFloat(mImporteUnit[1].replace(',', '.'))
     }
 
-    // 4. Extraer concepto — prioridad: "concepto de X", "por X", texto libre tras el importe
     let concepto = ''
     const mConcepto = userInput.match(
       /(?:concepto\s+(?:de\s+)?)([^,\n]+?)(?:\s+con\s+(?:el\s+)?(?:cif|nif)|,|\s*$)/i
@@ -337,7 +369,6 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       concepto = concepto.charAt(0).toUpperCase() + concepto.slice(1)
     }
 
-    // Fallback: texto libre DESPUÉS del importe (ej: "factura a López 800€ instalación")
     if (!concepto && importeNum > 0) {
       const afterAmtMatch = userInput.match(
         /\d+(?:[.,]\d{1,2})?\s*(?:€|eur\w*)?\s+([a-záéíóúñA-ZÁÉÍÓÚÑ][^\d,\n]{2,60}?)(?:\s+con\s+(?:el\s+)?(?:cif|nif)|,|\s*$)/i
@@ -352,15 +383,12 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       }
     }
 
-    // 5. Extraer CIF/NIF (letra + 7-8 dígitos, con posible espacio entre letra y número)
     const mCif   = userInput.match(/(?:cif|nif)\D{0,35}([A-Z]\s*\d{6,8}[A-Z0-9]?)/i)
     const cifNif = mCif ? mCif[1].replace(/\s/g, '').toUpperCase() : null
 
-    // 6. Extraer email directo del mensaje
     const mEmailDir    = userInput.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
     const emailDirecto = mEmailDir ? mEmailDir[1] : null
 
-    // 7. Datos obligatorios — pedir uno a uno
     if (!clienteNombre) {
       return { needsInfo: '¿Para qué cliente es la factura? Ej: "factura a García 800€ instalación"' }
     }
@@ -371,7 +399,6 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
       return { needsInfo: `¿Cuál es el concepto para ${clienteNombre}? Ej: "instalación eléctrica", "consultoría"` }
     }
 
-    // 8. Buscar cliente en BD
     const { data: clientes } = await supabase
       .from('clients')
       .select('id, name, email, nif')
@@ -386,10 +413,6 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     const cliente     = clientes[0]
     const clientEmail = emailDirecto || cliente.email || null
 
-    // 9. Decidir acción:
-    //    - Si pide envío explícito y no hay email → pedirlo
-    //    - Si hay email (y no rechaza) → crear + enviar
-    //    - Si no hay email → solo borrador
     if (userWantsSend && !clientEmail) {
       return { needsInfo: `Para enviar la factura a ${cliente.name} necesito su email. ¿Cuál es?` }
     }
@@ -417,7 +440,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     return { card }
   }
 
-  // ── facturas vencidas READ guard (antes de cambiar_estado) ─────────────
+  // ── facturas vencidas READ guard ──────────────────────────────────────────
   if (
     /^facturas?\s+vencidas?$|^ver\s+vencidas?$|^hay\s+vencidas?$|^cu[aá]ntas?\s+vencidas?$/i.test(userInput.trim()) ||
     /(?:listar?|ver|mostrar|hay|cu[aá]ntas?|qu[eé])\s+facturas?\s+vencidas?/i.test(userInput)
@@ -432,7 +455,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     if (/anuld|cancel/i.test(userInput)) nuevoEstado = 'anulada'
     if (/pendiente/i.test(userInput))    nuevoEstado = 'pendiente'
 
-    const mNum = userInput.match(/(?:#|factura\s+)?(\d{4}-\d{3,4})/i)
+    const mNum = userInput.match(/(?:#|factura\s+)?(\\d{4}-\\d{3,4})/i)
     let invoice = null
 
     if (mNum) {
@@ -572,7 +595,7 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     return { card }
   }
 
-  // ── gastos recurrentes del negocio (local, suministros, dietas, material) ─
+  // ── gastos recurrentes del negocio ───────────────────────────────────────
   {
     const gastoMap: Array<{re: RegExp; concepto: string; categoria: string; ejemploImporte: string}> = [
       { re: /alquiler\s+(?:del?\s+)?local|pago\s+(?:del?\s+)?local|renta\s+(?:del?\s+)?local/i, concepto: 'Alquiler local',    categoria: 'alquiler',      ejemploImporte: '800€'  },
@@ -685,17 +708,25 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
     return { card }
   }
 
-  // ── READ intents → ejecutar directamente ─────────────────────────────────
-  const routing = routeToLLM(parsed.confidence, userInput, false)
+  // ── READ intents & LLM fallback ──────────────────────────────────────────
+
+  // Load salon AI config for brain tier
+  const aiConfig = await getSalonAIConfig(tenantId)
+  const brainTier: BrainTier = aiConfig.brain_tier || 'rapida'
+  const routing = routeToLLM(parsed.confidence, userInput, false, brainTier)
 
   let finalResponse: string
   if (routing.level === 'L0') {
     finalResponse = await generateL0ReadResponse(parsed, tenantId)
   } else {
     try {
-      const ctx         = await getDashboardContext(tenantId)
-      const systemWithCtx = DIABOLUS_SYSTEM_PROMPT + '\n\nDatos actuales del negocio:\n' + ctx
-      finalResponse     = await callOpenRouter(routing.model, userInput, systemWithCtx)
+      // Load memory and dashboard context in parallel
+      const [memoryCtx, dashCtx] = await Promise.all([
+        buildMemoryContext(tenantId),
+        getDashboardContext(tenantId),
+      ])
+      const systemPrompt = buildSystemPrompt(routing.label, memoryCtx, dashCtx)
+      finalResponse = await callOpenRouter(routing.model, userInput, systemPrompt)
     } catch (err) {
       console.warn('[Core] LLM error, fallback to L0:', err)
       finalResponse = await generateL0ReadResponse(parsed, tenantId)
@@ -704,7 +735,12 @@ export async function processAgentInput(input: AgentInput): Promise<AgentOutput>
 
   return {
     replyText: finalResponse,
-    routing: { level: routing.level, model: routing.model, estimatedCost: `€${routing.estimatedCost}` },
+    routing: {
+      level: routing.level,
+      model: routing.model,
+      label: routing.label,
+      estimatedCost: `€${routing.estimatedCost}`,
+    },
   }
 }
 

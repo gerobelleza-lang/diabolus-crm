@@ -1,16 +1,46 @@
 /**
- * LLM Router — L0→L1→L2→L3
+ * LLM Router — Sistema de 3 Cerebros de Diablilla
  *
- * Decisión de qué modelo usar basada en complejidad de query
- * L0: Parser deterministic (€0.00, instant)
- * L1: Haiku (€0.001, para queries simple)
- * L2: Sonnet + tools (€0.005, para acciones)
- * L3: GPT-4 (€0.02, análisis complejo)
+ * Cerebros:
+ *  🧠 Rápida     → Gemini 2.5 Flash  (incluida en todos los planes)
+ *  🧠 Inteligente → GPT-4.1 Mini     (incluida en El Pacto / El Infierno)
+ *  🧠 Brillante  → Claude Sonnet 4   (incluida en El Infierno)
+ *
+ * Routing:
+ *  L0 → Parser determinístico (sin LLM, €0)
+ *  L1+ → Usa el modelo del cerebro configurado por el salón
+ *
+ * Memoria: el system prompt se enriquece con contexto de conversaciones previas.
  */
 
+import type { BrainTier } from './memory'
+
+// ─── Model map ────────────────────────────────────────────────────────────────
+
+export const BRAIN_MODELS: Record<BrainTier, { model: string; label: string; costPerMTok: number }> = {
+  rapida: {
+    model: 'google/gemini-2.5-flash',
+    label: '🧠 Diablilla Rápida',
+    costPerMTok: 0.15,
+  },
+  inteligente: {
+    model: 'openai/gpt-4.1-mini',
+    label: '🧠 Diablilla Inteligente',
+    costPerMTok: 0.40,
+  },
+  brillante: {
+    model: 'anthropic/claude-sonnet-4',
+    label: '🧠 Diablilla Brillante',
+    costPerMTok: 3.00,
+  },
+}
+
+// ─── Routing decision ─────────────────────────────────────────────────────────
+
 export interface RoutingDecision {
-  level: 'L0' | 'L1' | 'L2' | 'L3'
+  level: 'L0' | 'L1' | 'L2'
   model: string
+  label: string
   rationale: string
   estimatedCost: number
 }
@@ -18,57 +48,44 @@ export interface RoutingDecision {
 export function routeToLLM(
   parserConfidence: number,
   userInput: string,
-  needsTools: boolean
+  needsTools: boolean,
+  brainTier: BrainTier = 'rapida'
 ): RoutingDecision {
+  // L0: parser is confident enough — no LLM needed
   if (parserConfidence > 0.85 && !needsTools) {
     return {
       level: 'L0',
       model: 'parser',
-      rationale: 'Parser L0 confident (>85%). No tools needed.',
-      estimatedCost: 0
+      label: 'Parser L0',
+      rationale: 'Parser confident (>85%). No LLM needed.',
+      estimatedCost: 0,
     }
   }
 
-  if (parserConfidence > 0.7 && userInput.length < 100) {
+  const brain = BRAIN_MODELS[brainTier] || BRAIN_MODELS.rapida
+
+  // L1: simple queries — still use the salon's chosen brain
+  if (parserConfidence > 0.7 && userInput.length < 80) {
     return {
       level: 'L1',
-      model: 'anthropic/claude-haiku-4.5',
-      rationale: 'Parser semi-confident (70-85%). Simple query (<100 chars).',
-      estimatedCost: 0.001
+      model: brain.model,
+      label: brain.label,
+      rationale: `Parser semi-confident. Using ${brain.label}.`,
+      estimatedCost: brain.costPerMTok * 0.001,
     }
   }
 
-  if (needsTools || userInput.includes('crear') || userInput.includes('crear')) {
-    return {
-      level: 'L2',
-      model: 'anthropic/claude-sonnet-4.5',
-      rationale: 'Tools needed or action requested. Use Sonnet.',
-      estimatedCost: 0.005
-    }
-  }
-
-  if (
-    userInput.includes('analiza') ||
-    userInput.includes('analizar') ||
-    userInput.includes('resumen') ||
-    userInput.includes('insights') ||
-    userInput.length > 200
-  ) {
-    return {
-      level: 'L3',
-      model: 'openai/gpt-4-turbo',
-      rationale: 'Complex analysis or long input. Use GPT-4.',
-      estimatedCost: 0.02
-    }
-  }
-
+  // L2: everything else — use the salon's chosen brain
   return {
     level: 'L2',
-    model: 'anthropic/claude-sonnet-4.5',
-    rationale: 'Default to Sonnet for balanced accuracy/cost.',
-    estimatedCost: 0.005
+    model: brain.model,
+    label: brain.label,
+    rationale: `Full LLM call. Using ${brain.label}.`,
+    estimatedCost: brain.costPerMTok * 0.005,
   }
 }
+
+// ─── OpenRouter call ──────────────────────────────────────────────────────────
 
 export async function callOpenRouter(
   model: string,
@@ -78,7 +95,7 @@ export async function callOpenRouter(
   const apiKey = process.env.OPENROUTER_API_KEY
 
   if (!apiKey) {
-    throw new Error('OPENROUTER_API_KEY not set. Fallback to L0 parser.')
+    throw new Error('OPENROUTER_API_KEY not set.')
   }
 
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -86,32 +103,55 @@ export async function callOpenRouter(
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://diabolus.crm',
-      'X-Title': 'Diabolus CRM'
+      'HTTP-Referer': 'https://diabolus.es',
+      'X-Title': 'Diabolus CRM',
     },
     body: JSON.stringify({
       model,
       messages: [
         ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-        { role: 'user', content: userMessage }
+        { role: 'user', content: userMessage },
       ],
       temperature: 0.2,
-      max_tokens: 800
-    })
+      max_tokens: 800,
+    }),
   })
 
   if (!response.ok) {
-    throw new Error(`OpenRouter error: ${response.statusText}`)
+    const errText = await response.text().catch(() => response.statusText)
+    throw new Error(`OpenRouter error (${response.status}): ${errText}`)
   }
 
-  const data = (await response.json()) as any
+  const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
   return data.choices?.[0]?.message?.content || 'No response from LLM'
 }
 
-/**
- * System prompt para Diabolus — Diablilla con personalidad completa
- * Actualizado 26 Jun 2026 — tono sarcástico, leal, proactivo, con criterio
- */
+// ─── System prompt ────────────────────────────────────────────────────────────
+// Updated 27 Jun 2026 — memory-aware, with brain tier context
+
+export function buildSystemPrompt(
+  brainLabel: string,
+  memoryContext: string,
+  dashboardContext: string
+): string {
+  return `${DIABOLUS_SYSTEM_PROMPT}
+
+# MI CEREBRO: ${brainLabel}
+
+# MI MEMORIA — USO DE CONTEXTO
+${memoryContext || 'Primera interacción con este negocio. No tengo historial aún.'}
+
+Uso mi memoria para:
+- Referirme a clientes, importes y decisiones de conversaciones previas
+- No repetir información que ya le di al Jefe
+- Recordar compromisos: "la semana pasada dijiste que García pagaría el viernes"
+- Detectar patrones: "es la tercera vez que López se retrasa"
+
+# DATOS ACTUALES DEL NEGOCIO
+${dashboardContext || 'Datos no disponibles en este momento.'}
+`
+}
+
 export const DIABOLUS_SYSTEM_PROMPT = `# QUIÉN SOY
 
 Soy tu Diablilla. No soy una app. No soy un asistente. Soy la que lleva las cuentas de tu negocio mientras tú haces lo que sabes hacer.
@@ -124,14 +164,17 @@ Soy directa, leal, y un poco sarcástica cuando la situación lo merece. Mis res
 
 Nunca digo "no puedo" sin dar una alternativa. Nunca ejecuto sin confirmación. Y nunca uso palabras genéricas cuando hay una precisa.
 
+Tengo MEMORIA. Recuerdo lo que hablamos ayer, la semana pasada, el mes pasado. Si me dices que García va a pagar el viernes y no paga, yo lo sé y te lo digo el lunes.
+
 # MI ACTITUD
 
 - Si el Jefe me pregunta cómo va el negocio, le doy los números con un veredicto: "Bien", "Mal", "Hay que actuar".
-- Si hay morosos, los nombre. No digo "tienes deudores pendientes" — digo "García te debe 450€ desde hace 18 días. Hay que recordárselo hoy."
+- Si hay morosos, los nombro. No digo "tienes deudores pendientes" — digo "García te debe 450€ desde hace 18 días. Hay que recordárselo hoy."
 - Si algo está raro en los datos, lo señalo aunque no me lo pidan.
 - Si el Jefe está en racha, se lo digo. Si está en barrena, también.
 - Soy proactiva: si veo algo que hay que hacer y no me lo han pedido, lo menciono en una línea.
-- Usoo 😈 con moderación. Solo cuando procede — no en cada mensaje.
+- Uso 😈 con moderación. Solo cuando procede — no en cada mensaje.
+- RECUERDO conversaciones anteriores y las uso para dar contexto relevante.
 
 # MI ALCANCE — LO QUE EJECUTO
 
@@ -176,25 +219,22 @@ Estos conceptos son GASTOS o INGRESOS válidos que registro normalmente:
 **Gastos del local y suministros:**
 - "alquiler del local" → GASTO. Concepto: "Alquiler local [mes si se menciona]"
 - "luz", "electricidad" → GASTO. Concepto: "Electricidad [mes]"
-- "agua" → GASTO. Concepto: "Agua [mes]"
-- "gas" → GASTO. Concepto: "Gas [mes]"
-- "internet", "wifi", "fibra" → GASTO. Concepto: "Internet [mes]"
+- "agua", "gas", "internet" → GASTO correspondiente
 - "teléfono empresa" → GASTO. Concepto: "Teléfono empresa [mes]"
 - "limpieza" → GASTO. Concepto: "Limpieza [mes]"
 
 **Gastos variables y dietas:**
 - "dieta", "comida de trabajo" → GASTO. Concepto: "Dieta [lugar si se menciona]"
-- "material de peluquería", "material de oficina", "consumibles" → GASTO. Concepto: "Material [tipo]"
+- "material", "consumibles" → GASTO. Concepto: "Material [tipo]"
 - "gasolina", "combustible" → GASTO. Concepto: "Combustible"
-- "peaje", "parking" → GASTO. Concepto: "Aparcamiento/Peaje"
 - "publicidad", "marketing" → GASTO. Concepto: "Publicidad"
 - "gestoría", "asesoría" → GASTO. Concepto: "Gestoría [mes]"
 - "seguro", "póliza" → GASTO. Concepto: "Seguro [tipo]"
-- "proveedor", "stock", "mercancía" → GASTO. Concepto: "Compra proveedor - [nombre]"
-- "suscripción software", "herramienta digital" → GASTO. Concepto: "Herramienta digital - [nombre]"
-- "comisión banco", "TPV", "datáfono" → GASTO. Concepto: "Comisión bancaria"
-- "impuesto", "tasa municipal", "IBI" → GASTO. Concepto: "Impuesto/Tasa - [tipo]"
-- "reparación", "avería", "mantenimiento" → GASTO. Concepto: "Reparación/Mantenimiento"
+- "proveedor", "stock" → GASTO. Concepto: "Compra proveedor - [nombre]"
+- "suscripción software" → GASTO. Concepto: "Herramienta digital - [nombre]"
+- "comisión banco", "TPV" → GASTO. Concepto: "Comisión bancaria"
+- "impuesto", "tasa", "IBI" → GASTO. Concepto: "Impuesto/Tasa - [tipo]"
+- "reparación", "avería" → GASTO. Concepto: "Reparación/Mantenimiento"
 - "formación", "curso" → GASTO. Concepto: "Formación - [nombre curso]"
 
 **Proveedor:** si el usuario menciona de quién es el gasto ("de Endesa", "a Mapfre"), inclúyelo en el concepto. Ej: "Electricidad mayo - Endesa"
