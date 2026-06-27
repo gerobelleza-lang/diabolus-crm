@@ -846,12 +846,12 @@ async function getDashboardContext(salonId: string): Promise<DashboardData> {
 
     return {
       text: [
-        \`- Ingresos mes actual: €\${income.toFixed(2)}\`,
-        \`- Gastos mes actual: €\${expenses.toFixed(2)}\`,
-        \`- Balance: €\${(income - expenses).toFixed(2)}\`,
-        \`- Pendiente de cobro: €\${pendingAmount.toFixed(2)} (\${pendingCount} facturas)\`,
-        \`- Vencido sin cobrar: €\${overdueAmount.toFixed(2)} (\${overdueCount} facturas)\`,
-        \`- Ingresos mes anterior: €\${lastMonthIncome.toFixed(2)}\`,
+        `- Ingresos mes actual: EUR ${income.toFixed(2)}`,
+        `- Gastos mes actual: EUR ${expenses.toFixed(2)}`,
+        `- Balance: EUR ${(income - expenses).toFixed(2)}`,
+        `- Pendiente de cobro: EUR ${pendingAmount.toFixed(2)} (${pendingCount} facturas)`,
+        `- Vencido sin cobrar: EUR ${overdueAmount.toFixed(2)} (${overdueCount} facturas)`,
+        `- Ingresos mes anterior: EUR ${lastMonthIncome.toFixed(2)}`,
       ].join('\n'),
       structured,
     }
@@ -860,48 +860,18 @@ async function getDashboardContext(salonId: string): Promise<DashboardData> {
   }
 }
 
-// ─── L0 read responses ────────────────────────────────────────────────────────
-
-async function generateL0ReadResponse(
-  parsed: ReturnType<typeof parseUserInput>,
-  salonId: string
-): Promise<string> {
-  switch (parsed.intent) {
-    case 'query_balance':  return fetchBalance(salonId)
-    case 'query_debtors':  return fetchPending(salonId)
-    case 'query_overdue':  return fetchOverdue(salonId)
-    case 'query_who_owes': return fetchWhoOwes(salonId)
-    case 'query_income':   return fetchIncome(salonId)
-    case 'query_expense':  return fetchExpenses(salonId)
-    default:
-      return [
-        'Puedo ayudarte con:',
-        '• <b>"factura a García 800€ instalación"</b> → crea factura al instante',
-        '• <b>"cobré 300€ de Ana por corte"</b> → registra ingreso',
-        '• <b>"gasté 45€ en material"</b> → registra gasto',
-        '• 📷 Adjunta foto de ticket o factura',
-        '• <b>"nuevo cliente Ana García tel 612345678"</b> → crea cliente',
-        '• <b>"la factura de Ana está pagada"</b> → actualiza estado',
-        '• <b>"manda recordatorio a Ana"</b> → aviso de cobro',
-        '• <b>"¿cuánto tengo?"</b> → balance del mes',
-        '• <b>"¿quién me debe?"</b> → cobros pendientes',
-        '',
-        '/ayuda para ver todos los comandos',
-      ].join('\n')
-  }
-}
+// ---- Insight data fetchers (standalone) ----
 
 async function fetchBalance(salonId: string): Promise<string> {
   try {
-    const supabase     = getSupabase()
-    const now          = new Date()
+    const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const { data: txns } = await supabase
+    const { data: txns } = await getSupabase()
       .from('transactions').select('amount, type').eq('salon_id', salonId).gte('created_at', startOfMonth)
     if (!txns?.length) return 'No hay transacciones registradas este mes.'
     let income = 0, expenses = 0
     for (const t of txns) { if (t.type === 'income') income += t.amount || 0; else expenses += t.amount || 0 }
-    return `💰 Este mes:\n• Ingresos: €${income.toFixed(2)}\n• Gastos: €${expenses.toFixed(2)}\n• Balance: €${(income - expenses).toFixed(2)}`
+    return `Balance este mes: Ingresos EUR ${income.toFixed(2)} | Gastos EUR ${expenses.toFixed(2)} | Neto EUR ${(income - expenses).toFixed(2)}`
   } catch { return 'No se pudo consultar el balance.' }
 }
 
@@ -910,8 +880,8 @@ async function fetchPending(salonId: string): Promise<string> {
     const { data: invoices } = await getSupabase()
       .from('invoices').select('total, status').eq('salon_id', salonId).in('status', ['sent', 'pending'])
     if (!invoices?.length) return 'No hay cobros pendientes.'
-    const total = invoices.reduce((s, i) => s + (i.total || 0), 0)
-    return `⏳ Pendiente de cobro:\n• Total: €${total.toFixed(2)}\n• Facturas: ${invoices.length}`
+    const total = invoices.reduce((s: number, i: any) => s + (i.total || 0), 0)
+    return `Pendiente de cobro: Total EUR ${total.toFixed(2)} | Facturas: ${invoices.length}`
   } catch { return 'No se pudo consultar los cobros pendientes.' }
 }
 
@@ -919,29 +889,25 @@ async function fetchOverdue(salonId: string): Promise<string> {
   try {
     const now  = new Date().toISOString()
     const { data: invoices } = await getSupabase()
-      .from('invoices').select('total, number, due_date')
-      .eq('salon_id', salonId).in('status', ['sent', 'pending']).lt('due_date', now)
-      .order('due_date', { ascending: true })
-    if (!invoices?.length) return '✅ No hay facturas vencidas.'
-    const total = invoices.reduce((s, i) => s + (i.total || 0), 0)
-    const list  = invoices.slice(0, 5).map(i => `  • ${i.number}: €${(i.total || 0).toFixed(2)}`).join('\n')
-    return `🔴 Facturas vencidas:\n• Total: €${total.toFixed(2)}\n• Facturas: ${invoices.length}\n${list}`
+      .from('invoices').select('total, number, due_date').eq('salon_id', salonId).in('status', ['sent', 'pending']).lt('due_date', now)
+    if (!invoices?.length) return 'No hay facturas vencidas.'
+    const total = invoices.reduce((s: number, i: any) => s + (i.total || 0), 0)
+    const list  = invoices.slice(0, 5).map((i: any) => `  - ${i.number}: EUR ${(i.total || 0).toFixed(2)}`).join('\n')
+    return `Facturas vencidas: Total EUR ${total.toFixed(2)} | Facturas: ${invoices.length}\n${list}`
   } catch { return 'No se pudo consultar las facturas vencidas.' }
 }
 
 async function fetchWhoOwes(salonId: string): Promise<string> {
   try {
     const { data: invoices } = await getSupabase()
-      .from('invoices').select('total, number, due_date, clients(name)')
-      .eq('salon_id', salonId).in('status', ['sent', 'pending'])
-      .order('due_date', { ascending: true }).limit(8)
-    if (!invoices?.length) return 'No hay cobros pendientes.'
-    const lines = invoices.map(i => {
+      .from('invoices').select('total, due_date, clients(name)').eq('salon_id', salonId).in('status', ['sent', 'pending']).order('total', { ascending: false }).limit(10)
+    if (!invoices?.length) return 'No hay deudores.'
+    const lines = invoices.map((i: any) => {
       const name = (i.clients as any)?.name || 'Cliente'
       const due  = i.due_date ? new Date(i.due_date).toLocaleDateString('es-ES') : 'sin vencimiento'
-      return `  • ${name}: €${(i.total || 0).toFixed(2)} (vence ${due})`
+      return `  - ${name}: EUR ${(i.total || 0).toFixed(2)} (vence ${due})`
     })
-    return `👥 Clientes que te deben:\n${lines.join('\n')}`
+    return `Clientes que te deben:\n${lines.join('\n')}`
   } catch { return 'No se pudo consultar la lista de deudores.' }
 }
 
@@ -952,8 +918,8 @@ async function fetchIncome(salonId: string): Promise<string> {
     const { data: txns } = await getSupabase()
       .from('transactions').select('amount').eq('salon_id', salonId).eq('type', 'income').gte('created_at', startOfMonth)
     if (!txns?.length) return 'No hay ingresos registrados este mes.'
-    const total = txns.reduce((s, t) => s + (t.amount || 0), 0)
-    return `📈 Ingresos este mes: €${total.toFixed(2)} (${txns.length} registros)`
+    const total = txns.reduce((s: number, t: any) => s + (t.amount || 0), 0)
+    return `Ingresos este mes: EUR ${total.toFixed(2)} (${txns.length} registros)`
   } catch { return 'No se pudo consultar los ingresos.' }
 }
 
@@ -964,7 +930,7 @@ async function fetchExpenses(salonId: string): Promise<string> {
     const { data: txns } = await getSupabase()
       .from('transactions').select('amount').eq('salon_id', salonId).eq('type', 'expense').gte('created_at', startOfMonth)
     if (!txns?.length) return 'No hay gastos registrados este mes.'
-    const total = txns.reduce((s, t) => s + (t.amount || 0), 0)
-    return `📉 Gastos este mes: €${total.toFixed(2)} (${txns.length} registros)`
+    const total = txns.reduce((s: number, t: any) => s + (t.amount || 0), 0)
+    return `Gastos este mes: EUR ${total.toFixed(2)} (${txns.length} registros)`
   } catch { return 'No se pudo consultar los gastos.' }
 }
