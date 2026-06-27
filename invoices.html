@@ -27,28 +27,14 @@
     .main-content { margin-left: 280px; flex: 1; padding: 2rem; overflow-y: auto; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
     .header h1 { margin: 0; }
-
-    /* STATS BAR */
     .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-mini {
-      background: var(--bg-secondary);
-      border: 1px solid rgba(139,92,246,0.45);
-      border-radius: 0.75rem;
-      padding: 1rem 1.25rem;
-      box-shadow: 0 0 10px rgba(139,92,246,0.18), inset 0 0 6px rgba(139,92,246,0.04);
-      transition: border-color 0.22s, box-shadow 0.22s;
-    }
-    .stat-mini:hover {
-      border-color: rgba(139,92,246,0.85);
-      box-shadow: 0 0 22px rgba(139,92,246,0.45), inset 0 0 12px rgba(139,92,246,0.07);
-    }
+    .stat-mini { background: var(--bg-secondary); border: 1px solid rgba(139,92,246,0.45); border-radius: 0.75rem; padding: 1rem 1.25rem; box-shadow: 0 0 10px rgba(139,92,246,0.18), inset 0 0 6px rgba(139,92,246,0.04); transition: border-color 0.22s, box-shadow 0.22s; }
+    .stat-mini:hover { border-color: rgba(139,92,246,0.85); box-shadow: 0 0 22px rgba(139,92,246,0.45), inset 0 0 12px rgba(139,92,246,0.07); }
     .stat-mini .label { font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 0.25rem; }
     .stat-mini .value { font-size: 1.5rem; font-weight: 700; }
     .stat-mini .value.pending { color: #f59e0b; }
     .stat-mini .value.overdue { color: var(--danger); }
     .stat-mini .value.paid { color: var(--success); }
-
-    /* TOOLBAR */
     .toolbar { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
     .filter-tabs { display: flex; gap: 0.5rem; }
     .tab-btn { padding: 0.5rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; font-weight: 600; transition: all 0.2s; }
@@ -56,8 +42,6 @@
     .search-box { flex: 1; min-width: 200px; padding: 0.5rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-primary); font-size: 0.875rem; }
     .search-box:focus { outline: none; border-color: var(--primary); }
     .search-box::placeholder { color: var(--text-tertiary); }
-
-    /* TABLE */
     .table-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; overflow: hidden; }
     table { width: 100%; border-collapse: collapse; }
     thead { background: var(--bg-tertiary); }
@@ -81,8 +65,6 @@
     .btn-paid:hover:not(:disabled) { background: rgba(16, 185, 129, 0.25); }
     .btn-pdf { background: rgba(139, 21, 56, 0.15); color: var(--primary-light); border: 1px solid rgba(139, 21, 56, 0.3); }
     .btn-pdf:hover:not(:disabled) { background: rgba(139, 21, 56, 0.25); }
-
-    /* MODAL */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
     .modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 1rem; padding: 2rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
@@ -103,6 +85,13 @@
     .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
     .badge-paid { background: rgba(16, 185, 129, 0.15); color: #10b981; }
     .badge-overdue { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    .btn-preview { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .btn-preview:hover:not(:disabled) { background: rgba(59, 130, 246, 0.25); }
+    .btn-duplicate { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .btn-duplicate:hover:not(:disabled) { background: rgba(168, 85, 247, 0.25); }
+    .preview-modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; width: 95vw; max-width: 860px; max-height: 95vh; display: flex; flex-direction: column; gap: 1rem; }
+    .preview-modal iframe { width: 100%; flex: 1; border: none; border-radius: 0.5rem; background: #fff; min-height: 520px; }
     @media (max-width: 768px) { .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); } .main-content { margin-left: 0; } .form-row { grid-template-columns: 1fr; } .actions { flex-direction: column; } }
   </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
@@ -165,28 +154,12 @@
       </div>
       <button class="btn btn-primary" onclick="openCreateModal()">+ Nueva Factura</button>
     </div>
-
-    <!-- STATS BAR -->
     <div class="stats-bar">
-      <div class="stat-mini">
-        <div class="label">📄 Total facturas</div>
-        <div class="value" id="statTotal">—</div>
-      </div>
-      <div class="stat-mini">
-        <div class="label">⏳ Pendiente cobro</div>
-        <div class="value pending" id="statPending">—</div>
-      </div>
-      <div class="stat-mini">
-        <div class="label">🔴 Vencidas</div>
-        <div class="value overdue" id="statOverdue">—</div>
-      </div>
-      <div class="stat-mini">
-        <div class="label">✅ Cobradas</div>
-        <div class="value paid" id="statPaid">—</div>
-      </div>
+      <div class="stat-mini"><div class="label">📄 Total facturas</div><div class="value" id="statTotal">—</div></div>
+      <div class="stat-mini"><div class="label">⏳ Pendiente cobro</div><div class="value pending" id="statPending">—</div></div>
+      <div class="stat-mini"><div class="label">🔴 Vencidas</div><div class="value overdue" id="statOverdue">—</div></div>
+      <div class="stat-mini"><div class="label">✅ Cobradas</div><div class="value paid" id="statPaid">—</div></div>
     </div>
-
-    <!-- TOOLBAR -->
     <div class="toolbar">
       <div class="filter-tabs">
         <button class="tab-btn active" onclick="setFilter('all', this)">Todas</button>
@@ -196,59 +169,36 @@
       </div>
       <input class="search-box" type="text" placeholder="🔍 Buscar por cliente o número..." id="searchInput" oninput="applyFilters()">
     </div>
-
-    <!-- TABLE -->
-    <div class="table-card">
-      <div id="tableContainer">
-        <div class="loading-state">⏳ Cargando facturas...</div>
-      </div>
-    </div>
+    <div class="table-card"><div id="tableContainer"><div class="loading-state">⏳ Cargando facturas...</div></div></div>
   </main>
 </div>
 
-<!-- CREATE INVOICE MODAL -->
+<div class="modal-overlay" id="previewModal">
+  <div class="preview-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="margin:0;" id="previewTitle">👁️ Vista Previa PDF</h2>
+      <div style="display:flex;gap:0.75rem;">
+        <button class="btn btn-primary" id="previewDownloadBtn" onclick="confirmDownload()">📥 Descargar</button>
+        <button class="btn btn-secondary" onclick="closePreviewModal()">Cerrar</button>
+      </div>
+    </div>
+    <iframe id="previewFrame" src="about:blank"></iframe>
+  </div>
+</div>
 <div class="modal-overlay" id="createModal">
   <div class="modal">
     <h2>📄 Nueva Factura</h2>
-    <div class="form-group">
-      <label>Cliente *</label>
-      <select id="newClientId" required>
-        <option value="">— Seleccionar cliente —</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Descripción / Concepto *</label>
-      <textarea id="newDescription" rows="2" placeholder="Ej: Servicios de consultoría junio 2026"></textarea>
+    <div class="form-group"><label>Cliente *</label><select id="newClientId" required><option value="">— Seleccionar cliente —</option></select></div>
+    <div class="form-group"><label>Descripción / Concepto *</label><textarea id="newDescription" rows="2" placeholder="Ej: Servicios de consultoría junio 2026"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Importe base (€) *</label><input type="number" id="newAmount" min="0" step="0.01" placeholder="0.00" oninput="calcIva()"></div>
+      <div class="form-group"><label>IVA (%)</label><select id="newIva" onchange="calcIva()"><option value="21">21%</option><option value="10">10%</option><option value="4">4%</option><option value="0">0% (exento)</option></select></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Importe base (€) *</label>
-        <input type="number" id="newAmount" min="0" step="0.01" placeholder="0.00" oninput="calcIva()">
-      </div>
-      <div class="form-group">
-        <label>IVA (%)</label>
-        <select id="newIva" onchange="calcIva()">
-          <option value="21">21%</option>
-          <option value="10">10%</option>
-          <option value="4">4%</option>
-          <option value="0">0% (exento)</option>
-        </select>
-      </div>
+      <div class="form-group"><label>Total con IVA (€)</label><input type="number" id="newTotal" placeholder="0.00" readonly style="opacity:0.7"></div>
+      <div class="form-group"><label>Fecha vencimiento *</label><input type="date" id="newDueDate"></div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Total con IVA (€)</label>
-        <input type="number" id="newTotal" placeholder="0.00" readonly style="opacity:0.7">
-      </div>
-      <div class="form-group">
-        <label>Fecha vencimiento *</label>
-        <input type="date" id="newDueDate">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Número de factura (opcional)</label>
-      <input type="text" id="newInvoiceNumber" placeholder="FAC-2026-001 (auto si vacío)">
-    </div>
+    <div class="form-group"><label>Número de factura (opcional)</label><input type="text" id="newInvoiceNumber" placeholder="FAC-2026-001 (auto si vacío)"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeCreateModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="createInvoice()">Crear Factura</button>
@@ -256,7 +206,6 @@
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -266,91 +215,29 @@ let token = _auth?.token || null;
 let allInvoices = [];
 let allClients = [];
 let currentFilter = 'all';
-
-// Auth check
 if (!token) { window.location.href = 'index-login.html'; }
-
-// Date label
 const now = new Date();
 document.getElementById('dateLabel').textContent = now.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-function logout() {
-  localStorage.removeItem('diabolus_auth');
-  window.location.href = 'index-login.html';
-}
-
-function toast(msg, type = 'success') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = `toast show ${type}`;
-  setTimeout(() => { el.className = 'toast'; }, 4000);
-}
-
-function fmt(n) {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
-}
-
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function badgeHtml(status) {
-  const map = { pending: ['badge-pending', '⏳ Pendiente'], paid: ['badge-paid', '✅ Cobrada'], overdue: ['badge-overdue', '🔴 Vencida'] };
-  const [cls, label] = map[status] || ['badge-pending', status];
-  return `<span class="badge ${cls}">${label}</span>`;
-}
-
-async function apiGet(path) {
-  const r = await fetch(API + path, { headers: { Authorization: `Bearer ${token}` } });
-  if (r.status === 401) { logout(); return null; }
-  return r.json();
-}
-
-async function apiPost(path, body) {
-  const r = await fetch(API + path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body)
-  });
-  return r.json();
-}
-
-async function apiPatch(path, body) {
-  const r = await fetch(API + path, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body)
-  });
-  return r.json();
-}
-
+function logout() { localStorage.removeItem('diabolus_auth'); window.location.href = 'index-login.html'; }
+function toast(msg, type = 'success') { const el = document.getElementById('toast'); el.textContent = msg; el.className = `toast show ${type}`; setTimeout(() => { el.className = 'toast'; }, 4000); }
+function fmt(n) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0); }
+function fmtDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+function badgeHtml(status) { const map = { pending: ['badge-pending', '⏳ Pendiente'], paid: ['badge-paid', '✅ Cobrada'], overdue: ['badge-overdue', '🔴 Vencida'] }; const [cls, label] = map[status] || ['badge-pending', status]; return `<span class="badge ${cls}">${label}</span>`; }
+async function apiGet(path) { const r = await fetch(API + path, { headers: { Authorization: `Bearer ${token}` } }); if (r.status === 401) { logout(); return null; } return r.json(); }
+async function apiPost(path, body) { const r = await fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) }); return r.json(); }
+async function apiPatch(path, body) { const r = await fetch(API + path, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) }); return r.json(); }
 async function loadData() {
   try {
     const [invData, cliData] = await Promise.all([apiGet('/api/invoices'), apiGet('/api/clients')]);
     allInvoices = (invData?.invoices || invData || []);
     allClients = (cliData?.clients || cliData || []);
-
-    // Populate client select
     const sel = document.getElementById('newClientId');
-    allClients.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = c.name;
-      sel.appendChild(opt);
-    });
-
-    // Default due date = 30 days
+    allClients.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt); });
     const dd = new Date(); dd.setDate(dd.getDate() + 30);
     document.getElementById('newDueDate').value = dd.toISOString().split('T')[0];
-
-    updateStats();
-    renderTable();
-  } catch(e) {
-    document.getElementById('tableContainer').innerHTML = '<div class="empty-state">❌ Error al conectar con la API</div>';
-  }
+    updateStats(); renderTable();
+  } catch(e) { document.getElementById('tableContainer').innerHTML = '<div class="empty-state">❌ Error al conectar con la API</div>'; }
 }
-
 function updateStats() {
   const pending = allInvoices.filter(i => i.status === 'pending');
   const overdue = allInvoices.filter(i => i.status === 'overdue');
@@ -360,7 +247,6 @@ function updateStats() {
   document.getElementById('statOverdue').textContent = fmt(overdue.reduce((s, i) => s + (i.total || 0), 0));
   document.getElementById('statPaid').textContent = fmt(paid.reduce((s, i) => s + (i.total || 0), 0));
 }
-
 function getFilteredInvoices() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   return allInvoices.filter(inv => {
@@ -371,25 +257,12 @@ function getFilteredInvoices() {
     return matchFilter && matchSearch;
   });
 }
-
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderTable();
-}
-
+function setFilter(f, btn) { currentFilter = f; document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderTable(); }
 function applyFilters() { renderTable(); }
-
 function renderTable() {
   const invoices = getFilteredInvoices();
   const container = document.getElementById('tableContainer');
-
-  if (!invoices.length) {
-    container.innerHTML = '<div class="empty-state">📭 No hay facturas que mostrar</div>';
-    return;
-  }
-
+  if (!invoices.length) { container.innerHTML = '<div class="empty-state">📭 No hay facturas que mostrar</div>'; return; }
   const rows = invoices.map(inv => {
     const clientName = inv.clients?.name || inv.client_name || '—';
     const isPaid = inv.status === 'paid';
@@ -401,36 +274,19 @@ function renderTable() {
       <td>${fmtDate(inv.created_at)}</td>
       <td>${fmtDate(inv.due_date)}</td>
       <td>${badgeHtml(inv.status)}</td>
-      <td>
-        <div class="actions">
-          <button class="action-btn btn-send" onclick="sendInvoice('${inv.id}', '${invNum}')">📤 Enviar</button>
-          <button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}', '${invNum}')">📎 PDF</button>
-          <button class="action-btn btn-wp" onclick="sendWhatsApp('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📱 WA</button>
-          <button class="action-btn btn-reminder" onclick="sendReminder('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>🔔 Aviso</button>
-          ${!isPaid ? `<button class="action-btn btn-paid" onclick="markAsPaid('${inv.id}')">✅ Cobrada</button>` : ''}
-        </div>
-      </td>
+      <td><div class="actions">
+        <button class="action-btn btn-preview" onclick="previewPDF('${inv.id}', '${invNum}')">👁️ Ver</button>
+        <button class="action-btn btn-send" onclick="sendInvoice('${inv.id}', '${invNum}')">📤 Enviar</button>
+        <button class="action-btn btn-pdf" onclick="downloadPDF('${inv.id}', '${invNum}')">📎 PDF</button>
+        <button class="action-btn btn-duplicate" onclick="duplicateInvoice('${inv.id}')">📋 Clonar</button>
+        <button class="action-btn btn-wp" onclick="sendWhatsApp('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>📱 WA</button>
+        <button class="action-btn btn-reminder" onclick="sendReminder('${inv.id}')" ${isPaid ? 'disabled title="Ya cobrada"' : ''}>🔔 Aviso</button>
+        ${!isPaid ? `<button class="action-btn btn-paid" onclick="markAsPaid('${inv.id}')">✅ Cobrada</button>` : ''}
+      </div></td>
     </tr>`;
   }).join('');
-
-  container.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Número</th>
-          <th>Cliente</th>
-          <th>Total</th>
-          <th>Fecha</th>
-          <th>Vencimiento</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+  container.innerHTML = `<table><thead><tr><th>Número</th><th>Cliente</th><th>Total</th><th>Fecha</th><th>Vencimiento</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
-
-// ── 📤 Enviar — envío unificado Email + WhatsApp + Telegram ──────────────────
 async function sendInvoice(id, invoiceNum) {
   if (!confirm(`¿Enviar la factura ${invoiceNum} al cliente por todos los canales (Email + WhatsApp + Telegram)?`)) return;
   const btn = event?.target;
@@ -440,110 +296,66 @@ async function sendInvoice(id, invoiceNum) {
     const res = await apiPost(`/api/invoices/${id}/send`, {});
     if (res.success || res.ok || res.message) {
       toast('✅ Factura enviada al cliente', 'success');
-      // Actualizar sent_at en local
       const inv = allInvoices.find(i => i.id === id);
       if (inv) inv.sent_at = new Date().toISOString();
     } else {
       toast('❌ ' + (res.error || 'Error al enviar la factura'), 'error');
     }
-  } catch(e) {
-    toast('❌ Error de conexión', 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = origText || '📤 Enviar'; }
-  }
+  } catch(e) { toast('❌ Error de conexión', 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = origText || '📤 Enviar'; } }
 }
-
 async function downloadPDF(id, invoiceNum) {
   const btn = event?.target;
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
   try {
-    const res = await fetch(`${API}/api/invoices/${id}/pdf`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      toast('❌ ' + (err.error || 'Error al generar PDF'), 'error');
-      return;
-    }
+    const res = await fetch(`${API}/api/invoices/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); toast('❌ ' + (err.error || 'Error al generar PDF'), 'error'); return; }
     const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `${invoiceNum}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `${invoiceNum}.pdf`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     toast('✅ PDF descargado', 'success');
-  } catch(e) {
-    toast('❌ Error al descargar PDF', 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '📎 PDF'; }
-  }
+  } catch(e) { toast('❌ Error al descargar PDF', 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '📎 PDF'; } }
 }
-
 async function sendWhatsApp(id) {
   if (!confirm('¿Enviar la factura por WhatsApp al cliente?')) return;
   toast('📱 Enviando por WhatsApp...', 'success');
   try {
     const res = await apiPost(`/api/invoices/${id}/send-whatsapp`, {});
-    if (res.success || res.messageSid) {
-      toast('✅ Factura enviada por WhatsApp', 'success');
-    } else {
-      toast('❌ ' + (res.error || 'Error al enviar'), 'error');
-    }
+    if (res.success || res.messageSid) { toast('✅ Factura enviada por WhatsApp', 'success'); } else { toast('❌ ' + (res.error || 'Error al enviar'), 'error'); }
   } catch(e) { toast('❌ Error de conexión', 'error'); }
 }
-
 async function sendReminder(id) {
   if (!confirm('¿Enviar recordatorio de pago al cliente?')) return;
   toast('🔔 Enviando recordatorio...', 'success');
   try {
     const res = await apiPost(`/api/invoices/${id}/send-reminder`, {});
-    if (res.success || res.message) {
-      toast('✅ Recordatorio enviado', 'success');
-    } else {
-      toast('❌ ' + (res.error || 'Error al enviar'), 'error');
-    }
+    if (res.success || res.message) { toast('✅ Recordatorio enviado', 'success'); } else { toast('❌ ' + (res.error || 'Error al enviar'), 'error'); }
   } catch(e) { toast('❌ Error de conexión', 'error'); }
 }
-
 async function markAsPaid(id) {
   if (!confirm('¿Marcar esta factura como cobrada?')) return;
   try {
     const res = await apiPatch(`/api/invoices/${id}`, { status: 'paid' });
-    if (res.id || res.invoice) {
-      const inv = allInvoices.find(i => i.id === id);
-      if (inv) inv.status = 'paid';
-      toast('✅ Factura marcada como cobrada', 'success');
-      updateStats();
-      renderTable();
-    } else {
-      toast('❌ ' + (res.error || 'Error al actualizar'), 'error');
-    }
+    if (res.id || res.invoice) { const inv = allInvoices.find(i => i.id === id); if (inv) inv.status = 'paid'; toast('✅ Factura marcada como cobrada', 'success'); updateStats(); renderTable(); }
+    else { toast('❌ ' + (res.error || 'Error al actualizar'), 'error'); }
   } catch(e) { toast('❌ Error de conexión', 'error'); }
 }
-
-function calcIva() {
-  const amount = parseFloat(document.getElementById('newAmount').value) || 0;
-  const iva = parseFloat(document.getElementById('newIva').value) || 0;
-  const total = amount * (1 + iva / 100);
-  document.getElementById('newTotal').value = total.toFixed(2);
-}
-
-function openCreateModal() {
+function calcIva() { const amount = parseFloat(document.getElementById('newAmount').value) || 0; const iva = parseFloat(document.getElementById('newIva').value) || 0; document.getElementById('newTotal').value = (amount * (1 + iva / 100)).toFixed(2); }
+function openCreateModal(prefill) {
   document.getElementById('createModal').classList.add('open');
+  if (prefill) {
+    document.getElementById('newDescription').value = prefill.description || '';
+    document.getElementById('newAmount').value = prefill.amount || '';
+    document.getElementById('newIva').value = prefill.iva_pct || 21;
+    if (prefill.iva_pct) calcIva();
+    if (prefill.client_id) document.getElementById('newClientId').value = prefill.client_id;
+    const dd = new Date(); dd.setDate(dd.getDate() + 30);
+    document.getElementById('newDueDate').value = dd.toISOString().split('T')[0];
+  }
 }
-
-function closeCreateModal() {
-  document.getElementById('createModal').classList.remove('open');
-  document.getElementById('newClientId').value = '';
-  document.getElementById('newDescription').value = '';
-  document.getElementById('newAmount').value = '';
-  document.getElementById('newTotal').value = '';
-  document.getElementById('newInvoiceNumber').value = '';
-}
-
+function closeCreateModal() { document.getElementById('createModal').classList.remove('open'); document.getElementById('newClientId').value = ''; document.getElementById('newDescription').value = ''; document.getElementById('newAmount').value = ''; document.getElementById('newTotal').value = ''; document.getElementById('newInvoiceNumber').value = ''; }
 async function createInvoice() {
   const clientId = document.getElementById('newClientId').value;
   const description = document.getElementById('newDescription').value.trim();
@@ -551,39 +363,22 @@ async function createInvoice() {
   const total = parseFloat(document.getElementById('newTotal').value);
   const dueDate = document.getElementById('newDueDate').value;
   const invoiceNumber = document.getElementById('newInvoiceNumber').value.trim();
-
   if (!clientId) { toast('❌ Selecciona un cliente', 'error'); return; }
   if (!description) { toast('❌ Añade una descripción', 'error'); return; }
   if (!amount || amount <= 0) { toast('❌ El importe debe ser mayor que 0', 'error'); return; }
   if (!dueDate) { toast('❌ Añade fecha de vencimiento', 'error'); return; }
-
   const btn = document.querySelector('.modal-footer .btn-primary');
-  btn.disabled = true;
-  btn.textContent = 'Creando...';
-
+  btn.disabled = true; btn.textContent = 'Creando...';
   try {
     const ivaPct = parseFloat(document.getElementById('newIva').value) || 21;
     const body = { client_id: clientId, description, amount, iva_pct: ivaPct, total: total || amount, due_date: dueDate, status: 'pending' };
     if (invoiceNumber) body.number = invoiceNumber;
-
     const res = await apiPost('/api/invoices', body);
-    if (res.id || res.invoice) {
-      const newInv = res.invoice || res;
-      allInvoices.unshift(newInv);
-      toast('✅ Factura creada correctamente', 'success');
-      closeCreateModal();
-      updateStats();
-      renderTable();
-    } else {
-      toast('❌ ' + (res.error || 'Error al crear factura'), 'error');
-    }
+    if (res.id || res.invoice) { const newInv = res.invoice || res; allInvoices.unshift(newInv); toast('✅ Factura creada correctamente', 'success'); closeCreateModal(); updateStats(); renderTable(); }
+    else { toast('❌ ' + (res.error || 'Error al crear factura'), 'error'); }
   } catch(e) { toast('❌ Error de conexión', 'error'); }
-
-  btn.disabled = false;
-  btn.textContent = 'Crear Factura';
+  btn.disabled = false; btn.textContent = 'Crear Factura';
 }
-
-// Load salon name
 async function loadMe() {
   try {
     const _a = JSON.parse(localStorage.getItem('diabolus_auth') || 'null');
@@ -593,20 +388,62 @@ async function loadMe() {
   } catch(e) {}
 }
 
-loadData();
-loadMe();
+let _previewCurrentId = null;
+let _previewCurrentNum = null;
+let _previewBlobUrl = null;
+
+async function previewPDF(id, invoiceNum) {
+  _previewCurrentId = id;
+  _previewCurrentNum = invoiceNum;
+  const modal = document.getElementById('previewModal');
+  const frame = document.getElementById('previewFrame');
+  document.getElementById('previewTitle').textContent = '👁️ Vista previa — ' + invoiceNum;
+  frame.src = 'about:blank';
+  modal.classList.add('open');
+  try {
+    const res = await fetch(`${API}/api/invoices/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) { toast('❌ Error al cargar PDF', 'error'); closePreviewModal(); return; }
+    const blob = await res.blob();
+    if (_previewBlobUrl) URL.revokeObjectURL(_previewBlobUrl);
+    _previewBlobUrl = URL.createObjectURL(blob);
+    frame.src = _previewBlobUrl;
+  } catch(e) { toast('❌ Error al cargar PDF', 'error'); closePreviewModal(); }
+}
+
+function closePreviewModal() {
+  document.getElementById('previewModal').classList.remove('open');
+  document.getElementById('previewFrame').src = 'about:blank';
+  if (_previewBlobUrl) { URL.revokeObjectURL(_previewBlobUrl); _previewBlobUrl = null; }
+}
+
+async function confirmDownload() {
+  if (!_previewCurrentId) return;
+  await downloadPDF(_previewCurrentId, _previewCurrentNum);
+}
+
+async function duplicateInvoice(id) {
+  const inv = allInvoices.find(i => i.id === id);
+  if (!inv) { toast('❌ Factura no encontrada', 'error'); return; }
+  openCreateModal({
+    client_id: inv.client_id,
+    description: inv.description ? inv.description + ' (copia)' : '',
+    amount: inv.amount,
+    iva_pct: inv.iva_pct || 21,
+  });
+  toast('📋 Datos copiados — revisa y crea la nueva factura', 'success');
+}
+
+loadData(); loadMe();
 </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-          console.log('[SW] registrado:', reg.scope);
-        }).catch(err => {
-          console.warn('[SW] error al registrar:', err);
-        });
-      });
-    }
-  </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        console.log('[SW] registrado:', reg.scope);
+      }).catch(err => { console.warn('[SW] error al registrar:', err); });
+    });
+  }
+</script>
 <script src="sidebar.js"></script>
 </body>
 </html>
