@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ─── Numeración configurable de facturas ────────────────────────────────────
 // Tabla requerida en Supabase (ejecutar una vez):
 //
@@ -16,6 +15,17 @@
 
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
+
+// Row type for invoice_numbering (no generated Supabase types)
+interface InvoiceNumberingRow {
+  salon_id: string
+  prefix: string
+  separator: string
+  include_year: boolean
+  pad_digits: number
+  next_number: number
+  updated_at?: string
+}
 
 type Variables = { userId: string; salonId: string }
 export const invoiceNumberingRoutes = new Hono<{ Variables: Variables }>()
@@ -61,7 +71,7 @@ export async function incrementInvoiceCounter(salonId: string): Promise<void> {
     await supabase
       .from('invoice_numbering')
       .upsert(
-        { ...cfg, salon_id: salonId, next_number: cfg.next_number + 1, updated_at: new Date().toISOString() },
+        { ...cfg, salon_id: salonId, next_number: cfg.next_number + 1, updated_at: new Date().toISOString() } as any, // targeted cast: no generated types for invoice_numbering table
         { onConflict: 'salon_id' }
       )
   } catch { /* silencioso */ }
@@ -105,7 +115,7 @@ invoiceNumberingRoutes.post('/numbering', async (c) => {
   try {
     const { data, error } = await supabase
       .from('invoice_numbering')
-      .upsert(payload, { onConflict: 'salon_id' })
+      .upsert(payload as any, { onConflict: 'salon_id' }) // targeted cast: no generated types
       .select()
       .single()
     if (error) throw error
