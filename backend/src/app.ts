@@ -394,8 +394,8 @@ export function createApp() {
   app.route('/api/clients', clientRoutes)
   app.route('/api/transactions', transactionRoutes)
   app.route('/api/invoices', invoiceRoutes)
-// ─── Numeración configurable de facturas ──────────────────────────────────────
-app.route('/api/invoices', invoiceNumberingRoutes)
+  // ─── Numeración configurable de facturas ──────────────────────────────────────
+  app.route('/api/invoice-numbering', invoiceNumberingRoutes)
   app.route('/api/agent', agentRoutes)
   app.route('/api/reports', reportRoutes)
   app.route('/api/demonio', demonioRoutes)
