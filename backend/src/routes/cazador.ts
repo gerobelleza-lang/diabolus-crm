@@ -395,8 +395,8 @@ async function sendOwnerMessage(salon: any, text: string) {
   if (channel === 'telegram' && salon.telegram_chat_id) {
     await sendTelegram(salon.telegram_chat_id, text);
   } else if (channel === 'whatsapp' && salon.whatsapp_number) {
-    const WABA_TOKEN = process.env.WHATSAPP_TOKEN;
-    const PHONE_ID   = process.env.WHATSAPP_PHONE_ID;
+    const WABA_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
+    const PHONE_ID   = process.env.WHATSAPP_PHONE_NUMBER_ID;
     if (WABA_TOKEN && PHONE_ID) {
       await fetch(`https://graph.facebook.com/v19.0/${PHONE_ID}/messages`, {
         method: 'POST',
