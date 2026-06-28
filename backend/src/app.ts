@@ -46,6 +46,7 @@ import { invoiceNumberingRoutes } from './routes/invoice_numbering'
 import { calendarHitosRoute } from './routes/calendar_hitos'
 import { brainSettingsRoutes } from './routes/brain-settings'
 import { whatsappTemplatesRoutes } from './routes/whatsapp-templates'
+import { productsRoutes } from './routes/products'
 
 export function createApp() {
   const app = new Hono()
@@ -512,6 +513,7 @@ export function createApp() {
 
   app.route('/api/leads-b2b', leadsB2bProtectedRoutes)
   app.route('/api/salons', salonsRoutes)   // ← Selector multiempresa
+  app.route('/api/products', productsRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))
