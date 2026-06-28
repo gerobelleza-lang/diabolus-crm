@@ -87,6 +87,11 @@ export function parseUserInput(input: string): ParsedInput {
     return { intent: 'query_expense', data: { type: 'expense' }, confidence: 0.9 };
   }
 
+  // ── INCOME IMPLÍCITO (apunta/anota/mete/pon/registra + cantidad) ────────
+  if (/(?:apunta|anota|mete|pon|registra)\s+\d/i.test(lowerInput) && amounts.length > 0) {
+    return parseIncome(input, amounts);
+  }
+
   // ── INCOME ─────────────────────────────────────────────────────────────────
   if (includesAny(lowerInput, INCOME_KEYWORDS)) {
     return parseIncome(input, amounts);
@@ -278,5 +283,11 @@ function parseQuery(input: string): ParsedInput {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function includesAny(text: string, keywords: string[]): boolean {
-  return keywords.some(keyword => text.includes(keyword));
+  return keywords.some(keyword => {
+    const idx = text.indexOf(keyword);
+    if (idx === -1) return false;
+    const after = text[idx + keyword.length];
+    // Reject if match continues with a letter (prevents substring false positives)
+    return !after || !/[a-záéíóúñ]/i.test(after);
+  });
 }

@@ -426,9 +426,13 @@ export function createApp() {
 
   // ── Diablo Metrics endpoint ────────────────────────────────────────────────
   app.get('/api/internal/diablo-metrics', async (c) => {
-    const secret = c.req.header('x-internal-secret') || c.req.query('secret') || ''
-    const expected = process.env.INTERNAL_SECRET
-    if (!expected || secret !== expected) return c.json({ error: 'Forbidden' }, 403)
+    // Auth: JWT only (secret branch removed — surface-of-attack reduction per audit)
+    const auth = c.req.header('Authorization')
+    if (!auth?.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401)
+    const token = auth.slice(7)
+    const supabase = getSupabaseAdmin()
+    const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
+    if (authErr || !user) return c.json({ error: 'Unauthorized' }, 401)
 
     const salonId = c.req.query('salon_id') || undefined
     const days = parseInt(c.req.query('days') || '30')

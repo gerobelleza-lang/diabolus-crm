@@ -96,13 +96,13 @@ export function classifyIntent(userInput: string, parsedIntent: string, parsedCo
   }
 
   // Facturas
-  if (/crea.{0,10}factura|nueva factura|factura para|hazme.{0,10}factura|factura a\s|apunta.{0,10}factura|registra.{0,10}factura|hacer.{0,10}factura|pon.{0,10}factura|mete.{0,10}factura|generar?.{0,10}factura/i.test(userInput)) {
+  if (/cr[eé]a.{0,10}factura|nueva factura|factura para|hazme.{0,10}factura|factura a\s|apunta.{0,10}factura|registra.{0,10}factura|hacer.{0,10}factura|pon.{0,10}factura|mete.{0,10}factura|generar?.{0,10}factura/i.test(userInput)) {
     return { diablo: 'facturador', intent: 'crear_factura', confidence: 0.9 }
   }
   if (/^facturas?\s+vencidas?$|^ver\s+vencidas?$|^hay\s+vencidas?$|^cu[aá]ntas?\s+vencidas?$|(?:listar?|ver|mostrar|hay|cu[aá]ntas?|qu[eé])\s+facturas?\s+vencidas?/i.test(userInput.trim())) {
     return { diablo: 'facturador', intent: 'facturas_vencidas', confidence: 0.9 }
   }
-  if (/paga[dr]a|cobrad[ao]|marca.{0,20}como|cambi.{0,10}estado|factura.{0,20}(pagad|cobrad|anuld)/i.test(userInput)) {
+  if (/paga[dr]a\b|cobrad[ao]\b|marca.{0,20}como|cambi.{0,10}estado|factura.{0,20}(pagad|cobrad|anuld)/i.test(userInput)) {
     return { diablo: 'facturador', intent: 'cambiar_estado', confidence: 0.85 }
   }
 
@@ -127,7 +127,7 @@ export function classifyIntent(userInput: string, parsedIntent: string, parsedCo
   }
 
   // Legal → El Abogado
-  if (/\blegal\b|ley\b|artículo\b|normativa\b|legislaci[oó]n|obligaci[oó]n\s+fiscal|hacienda|agencia\s+tributaria|irpf|iva\s+(?:trimestral|anual)|modelo\s+\d{3}|verifactu|factura\s+electr[oó]nica/i.test(lower)) {
+  if (/\blegal\b|ley\b|artículo\b|normativa\b|legislaci[oó]n|obligaci[oó]n(?:es)?\s+fiscal(?:es)?|hacienda|agencia\s+tributaria|irpf|iva\s+(?:trimestral|anual)|modelo\s+\d{3}|verifactu|factura\s+electr[oó]nica/i.test(lower)) {
     return { diablo: 'abogado', intent: 'consulta_legal', confidence: 0.8 }
   }
 
