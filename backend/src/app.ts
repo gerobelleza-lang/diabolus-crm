@@ -30,6 +30,7 @@ import { pactoRoutes } from './routes/pacto'
 import { albaranRoute } from './routes/albaran'
 import { transcribeRoute } from './routes/transcribe'
 import { ttsRoute } from './routes/tts'
+import { securityHeaders } from './middleware/security-headers'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
 import { accrueCommissions } from './routes/export'
@@ -75,6 +76,9 @@ export function createApp() {
   })
 
   app.use('*', corsMiddleware)
+
+  // Security headers
+  app.use('*', securityHeaders)
 
   // Explicit preflight handler — runs BEFORE authMiddleware, returns 204 immediately
   app.options('*', (c) => {
