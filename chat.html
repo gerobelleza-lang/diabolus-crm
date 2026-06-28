@@ -1478,7 +1478,7 @@ let _ttsActiveBtn = null
 async function speakText(text, btn) {
   // Si hay audio reproduciéndose, pararlo
   if (_ttsAudio) {
-    try { _ttsAudio.stop(); if (_ttsAudio._ctx) _ttsAudio._ctx.close() } catch(e){}
+    try { if (_ttsAudio._ctx) { _ttsAudio.stop(); _ttsAudio._ctx.close() } else { _ttsAudio.pause(); _ttsAudio.currentTime = 0 } } catch(e){}
     _ttsAudio = null
     if (_ttsActiveBtn) { _ttsActiveBtn.textContent = '🔊'; _ttsActiveBtn.classList.remove('playing') }
     if (_ttsActiveBtn === btn) { _ttsActiveBtn = null; return }
@@ -1497,49 +1497,73 @@ async function speakText(text, btn) {
     if (!res.ok) throw new Error('TTS error')
     const blob = await res.blob()
 
-    // AudioContext para mejor calidad + ganancia (más potencia/estéreo)
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const arrayBuf = await blob.arrayBuffer()
-    const audioBuf = await audioCtx.decodeAudioData(arrayBuf)
+    // AudioContext con gain para más volumen + fallback robusto para móvil
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      // Obligatorio en iOS/Android — sin esto no suena
+      if (audioCtx.state === 'suspended') await audioCtx.resume()
 
-    // Gain node — subimos volumen para más presencia
-    const gainNode = audioCtx.createGain()
-    gainNode.gain.value = 1.6
+      const arrayBuf = await blob.arrayBuffer()
+      const audioBuf = await audioCtx.decodeAudioData(arrayBuf)
 
-    // Stereo widener — leve ensanchamiento
-    const splitter = audioCtx.createChannelSplitter(2)
-    const merger = audioCtx.createChannelMerger(2)
-    const delayL = audioCtx.createDelay()
-    const delayR = audioCtx.createDelay()
-    delayL.delayTime.value = 0.0
-    delayR.delayTime.value = 0.0008 // sutil delay para efecto estéreo
+      const source = audioCtx.createBufferSource()
+      source.buffer = audioBuf
 
-    const source = audioCtx.createBufferSource()
-    source.buffer = audioBuf
+      // Gain node — más presencia/volumen
+      const gainNode = audioCtx.createGain()
+      gainNode.gain.value = 1.6
 
-    // Chain: source → gain → splitter → delays → merger → destination
-    source.connect(gainNode)
-    gainNode.connect(splitter)
-    splitter.connect(delayL, 0)
-    splitter.connect(delayR, 1)
-    delayL.connect(merger, 0, 0)
-    delayR.connect(merger, 0, 1)
-    merger.connect(audioCtx.destination)
+      // Solo aplicar stereo widener si el audio tiene 2+ canales
+      if (audioBuf.numberOfChannels >= 2) {
+        const splitter = audioCtx.createChannelSplitter(2)
+        const merger = audioCtx.createChannelMerger(2)
+        const delayR = audioCtx.createDelay()
+        delayR.delayTime.value = 0.0008
+        source.connect(gainNode)
+        gainNode.connect(splitter)
+        splitter.connect(merger, 0, 0)
+        splitter.connect(delayR, 1)
+        delayR.connect(merger, 0, 1)
+        merger.connect(audioCtx.destination)
+      } else {
+        // Mono — gain directo sin stereo widener
+        source.connect(gainNode)
+        gainNode.connect(audioCtx.destination)
+      }
 
-    _ttsAudio = source
-    _ttsAudio._ctx = audioCtx
-    _ttsActiveBtn = btn
-    btn.textContent = '🔈'
-    btn.classList.remove('loading')
-    btn.classList.add('playing')
-    btn.disabled = false
+      _ttsAudio = source
+      _ttsAudio._ctx = audioCtx
+      _ttsActiveBtn = btn
+      btn.textContent = '🔈'
+      btn.classList.remove('loading')
+      btn.classList.add('playing')
+      btn.disabled = false
 
-    source.start(0)
-    source.onended = () => {
-      btn.textContent = '🔊'
-      btn.classList.remove('playing')
-      _ttsActiveBtn = null
-      audioCtx.close()
+      source.start(0)
+      source.onended = () => {
+        btn.textContent = '🔊'
+        btn.classList.remove('playing')
+        _ttsActiveBtn = null
+        audioCtx.close()
+      }
+    } catch(ctxErr) {
+      // Fallback: Audio() clásico — siempre funciona en móvil
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audio.volume = 1.0
+      _ttsAudio = audio
+      _ttsActiveBtn = btn
+      btn.textContent = '🔈'
+      btn.classList.remove('loading')
+      btn.classList.add('playing')
+      btn.disabled = false
+      audio.play()
+      audio.onended = () => {
+        btn.textContent = '🔊'
+        btn.classList.remove('playing')
+        _ttsActiveBtn = null
+        URL.revokeObjectURL(url)
+      }
     }
   } catch(e) {
     btn.textContent = '🔊'
