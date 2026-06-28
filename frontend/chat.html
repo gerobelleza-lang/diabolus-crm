@@ -1048,6 +1048,7 @@
   <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
 <body>
+<audio id="ttsPlayer" playsinline preload="none"></audio>
 
 <!-- Auth overlay -->
 <div id="auth-overlay">
@@ -1474,7 +1475,7 @@ function addUserPhoto(objectUrl, fileName) {
 // ─── TTS globals ────────────────────────────────────────────────────────────
 let _ttsAudio = null
 let _ttsActiveBtn = null
-let _preCreatedAudio = null  // Para auto-play después de voz
+let _iosAudioUnlocked = false  // Para auto-play después de voz
 
 // Detener cualquier TTS activo
 function stopTTS() {
@@ -1506,18 +1507,16 @@ async function speakText(text, btn) {
     const res = await fetch(`${API}/api/agent/tts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ text, hd: true })
     })
     if (!res.ok) throw new Error('TTS error')
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
 
-    // Usar Audio() pre-creado (si existe, del gesto de voz) o crear nuevo
-    const audio = _preCreatedAudio || new Audio()
-    _preCreatedAudio = null
+    // Usar el <audio> persistente del DOM — ya desbloqueado en iOS
+    const audio = document.getElementById('ttsPlayer')
     audio.src = url
     audio.volume = 1.0
-    audio._blobUrl = url
 
     _ttsAudio = audio
     _ttsActiveBtn = btn
@@ -1535,7 +1534,8 @@ async function speakText(text, btn) {
       _ttsAudio = null
       URL.revokeObjectURL(url)
     }
-    audio.onerror = () => {
+    audio.onerror = (e) => {
+      console.warn('Audio play error:', e)
       if (btn) { btn.textContent = '🔊'; btn.classList.remove('playing', 'loading'); btn.disabled = false }
       _ttsActiveBtn = null
       _ttsAudio = null
@@ -1549,7 +1549,6 @@ async function speakText(text, btn) {
       btn.classList.remove('loading', 'playing')
       btn.disabled = false
     }
-    _preCreatedAudio = null
     console.warn('TTS error:', e)
   }
 }
@@ -1878,15 +1877,8 @@ function stopVoice() {
   voiceRecording = false
   document.getElementById('btn-mic').classList.remove('recording')
 
-  // Pre-crear Audio() en el gesto del usuario (OBLIGATORIO para iOS autoplay)
-  // iOS solo permite .play() si el Audio se creó en respuesta a un tap
-  try {
-    _preCreatedAudio = new Audio()
-    // "Unlock" de audio en iOS: reproducir silencio brevísimo
-    _preCreatedAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
-    _preCreatedAudio.volume = 0
-    _preCreatedAudio.play().then(() => { _preCreatedAudio.pause(); _preCreatedAudio.volume = 1.0; _preCreatedAudio.src = '' }).catch(() => {})
-  } catch(e) {}
+  // Desbloquear audio iOS si no se ha hecho aún
+  unlockiOSAudio()
 
   if (voiceMediaRec && voiceMediaRec.state === 'recording') {
     voiceMediaRec.stop()
