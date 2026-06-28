@@ -17,7 +17,8 @@
         { key: 'invoices',     icon: '📄', label: 'Facturas',      href: 'invoices.html' },
         { key: 'clients',      icon: '👥', label: 'Clientes',       href: 'clients.html' },
         { key: 'transactions', icon: '💰', label: 'Transacciones',  href: 'transactions.html' },
-        { key: 'reports',      icon: '📈', label: 'Reportes',       href: 'reports.html' }
+        { key: 'reports',      icon: '📈', label: 'Reportes',       href: 'reports.html' },
+        { key: 'catalogo',    icon: '📦', label: 'Catálogo',       href: 'catalogo.html' },
       ]
     },
     {
