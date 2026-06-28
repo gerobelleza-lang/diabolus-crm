@@ -12,6 +12,7 @@ import { agentRoutes } from './routes/agent'
 import { voiceRoute } from './routes/voice'
 import { reportRoutes } from './routes/reports'
 import { stripeRoutes } from './routes/stripe'
+import { waTemplateRoutes } from './routes/whatsapp-templates'
 import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
 import { registerPrivacidadRoute } from './routes/privacidad'
@@ -95,6 +96,7 @@ export function createApp() {
 
   // ─── Stripe & External Webhooks (Public, no auth) ──────────────────────────
   app.route('/api/stripe', stripeRoutes)
+  app.route('/api/whatsapp', waTemplateRoutes)
   app.use('/webhooks/*', webhookLimiter)
   app.route('/webhooks', webhookRoutes)
   app.use('/telegram/*', webhookLimiter)

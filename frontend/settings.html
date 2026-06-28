@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración — Diabolus</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="diabolus-tokens.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); padding: 1.5rem 0; display: flex; flex-direction: column; }
+    .sidebar-header { padding: 0 1rem 1.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+    .sidebar-logo { font-size: 1.5rem; font-weight: 800; }
+    .sidebar-nav { flex: 1; padding: 0 0.75rem; }
+    .nav-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border-radius: 0.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; margin-bottom: 0.15rem; }
+    .nav-item:hover { background: rgba(139,92,246,.08); color: var(--text-primary); }
+    .nav-item.active { background: rgba(139,92,246,.15); color: var(--violet); font-weight: 600; }
+    .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+    .main { flex: 1; padding: 2rem 3rem; max-width: 800px; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 2rem; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card h2 { font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color); }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-secondary); font-size: 0.9rem; }
+    .info-value { font-weight: 600; font-size: 0.9rem; }
+    .badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600; }
+    .badge-active { background: rgba(34,197,94,.15); color: #22c55e; }
+    .badge-free { background: rgba(156,163,175,.15); color: #9ca3af; }
+    .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: var(--violet); color: white; }
+    .btn-primary:hover { background: var(--violet-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); }
+    .btn-outline:hover { border-color: var(--violet); color: var(--violet); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .salon-name { font-size: 0.85rem; color: var(--text-secondary); padding: 0.5rem 1rem 0; }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">🔥 Diabolus</div>
+        <div class="salon-name" id="salonNameSidebar">—</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente</a>
+        <a href="invoices.html" class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+        <a href="clients.html" class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+        <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+        <a href="documents.html" class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+        <a href="cazador.html" class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
+        <a href="whatsapp.html" class="nav-item"><span class="nav-icon">💬</span> WhatsApp</a>
+        <a href="settings.html" class="nav-item active"><span class="nav-icon">⚙️</span> Configuración</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>⚙️ Configuración</h1>
+      <p class="subtitle">Gestiona tu cuenta, suscripción y preferencias</p>
+
+      <!-- Suscripción -->
+      <div class="card">
+        <h2>💳 Suscripción</h2>
+        <div class="info-row">
+          <span class="info-label">Plan actual</span>
+          <span class="info-value" id="planName">Cargando...</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Estado</span>
+          <span id="planBadge"><span class="badge badge-free">—</span></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Acciones</span>
+          <span id="planActions">
+            <button class="btn btn-primary" id="upgradeBtn" onclick="goCheckout()" style="display:none">Contratar El Pacto 🔥</button>
+            <button class="btn btn-outline" id="portalBtn" onclick="openPortal()" style="display:none">Gestionar suscripción</button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Cuenta -->
+      <div class="card">
+        <h2>👤 Cuenta</h2>
+        <div class="info-row">
+          <span class="info-label">Email</span>
+          <span class="info-value" id="userEmail">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Negocio</span>
+          <span class="info-value" id="salonName">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Bizum</span>
+          <span class="info-value" id="bizumNumber">No configurado</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">WhatsApp</span>
+          <span class="info-value" id="waNumber">No configurado</span>
+        </div>
+      </div>
+
+      <!-- Diablilla -->
+      <div class="card">
+        <h2>🧠 Diablilla — Configuración IA</h2>
+        <div class="info-row">
+          <span class="info-label">Cerebro activo</span>
+          <span class="info-value" id="brainTier">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Personalidad</span>
+          <span class="info-value" id="personality">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Configurar</span>
+          <a href="chat.html" class="btn btn-outline">Abrir Diablilla</a>
+        </div>
+      </div>
+
+      <!-- Sesión -->
+      <div class="card">
+        <h2>🔐 Sesión</h2>
+        <div class="info-row">
+          <span class="info-label">Cerrar sesión</span>
+          <button class="btn btn-outline" onclick="logout()" style="color:#ef4444;border-color:#ef4444">Cerrar sesión</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API = 'https://diabolus-crm-api.vercel.app';
+    const token = localStorage.getItem('sb_access_token');
+    if (!token) window.location.href = 'index-login.html';
+
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+    // Load subscription info
+    (async () => {
+      try {
+        const [subR, profileR] = await Promise.all([
+          fetch(`${API}/api/stripe/subscription`, { headers }),
+          fetch(`${API}/api/dashboard/stats`, { headers }).catch(() => null),
+        ]);
+
+        const sub = await subR.json();
+        const profile = profileR ? await profileR.json().catch(() => ({})) : {};
+
+        // Plan
+        const planEl = document.getElementById('planName');
+        const badgeEl = document.getElementById('planBadge');
+        if (sub.active || sub.plan === 'pacto') {
+          planEl.textContent = 'El Pacto — €49/mes';
+          badgeEl.innerHTML = '<span class="badge badge-active">✅ Activo</span>';
+          document.getElementById('portalBtn').style.display = 'inline-block';
+        } else {
+          planEl.textContent = 'Sin plan activo';
+          badgeEl.innerHTML = '<span class="badge badge-free">Gratuito</span>';
+          document.getElementById('upgradeBtn').style.display = 'inline-block';
+        }
+
+        // Profile info
+        if (profile.salon_name) {
+          document.getElementById('salonName').textContent = profile.salon_name;
+          document.getElementById('salonNameSidebar').textContent = profile.salon_name;
+        }
+        if (profile.email) document.getElementById('userEmail').textContent = profile.email;
+      } catch {}
+
+      // AI config
+      try {
+        const r = await fetch(`${API}/api/agent/brain-settings`, { headers });
+        const d = await r.json();
+        const tiers = { rapida: '⚡ Rápida (Gemini Flash)', inteligente: '🧠 Inteligente (GPT-4.1)', brillante: '👑 Brillante (Claude Sonnet)' };
+        document.getElementById('brainTier').textContent = tiers[d.brain_tier] || d.brain_tier || '⚡ Rápida';
+        document.getElementById('personality').textContent = d.personality || 'Diablilla';
+      } catch {}
+    })();
+
+    function goCheckout() { window.location.href = 'checkout.html'; }
+
+    async function openPortal() {
+      const btn = document.getElementById('portalBtn');
+      btn.disabled = true;
+      btn.textContent = 'Abriendo...';
+      try {
+        const r = await fetch(`${API}/api/stripe/portal`, {
+          method: 'POST', headers
+        });
+        const d = await r.json();
+        if (d.url) window.location.href = d.url;
+        else { alert(d.error || 'Error'); btn.disabled = false; btn.textContent = 'Gestionar suscripción'; }
+      } catch {
+        btn.disabled = false;
+        btn.textContent = 'Gestionar suscripción';
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'index-login.html';
+    }
+  </script>
+</body>
+</html>

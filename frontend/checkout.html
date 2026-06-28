@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Pacto — Diabolus</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="diabolus-tokens.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .checkout-card {
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: 1.5rem; max-width: 480px; width: 90%; padding: 3rem 2.5rem;
+      text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    .logo { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem; }
+    .price { font-size: 3rem; font-weight: 800; color: var(--violet); margin: 1rem 0 0.25rem; }
+    .price-period { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; }
+    .features { text-align: left; margin: 1.5rem 0 2rem; }
+    .feature { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; font-size: 0.95rem; }
+    .feature-icon { color: #22c55e; font-size: 1.1rem; }
+    .cta-btn {
+      display: block; width: 100%; padding: 1rem; border: none; border-radius: 0.75rem;
+      background: var(--violet); color: white; font-size: 1.1rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .cta-btn:hover { background: var(--violet-hover); transform: translateY(-1px); }
+    .cta-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .already { margin-top: 1rem; }
+    .already a { color: var(--violet); }
+    .back-link { display: block; margin-top: 1.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; }
+    .status { margin-top: 1rem; font-size: 0.9rem; }
+    .status.error { color: #ef4444; }
+    .status.success { color: #22c55e; }
+  </style>
+</head>
+<body>
+  <div class="checkout-card">
+    <div class="logo">🔥</div>
+    <h1>El Pacto</h1>
+    <p class="subtitle">Tu tesorería con Diablilla — cobros, facturas, recordatorios automáticos</p>
+    <div class="price">€49<span style="font-size:1rem;font-weight:400;color:var(--text-secondary)">/mes</span></div>
+    <p class="price-period">Oferta de lanzamiento · Sin permanencia</p>
+
+    <div class="features">
+      <div class="feature"><span class="feature-icon">✅</span> Diablilla IA — 3 cerebros (voz + texto + WhatsApp)</div>
+      <div class="feature"><span class="feature-icon">✅</span> Facturación inteligente y recordatorios Cazador</div>
+      <div class="feature"><span class="feature-icon">✅</span> Cobro Bizum integrado</div>
+      <div class="feature"><span class="feature-icon">✅</span> Dashboard tesorería + Score salud financiera</div>
+      <div class="feature"><span class="feature-icon">✅</span> Ficha cliente 360° — facturas, pagos, historial</div>
+      <div class="feature"><span class="feature-icon">✅</span> Exportación gestoría + firma digital</div>
+      <div class="feature"><span class="feature-icon">✅</span> WhatsApp Business + El Demonio (captación)</div>
+    </div>
+
+    <button class="cta-btn" id="ctaBtn" onclick="startCheckout()">Firmar El Pacto 🔥</button>
+    <div id="status" class="status"></div>
+    <a href="dashboard.html" class="back-link">← Volver al dashboard</a>
+  </div>
+
+  <script>
+    const API = 'https://diabolus-crm-api.vercel.app';
+    const token = localStorage.getItem('sb_access_token');
+
+    // Check if already subscribed
+    (async () => {
+      if (!token) return;
+      try {
+        const r = await fetch(`${API}/api/stripe/subscription`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const d = await r.json();
+        if (d.active || d.plan === 'pacto') {
+          document.getElementById('ctaBtn').textContent = '✅ Ya tienes El Pacto';
+          document.getElementById('ctaBtn').disabled = true;
+          document.getElementById('status').textContent = 'Tu suscripción está activa.';
+          document.getElementById('status').className = 'status success';
+        }
+      } catch {}
+    })();
+
+    async function startCheckout() {
+      const btn = document.getElementById('ctaBtn');
+      const status = document.getElementById('status');
+      btn.disabled = true;
+      btn.textContent = 'Redirigiendo a Stripe...';
+      status.textContent = '';
+
+      try {
+        if (!token) {
+          window.location.href = 'index-login.html?redirect=checkout';
+          return;
+        }
+        const r = await fetch(`${API}/api/stripe/checkout`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
+        });
+        const d = await r.json();
+        if (d.url) {
+          window.location.href = d.url;
+        } else {
+          status.textContent = d.error || 'Error al crear sesión de pago';
+          status.className = 'status error';
+          btn.disabled = false;
+          btn.textContent = 'Firmar El Pacto 🔥';
+        }
+      } catch (e) {
+        status.textContent = 'Error de conexión';
+        status.className = 'status error';
+        btn.disabled = false;
+        btn.textContent = 'Firmar El Pacto 🔥';
+      }
+    }
+  </script>
+</body>
+</html>
