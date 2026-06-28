@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp — Diabolus CRM</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="diabolus-tokens.css">
+  <style>
+    .main-container { display: flex; min-height: 100vh; background-color: var(--ink); }
+    .sidebar {
+      width: 260px; background: var(--surface); border-right: 1px solid var(--border-color);
+      padding: 2rem 0; display: flex; flex-direction: column; position: fixed; height: 100vh;
+      left: 0; top: 0; overflow-y: auto; z-index: 10;
+    }
+    .sidebar-header { padding: 0 1.5rem 1.5rem; text-align: center; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+    .sidebar-nav { flex: 1; padding: 0 0.75rem; }
+    .nav-item {
+      padding: 0.65rem 1rem; margin-bottom: 0.2rem; border-radius: 0.5rem; display: flex;
+      align-items: center; gap: 0.75rem; transition: all 0.18s; color: var(--text-secondary);
+      text-decoration: none; font-weight: 500; font-size: 0.875rem;
+    }
+    .nav-item:hover { background: rgba(139,92,246,.08); }
+    .nav-item.active { background: rgba(139,92,246,.15); color: var(--violet); }
+    .sidebar-footer { padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); }
+
+    .main-content { margin-left: 260px; flex: 1; padding: 2rem; }
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { margin: 0 0 0.25rem; font-size: 1.75rem; }
+    .page-header p { color: var(--text-secondary); }
+
+    .zone { background: var(--surface); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .zone-label { font-size: 0.75rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 1rem; }
+
+    .templates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .template-card {
+      background: rgba(139,92,246,.05);
+      border: 2px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      transition: all 0.18s;
+    }
+
+    .template-card:hover {
+      border-color: var(--violet);
+      background: rgba(139,92,246,.1);
+    }
+
+    .template-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .template-body {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      background: rgba(255,255,255,.02);
+      padding: 0.75rem;
+      border-radius: 0.35rem;
+      margin-bottom: 0.75rem;
+      font-family: var(--font-mono);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .template-params {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.35rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.18s;
+    }
+
+    .btn-primary {
+      background: var(--violet);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #7C3AED;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.35rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      background: var(--ink);
+      border: 1px solid var(--border-color);
+      border-radius: 0.35rem;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--violet);
+      box-shadow: 0 0 0 2px rgba(139,92,246,.2);
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .alert-info {
+      background: rgba(59,130,246,.1);
+      border: 1px solid rgba(59,130,246,.2);
+      color: #3B82F6;
+    }
+
+    .alert-success {
+      background: rgba(74,222,128,.1);
+      border: 1px solid rgba(74,222,128,.2);
+      color: #4ADE80;
+    }
+
+    .alert-error {
+      background: rgba(248,113,113,.1);
+      border: 1px solid rgba(248,113,113,.2);
+      color: #F87171;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 1.5rem 0 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .main-content { margin-left: 0; }
+      .sidebar { width: 100%; height: auto; position: relative; }
+      .templates-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">😈</div>
+        <div style="font-weight: 600; color: var(--text-primary);">Diabolus</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item"><span>📊</span> Dashboard</a>
+        <a href="clients.html" class="nav-item"><span>👥</span> Clientes</a>
+        <a href="invoices.html" class="nav-item"><span>📄</span> Facturas</a>
+        <a href="cazador.html" class="nav-item"><span>🗡️</span> Cazador</a>
+        <a href="whatsapp.html" class="nav-item active"><span>💬</span> WhatsApp</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-primary" style="width:100%;" onclick="logout()">Salir</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1>💬 WhatsApp — Templates</h1>
+        <p>Envía mensajes pre-aprobados a tus clientes sin límite</p>
+      </div>
+
+      <div class="alert alert-info">
+        ℹ️ Los templates están en modo desarrollo. Una vez Meta apruebe, podrás enviar sin limitaciones de rate-limit.
+      </div>
+
+      <!-- PLANTILLAS DISPONIBLES -->
+      <div class="zone">
+        <div class="zone-label">Plantillas Disponibles</div>
+        <div class="templates-grid" id="templatesGrid">
+          <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Cargando...</div>
+        </div>
+      </div>
+
+      <!-- ENVIAR MENSAJE -->
+      <div class="zone">
+        <div class="zone-label">Enviar Mensaje</div>
+
+        <form onsubmit="sendTemplate(event)">
+          <div class="form-group">
+            <label class="form-label">Teléfono del cliente</label>
+            <input type="tel" class="form-input" id="phoneInput" placeholder="34123456789" required>
+            <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.35rem;">Formato internacional (ej: 34 para España)</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Plantilla</label>
+            <select class="form-input" id="templateSelect" required onchange="updateTemplatePreview()">
+              <option value="">Selecciona una plantilla...</option>
+            </select>
+          </div>
+
+          <div id="parametersContainer"></div>
+
+          <div class="form-group">
+            <button type="submit" class="btn btn-primary" style="width:100%;">📤 Enviar Mensaje</button>
+          </div>
+        </form>
+
+        <div id="responseMessage"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+    const token = localStorage.getItem('auth_token');
+
+    if (!token) {
+      window.location.href = '/';
+    }
+
+    let templates = {};
+
+    async function loadTemplates() {
+      try {
+        const res = await fetch(`${API}/api/whatsapp/templates`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        templates = data.templates.reduce((acc, t) => { acc[t.name] = t; return acc; }, {});
+
+        // Render cards
+        const grid = document.getElementById('templatesGrid');
+        grid.innerHTML = data.templates.map(t => `
+          <div class="template-card">
+            <div class="template-name">${t.name.replace(/_/g, ' ')}</div>
+            <div class="template-body">${t.body}</div>
+            <div class="template-params">
+              Parámetros: ${t.parameters.length > 0 ? t.parameters.join(', ') : 'ninguno'}
+            </div>
+            <button type="button" class="btn btn-primary" onclick="selectTemplate('${t.name}')" style="width:100%;">
+              Usar esta plantilla
+            </button>
+          </div>
+        `).join('');
+
+        // Populate select
+        const select = document.getElementById('templateSelect');
+        select.innerHTML = '<option value="">Selecciona una plantilla...</option>' +
+          data.templates.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+      } catch (err) {
+        console.error('Error loading templates:', err);
+      }
+    }
+
+    function selectTemplate(name) {
+      document.getElementById('templateSelect').value = name;
+      updateTemplatePreview();
+      window.scrollTo({ top: document.querySelector('.zone:last-of-type').offsetTop, behavior: 'smooth' });
+    }
+
+    function updateTemplatePreview() {
+      const name = document.getElementById('templateSelect').value;
+      const container = document.getElementById('parametersContainer');
+
+      if (!name || !templates[name]) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const template = templates[name];
+      const params = template.parameters || [];
+
+      if (params.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.875rem;">No requiere parámetros</div>';
+        return;
+      }
+
+      container.innerHTML = '<div class="section-title">Parámetros</div>' +
+        params.map((p, i) => `
+          <div class="form-group">
+            <label class="form-label">${p}</label>
+            <input type="text" class="form-input param-input" data-index="${i}" placeholder="${p}" required>
+          </div>
+        `).join('');
+    }
+
+    async function sendTemplate(e) {
+      e.preventDefault();
+
+      const phone = document.getElementById('phoneInput').value;
+      const templateName = document.getElementById('templateSelect').value;
+      const paramInputs = document.querySelectorAll('.param-input');
+      const parameters = Array.from(paramInputs).map(i => i.value);
+
+      const msgDiv = document.getElementById('responseMessage');
+      msgDiv.innerHTML = '';
+
+      try {
+        const res = await fetch(`${API}/api/whatsapp/send-template`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ phone, template_name: templateName, parameters })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          msgDiv.innerHTML = `<div class="alert alert-success">✅ Mensaje enviado correctamente<br><small>ID: ${data.message_id}</small></div>`;
+          document.getElementById('phoneInput').value = '';
+          document.getElementById('templateSelect').value = '';
+          document.getElementById('parametersContainer').innerHTML = '';
+        } else {
+          msgDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${data.error}</div>`;
+        }
+      } catch (err) {
+        msgDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${err.message}</div>`;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/';
+    }
+
+    loadTemplates();
+  </script>
+</body>
+</html>
