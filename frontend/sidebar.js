@@ -1,4 +1,4 @@
-// sidebar.js — Diabolus CRM Accordion Sidebar v2.0
+// sidebar.js — Diabolus CRM Accordion Sidebar v2.1
 // Reemplaza automáticamente cualquier <aside class="sidebar"> con el menú acordeón.
 (function () {
   'use strict';
@@ -19,6 +19,7 @@
         { key: 'transactions', icon: '💰', label: 'Transacciones',  href: 'transactions.html' },
         { key: 'reports',      icon: '📈', label: 'Reportes',       href: 'reports.html' },
         { key: 'catalogo',    icon: '📦', label: 'Catálogo',       href: 'catalogo.html' },
+        { key: 'importar',    icon: '📥', label: 'Importar',       href: 'importar.html' },
       ]
     },
     {
@@ -42,7 +43,6 @@
   var LS_KEY = 'diabolus_sidebar_v2';
   var page = (window.location.pathname.split('/').pop() || 'dashboard').replace('.html', '') || 'dashboard';
 
-  // ── Estado en localStorage ───────────────────────────────────────────────
   function loadState() {
     try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) { return null; }
   }
@@ -53,7 +53,6 @@
     var s = {};
     var mobile = window.innerWidth < 768;
     SECTIONS.forEach(function (sec) {
-      // Desktop: todas las secciones abiertas por defecto
       s[sec.key] = !mobile;
     });
     return s;
@@ -62,7 +61,6 @@
     return loadState() || buildDefault();
   }
 
-  // ── CSS accordion ─────────────────────────────────────────────────────────
   function injectCSS() {
     if (document.getElementById('dsb-css')) return;
     var s = document.createElement('style');
@@ -91,10 +89,8 @@
     document.head.appendChild(s);
   }
 
-  // ── SVG Logo (IDs únicos para evitar conflictos) ──────────────────────────
   var LOGO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220" style="width:100%;max-width:186px;display:block;margin:0 auto" aria-label="Diabolus"><defs><filter id="dsb-fs" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="12" result="b1"/><feGaussianBlur stdDeviation="5" result="b2"/><feGaussianBlur stdDeviation="2" result="b3"/><feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="b3"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="dsb-fg" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="dsb-sd" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".85"/></filter><linearGradient id="dsb-gv" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#E0D0FF"/><stop offset="40%" stop-color="#C4B5FD"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="350" y="160" font-family="Georgia,\'Times New Roman\',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#1a0033" stroke-width="18" filter="url(#dsb-sd)" transform="skewX(-18)">Diabolus</text><text x="350" y="160" font-family="Georgia,\'Times New Roman\',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#8B5CF6" stroke-width="3" filter="url(#dsb-fs)" transform="skewX(-18)" opacity=".9">Diabolus</text><text x="350" y="160" font-family="Georgia,\'Times New Roman\',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="url(#dsb-gv)" stroke="#C4B5FD" stroke-width=".4" transform="skewX(-18)">Diabolus</text><line x1="30" y1="178" x2="620" y2="168" stroke="#E3BE7A" stroke-width="1.2" stroke-linecap="round" filter="url(#dsb-fg)" opacity=".85"/></svg>';
 
-  // ── Render ────────────────────────────────────────────────────────────────
   function render() {
     var sidebar = document.querySelector('aside.sidebar');
     if (!sidebar) return;
@@ -133,7 +129,6 @@
       '<div class="dsb-ver">Diabolus CRM v2.1</div>' +
       '</div>';
 
-    // Actualizar nombre de salón desde API si está disponible más tarde
     var authEl = document.getElementById('salonName') || document.getElementById('salonNameSidebar');
     if (authEl) {
       var observer = new MutationObserver(function () {
@@ -146,7 +141,6 @@
     }
   }
 
-  // ── Toggle ────────────────────────────────────────────────────────────────
   window.__dsbTog = function (key) {
     var state = getState();
     state[key] = !state[key];
@@ -159,24 +153,17 @@
     if (items) items.classList.toggle('dsb-open', !!state[key]);
   };
 
-
-  // ── Navigation Fix (universal) ─────────────────────────────────────────────
-  // iOS Safari has issues with <a> clicks inside overflow:hidden + max-height
-  // animated containers. Also fixes PWA standalone mode navigation.
-  // We intercept all same-origin <a> clicks and navigate via JS.
   document.addEventListener('click', function (e) {
     var el = e.target.closest('a[href]');
     if (!el) return;
     var href = el.getAttribute('href');
     if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript')) return;
-    // External links: let browser handle
     if (href.startsWith('http://') || href.startsWith('https://')) return;
     e.preventDefault();
     e.stopPropagation();
     window.location.href = href;
   }, true);
 
-  // ── Init ──────────────────────────────────────────────────────────────────
   injectCSS();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', render);
