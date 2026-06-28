@@ -413,8 +413,11 @@ export function createApp() {
   app.route('/api/invoices', invoiceRoutes)
   // ─── Numeración configurable de facturas ──────────────────────────────────────
   app.route('/api/invoice-numbering', invoiceNumberingRoutes)
-  app.route('/api/agent', agentRoutes)
   app.route('/api/agent/voice', voiceRoute)
+  app.route('/api/agent/transcribe', transcribeRoute)
+  app.route('/api/agent/tts', ttsRoute)
+  app.route('/api/agent/brain', brainSettingsRoutes)
+  app.route('/api/agent', agentRoutes)
   app.route('/api/reports', reportRoutes)
   app.route('/api/demonio', demonioRoutes)
   app.route('/api/gestor', gestorRoutes)
@@ -428,9 +431,9 @@ export function createApp() {
   app.route('/api/pacto', pactoRoutes)
   app.route('/api/admin', adminRoutes)
   app.route('/api/albaranes', albaranRoute)
-  app.route('/api/agent/transcribe', transcribeRoute)
-  app.route('/api/agent/tts', ttsRoute)
-  app.route('/api/agent/brain', brainSettingsRoutes)
+
+
+
   app.route('/api/leads-b2b', leadsB2bProtectedRoutes)
   app.route('/api/salons', salonsRoutes)   // ← Selector multiempresa
 
