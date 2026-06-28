@@ -157,6 +157,21 @@
     if (items) items.classList.toggle('dsb-open', !!state[key]);
   };
 
+
+  // ── PWA Navigation Fix (iOS standalone mode) ───────────────────────────────
+  // En iOS standalone mode, los <a> abren Safari. Interceptamos y usamos
+  // window.location.href para mantener la navegación dentro de la PWA.
+  if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest('a[href]');
+      if (!el) return;
+      var href = el.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('http')) return;
+      e.preventDefault();
+      window.location.href = href;
+    }, true);
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
   injectCSS();
   if (document.readyState === 'loading') {
