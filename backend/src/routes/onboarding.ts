@@ -206,9 +206,20 @@ onboardingRoutes.post('/skip', async (c) => {
 // ─── POST /api/onboarding/complete ───────────────────────────────────────────
 onboardingRoutes.post('/complete', async (c) => {
   const salonId = c.get('salonId')
+  const userId = c.get('userId')
+  const userEmail = c.get('userEmail')
   if (!salonId) return c.json({ error: 'No autorizado' }, 401)
 
   const supabase = getSupabaseAdmin()
+
+  // Get salon info
+  const { data: salon } = await supabase
+    .from('salons')
+    .select('name')
+    .eq('id', salonId)
+    .single()
+
+  // Mark onboarding complete
   await supabase
     .from('salons')
     .update({ onboarding_completed: true, onboarding_step: 4 })
@@ -220,6 +231,46 @@ onboardingRoutes.post('/complete', async (c) => {
     changes: {},
     created_at: new Date().toISOString(),
   }])
+
+  // Send welcome email
+  if (userEmail && salon?.name) {
+    const RESEND_API_KEY = process.env.RESEND_API_KEY
+    const FROM_EMAIL = process.env.FROM_EMAIL || 'Diabolus CRM <noreply@diabolus.es>'
+
+    if (RESEND_API_KEY) {
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: FROM_EMAIL,
+            to: userEmail,
+            subject: '¡Bienvenido a Diabolus CRM!',
+            html: `
+              <h1 style="font-family:sans-serif">¡Hola, ${salon.name}!</h1>
+              <p style="font-family:sans-serif;line-height:1.6">Tu negocio ya está listo en <strong>Diabolus CRM</strong>.</p>
+
+              <h2 style="font-family:sans-serif;font-size:1.1rem">Próximos pasos:</h2>
+              <ol style="font-family:sans-serif;line-height:1.8">
+                <li><strong>Invita clientes:</strong> Agrega tus primeros clientes en el panel</li>
+                <li><strong>Crea facturas:</strong> Usa Diablilla para crear facturas por voz</li>
+                <li><strong>Configura Cazador:</strong> Activa recordatorios automáticos de cobro</li>
+                <li><strong>Chat con Diablilla:</strong> Pregunta: "¿Cuál es mi balance?" o "Crea factura a García"</li>
+              </ol>
+
+              <p style="font-family:sans-serif">
+                <a href="https://diabolus.es/dashboard.html" style="display:inline-block;padding:0.75rem 1.5rem;background:#8B5CF6;color:white;text-decoration:none;border-radius:0.5rem;font-weight:600">Ir a Diabolus →</a>
+              </p>
+
+              <p style="font-family:sans-serif;color:#666;font-size:0.9rem">¿Preguntas? Escribe a <strong>hola@diabolus.es</strong></p>
+            `
+          }),
+        })
+      } catch (err) {
+        console.error('Error sending welcome email:', err)
+      }
+    }
+  }
 
   return c.json({ ok: true })
 })
