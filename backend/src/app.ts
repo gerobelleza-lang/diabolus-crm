@@ -44,6 +44,7 @@ import { driveExportRoute } from './routes/drive_export'
 import { invoiceNumberingRoutes } from './routes/invoice_numbering'
 import { calendarHitosRoute } from './routes/calendar_hitos'
 import { brainSettingsRoutes } from './routes/brain-settings'
+import { whatsappTemplatesRoutes } from './routes/whatsapp-templates'
 
 export function createApp() {
   const app = new Hono()
@@ -504,8 +505,7 @@ export function createApp() {
   app.route('/api/pacto', pactoRoutes)
   app.route('/api/admin', adminRoutes)
   app.route('/api/albaranes', albaranRoute)
-
-
+  app.route('/api/whatsapp', whatsappTemplatesRoutes)
 
   app.route('/api/leads-b2b', leadsB2bProtectedRoutes)
   app.route('/api/salons', salonsRoutes)   // ← Selector multiempresa
