@@ -2,7 +2,7 @@
 // Estrategia: Cache-first para el app shell; Network-only para /api/*
 // v3: FIX — no interceptar peticiones externas (evita CORS bug en Safari)
 
-const CACHE_NAME = 'diabolus-shell-v4';
+const CACHE_NAME = 'diabolus-shell-v5';
 
 const SHELL_URLS = [
   '/chat.html',
@@ -17,6 +17,7 @@ const SHELL_URLS = [
   '/manifest.json',
   '/offline.html',
   '/sidebar.js',
+  '/catalogo.html',
 ];
 
 self.addEventListener('install', (event) => {

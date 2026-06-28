@@ -553,7 +553,10 @@
       animation: door-open-flash .8s ease-out;
     }
 
-    @media(max-width:768px){.form-grid { grid-template-columns: 1fr; }
+    @media(max-width:768px){
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .form-grid { grid-template-columns: 1fr; }
       .radio-group { grid-template-columns: 1fr; }
     }
   
@@ -571,12 +574,60 @@
 </head>
 <body>
 
-<aside class="sidebar"></aside>
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <span>😈 Diabolus</span>
+    <small>Centro de Mando</small>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-section-label" onclick="toggleNav('mando')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+      <span>Mando</span><span class="nav-chevron" id="chv-mando" style="font-size:.65rem;transition:transform .22s;opacity:.7;">▾</span>
+    </div>
+    <div class="nav-group-items" id="items-mando">
+      <a href="dashboard.html"    class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a href="mobile.html"       class="nav-item"><span class="nav-icon">🤖</span> Agente IA</a>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-section-label" onclick="toggleNav('negocio')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+      <span>Negocio</span><span class="nav-chevron" id="chv-negocio" style="font-size:.65rem;transition:transform .22s;opacity:.7;">▾</span>
+    </div>
+    <div class="nav-group-items" id="items-negocio">
+      <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+      <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+      <a href="transactions.html" class="nav-item"><span class="nav-icon">💳</span> Transacciones</a>
+            <a href="catalogo.html" class="nav-item"><span class="nav-icon">📦</span> Catálogo</a>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-section-label" onclick="toggleNav('inteligencia')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+      <span>Inteligencia</span><span class="nav-chevron" id="chv-inteligencia" style="font-size:.65rem;transition:transform .22s;opacity:.7;">▾</span>
+    </div>
+    <div class="nav-group-items" id="items-inteligencia">
+      <a href="reports.html"      class="nav-item"><span class="nav-icon">📊</span> Reportes</a>
+      <a href="cazador.html"      class="nav-item"><span class="nav-icon">🎯</span> Cazador</a>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-section-label" onclick="toggleNav('modulos')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+      <span>Módulos</span><span class="nav-chevron" id="chv-modulos" style="font-size:.65rem;transition:transform .22s;opacity:.7;">▾</span>
+    </div>
+    <div class="nav-group-items" id="items-modulos">
+      <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+      <a href="legal.html"        class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
+      <a href="pacto.html"        class="nav-item active"><span class="nav-icon">🔥</span> El Pacto</a>
+    </div>
+  </div>
+</nav>
 
 <!-- ── MAIN ── -->
 <div class="main">
   <div class="topbar">
-    <a href="dashboard.html" style="display:inline-flex;align-items:center;gap:.4rem;color:var(--text-secondary,#aaa);text-decoration:none;font-size:.85rem;padding:.3rem .7rem;border:1px solid rgba(255,255,255,.12);border-radius:6px;margin-bottom:1rem;transition:all .2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.color='var(--text-secondary,#aaa)';this.style.borderColor='rgba(255,255,255,.12)'">← Dashboard</a>
     <h1>🔥 El Pacto del Diablo</h1>
     <span id="plan-badge" class="plan-badge">Cargando…</span>
   </div>
@@ -1239,6 +1290,5 @@ init()
   }
   document.addEventListener('DOMContentLoaded', () => setTimeout(loadPipeline, 1500));
 </script>
-<script src="sidebar.js"></script>
 </body>
 </html>
