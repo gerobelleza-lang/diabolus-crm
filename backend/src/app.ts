@@ -46,6 +46,7 @@ import { driveExportRoute } from './routes/drive_export'
 import { invoiceNumberingRoutes } from './routes/invoice_numbering'
 import { calendarHitosRoute } from './routes/calendar_hitos'
 import { brainSettingsRoutes } from './routes/brain-settings'
+import { guardianRoutes } from './routes/guardian'
 import { whatsappTemplatesRoutes } from './routes/whatsapp-templates'
 import { productsRoutes } from './routes/products'
 
@@ -138,6 +139,9 @@ export function createApp() {
 
   // ─── Internal: Calendar Hitos (día 1 mes — vencimientos + plazos AEAT → ICS/Drive) ──
   app.route('/api/internal/calendar-hitos', calendarHitosRoute)
+
+  // ─── Internal: Guardián Proactivo (scan detectores → Confesor → entrega) ──
+  app.route('/api/internal/guardian', guardianRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
