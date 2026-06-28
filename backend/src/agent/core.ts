@@ -290,6 +290,28 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
     }
   }
 
+  // ── Guardar Bizum del dueño ─────────────────────────────────────────────
+  const bizumMatch = userInput.match(
+    /(?:mi\s+)?(?:bizum|biz)\s+(?:es|:)?\s*\+?(\d[\d\s]{6,14}\d)/i
+  )
+  if (bizumMatch) {
+    const rawBizum = bizumMatch[1].replace(/\s/g, '')
+    const normalizedBizum = rawBizum.startsWith('34') ? rawBizum : rawBizum
+    const supabaseBz = getSupabase()
+    const { error } = await supabaseBz
+      .from('salons')
+      .update({ bizum_number: normalizedBizum })
+      .eq('id', tenantId)
+    if (error) {
+      return { replyText: '\u274c No pude guardar tu Bizum. Inténtalo de nuevo.' }
+    }
+    return {
+      replyText: `\u2705 Bizum guardado: ${normalizedBizum}\n\nA partir de ahora, los recordatorios del Cazador incluirán tu número Bizum para que tus clientes paguen al instante. \ud83d\ude08`
+    }
+  }
+
+
+
   const supabase = getSupabase()
   const parsed   = parseUserInput(userInput)
 

@@ -110,7 +110,7 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
   for (const config of configs) {
     const { data: salon } = await supabase
       .from('salons')
-      .select('name, email, telegram_chat_id, whatsapp_number')
+      .select('name, email, telegram_chat_id, whatsapp_number, bizum_number')
       .eq('id', config.salon_id)
       .single();
     if (!salon) continue;
@@ -156,10 +156,15 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
         importe: formatEur(invoice.total || 0),
         dias: String(diasVencida),
         numero: invoice.number || invoice.id.slice(0, 8),
+        bizum: salon.bizum_number ? salon.bizum_number : '',
       };
 
       const msgTemplate = level === 1 ? config.level1_msg : level === 2 ? config.level2_msg : config.level3_msg;
-      const mensaje = interpolate(msgTemplate, vars);
+      let mensaje = interpolate(msgTemplate, vars);
+      // Append Bizum payment option if configured and not already in template
+      if (salon.bizum_number && !msgTemplate.includes('{bizum}')) {
+        mensaje += '\n\n💳 Pago rápido por Bizum al ' + salon.bizum_number;
+      }
       const subject = `Recordatorio de pago — Factura ${vars.numero}`;
 
       let sent = false;
@@ -244,11 +249,11 @@ cazadorRoutes.get('/config', async (c) => {
       salon_id,
       enabled: true,
       level1_days: 1,
-      level1_msg: 'Hola {nombre}, te recordamos que tienes una factura de {importe} pendiente de pago desde hace {dias} día(s). Si ya lo has realizado, ignora este mensaje. ¡Gracias!',
+      level1_msg: 'Hola {nombre}, te recordamos que tienes una factura de {importe} pendiente de pago desde hace {dias} día(s). Si ya lo has realizado, ignora este mensaje. ¡Gracias!\n\n💳 ¿Quieres pagar rápido? Bizum al {bizum}',
       level2_days: 3,
-      level2_msg: 'Hola {nombre}, llevamos {dias} días esperando el pago de {importe}. Por favor, confírmanos cuándo puedes regularizarlo. Estamos a tu disposición.',
+      level2_msg: 'Hola {nombre}, llevamos {dias} días esperando el pago de {importe}. Por favor, confírmanos cuándo puedes regularizarlo.\n\n💳 Pago inmediato por Bizum al {bizum}',
       level3_days: 7,
-      level3_msg: 'Hola {nombre}, este es nuestro último aviso. La deuda de {importe} lleva {dias} días vencida. Por favor, contáctanos urgentemente para resolverlo.',
+      level3_msg: 'Hola {nombre}, este es nuestro último aviso. La deuda de {importe} lleva {dias} días vencida. Por favor, contáctanos urgentemente para resolverlo.\n\n💳 Bizum al {bizum} — resuelve ahora.',
       channel: 'email',
     });
   }
@@ -428,7 +433,7 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
   for (const config of configs) {
     const { data: salon } = await supabase
       .from('salons')
-      .select('name, email, telegram_chat_id, whatsapp_number, notify_channel')
+      .select('name, email, telegram_chat_id, whatsapp_number, bizum_number, notify_channel')
       .eq('id', config.salon_id)
       .single();
     if (!salon) continue;
