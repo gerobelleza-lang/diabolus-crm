@@ -156,3 +156,90 @@ dashboardRoutes.get('/forecast', async (c) => {
     projection,
   })
 })
+
+// GET /api/dashboard/alerts — Contextual alerts (overdue, unpaid, positive balance)
+dashboardRoutes.get('/alerts', async (c) => {
+  const salonId = c.get('salonId')
+  const supabase = getSupabaseAdmin()
+  const now = new Date()
+  const nowISO = now.toISOString()
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+  const alerts = []
+
+  // Alert 1: Overdue invoices
+  const { data: overdueInvoices } = await supabase
+    .from('invoices')
+    .select('id, total, due_date, clients(name)')
+    .eq('salon_id', salonId)
+    .eq('status', 'pending')
+    .lt('due_date', nowISO.split('T')[0])
+
+  if ((overdueInvoices ?? []).length > 0) {
+    const total = overdueInvoices.reduce((s, i) => s + Number(i.total || 0), 0)
+    alerts.push({
+      id: 'overdue_invoices',
+      type: 'danger',
+      icon: '🔴',
+      title: `Tienes ${overdueInvoices.length} factura(s) vencida(s)`,
+      description: `Por €${total.toFixed(2)}`,
+      action: 'viewOverdueInvoices',
+      count: overdueInvoices.length,
+      amount: total,
+    })
+  }
+
+  // Alert 2: Long unpaid clients (30+ days)
+  const { data: allInvoices } = await supabase
+    .from('invoices')
+    .select('client_id, due_date, clients(name)')
+    .eq('salon_id', salonId)
+    .eq('status', 'pending')
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const longUnpaid = (allInvoices ?? [])
+    .filter(inv => (inv.due_date || '') < thirtyDaysAgo)
+    .map(inv => inv.clients?.name)
+    .filter((v, i, a) => a.indexOf(v) === i && v)
+
+  if (longUnpaid.length > 0) {
+    alerts.push({
+      id: 'long_unpaid_clients',
+      type: 'warning',
+      icon: '🟠',
+      title: `${longUnpaid.length} cliente(s) sin pagar 30+ días`,
+      description: longUnpaid.slice(0, 3).join(', ') + (longUnpaid.length > 3 ? '...' : ''),
+      action: 'viewLongUnpaidClients',
+      clients: longUnpaid,
+    })
+  }
+
+  // Alert 3: Positive week balance
+  const { data: weekTransactions } = await supabase
+    .from('transactions')
+    .select('amount, type')
+    .eq('salon_id', salonId)
+    .gte('created_at', weekAgo)
+
+  const weekIncome = (weekTransactions ?? [])
+    .filter(t => t.type === 'income')
+    .reduce((s, t) => s + Number(t.amount || 0), 0)
+  const weekExpense = (weekTransactions ?? [])
+    .filter(t => t.type === 'expense')
+    .reduce((s, t) => s + Number(t.amount || 0), 0)
+  const weekBalance = weekIncome - weekExpense
+
+  if (weekBalance > 0) {
+    alerts.push({
+      id: 'positive_week',
+      type: 'success',
+      icon: '🟢',
+      title: `Balance +€${weekBalance.toFixed(2)} esta semana`,
+      description: '¡Muy bien esta semana!',
+      action: 'scrollToChart',
+      amount: weekBalance,
+    })
+  }
+
+  return c.json({ alerts })
+})
