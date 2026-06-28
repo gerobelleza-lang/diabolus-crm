@@ -281,6 +281,9 @@
           <div class="sug-chip" onclick="askSuggestion('¿Puedo cobrar los 40€ de compensación por costes de cobro automáticamente?')">¿Cuándo puedo cobrar los 40€ de compensación?</div>
           <div class="sug-chip" onclick="askSuggestion('¿Qué pasa si un cliente cancela su cita sin avisar?')">¿Puedo cobrar si cancela sin avisar?</div>
           <div class="sug-chip" onclick="askSuggestion('¿Necesito contrato por escrito para prestar servicios?')">¿Necesito contrato escrito?</div>
+          <div class="sug-chip" onclick="askSuggestion('¿Es legal alquilar sillas a autónomos en mi salón?')">¿Es legal el alquiler de sillas?</div>
+          <div class="sug-chip" onclick="askSuggestion('¿Puedo exigir a mi empleado que guarde confidencialidad sobre mis clientes?')">¿Puedo obligar a guardar confidencialidad?</div>
+          <div class="sug-chip" onclick="askSuggestion('¿Necesito autorización de los padres para atender a un menor de edad?')">¿Autorización para menores?</div>
           <div class="sug-chip" onclick="askSuggestion('¿Cuánto tiempo tengo que conservar los datos de mis clientes?')">¿Cuánto tiempo guardo datos de clientes?</div>
 
           <div class="suggestions-title" style="margin-top: 18px;">📚 Base de conocimiento</div>
@@ -290,7 +293,8 @@
             ✅ Código Civil (contratos)<br>
             ✅ LSSI (comercio electrónico)<br>
             ✅ Estatuto Trabajo Autónomo<br>
-            <span style="color: var(--violet); font-size:.75rem; margin-top:6px; display:block;">+ más leyes próximamente</span>
+            ✅ Ley 41/2002 (Autonomía paciente)<br>
+            <span style="color: var(--violet); font-size:.75rem; margin-top:6px; display:block;">5 nuevas plantillas disponibles</span>
           </div>
         </div>
       </div>
@@ -392,7 +396,7 @@
     }
 
     const TEMPLATE_ICONS = {
-      servicio: '📋', confidencialidad: '🔒', rgpd: '🛡️', web: '🌐', encargo: '📝',
+      servicio: '📋', confidencialidad: '🔒', contratos: '📝', rgpd: '🛡️', web: '🌐', encargo: '📃',
     };
 
     function renderTemplateGrid(templates) {
@@ -447,6 +451,37 @@
       nombre_parte_1: 'Nombre Parte 1 (Divulgante)', nombre_parte_2: 'Nombre Parte 2 (Receptor)',
       contexto_relacion: 'Contexto / motivo de la relación', duracion_anos: 'Duración (años)',
       descripcion_actividad: 'Descripción de tu actividad',
+      // ── nuevas plantillas ──────────────────────────────────────
+      prov_nombre: 'Tu nombre / razón social',
+      prov_nif: 'Tu NIF/CIF',
+      prov_domicilio: 'Tu domicilio fiscal',
+      cli_nif: 'NIF/DNI del cliente',
+      cli_domicilio: 'Domicilio del cliente',
+      descripcion_puesto: 'Descripción del puesto (ej: silla nº 3, cabina izq)',
+      duracion_meses: 'Duración (meses)',
+      renta_mensual: 'Renta mensual (€)',
+      dia_pago: 'Día de pago (ej: 5)',
+      fianza: 'Importe fianza (€)',
+      localidad: 'Localidad',
+      fecha_contrato: 'Fecha del contrato',
+      cli_puesto: 'Puesto / cargo del colaborador',
+      duracion_post_meses: 'Meses de vigencia post-relación',
+      horas_cancelacion: 'Horas mínimas aviso cancelación',
+      porcentaje_penalizacion: 'Penalización (%)',
+      importe_max_penalizacion: 'Penalización máxima (€)',
+      menor_nombre: 'Nombre del/la menor',
+      menor_dni: 'DNI/Pasaporte del/la menor',
+      menor_fecha_nacimiento: 'Fecha de nacimiento del/la menor',
+      tutor_nombre: 'Nombre del padre/madre/tutor',
+      tutor_nif: 'NIF del representante legal',
+      tutor_parentesco: 'Relación (padre, madre, tutor/a)',
+      servicio_autorizado: 'Servicio(s) autorizado(s)',
+      observaciones: 'Observaciones / alergias conocidas',
+      tratamiento: 'Nombre del tratamiento',
+      descripcion_tratamiento: 'Descripción del tratamiento',
+      riesgos: 'Posibles efectos secundarios y riesgos',
+      contraindicaciones: 'Contraindicaciones',
+      profesional_nombre: 'Nombre del/la profesional',
     };
 
     function renderVarsForm() {
@@ -585,5 +620,6 @@
       setTimeout(() => toast.remove(), 3500);
     }
   </script>
+<script src="sidebar.js"></script>
 </body>
 </html>

@@ -3,266 +3,213 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configuración — Diabolus CRM</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#8B5CF6">
-  <meta name="mobile-web-app-capable" content="yes">
+  <title>Configuración — Diabolus</title>
+  <link rel="icon" href="favicon.ico">
   <link rel="stylesheet" href="diabolus-tokens.css">
   <style>
-    .main-container { display: flex; min-height: 100vh; background-color: var(--ink); }
-    .sidebar {
-      width: 260px; background: var(--surface); border-right: 1px solid var(--border-color);
-      padding: 2rem 0; display: flex; flex-direction: column; position: fixed; height: 100vh;
-      left: 0; top: 0; overflow-y: auto; z-index: 10;
-    }
-    .sidebar-header { padding: 0 1.5rem 1.5rem; text-align: center; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
-    .sidebar-salon { font-size: 0.75rem; color: var(--text-tertiary); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); padding: 1.5rem 0; display: flex; flex-direction: column; }
+    .sidebar-header { padding: 0 1rem 1.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+    .sidebar-logo { font-size: 1.5rem; font-weight: 800; }
     .sidebar-nav { flex: 1; padding: 0 0.75rem; }
-    .nav-item {
-      padding: 0.65rem 1rem; margin-bottom: 0.2rem; border-radius: 0.5rem; display: flex;
-      align-items: center; gap: 0.75rem; transition: all 0.18s; color: var(--text-secondary);
-      text-decoration: none; font-weight: 500; font-size: 0.875rem;
-    }
+    .nav-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border-radius: 0.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; margin-bottom: 0.15rem; }
     .nav-item:hover { background: rgba(139,92,246,.08); color: var(--text-primary); }
     .nav-item.active { background: rgba(139,92,246,.15); color: var(--violet); font-weight: 600; }
     .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
-    .sidebar-footer { padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); }
-    .sidebar-ver { text-align: center; font-size: 0.65rem; color: var(--text-tertiary); margin-top: 0.5rem; }
-
-    .main-content { margin-left: 260px; flex: 1; padding: 2rem 2.5rem; max-width: calc(100vw - 260px); }
-    .page-header {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);
-    }
-    .page-header h1 { margin: 0 0 0.25rem; font-family: var(--font-display); }
-    .user-chip {
-      display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem;
-      background: rgba(139,92,246,.05); border-radius: 0.5rem;
-    }
-    .avatar { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--violet); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
-
-    .zone { background: var(--surface); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .zone-label { font-size: 0.75rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
-    .section-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 1rem; }
-
-    .subscription-card {
-      background: linear-gradient(135deg, rgba(139,92,246,.1) 0%, rgba(139,92,246,.05) 100%);
-      border: 2px solid var(--violet); border-radius: 0.75rem; padding: 2rem;
-      text-align: center;
-    }
-    .subscription-status { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
-    .subscription-plan { font-size: 2rem; font-weight: 700; color: var(--violet); margin-bottom: 0.25rem; }
-    .subscription-price { font-size: 1.125rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .subscription-info { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; text-align: left; }
-    .info-item { padding: 0.75rem; background: rgba(255,255,255,.03); border-radius: 0.5rem; }
-    .info-label { font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; }
-    .info-value { font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-top: 0.25rem; }
-
-    .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 500; font-size: 0.9rem; transition: all 0.18s; }
+    .main { flex: 1; padding: 2rem 3rem; max-width: 800px; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 2rem; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card h2 { font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color); }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-secondary); font-size: 0.9rem; }
+    .info-value { font-weight: 600; font-size: 0.9rem; }
+    .badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600; }
+    .badge-active { background: rgba(34,197,94,.15); color: #22c55e; }
+    .badge-free { background: rgba(156,163,175,.15); color: #9ca3af; }
+    .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .btn-primary { background: var(--violet); color: white; }
-    .btn-primary:hover { background: #7C3AED; }
-    .btn-secondary { background: var(--surface-variant); color: var(--text-primary); }
-
-    .alert { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
-    .alert-info { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.2); color: #3B82F6; }
-
+    .btn-primary:hover { background: var(--violet-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); }
+    .btn-outline:hover { border-color: var(--violet); color: var(--violet); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .salon-name { font-size: 0.85rem; color: var(--text-secondary); padding: 0.5rem 1rem 0; }
     @media (max-width: 768px) {
-      .main-content { margin-left: 0; padding: 1.5rem; }
-      .sidebar { width: 100%; height: auto; position: relative; }
-      .subscription-info { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { padding: 1.5rem; }
     }
   </style>
 </head>
 <body>
-  <div class="main-container">
+  <div class="layout">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">😈</div>
-        <div style="font-weight: 600; color: var(--text-primary);">Diabolus</div>
-        <div class="sidebar-salon" id="salonName">—</div>
+        <div class="sidebar-logo">🔥 Diabolus</div>
+        <div class="salon-name" id="salonNameSidebar">—</div>
       </div>
       <nav class="sidebar-nav">
         <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
-        <a href="chat.html"      class="nav-item"><span class="nav-icon">💬</span> Agente</a>
-        <a href="invoices.html"  class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
-        <a href="clients.html"   class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
-        <a href="cazador.html"   class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
-        <a href="pacto.html"     class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
-        <hr style="border-color:rgba(255,255,255,.08);margin:.5rem .5rem">
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente</a>
+        <a href="invoices.html" class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+        <a href="clients.html" class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+        <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+        <a href="documents.html" class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+        <a href="cazador.html" class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
+        <a href="whatsapp.html" class="nav-item"><span class="nav-icon">💬</span> WhatsApp</a>
         <a href="settings.html" class="nav-item active"><span class="nav-icon">⚙️</span> Configuración</a>
       </nav>
-      <div class="sidebar-footer">
-        <button class="btn btn-secondary" style="width:100%;" onclick="logout()">Cerrar sesión</button>
-        <div class="sidebar-ver">v2.1</div>
-      </div>
     </aside>
 
-    <main class="main-content">
-      <div class="page-header">
-        <div>
-          <h1>Configuración</h1>
-          <div style="font-size: 0.875rem; color: var(--text-secondary);">Gestiona tu suscripción y preferencias</div>
+    <main class="main">
+      <h1>⚙️ Configuración</h1>
+      <p class="subtitle">Gestiona tu cuenta, suscripción y preferencias</p>
+
+      <!-- Suscripción -->
+      <div class="card">
+        <h2>💳 Suscripción</h2>
+        <div class="info-row">
+          <span class="info-label">Plan actual</span>
+          <span class="info-value" id="planName">Cargando...</span>
         </div>
-        <div class="user-chip">
-          <div>
-            <strong id="userEmailDisplay">—</strong>
-          </div>
-          <div class="avatar" id="userAvatar">?</div>
+        <div class="info-row">
+          <span class="info-label">Estado</span>
+          <span id="planBadge"><span class="badge badge-free">—</span></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Acciones</span>
+          <span id="planActions">
+            <button class="btn btn-primary" id="upgradeBtn" onclick="goCheckout()" style="display:none">Contratar El Pacto 🔥</button>
+            <button class="btn btn-outline" id="portalBtn" onclick="openPortal()" style="display:none">Gestionar suscripción</button>
+          </span>
         </div>
       </div>
 
-      <!-- SUSCRIPCIÓN -->
-      <div class="zone">
-        <div class="zone-label">Suscripción</div>
-        <div class="subscription-card" id="subscriptionCard">
-          <div class="subscription-status" id="subStatus">Cargando...</div>
-          <div class="subscription-plan" id="subPlan">—</div>
-          <div class="subscription-price" id="subPrice">—</div>
-          <div class="subscription-info" id="subInfo"></div>
-          <button class="btn btn-primary" id="manageSubBtn" onclick="openBillingPortal()" style="display:none;">
-            💳 Gestionar suscripción
-          </button>
-          <div id="noSubMsg" style="padding: 1rem; text-align: center; color: var(--text-secondary);">
-            No tienes El Pacto activo aún.
-            <a href="checkout.html" style="color: var(--violet); text-decoration: none; font-weight: 600;">Comprar ahora →</a>
-          </div>
+      <!-- Cuenta -->
+      <div class="card">
+        <h2>👤 Cuenta</h2>
+        <div class="info-row">
+          <span class="info-label">Email</span>
+          <span class="info-value" id="userEmail">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Negocio</span>
+          <span class="info-value" id="salonName">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Bizum</span>
+          <span class="info-value" id="bizumNumber">No configurado</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">WhatsApp</span>
+          <span class="info-value" id="waNumber">No configurado</span>
         </div>
       </div>
 
-      <!-- PREFERENCIAS -->
-      <div class="zone">
-        <div class="zone-label">Preferencias</div>
-        <p class="section-title">Tema</p>
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-            <input type="radio" name="theme" value="dark" checked onchange="setTheme('dark')">
-            🌙 Oscuro
-          </label>
-          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-            <input type="radio" name="theme" value="light" onchange="setTheme('light')">
-            ☀️ Claro
-          </label>
+      <!-- Diablilla -->
+      <div class="card">
+        <h2>🧠 Diablilla — Configuración IA</h2>
+        <div class="info-row">
+          <span class="info-label">Cerebro activo</span>
+          <span class="info-value" id="brainTier">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Personalidad</span>
+          <span class="info-value" id="personality">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Configurar</span>
+          <a href="chat.html" class="btn btn-outline">Abrir Diablilla</a>
         </div>
       </div>
 
-      <!-- CUENTA -->
-      <div class="zone">
-        <div class="zone-label">Cuenta</div>
-        <p class="section-title">Información de usuario</p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-          <div>
-            <div style="font-size: 0.875rem; color: var(--text-secondary);">Email</div>
-            <div id="userEmail" style="font-weight: 500; margin-top: 0.25rem;">—</div>
-          </div>
-          <div>
-            <div style="font-size: 0.875rem; color: var(--text-secondary);">Salón</div>
-            <div id="salonInfo" style="font-weight: 500; margin-top: 0.25rem;">—</div>
-          </div>
+      <!-- Sesión -->
+      <div class="card">
+        <h2>🔐 Sesión</h2>
+        <div class="info-row">
+          <span class="info-label">Cerrar sesión</span>
+          <button class="btn btn-outline" onclick="logout()" style="color:#ef4444;border-color:#ef4444">Cerrar sesión</button>
         </div>
-        <button class="btn btn-secondary" onclick="logout()">Cerrar sesión</button>
       </div>
     </main>
   </div>
 
   <script>
-    const token = localStorage.getItem('auth_token');
-    if (!token) { window.location.href = 'index.html'; }
+    const API = 'https://diabolus-crm-api.vercel.app';
+    const token = localStorage.getItem('sb_access_token');
+    if (!token) window.location.href = 'index-login.html';
 
-    async function loadSettings() {
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+    // Load subscription info
+    (async () => {
       try {
-        // Load user profile
-        const profileRes = await fetch('/api/profile', { headers: { Authorization: `Bearer ${token}` } });
-        const profile = await profileRes.json();
+        const [subR, profileR] = await Promise.all([
+          fetch(`${API}/api/stripe/subscription`, { headers }),
+          fetch(`${API}/api/dashboard/stats`, { headers }).catch(() => null),
+        ]);
 
-        if (profile.salon) {
-          document.getElementById('salonName').textContent = profile.salon.name || '—';
-          document.getElementById('salonInfo').textContent = profile.salon.name || '—';
-          document.getElementById('userEmailDisplay').textContent = profile.email || '—';
-          document.getElementById('userEmail').textContent = profile.email || '—';
+        const sub = await subR.json();
+        const profile = profileR ? await profileR.json().catch(() => ({})) : {};
 
-          const initials = (profile.salon.name || 'U').substring(0, 1).toUpperCase();
-          document.getElementById('userAvatar').textContent = initials;
-        }
-
-        // Load subscription status
-        const subRes = await fetch('/api/stripe/subscription', { headers: { Authorization: `Bearer ${token}` } });
-        const sub = await subRes.json();
-
-        const card = document.getElementById('subscriptionCard');
-        const noMsg = document.getElementById('noSubMsg');
-        const manageBtn = document.getElementById('manageSubBtn');
-
-        if (sub.pacto_activo) {
-          card.style.display = 'block';
-          noMsg.style.display = 'none';
-          manageBtn.style.display = 'block';
-
-          document.getElementById('subStatus').textContent = '✅ Activo';
-          document.getElementById('subPlan').textContent = 'El Pacto';
-          document.getElementById('subPrice').textContent = '€49/mes';
-
-          const infoHtml = `
-            <div class="info-item">
-              <div class="info-label">Estado</div>
-              <div class="info-value">✅ Suscripción activa</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">Renovación</div>
-              <div class="info-value">Mensual (automático)</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">ID Suscripción</div>
-              <div class="info-value" style="font-family: monospace; font-size: 0.8rem;">${sub.subscription_id ? sub.subscription_id.substring(0, 12) + '...' : '—'}</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">Próxima factura</div>
-              <div class="info-value">${sub.expires_at ? new Date(sub.expires_at).toLocaleDateString('es-ES') : '—'}</div>
-            </div>
-          `;
-          document.getElementById('subInfo').innerHTML = infoHtml;
+        // Plan
+        const planEl = document.getElementById('planName');
+        const badgeEl = document.getElementById('planBadge');
+        if (sub.active || sub.plan === 'pacto') {
+          planEl.textContent = 'El Pacto — €49/mes';
+          badgeEl.innerHTML = '<span class="badge badge-active">✅ Activo</span>';
+          document.getElementById('portalBtn').style.display = 'inline-block';
         } else {
-          card.style.display = 'none';
-          noMsg.style.display = 'block';
-          manageBtn.style.display = 'none';
+          planEl.textContent = 'Sin plan activo';
+          badgeEl.innerHTML = '<span class="badge badge-free">Gratuito</span>';
+          document.getElementById('upgradeBtn').style.display = 'inline-block';
         }
-      } catch (err) {
-        console.error('Error loading settings:', err);
-      }
-    }
 
-    async function openBillingPortal() {
+        // Profile info
+        if (profile.salon_name) {
+          document.getElementById('salonName').textContent = profile.salon_name;
+          document.getElementById('salonNameSidebar').textContent = profile.salon_name;
+        }
+        if (profile.email) document.getElementById('userEmail').textContent = profile.email;
+      } catch {}
+
+      // AI config
       try {
-        const res = await fetch('/api/stripe/portal', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        const r = await fetch(`${API}/api/agent/brain-settings`, { headers });
+        const d = await r.json();
+        const tiers = { rapida: '⚡ Rápida (Gemini Flash)', inteligente: '🧠 Inteligente (GPT-4.1)', brillante: '👑 Brillante (Claude Sonnet)' };
+        document.getElementById('brainTier').textContent = tiers[d.brain_tier] || d.brain_tier || '⚡ Rápida';
+        document.getElementById('personality').textContent = d.personality || 'Diablilla';
+      } catch {}
+    })();
+
+    function goCheckout() { window.location.href = 'checkout.html'; }
+
+    async function openPortal() {
+      const btn = document.getElementById('portalBtn');
+      btn.disabled = true;
+      btn.textContent = 'Abriendo...';
+      try {
+        const r = await fetch(`${API}/api/stripe/portal`, {
+          method: 'POST', headers
         });
-        const data = await res.json();
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          alert('Error al abrir portal de facturación');
-        }
-      } catch (err) {
-        console.error('Error:', err);
-        alert('Error al abrir portal');
+        const d = await r.json();
+        if (d.url) window.location.href = d.url;
+        else { alert(d.error || 'Error'); btn.disabled = false; btn.textContent = 'Gestionar suscripción'; }
+      } catch {
+        btn.disabled = false;
+        btn.textContent = 'Gestionar suscripción';
       }
-    }
-
-    function setTheme(theme) {
-      localStorage.setItem('theme', theme);
-      document.documentElement.setAttribute('data-theme', theme);
     }
 
     function logout() {
-      localStorage.removeItem('auth_token');
-      window.location.href = 'index.html';
+      localStorage.clear();
+      window.location.href = 'index-login.html';
     }
-
-    // Init
-    const theme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', theme);
-    document.querySelector(`input[value="${theme}"]`).checked = true;
-    loadSettings();
   </script>
+<script src="sidebar.js"></script>
 </body>
 </html>

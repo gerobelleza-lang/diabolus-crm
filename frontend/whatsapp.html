@@ -3,348 +3,228 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp — Diabolus CRM</title>
-  <link rel="manifest" href="manifest.json">
+  <title>WhatsApp — Diabolus</title>
+  <link rel="icon" href="favicon.ico">
   <link rel="stylesheet" href="diabolus-tokens.css">
   <style>
-    .main-container { display: flex; min-height: 100vh; background-color: var(--ink); }
-    .sidebar {
-      width: 260px; background: var(--surface); border-right: 1px solid var(--border-color);
-      padding: 2rem 0; display: flex; flex-direction: column; position: fixed; height: 100vh;
-      left: 0; top: 0; overflow-y: auto; z-index: 10;
-    }
-    .sidebar-header { padding: 0 1.5rem 1.5rem; text-align: center; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); padding: 1.5rem 0; display: flex; flex-direction: column; }
+    .sidebar-header { padding: 0 1rem 1.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+    .sidebar-logo { font-size: 1.5rem; font-weight: 800; }
     .sidebar-nav { flex: 1; padding: 0 0.75rem; }
-    .nav-item {
-      padding: 0.65rem 1rem; margin-bottom: 0.2rem; border-radius: 0.5rem; display: flex;
-      align-items: center; gap: 0.75rem; transition: all 0.18s; color: var(--text-secondary);
-      text-decoration: none; font-weight: 500; font-size: 0.875rem;
-    }
-    .nav-item:hover { background: rgba(139,92,246,.08); }
-    .nav-item.active { background: rgba(139,92,246,.15); color: var(--violet); }
-    .sidebar-footer { padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); }
-
-    .main-content { margin-left: 260px; flex: 1; padding: 2rem; }
-    .page-header { margin-bottom: 2rem; }
-    .page-header h1 { margin: 0 0 0.25rem; font-size: 1.75rem; }
-    .page-header p { color: var(--text-secondary); }
-
-    .zone { background: var(--surface); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .zone-label { font-size: 0.75rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 1rem; }
-
-    .templates-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
+    .nav-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border-radius: 0.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; margin-bottom: 0.15rem; }
+    .nav-item:hover { background: rgba(139,92,246,.08); color: var(--text-primary); }
+    .nav-item.active { background: rgba(139,92,246,.15); color: var(--violet); font-weight: 600; }
+    .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+    .main { flex: 1; padding: 2rem 3rem; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 2rem; }
+    .templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
     .template-card {
-      background: rgba(139,92,246,.05);
-      border: 2px solid var(--border-color);
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-      transition: all 0.18s;
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: 1rem; padding: 1.25rem; cursor: pointer; transition: all 0.2s;
     }
-
-    .template-card:hover {
-      border-color: var(--violet);
-      background: rgba(139,92,246,.1);
+    .template-card:hover { border-color: var(--violet); transform: translateY(-2px); }
+    .template-card.selected { border-color: var(--violet); background: rgba(139,92,246,.05); }
+    .template-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
+    .template-desc { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .template-preview { background: var(--bg-primary); border-radius: 0.5rem; padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary); font-style: italic; }
+    .send-panel {
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: 1rem; padding: 1.5rem; display: none;
     }
-
-    .template-name {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 0.5rem;
+    .send-panel.visible { display: block; }
+    .send-panel h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem; }
+    .form-group input {
+      width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 0.5rem;
+      background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem;
     }
-
-    .template-body {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      background: rgba(255,255,255,.02);
-      padding: 0.75rem;
-      border-radius: 0.35rem;
-      margin-bottom: 0.75rem;
-      font-family: var(--font-mono);
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .template-params {
-      font-size: 0.75rem;
-      color: var(--text-tertiary);
-      margin-bottom: 1rem;
-    }
-
-    .btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 0.35rem;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: all 0.18s;
-    }
-
-    .btn-primary {
-      background: var(--violet);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: #7C3AED;
-    }
-
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 0.65rem 0.85rem;
-      background: var(--ink);
-      border: 1px solid var(--border-color);
-      border-radius: 0.35rem;
-      color: var(--text-primary);
-      font-family: var(--font-body);
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: var(--violet);
-      box-shadow: 0 0 0 2px rgba(139,92,246,.2);
-    }
-
-    .alert {
-      padding: 1rem;
-      border-radius: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .alert-info {
-      background: rgba(59,130,246,.1);
-      border: 1px solid rgba(59,130,246,.2);
-      color: #3B82F6;
-    }
-
-    .alert-success {
-      background: rgba(74,222,128,.1);
-      border: 1px solid rgba(74,222,128,.2);
-      color: #4ADE80;
-    }
-
-    .alert-error {
-      background: rgba(248,113,113,.1);
-      border: 1px solid rgba(248,113,113,.2);
-      color: #F87171;
-    }
-
-    .section-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin: 1.5rem 0 1rem;
-    }
-
+    .form-group input:focus { outline: none; border-color: var(--violet); }
+    .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: var(--violet); color: white; }
+    .btn-primary:hover { background: var(--violet-hover); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status { margin-top: 0.75rem; font-size: 0.9rem; }
+    .status.ok { color: #22c55e; }
+    .status.err { color: #ef4444; }
+    .meta-badge { display: inline-flex; padding: 0.15rem 0.5rem; border-radius: 0.75rem; font-size: 0.7rem; font-weight: 600; }
+    .meta-approved { background: rgba(34,197,94,.15); color: #22c55e; }
+    .meta-pending { background: rgba(234,179,8,.15); color: #eab308; }
+    .salon-name { font-size: 0.85rem; color: var(--text-secondary); padding: 0.5rem 1rem 0; }
+    .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
     @media (max-width: 768px) {
-      .main-content { margin-left: 0; }
-      .sidebar { width: 100%; height: auto; position: relative; }
+      .sidebar { display: none; }
+      .main { padding: 1.5rem; }
       .templates-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <div class="main-container">
+  <div class="layout">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">😈</div>
-        <div style="font-weight: 600; color: var(--text-primary);">Diabolus</div>
+        <div class="sidebar-logo">🔥 Diabolus</div>
+        <div class="salon-name" id="salonNameSidebar">—</div>
       </div>
       <nav class="sidebar-nav">
-        <a href="dashboard.html" class="nav-item"><span>📊</span> Dashboard</a>
-        <a href="clients.html" class="nav-item"><span>👥</span> Clientes</a>
-        <a href="invoices.html" class="nav-item"><span>📄</span> Facturas</a>
-        <a href="cazador.html" class="nav-item"><span>🗡️</span> Cazador</a>
-        <a href="whatsapp.html" class="nav-item active"><span>💬</span> WhatsApp</a>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente</a>
+        <a href="invoices.html" class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+        <a href="clients.html" class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+        <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+        <a href="documents.html" class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+        <a href="cazador.html" class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
+        <a href="whatsapp.html" class="nav-item active"><span class="nav-icon">💬</span> WhatsApp</a>
+        <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
       </nav>
-      <div class="sidebar-footer">
-        <button class="btn btn-primary" style="width:100%;" onclick="logout()">Salir</button>
-      </div>
     </aside>
 
-    <main class="main-content">
-      <div class="page-header">
-        <h1>💬 WhatsApp — Templates</h1>
-        <p>Envía mensajes pre-aprobados a tus clientes sin límite</p>
+    <main class="main">
+      <h1>💬 WhatsApp Templates</h1>
+      <p class="subtitle">Gestiona y envía mensajes con plantillas aprobadas por Meta</p>
+
+      <div class="section-title">📋 Plantillas disponibles</div>
+      <div class="templates-grid" id="templatesGrid">
+        <div style="color:var(--text-secondary)">Cargando plantillas...</div>
       </div>
 
-      <div class="alert alert-info">
-        ℹ️ Los templates están en modo desarrollo. Una vez Meta apruebe, podrás enviar sin limitaciones de rate-limit.
-      </div>
-
-      <!-- PLANTILLAS DISPONIBLES -->
-      <div class="zone">
-        <div class="zone-label">Plantillas Disponibles</div>
-        <div class="templates-grid" id="templatesGrid">
-          <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Cargando...</div>
+      <div class="send-panel" id="sendPanel">
+        <h2 id="sendTitle">Enviar plantilla</h2>
+        <div class="form-group">
+          <label>Teléfono destinatario</label>
+          <input type="tel" id="sendTo" placeholder="612345678 o +34612345678">
         </div>
-      </div>
-
-      <!-- ENVIAR MENSAJE -->
-      <div class="zone">
-        <div class="zone-label">Enviar Mensaje</div>
-
-        <form onsubmit="sendTemplate(event)">
-          <div class="form-group">
-            <label class="form-label">Teléfono del cliente</label>
-            <input type="tel" class="form-input" id="phoneInput" placeholder="34123456789" required>
-            <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.35rem;">Formato internacional (ej: 34 para España)</div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Plantilla</label>
-            <select class="form-input" id="templateSelect" required onchange="updateTemplatePreview()">
-              <option value="">Selecciona una plantilla...</option>
-            </select>
-          </div>
-
-          <div id="parametersContainer"></div>
-
-          <div class="form-group">
-            <button type="submit" class="btn btn-primary" style="width:100%;">📤 Enviar Mensaje</button>
-          </div>
-        </form>
-
-        <div id="responseMessage"></div>
+        <div id="varsContainer"></div>
+        <button class="btn btn-primary" id="sendBtn" onclick="sendTemplate()">Enviar por WhatsApp</button>
+        <div id="sendStatus" class="status"></div>
       </div>
     </main>
   </div>
 
   <script>
-    const API = window.location.origin;
-    const token = localStorage.getItem('auth_token');
+    const API = 'https://diabolus-crm-api.vercel.app';
+    const token = localStorage.getItem('sb_access_token');
+    if (!token) window.location.href = 'index-login.html';
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-    if (!token) {
-      window.location.href = '/';
-    }
+    let selectedTemplate = null;
 
-    let templates = {};
-
-    async function loadTemplates() {
+    (async () => {
       try {
-        const res = await fetch(`${API}/api/whatsapp/templates`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        templates = data.templates.reduce((acc, t) => { acc[t.name] = t; return acc; }, {});
-
-        // Render cards
-        const grid = document.getElementById('templatesGrid');
-        grid.innerHTML = data.templates.map(t => `
-          <div class="template-card">
-            <div class="template-name">${t.name.replace(/_/g, ' ')}</div>
-            <div class="template-body">${t.body}</div>
-            <div class="template-params">
-              Parámetros: ${t.parameters.length > 0 ? t.parameters.join(', ') : 'ninguno'}
-            </div>
-            <button type="button" class="btn btn-primary" onclick="selectTemplate('${t.name}')" style="width:100%;">
-              Usar esta plantilla
-            </button>
-          </div>
-        `).join('');
-
-        // Populate select
-        const select = document.getElementById('templateSelect');
-        select.innerHTML = '<option value="">Selecciona una plantilla...</option>' +
-          data.templates.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
-      } catch (err) {
-        console.error('Error loading templates:', err);
+        const r = await fetch(`${API}/api/whatsapp/templates`, { headers });
+        const d = await r.json();
+        renderTemplates(d.predefined || [], d.meta || []);
+      } catch {
+        document.getElementById('templatesGrid').innerHTML = '<div style="color:#ef4444">Error cargando plantillas</div>';
       }
+    })();
+
+    function renderTemplates(predefined, meta) {
+      const grid = document.getElementById('templatesGrid');
+      let html = '';
+
+      predefined.forEach(t => {
+        html += `<div class="template-card" onclick="selectTemplate(this, ${JSON.stringify(t).replace(/"/g, '&quot;')})">
+          <div class="template-name">${t.display} <span class="meta-badge meta-pending">Predefinida</span></div>
+          <div class="template-desc">${t.description}</div>
+          <div class="template-preview">${t.body}</div>
+        </div>`;
+      });
+
+      meta.forEach(t => {
+        const status = t.status === 'APPROVED' ? 'approved' : 'pending';
+        const label = t.status === 'APPROVED' ? 'Meta ✅' : t.status || 'Pendiente';
+        const body = t.components?.find(c => c.type === 'BODY')?.text || '—';
+        html += `<div class="template-card" onclick="selectMeta(this, '${t.name}', '${t.language || 'es'}')">
+          <div class="template-name">${t.name} <span class="meta-badge meta-${status}">${label}</span></div>
+          <div class="template-preview">${body}</div>
+        </div>`;
+      });
+
+      grid.innerHTML = html || '<div style="color:var(--text-secondary)">No hay plantillas configuradas</div>';
     }
 
-    function selectTemplate(name) {
-      document.getElementById('templateSelect').value = name;
-      updateTemplatePreview();
-      window.scrollTo({ top: document.querySelector('.zone:last-of-type').offsetTop, behavior: 'smooth' });
+    function selectTemplate(el, tpl) {
+      document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedTemplate = tpl;
+
+      const panel = document.getElementById('sendPanel');
+      panel.classList.add('visible');
+      document.getElementById('sendTitle').textContent = `Enviar: ${tpl.display}`;
+
+      const container = document.getElementById('varsContainer');
+      container.innerHTML = '';
+      (tpl.variables || []).forEach((v, i) => {
+        container.innerHTML += `<div class="form-group">
+          <label>${v}</label>
+          <input type="text" id="var_${i}" placeholder="${v}">
+        </div>`;
+      });
+
+      document.getElementById('sendStatus').textContent = '';
     }
 
-    function updateTemplatePreview() {
-      const name = document.getElementById('templateSelect').value;
-      const container = document.getElementById('parametersContainer');
+    function selectMeta(el, name, lang) {
+      document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedTemplate = { name, language: lang, isMeta: true };
 
-      if (!name || !templates[name]) {
-        container.innerHTML = '';
-        return;
-      }
-
-      const template = templates[name];
-      const params = template.parameters || [];
-
-      if (params.length === 0) {
-        container.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.875rem;">No requiere parámetros</div>';
-        return;
-      }
-
-      container.innerHTML = '<div class="section-title">Parámetros</div>' +
-        params.map((p, i) => `
-          <div class="form-group">
-            <label class="form-label">${p}</label>
-            <input type="text" class="form-input param-input" data-index="${i}" placeholder="${p}" required>
-          </div>
-        `).join('');
+      const panel = document.getElementById('sendPanel');
+      panel.classList.add('visible');
+      document.getElementById('sendTitle').textContent = `Enviar: ${name}`;
+      document.getElementById('varsContainer').innerHTML = '';
+      document.getElementById('sendStatus').textContent = '';
     }
 
-    async function sendTemplate(e) {
-      e.preventDefault();
+    async function sendTemplate() {
+      if (!selectedTemplate) return;
+      const btn = document.getElementById('sendBtn');
+      const status = document.getElementById('sendStatus');
+      const to = document.getElementById('sendTo').value.trim();
+      if (!to) { status.textContent = 'Introduce un teléfono'; status.className = 'status err'; return; }
 
-      const phone = document.getElementById('phoneInput').value;
-      const templateName = document.getElementById('templateSelect').value;
-      const paramInputs = document.querySelectorAll('.param-input');
-      const parameters = Array.from(paramInputs).map(i => i.value);
-
-      const msgDiv = document.getElementById('responseMessage');
-      msgDiv.innerHTML = '';
+      btn.disabled = true;
+      status.textContent = 'Enviando...';
+      status.className = 'status';
 
       try {
-        const res = await fetch(`${API}/api/whatsapp/send-template`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ phone, template_name: templateName, parameters })
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          msgDiv.innerHTML = `<div class="alert alert-success">✅ Mensaje enviado correctamente<br><small>ID: ${data.message_id}</small></div>`;
-          document.getElementById('phoneInput').value = '';
-          document.getElementById('templateSelect').value = '';
-          document.getElementById('parametersContainer').innerHTML = '';
+        if (selectedTemplate.isMeta) {
+          // Send Meta template
+          const r = await fetch(`${API}/api/whatsapp/send-template`, {
+            method: 'POST', headers,
+            body: JSON.stringify({ to, template_name: selectedTemplate.name, language: selectedTemplate.language || 'es' })
+          });
+          const d = await r.json();
+          if (d.ok) { status.textContent = '✅ Enviado'; status.className = 'status ok'; }
+          else { status.textContent = d.error || 'Error'; status.className = 'status err'; }
         } else {
-          msgDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${data.error}</div>`;
+          // Send predefined as direct message (fill variables)
+          let msg = selectedTemplate.body;
+          (selectedTemplate.variables || []).forEach((v, i) => {
+            const val = document.getElementById(`var_${i}`)?.value || v;
+            msg = msg.replace(`{{${i + 1}}}`, val);
+          });
+
+          const r = await fetch(`${API}/api/whatsapp/send-direct`, {
+            method: 'POST', headers,
+            body: JSON.stringify({ to, message: msg })
+          });
+          const d = await r.json();
+          if (d.ok) { status.textContent = '✅ Enviado'; status.className = 'status ok'; }
+          else { status.textContent = d.error || 'Error'; status.className = 'status err'; }
         }
-      } catch (err) {
-        msgDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${err.message}</div>`;
+      } catch {
+        status.textContent = 'Error de conexión'; status.className = 'status err';
       }
+      btn.disabled = false;
     }
-
-    function logout() {
-      localStorage.removeItem('auth_token');
-      window.location.href = '/';
-    }
-
-    loadTemplates();
   </script>
+<script src="sidebar.js"></script>
 </body>
 </html>
