@@ -1879,8 +1879,11 @@ function stopVoice() {
   voiceRecording = false
   document.getElementById('btn-mic').classList.remove('recording')
 
-  // Desbloquear audio iOS si no se ha hecho aún
-  unlockiOSAudio()
+  // Desbloquear audio iOS: reproducir silencio en ttsPlayer para que autoplay funcione después
+  try {
+    const tp = document.getElementById('ttsPlayer')
+    if (tp && tp.paused) { tp.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; tp.play().catch(()=>{}) }
+  } catch(e){}
 
   if (voiceMediaRec && voiceMediaRec.state === 'recording') {
     voiceMediaRec.stop()
