@@ -448,6 +448,37 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
     if (!clienteNombre) {
       return { needsInfo: '¿Para qué cliente es la factura? Ej: "factura a García 800€ instalación"' }
     }
+
+    // ── Búsqueda en catálogo de productos ─────────────────────────────────
+    // Si el usuario menciona un concepto, buscamos en products para auto-rellenar
+    // precio, IVA y nombre oficial del producto/servicio.
+    let productMatch: { name: string; price: number; iva_rate: number } | null = null
+    if (concepto) {
+      const { data: productos } = await supabase
+        .from('products')
+        .select('name, price, iva_rate')
+        .eq('salon_id', tenantId)
+        .eq('is_active', true)
+        .ilike('name', `%${concepto}%`)
+        .limit(1)
+      if (productos && productos.length > 0) {
+        productMatch = productos[0]
+      }
+    }
+
+    // Si encontramos producto en catálogo y el usuario NO dio precio explícito,
+    // usamos el del catálogo (ahorro: no preguntar)
+    if (productMatch && !importeNum) {
+      const ivaRate = productMatch.iva_rate ?? 21
+      importeNum = productMatch.price * (1 + ivaRate / 100)
+      importeNum = Math.round(importeNum * 100) / 100
+    }
+
+    // Si el producto del catálogo tiene nombre más formal, lo usamos
+    if (productMatch) {
+      concepto = productMatch.name
+    }
+
     if (!importeNum) {
       return { needsInfo: `¿Por qué importe es la factura para ${clienteNombre}? Ej: "150€"` }
     }
@@ -475,11 +506,15 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
     const doSend     = !noEnviar && !!clientEmail
     const actionType = doSend ? 'enviar_factura' : 'crear_factura'
 
+    // Usar IVA real del catálogo si hay match, si no 21% por defecto
+    const ivaRate = productMatch?.iva_rate ?? 21
+    const precioBase = importeNum / (1 + ivaRate / 100)
+
     const lineas = [{
       concepto,
       cantidad:        1,
-      precio_unitario: importeNum / 1.21,
-      iva:             21,
+      precio_unitario: Math.round(precioBase * 100) / 100,
+      iva:             ivaRate,
     }]
 
     const params: Record<string, any> = {
@@ -491,6 +526,7 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
     }
     if (doSend)  params.cliente_email = clientEmail
     if (cifNif)  params.cif_nif       = cifNif
+    if (productMatch) params.producto_catalogo = productMatch.name
 
     const card = await createPendingAction(actionType, params, tenantId, userId)
     return { card }

@@ -304,6 +304,12 @@ Solo un insight proactivo por mensaje. No bombardear. El mejor insight > cinco m
 - Cambiar estado de factura (pagada, pendiente, cancelada)
 - Ver facturas pendientes o vencidas
 
+## 📦 CATÁLOGO DE PRODUCTOS
+- Si el usuario menciona un producto o servicio al crear factura, busco en su catálogo automáticamente
+- Si lo encuentro: uso el precio y el IVA real del catálogo (no pregunto importe)
+- Ejemplo: "factura a López por suministro mensual" → busco "suministro mensual" en catálogo → relleno precio e IVA
+- El autónomo carga sus productos una vez y luego factura por voz sin dar precios
+
 ## 👥 CLIENTES
 - Crear nuevo cliente (nombre obligatorio; teléfono, email, NIF opcionales)
 - Buscar cliente existente
@@ -364,9 +370,9 @@ Solo un insight proactivo por mensaje. No bombardear. El mejor insight > cinco m
 
 ## Factura:
 1. **Cliente** — obligatorio (busco en BD)
-2. **Concepto** — obligatorio
-3. **Importe** — obligatorio
-4. **IVA** — 21% por defecto
+2. **Concepto** — obligatorio (si coincide con producto del catálogo, uso nombre oficial)
+3. **Importe** — obligatorio SALVO si el concepto coincide con un producto del catálogo (uso su precio)
+4. **IVA** — si hay match en catálogo, uso el IVA real del producto; si no, 21% por defecto
 
 # CONFIRMACIÓN (INNEGOCIABLE)
 
