@@ -8,6 +8,7 @@ import { clientRoutes } from './routes/clients'
 import { transactionRoutes } from './routes/transactions'
 import { invoiceRoutes } from './routes/invoices'
 import { agentRoutes } from './routes/agent'
+import { voiceRoute } from './routes/voice'
 import { reportRoutes } from './routes/reports'
 import { stripeRoutes } from './routes/stripe'
 import { webhookRoutes } from './routes/webhooks'
@@ -195,11 +196,25 @@ export function createApp() {
     const change  = entry?.changes?.[0]?.value;
     const msg     = change?.messages?.[0];
     const contact = change?.contacts?.[0];
-    if (!msg || msg.type !== 'text') return c.json({ ok: true });
+    if (!msg) return c.json({ ok: true });
+    if (msg.type !== 'text' && msg.type !== 'audio') return c.json({ ok: true });
 
     const from    = msg.from || '';
-    const mensaje = msg.text?.body || '';
+    let mensaje = msg.text?.body || '';
     const nombre  = contact?.profile?.name || 'Cliente';
+
+    // ── Audio transcription (WhatsApp voice notes) ──────────────────
+    if (msg.type === 'audio' && msg.audio?.id) {
+      try {
+        const { transcribeWhatsAppAudio } = await import('./routes/voice');
+        mensaje = await transcribeWhatsAppAudio(msg.audio.id);
+        if (!mensaje) return c.json({ ok: true }); // empty transcription
+      } catch (e) {
+        console.error('[WA] Audio transcription failed:', e);
+        return c.json({ ok: true }); // fail silently
+      }
+    }
+
     if (!from || !mensaje) return c.json({ ok: true });
 
     const SUPABASE_URL = (process.env.SUPABASE_URL as string) || 'https://emygbvxkhfbwyhbapaae.supabase.co';
@@ -399,6 +414,7 @@ export function createApp() {
   // ─── Numeración configurable de facturas ──────────────────────────────────────
   app.route('/api/invoice-numbering', invoiceNumberingRoutes)
   app.route('/api/agent', agentRoutes)
+  app.route('/api/agent/voice', voiceRoute)
   app.route('/api/reports', reportRoutes)
   app.route('/api/demonio', demonioRoutes)
   app.route('/api/gestor', gestorRoutes)
