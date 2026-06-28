@@ -129,6 +129,17 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
     let salonEnviados = 0;
 
     for (const invoice of invoices) {
+      const client = invoice.clients;
+
+      // Check if client has Cazador paused
+      if (client?.cazador_paused_until) {
+        const pauseUntil = new Date(client.cazador_paused_until);
+        if (pauseUntil > today) {
+          skippedLines.push(`⏸️ ${client.name || 'Desconocido'} — Recordatorios pausados hasta ${pauseUntil.toLocaleDateString('es-ES')}`);
+          continue;
+        }
+      }
+
       const dueDate = new Date(invoice.due_date);
       const diffMs = today.getTime() - dueDate.getTime();
       const diasVencida = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -149,8 +160,6 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
 
       const { data: fresh } = await supabase.from('invoices').select('status').eq('id', invoice.id).single();
       if (fresh?.status === 'paid') continue;
-
-      const client = invoice.clients;
       const vars = {
         nombre: client?.name || 'cliente',
         importe: formatEur(invoice.total || 0),

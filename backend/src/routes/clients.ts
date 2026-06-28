@@ -162,6 +162,27 @@ clientRoutes.get('/:id/ficha', async (c) => {
   })
 })
 
+// PUT /api/clients/:id/cazador-pause — Pause/resume Cazador reminders
+clientRoutes.put('/:id/cazador-pause', async (c) => {
+  const salonId = c.get('salonId')
+  const { id } = c.req.param()
+  const body = await c.req.json()
+  const supabase = getSupabaseAdmin()
+
+  const { paused_until } = body // null para reanudar, ISO date string para pausar
+
+  const { data, error } = await supabase
+    .from('clients')
+    .update({ cazador_paused_until: paused_until })
+    .eq('salon_id', salonId)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return c.json({ error: error.message }, 400)
+  return c.json({ client: data })
+})
+
 // DELETE /api/clients/:id
 clientRoutes.delete('/:id', async (c) => {
   const salonId = c.get('salonId')

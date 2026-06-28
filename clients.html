@@ -334,6 +334,14 @@ async function apiPatch(path, body) {
   });
   return r.json();
 }
+async function apiPut(path, body) {
+  const r = await fetch(API + path, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
 async function apiDelete(path) {
   const r = await fetch(API + path, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
   return r.json();
@@ -502,6 +510,23 @@ function openDetail(clientId) {
       <div class="info-row"><span class="lbl">Total facturado</span><span class="val">${fmt(totalFact)}</span></div>
       <div class="info-row"><span class="lbl">Deuda pendiente</span><span class="val" style="color:${debt>0?'#f59e0b':'#10b981'}">${fmt(debt)}</span></div>
     </div>
+    <div style="background:var(--bg-tertiary);border-radius:0.75rem;padding:1rem;margin-bottom:1.5rem;border:1px solid rgba(139,92,246,0.3)">
+      <h3 style="margin:0 0 1rem;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem">⏸️ Pausa Cazador</h3>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <input type="checkbox" id="cazadorPauseToggle_${clientId}"
+          ${client.cazador_paused_until ? 'checked' : ''}
+          onchange="toggleCazadorPause('${clientId}', this.checked)">
+        <label for="cazadorPauseToggle_${clientId}" style="cursor:pointer;font-size:0.875rem;margin:0">
+          Pausar recordatorios hasta:
+        </label>
+      </div>
+      <input type="date" id="cazadorPauseDate_${clientId}"
+        style="width:100%;margin-top:0.75rem;padding:0.5rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:0.375rem;color:var(--text-primary);font-size:0.875rem"
+        ${!client.cazador_paused_until ? 'disabled' : ''}
+        value="${client.cazador_paused_until ? new Date(client.cazador_paused_until).toISOString().split('T')[0] : ''}"
+        onchange="updateCazadorPauseDate('${clientId}', this.value)">
+      ${client.cazador_paused_until ? `<p style="font-size:0.75rem;color:var(--text-tertiary);margin-top:0.5rem;margin-bottom:0">Pausado hasta: ${new Date(client.cazador_paused_until).toLocaleDateString('es-ES')}</p>` : ''}
+    </div>
     <h3 style="margin:0 0 1rem">📄 Facturas (${invoices.length})</h3>
     <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:0.75rem;overflow:hidden">
       ${invRows}
@@ -616,6 +641,43 @@ async function deleteClient(id, name) {
       toast('❌ ' + (res.error || 'No se puede eliminar'), 'error');
     }
   } catch(e) { toast('❌ Error de conexión', 'error'); }
+}
+
+async function toggleCazadorPause(clientId, isPaused) {
+  const dateInput = document.getElementById(`cazadorPauseDate_${clientId}`);
+  if (isPaused) {
+    dateInput.disabled = false;
+    dateInput.focus();
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+  } else {
+    // Reanudar (quitar pausa)
+    await apiPut(`/api/clients/${clientId}/cazador-pause`, { paused_until: null });
+    dateInput.disabled = true;
+    dateInput.value = '';
+    const client = allClients.find(c => c.id === clientId);
+    if (client) client.cazador_paused_until = null;
+    toast('✅ Cazador reactivado', 'success');
+  }
+}
+
+async function updateCazadorPauseDate(clientId, dateStr) {
+  if (!dateStr) return;
+  try {
+    const res = await apiPut(`/api/clients/${clientId}/cazador-pause`, { paused_until: new Date(dateStr).toISOString() });
+    if (!res.error && (res.id || res.client)) {
+      const client = allClients.find(c => c.id === clientId);
+      if (client) {
+        const updated = res.client || res;
+        client.cazador_paused_until = updated.cazador_paused_until;
+      }
+      toast(`⏸️ Recordatorios pausados hasta ${new Date(dateStr).toLocaleDateString('es-ES')}`, 'success');
+    } else {
+      toast('❌ Error al guardar pausa', 'error');
+    }
+  } catch(e) {
+    toast('❌ Error de conexión', 'error');
+  }
 }
 
 async function loadMe() {
