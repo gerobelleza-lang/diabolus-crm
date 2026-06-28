@@ -31,6 +31,12 @@ export const authMiddleware = createMiddleware<{ Variables: Variables }>(
       return next()
     }
 
+    // SECURITY: Block dev tokens in production
+    if (isDev && isProduction) {
+      console.error(`[SECURITY] Dev token attempted in production: ${token.substring(0, 10)}...`)
+      return c.json({ error: 'Unauthorized: dev tokens disabled in production' }, 401)
+    }
+
     // PROD MODE: validate against Supabase
     const supabase = getSupabaseAdmin()
 
