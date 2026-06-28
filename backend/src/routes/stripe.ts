@@ -8,7 +8,7 @@ import { getSupabaseAdmin } from '../integrations/supabase'
 
 const STRIPE_PRICE_ID = 'price_1Tlwsw1UnR4OJAljw7DR4M2R'
 const APP_URL         = 'https://diabolus.es'
-const SUPABASE_URL_FB = 'https://emygbvxkhfbwyhbapaae.supabase.co'
+const SUPABASE_URL_FB = process.env.SUPABASE_URL as string
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 

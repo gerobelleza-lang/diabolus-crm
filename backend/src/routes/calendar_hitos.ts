@@ -56,13 +56,14 @@ function generateICS(
 // ─── Ruta: GET /api/internal/calendar-hitos ──────────────────────────────────
 calendarHitosRoute.get('/', async (c) => {
   const secret   = c.req.header('x-internal-secret') || c.req.query('secret') || ''
-  const expected = (c.env as any)?.INTERNAL_SECRET || 'diabolus_internal_2026'
+  const expected = process.env.INTERNAL_SECRET
+  if (!expected) return c.json({ error: 'Server misconfigured' }, 500)
   if (secret !== expected) return c.json({ error: 'Forbidden' }, 403)
 
-  const SB_URL   = (c.env as any)?.SUPABASE_URL            || 'https://emygbvxkhfbwyhbapaae.supabase.co'
-  const SB_KEY   = (c.env as any)?.SUPABASE_SERVICE_ROLE_KEY || ''
-  const TG_TOKEN = (c.env as any)?.TELEGRAM_BOT_TOKEN      || ''
-  const TG_CHAT  = (c.env as any)?.TELEGRAM_CHAT_ID        || '8356150792'
+  const SB_URL   = process.env.SUPABASE_URL as string
+  const SB_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY as string
+  const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN as string
+  const TG_CHAT  = process.env.TELEGRAM_CHAT_ID || '8356150792'
 
   const sb = (path: string) =>
     fetch(`${SB_URL}/rest/v1/${path}`, {

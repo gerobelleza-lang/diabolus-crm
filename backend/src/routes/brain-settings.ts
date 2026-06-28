@@ -6,7 +6,7 @@ import { Hono } from 'hono'
 
 const app = new Hono()
 
-const SUPABASE_URL = 'https://emygbvxkhfbwyhbapaae.supabase.co'
+const SUPABASE_URL = process.env.SUPABASE_URL as string
 
 function getHeaders() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''

@@ -15,7 +15,7 @@ export const monitorRoutes = new Hono()
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function sbAdmin(c: any) {
-  const url = (process.env.SUPABASE_URL as string) || 'https://emygbvxkhfbwyhbapaae.supabase.co'
+  const url = process.env.SUPABASE_URL as string
   const key = (process.env.SUPABASE_SERVICE_ROLE_KEY as string) || ''
   return (path: string, opts?: any) =>
     fetch(`${url}/rest/v1/${path}`, {

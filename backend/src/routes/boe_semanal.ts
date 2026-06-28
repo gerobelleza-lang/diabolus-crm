@@ -18,12 +18,13 @@ export const boeSemanalRoute = new Hono()
 
 boeSemanalRoute.post('/', async (c) => {
   const secret   = c.req.header('x-internal-secret') || c.req.query('secret') || ''
-  const expected = (c.env as any)?.INTERNAL_SECRET || 'diabolus_internal_2026'
+  const expected = process.env.INTERNAL_SECRET
+  if (!expected) return c.json({ error: 'Server misconfigured' }, 500)
   if (secret !== expected) return c.json({ error: 'Forbidden' }, 403)
 
-  const TG_TOKEN = (c.env as any)?.TELEGRAM_BOT_TOKEN || ''
-  const TG_CHAT  = (c.env as any)?.TELEGRAM_CHAT_ID   || '8356150792'
-  const OR_KEY   = (c.env as any)?.OPENROUTER_API_KEY  || ''
+  const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN as string
+  const TG_CHAT  = process.env.TELEGRAM_CHAT_ID || '8356150792'
+  const OR_KEY   = process.env.OPENROUTER_API_KEY as string
 
   try {
     const items: { date: string; title: string; url?: string }[] = []

@@ -99,7 +99,8 @@ app.get('/wa-verify', (c) => {
   const mode      = c.req.query('hub.mode');
   const token     = c.req.query('hub.verify_token');
   const challenge = c.req.query('hub.challenge');
-  const expected  = process.env.WA_VERIFY_TOKEN || 'diabolus_demonio_2026';
+  const expected = process.env.WA_VERIFY_TOKEN;
+  if (!expected) return c.text('Server misconfigured', 500);
   if (mode === 'subscribe' && token === expected) {
     return c.text(challenge || '', 200);
   }

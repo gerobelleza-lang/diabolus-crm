@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 
 const app = new Hono()
 
-const SUPABASE_URL = 'https://emygbvxkhfbwyhbapaae.supabase.co'
+const SUPABASE_URL = process.env.SUPABASE_URL as string
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
 const TELEGRAM_CHAT_ID = '8356150792'

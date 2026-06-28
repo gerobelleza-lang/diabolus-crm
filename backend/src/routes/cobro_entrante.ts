@@ -12,7 +12,8 @@ export const cobroEntranteRoute = new Hono()
 
 cobroEntranteRoute.post('/', async (c) => {
   try {
-    const WEBHOOK_SECRET = (c.env as any)?.COBRO_WEBHOOK_SECRET || 'diabolus_cobro_2026'
+    const WEBHOOK_SECRET = process.env.COBRO_WEBHOOK_SECRET
+    if (!WEBHOOK_SECRET) return c.json({ error: 'Server misconfigured' }, 500)
     const incomingSecret = c.req.header('x-webhook-secret') || c.req.header('x-supabase-secret') || ''
 
     // Validar secret — Supabase envía el header configurado en el webhook
@@ -45,9 +46,9 @@ cobroEntranteRoute.post('/', async (c) => {
       return c.json({ ok: true, skipped: 'not ingreso' })
     }
 
-    const SB_URL = (c.env as any)?.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co'
-    const SB_KEY = (c.env as any)?.SUPABASE_SERVICE_ROLE_KEY || ''
-    const TG_TOKEN = (c.env as any)?.TELEGRAM_BOT_TOKEN || '8895422982:AAH__LXR19NuZsZqkIAdxuZNqNCJYA005Xc'
+    const SB_URL = process.env.SUPABASE_URL as string
+    const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY as string
+    const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN as string
 
     const sb = (path: string, opts?: any) =>
       fetch(`${SB_URL}/rest/v1/${path}`, {

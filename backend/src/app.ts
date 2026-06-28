@@ -130,6 +130,9 @@ export function createApp() {
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
+    const secret = c.req.header('x-internal-secret') || ''
+    const expected = process.env.INTERNAL_SECRET
+    if (!expected || secret !== expected) return c.json({ error: 'Forbidden' }, 403)
     try {
       const body = await c.req.json().catch(() => ({}))
       const { task_id, status, result, error, preview } = body
@@ -156,6 +159,9 @@ export function createApp() {
 
   // ─── Internal: Commissions Accrue (called by monthly trigger) ─────────────
   app.post('/api/internal/commissions/accrue', async (c) => {
+    const secret = c.req.header('x-internal-secret') || ''
+    const expected = process.env.INTERNAL_SECRET
+    if (!expected || secret !== expected) return c.json({ error: 'Forbidden' }, 403)
     try {
       const supabase = getSupabaseAdmin()
       const result = await accrueCommissions(supabase)
@@ -166,10 +172,20 @@ export function createApp() {
   })
 
   // ─── Internal: Cazador Run (called by daily trigger — no user auth) ────────
-  app.post('/api/internal/cazador/run', cazadorInternalRoute)
+  app.post('/api/internal/cazador/run', async (c) => {
+    const secret = c.req.header('x-internal-secret') || ''
+    const expected = process.env.INTERNAL_SECRET
+    if (!expected || secret !== expected) return c.json({ error: 'Forbidden' }, 403)
+    return cazadorInternalRoute(c)
+  })
 
   // ─── Internal: Cazador Preview 08:00 (aviso al dueño antes de actuar) ─────
-  app.post('/api/internal/cazador/preview', cazadorPreviewRoute)
+  app.post('/api/internal/cazador/preview', async (c) => {
+    const secret = c.req.header('x-internal-secret') || ''
+    const expected = process.env.INTERNAL_SECRET
+    if (!expected || secret !== expected) return c.json({ error: 'Forbidden' }, 403)
+    return cazadorPreviewRoute(c)
+  })
 
   // ─── Public: Política de privacidad (requerida por Meta para publicar app) ──
   registerPrivacidadRoute(app)
@@ -179,7 +195,8 @@ export function createApp() {
     const mode      = c.req.query('hub.mode')
     const token     = c.req.query('hub.verify_token')
     const challenge = c.req.query('hub.challenge')
-    const expected  = (process.env.WA_VERIFY_TOKEN as string) || 'diabolus_demonio_2026'
+    const expected = process.env.WA_VERIFY_TOKEN as string
+    if (!expected) return c.text('Server misconfigured', 500)
     if (mode === 'subscribe' && token === expected) {
       return new Response(challenge, { status: 200, headers: { 'Content-Type': 'text/plain' } })
     }
@@ -217,7 +234,7 @@ export function createApp() {
 
     if (!from || !mensaje) return c.json({ ok: true });
 
-    const SUPABASE_URL = (process.env.SUPABASE_URL as string) || 'https://emygbvxkhfbwyhbapaae.supabase.co';
+    const SUPABASE_URL = process.env.SUPABASE_URL as string;
     const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY as string) || '';
     const OR_KEY       = (process.env.OPENROUTER_API_KEY as string) || '';
     const WA_TOKEN     = (process.env.WHATSAPP_TOKEN as string) || '';
@@ -396,11 +413,12 @@ export function createApp() {
   // ─── Internal: Admin Panel Stats (Miguel — sin user auth, secret requerido) ─
   app.get('/api/internal/admin/panel', async (c) => {
     const secret   = c.req.query('secret') || c.req.header('x-admin-secret') || ''
-    const expected = (c.env as any)?.ADMIN_PANEL_SECRET || process.env.ADMIN_PANEL_SECRET || 'diabolus_admin_2026'
+    const expected = process.env.ADMIN_PANEL_SECRET
+    if (!expected) return c.json({ error: 'Server misconfigured' }, 500)
     if (secret !== expected) return c.json({ error: 'Forbidden' }, 403)
 
-    const SB_URL = (c.env as any)?.SUPABASE_URL || process.env.SUPABASE_URL || 'https://emygbvxkhfbwyhbapaae.supabase.co'
-    const SB_KEY = (c.env as any)?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    const SB_URL = process.env.SUPABASE_URL as string
+    const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY as string
 
     const sb = (path: string) => fetch(`${SB_URL}/rest/v1/${path}`, {
       headers: {

@@ -16,7 +16,7 @@ export const informeBatallaRoutes = new Hono()
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function sbAdmin(c: any) {
-  const url = (process.env.SUPABASE_URL as string) || 'https://emygbvxkhfbwyhbapaae.supabase.co'
+  const url = process.env.SUPABASE_URL as string
   const key = (process.env.SUPABASE_SERVICE_ROLE_KEY as string) || ''
   return (path: string, opts?: RequestInit) =>
     fetch(`${url}/rest/v1/${path}`, {
@@ -53,8 +53,9 @@ function hoy(): { inicio: string; fin: string } {
 
 informeBatallaRoutes.post('/', async (c) => {
   try {
-    const INTERNAL_SECRET = (process.env.INTERNAL_SECRET as string) || 'diabolus-internal-2026'
-    const TG_TOKEN        = (process.env.TELEGRAM_BOT_TOKEN as string) || '8895422982:AAH__LXR19NuZsZqkIAdxuZNqNCJYA005Xc'
+    const INTERNAL_SECRET = process.env.INTERNAL_SECRET as string
+    if (!INTERNAL_SECRET) return c.json({ error: 'Server misconfigured' }, 500)
+    const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN as string
     const TG_CHAT         = (process.env.TELEGRAM_CHAT_ID as string)   || '8356150792'
 
     // Auth

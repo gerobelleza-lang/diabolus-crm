@@ -21,7 +21,7 @@ app.post('/', async (c) => {
       return c.json({ error: 'text requerido' }, 400);
     }
 
-    const apiKey = (c.env as any)?.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return c.json({ error: 'TTS no configurado' }, 500);
     }

@@ -22,8 +22,9 @@ export const authMiddleware = createMiddleware<{ Variables: Variables }>(
     const token = auth.slice(7)
     const isDev = token.startsWith('dev_') || token.startsWith('demo_')
 
-    // DEV MODE: accept demo token with real UUIDs
-    if (isDev) {
+    // DEV MODE: accept demo token with real UUIDs — ONLY in non-production
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production'
+    if (isDev && !isProduction) {
       c.set('userId', DEMO_USER_ID)
       c.set('salonId', DEMO_SALON_ID)
       c.set('userEmail', DEMO_EMAIL)
