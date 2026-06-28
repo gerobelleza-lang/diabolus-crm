@@ -158,19 +158,21 @@
   };
 
 
-  // ── PWA Navigation Fix (iOS standalone mode) ───────────────────────────────
-  // En iOS standalone mode, los <a> abren Safari. Interceptamos y usamos
-  // window.location.href para mantener la navegación dentro de la PWA.
-  if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
-    document.addEventListener('click', function (e) {
-      var el = e.target.closest('a[href]');
-      if (!el) return;
-      var href = el.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('http')) return;
-      e.preventDefault();
-      window.location.href = href;
-    }, true);
-  }
+  // ── Navigation Fix (universal) ─────────────────────────────────────────────
+  // iOS Safari has issues with <a> clicks inside overflow:hidden + max-height
+  // animated containers. Also fixes PWA standalone mode navigation.
+  // We intercept all same-origin <a> clicks and navigate via JS.
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('a[href]');
+    if (!el) return;
+    var href = el.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript')) return;
+    // External links: let browser handle
+    if (href.startsWith('http://') || href.startsWith('https://')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = href;
+  }, true);
 
   // ── Init ──────────────────────────────────────────────────────────────────
   injectCSS();
