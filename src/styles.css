@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS custom properties for design tokens */
+:root {
+  --primary: #8B5CF6;
+  --violet: #8B5CF6;
+  --ink: #0F0F0F;
+  --surface: #1A1A1A;
+  --border-color: #333333;
+  --text-primary: #FFFFFF;
+  --text-secondary: #B0B0B0;
+  --text-tertiary: #808080;
+}
+
+[data-theme="light"] {
+  --ink: #FFFFFF;
+  --surface: #F5F5F5;
+  --border-color: #CCCCCC;
+  --text-primary: #000000;
+  --text-secondary: #555555;
+  --text-tertiary: #999999;
+}
