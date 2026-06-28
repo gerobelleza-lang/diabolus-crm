@@ -49,6 +49,7 @@ import { brainSettingsRoutes } from './routes/brain-settings'
 import { guardianRoutes } from './routes/guardian'
 import { whatsappTemplatesRoutes } from './routes/whatsapp-templates'
 import { productsRoutes } from './routes/products'
+import { importRoutes } from './routes/import'
 
 export function createApp() {
   const app = new Hono()
@@ -554,6 +555,8 @@ export function createApp() {
   app.route('/api/leads-b2b', leadsB2bProtectedRoutes)
   app.route('/api/salons', salonsRoutes)   // ← Selector multiempresa
   app.route('/api/products', productsRoutes)
+  // ─── Importador Masivo (CSV productos + clientes) ─────────────────────────
+  app.route('/api/import', importRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))
