@@ -50,6 +50,7 @@ import { guardianRoutes } from './routes/guardian'
 import { whatsappTemplatesRoutes } from './routes/whatsapp-templates'
 import { productsRoutes } from './routes/products'
 import { importRoutes } from './routes/import'
+import contactRoutes from './routes/contact'
 
 export function createApp() {
   const app = new Hono()
@@ -143,6 +144,9 @@ export function createApp() {
 
   // ─── Internal: Guardián Proactivo (scan detectores → Confesor → entrega) ──
   app.route('/api/internal/guardian', guardianRoutes)
+
+  // ─── Contact Form (Public — landing page form) ────────────────────────────
+  app.route('/api/contact', contactRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {

@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diabolus — El Pacto</title>
+  <meta name="description" content="Tesorería, facturas y cobros automáticos. El socio diabólicamente inteligente para autónomos que van en serio. Pide acceso anticipado.">
+  <meta property="og:title" content="Diabolus — El Pacto">
+  <meta property="og:description" content="Tus facturas salen solas. Tu tesorería bajo control. Tu Diablilla siempre disponible.">
+  <meta property="og:image" content="https://diabolus.es/landing-hero.png">
+  <meta property="og:url" content="https://diabolus.es">
+  <meta property="og:type" content="website">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://diabolus.es">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --red: #e63946;
+      --orange: #FF6347;
+      --dark: #060608;
+      --dark2: #0f0f12;
+      --dark3: #1a1a1f;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0f0f0;
+      --muted: #888;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 48px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: rgba(6,6,8,0.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--orange);
+    }
+    nav a.nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+    nav a.nav-link:hover { color: var(--text); }
+    .nav-cta {
+      background: var(--red);
+      color: #fff !important;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-cta:hover { background: #c82333; transform: translateY(-1px); }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      padding: 60px 24px 80px;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 70% at 50% 60%, #3a0a0a 0%, #1a0505 40%, #060608 100%);
+      z-index: 0;
+    }
+    .hero-image {
+      position: relative;
+      z-index: 1;
+      width: min(420px, 90vw);
+      margin: 0 auto 32px;
+      filter: drop-shadow(0 0 60px rgba(230,57,70,0.35));
+      animation: heroFloat 6s ease-in-out infinite;
+    }
+    @keyframes heroFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-12px); }
+    }
+    .hero-badge {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(230,57,70,0.12);
+      border: 1px solid rgba(230,57,70,0.35);
+      color: var(--orange);
+      padding: 7px 16px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 28px;
+      letter-spacing: 0.3px;
+    }
+    .hero-badge::before { content: '●'; font-size: 7px; animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .hero h1 {
+      position: relative;
+      z-index: 1;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(32px, 5.5vw, 64px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      margin-bottom: 28px;
+      max-width: 820px;
+    }
+    .hero h1 .accent { color: var(--orange); }
+    .hero-sub {
+      position: relative;
+      z-index: 1;
+      font-size: clamp(16px, 2vw, 20px);
+      color: #ccc;
+      max-width: 640px;
+      margin: 0 auto 20px;
+      line-height: 1.75;
+    }
+    .hero-sub-2 {
+      position: relative;
+      z-index: 1;
+      font-size: clamp(15px, 1.8vw, 18px);
+      color: #bbb;
+      max-width: 600px;
+      margin: 0 auto 20px;
+      line-height: 1.75;
+    }
+    .hero-sub strong { color: #fff; }
+    .hero-divider {
+      position: relative;
+      z-index: 1;
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, transparent, var(--red), transparent);
+      margin: 8px auto;
+    }
+    .hero-bold {
+      position: relative;
+      z-index: 1;
+      font-size: clamp(17px, 2vw, 22px);
+      font-weight: 700;
+      color: #fff;
+      max-width: 560px;
+      margin: 0 auto 12px;
+      line-height: 1.5;
+    }
+    .hero-bold .accent { color: var(--orange); }
+    .hero-tagline {
+      position: relative;
+      z-index: 1;
+      font-size: 16px;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+    .btn-hero {
+      position: relative;
+      z-index: 1;
+      display: inline-block;
+      background: linear-gradient(135deg, #e63946, #c0392b);
+      color: #fff;
+      padding: 18px 40px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.25s;
+      box-shadow: 0 8px 32px rgba(230,57,70,0.35);
+      letter-spacing: -0.2px;
+    }
+    .btn-hero:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(230,57,70,0.5); }
+    .btn-hero-note {
+      position: relative;
+      z-index: 1;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 14px;
+    }
+
+    /* ─── DIVIDER ─── */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border), transparent);
+      margin: 0 48px;
+    }
+
+    /* ─── PROBLEMA ─── */
+    .problema {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .section-label {
+      display: inline-block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: var(--red);
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    .problema h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 40px;
+      letter-spacing: -0.5px;
+    }
+    .problema-paras p {
+      font-size: clamp(16px, 1.8vw, 19px);
+      color: #bbb;
+      margin-bottom: 20px;
+      line-height: 1.8;
+    }
+    .problema-paras strong { color: #fff; }
+
+    /* ─── TRANSFORMACIÓN ─── */
+    .transformacion {
+      background: var(--dark2);
+      padding: 100px 24px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .transformacion-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .transformacion h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 56px;
+      letter-spacing: -0.5px;
+    }
+    .transformacion h2 .accent { color: var(--orange); }
+    .imagina-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      text-align: left;
+      margin-bottom: 56px;
+    }
+    .imagina-item {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      transition: border-color 0.25s;
+    }
+    .imagina-item:hover { border-color: rgba(255,99,71,0.35); }
+    .imagina-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .imagina-text {
+      font-size: clamp(15px, 1.6vw, 17px);
+      color: #ccc;
+      line-height: 1.7;
+    }
+    .imagina-text strong { color: #fff; }
+    .imagina-text .hl { color: var(--orange); font-weight: 600; }
+    .transformacion-close {
+      font-size: clamp(18px, 2vw, 22px);
+      color: #ddd;
+      line-height: 1.7;
+      font-style: italic;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+    .transformacion-close strong { color: #fff; font-style: normal; }
+
+    /* ─── FEATURES ─── */
+    .features {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 100px 24px;
+    }
+    .features-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .features-header h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+    }
+    .features-header p {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      transition: all 0.25s;
+    }
+    .feature-card:hover {
+      border-color: rgba(255,99,71,0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .feature-icon { font-size: 36px; margin-bottom: 20px; }
+    .feature-card h3 {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+    .feature-card p { color: var(--muted); font-size: 15px; line-height: 1.7; }
+
+    /* ─── EXCLUSIVIDAD / CTA ─── */
+    .exclusividad {
+      background: var(--dark2);
+      border-top: 1px solid var(--border);
+      padding: 100px 24px;
+    }
+    .exclusividad-inner {
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .exclusividad h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+    }
+    .exclusividad h2 .accent { color: var(--orange); }
+    .exclusividad-desc {
+      font-size: 18px;
+      color: #bbb;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+    .perks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 52px;
+      text-align: left;
+    }
+    .perk {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 22px;
+    }
+    .perk-check {
+      color: var(--orange);
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .perk-text {
+      font-size: 16px;
+      color: #ddd;
+      line-height: 1.5;
+    }
+    .perk-text strong { color: #fff; }
+
+    /* ─── WAITLIST FORM ─── */
+    .waitlist-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+    .form-row input { flex: 1; }
+    input[type="text"],
+    input[type="email"] {
+      background: var(--dark3);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text);
+      padding: 15px 18px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    input::placeholder { color: var(--muted); }
+    input:focus { border-color: var(--orange); }
+    .consent-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: left;
+    }
+    .consent-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      margin-top: 3px;
+      accent-color: var(--red);
+      cursor: pointer;
+    }
+    .consent-row label {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      cursor: pointer;
+    }
+    .consent-row label a { color: var(--orange); text-decoration: none; }
+    .consent-row label a:hover { text-decoration: underline; }
+    .btn-main {
+      background: linear-gradient(135deg, #e63946, #c0392b);
+      color: #fff;
+      border: none;
+      padding: 18px 28px;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.25s;
+      width: 100%;
+      box-shadow: 0 6px 24px rgba(230,57,70,0.3);
+      letter-spacing: -0.2px;
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(230,57,70,0.45); }
+    .btn-main:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .form-note {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .success-msg {
+      display: none;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.3);
+      color: #4ade80;
+      padding: 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    /* ─── SOCIAL PROOF ─── */
+    .social-bar {
+      padding: 36px 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .social-bar p { color: var(--muted); font-size: 15px; }
+    .social-bar strong { color: #fff; }
+    .social-bar .flag { font-size: 18px; vertical-align: -2px; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      text-align: center;
+      padding: 48px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    footer .footer-logo {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      color: var(--orange);
+      margin-bottom: 16px;
+      display: block;
+    }
+    footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    footer a:hover { color: var(--text); }
+    .footer-links { margin: 12px 0 8px; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 20px; }
+
+    /* ─── MOBILE SECTION ─── */
+    .mobile-section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .mobile-section h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+    }
+    .mobile-section h2 .accent { color: var(--orange); }
+    .mobile-section .mobile-desc {
+      font-size: clamp(16px, 1.8vw, 19px);
+      color: #bbb;
+      margin-bottom: 40px;
+      line-height: 1.8;
+    }
+    .chat-demo {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 560px;
+      margin: 0 auto 40px;
+      text-align: left;
+    }
+    .chat-demo-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .chat-avatar {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #e63946, #8B0000);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .chat-name { font-weight: 700; font-size: 15px; }
+    .chat-status { font-size: 12px; color: #4ade80; }
+    .chat-bubble {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: flex-end;
+    }
+    .chat-bubble.user { flex-direction: row-reverse; }
+    .bubble-text {
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      border-radius: 16px 16px 16px 4px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #ddd;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+    .chat-bubble.user .bubble-text {
+      background: rgba(230,57,70,0.15);
+      border-color: rgba(230,57,70,0.3);
+      border-radius: 16px 16px 4px 16px;
+      color: #fff;
+    }
+    .bubble-icon { font-size: 20px; flex-shrink: 0; }
+    .mobile-tagline {
+      font-size: clamp(18px, 2vw, 22px);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.5;
+    }
+    .mobile-tagline .accent { color: var(--orange); }
+
+    /* ─── LEGAL/FISCAL SECTION ─── */
+    .fiscal {
+      background: var(--dark2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 100px 24px;
+    }
+    .fiscal-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .fiscal-text h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(26px, 3.5vw, 42px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+    }
+    .fiscal-text h2 .accent { color: var(--orange); }
+    .fiscal-text .fiscal-desc {
+      font-size: 16px;
+      color: #bbb;
+      line-height: 1.75;
+      margin-bottom: 28px;
+    }
+    .fiscal-closing {
+      font-size: 15px;
+      font-style: italic;
+      color: #888;
+      border-left: 2px solid var(--red);
+      padding-left: 16px;
+    }
+    .fiscal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .fiscal-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      transition: border-color 0.25s;
+    }
+    .fiscal-item:hover { border-color: rgba(255,99,71,0.35); }
+    .fiscal-item-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+    .fiscal-item-text { font-size: 15px; color: #ccc; line-height: 1.5; }
+    .fiscal-item-text strong { color: #fff; }
+
+    /* ─── AGENTE LEGAL SECTION ─── */
+    .agente-legal {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .agente-legal h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(26px, 4vw, 46px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+    }
+    .agente-legal h2 .accent { color: var(--orange); }
+    .legal-preguntas {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin: 32px 0;
+    }
+    .legal-q {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 20px;
+      font-size: 14px;
+      color: #ccc;
+      font-style: italic;
+      transition: border-color 0.2s;
+    }
+    .legal-q:hover { border-color: rgba(255,99,71,0.4); color: #fff; }
+    .legal-desc {
+      font-size: clamp(16px, 1.8vw, 18px);
+      color: #bbb;
+      line-height: 1.8;
+      max-width: 680px;
+      margin: 0 auto 24px;
+    }
+    .legal-desc strong { color: #fff; }
+    .legal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(230,57,70,0.1);
+      border: 1px solid rgba(230,57,70,0.3);
+      color: var(--orange);
+      padding: 8px 20px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      nav { padding: 16px 20px; }
+      .nav-cta { display: none; }
+      .form-row { flex-direction: column; }
+      .imagina-item { flex-direction: column; gap: 12px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .fiscal-inner { grid-template-columns: 1fr; gap: 40px; }
+      .legal-preguntas { flex-direction: column; align-items: center; }
+    }
+  
+/* ── Identidad Section ── */
+.identidad-section {
+  padding: 100px 20px;
+  background: #080808;
+}
+.identidad-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+.identidad-eyebrow {
+  color: #8b1a1a;
+  font-size: 12px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.identidad-title {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #f0e8d0;
+}
+.identidad-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  max-width: 900px;
+  margin: 0 auto 60px;
+}
+@media (max-width: 700px) {
+  .identidad-grid { grid-template-columns: 1fr; }
+}
+.identidad-card {
+  background: #111;
+  border: 1px solid #2a1a0a;
+  border-radius: 12px;
+  padding: 40px 32px;
+}
+.identidad-icon {
+  font-size: 36px;
+  margin-bottom: 16px;
+}
+.identidad-card h3 {
+  font-size: 1.4rem;
+  color: #e0c878;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.identidad-card p {
+  color: #a09070;
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+.identidad-card strong { color: #d4b870; }
+.identidad-quote {
+  color: #8b6914 !important;
+  font-style: italic;
+  font-size: 14px !important;
+  border-left: 2px solid #5a3a0a;
+  padding-left: 14px;
+}
+.identidad-footer {
+  max-width: 600px;
+  margin: 0 auto;
+}
+.plazas-bar-wrap {
+  background: #0f0f0f;
+  border: 1px solid #2a1a0a;
+  border-radius: 10px;
+  padding: 32px;
+}
+.plazas-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.plazas-bar-label { color: #8a7050; font-size: 13px; }
+.plazas-bar-num { color: #e0c878; font-size: 18px; font-weight: 700; }
+.plazas-bar-bg {
+  background: #1a1a1a;
+  border-radius: 4px;
+  height: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.plazas-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b1a1a, #cc2222);
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+.plazas-bar-note {
+  color: #6a5030;
+  font-size: 12px;
+  text-align: center;
+  margin: 0;
+}
+/* ── Hero Counter ── */
+.plazas-counter {
+  margin-top: 14px;
+  color: #8a6030;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.plazas-num {
+  color: #e0c878;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+
+    /* ─── CONTACTO FORM ─── */
+    .contacto {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .contacto h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+    }
+    .contacto h2 .accent { color: var(--orange); }
+    .contacto .contacto-desc {
+      font-size: 18px;
+      color: #bbb;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+    .contact-form textarea {
+      background: var(--dark3);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text);
+      padding: 15px 18px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+    .contact-form textarea::placeholder { color: var(--muted); }
+    .contact-form textarea:focus { border-color: var(--orange); }
+    .contact-success {
+      display: none;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.3);
+      color: #4ade80;
+      padding: 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-align: center;
+      font-size: 16px;
+    }
+    .contact-error {
+      display: none;
+      background: rgba(230,57,70,0.1);
+      border: 1px solid rgba(230,57,70,0.3);
+      color: #e63946;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Diabolus</div>
+  <div style="display:flex;align-items:center;gap:20px;">
+    <a href="#contacto" class="nav-link">Contacto</a>
+    <a href="index-login.html" class="nav-link" style="color:var(--text);font-weight:600;">Entrar</a>
+    <a href="#acceso" class="nav-cta">Pedir acceso 😈</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+
+  <div class="hero-badge">Beta privada · <strong style="color:#ff4444;">Solo 100 plazas</strong> · Sin excepciones</div>
+
+  <img src="./landing-hero.png" alt="Diabolus — El Pacto" class="hero-image" loading="eager">
+
+  <h1>Nunca imaginaste<br>que llegaría este momento.<br>Bienvenido al <span class="accent">Pacto</span>.</h1>
+
+  <div class="hero-divider"></div>
+
+  <p class="hero-sub">
+    Tus facturas ya están en la gestoría.<br>El IVA ya está calculado al céntimo.<br>Tu cliente moroso ya recibió el aviso.<br><strong>Y tú no has movido un dedo.</strong>
+  </p>
+
+  <p class="hero-sub-2">
+    El mes flojo no te asusta.<br>Sabes dónde está cada euro, qué te deben y cuánto tendrás en 30, 60 y 90 días.<br>Antes de que tu gestor te pregunte nada.
+  </p>
+
+  <p class="hero-sub-2">
+    Tu <strong>Diablilla</strong> no te pregunta qué necesitas. Actúa. Busca clientes, negocia, cierra tratos y gestiona cobros — mientras tú te concentras en lo que de verdad importa.
+  </p>
+
+  <div class="hero-divider"></div>
+
+  <p class="hero-bold">Esto no es software.<br>Es un pacto.<br>Y los que lo tienen, <span class="accent">ya no vuelven atrás.</span></p>
+
+  <a href="#acceso" class="btn-hero">Quiero firmar el Pacto 😈</a>
+  <div class="plazas-counter" id="hero-counter">
+    <span class="plazas-num" id="hero-num">—</span>
+    <span class="plazas-label"> plazas restantes de 100</span>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- SECCIÓN MÓVIL -->
+<section class="mobile-section">
+  <span class="section-label">Solo habla. Diabolus hace el resto.</span>
+  <h2>Tu negocio en el bolsillo.<br><span class="accent">De verdad.</span></h2>
+  <p class="mobile-desc">
+    Abres Diabolus. Hablas. Tu <strong>Diablilla</strong> actúa.<br>Sin formularios. Sin menús. Sin tiempo perdido.<br>Solo resultados.
+  </p>
+
+  <div class="chat-demo">
+    <div class="chat-demo-header">
+      <div class="chat-avatar">😈</div>
+      <div>
+        <div class="chat-name">Diablilla</div>
+        <div class="chat-status">● En línea</div>
+      </div>
+    </div>
+
+    <div class="chat-bubble user">
+      <div class="bubble-text">Acabo de cobrar 1.200€ de Peluquería Rocío</div>
+      <div class="bubble-icon">🧑‍💼</div>
+    </div>
+    <div class="chat-bubble">
+      <div class="bubble-icon">😈</div>
+      <div class="bubble-text">✅ Movimiento registrado: +1.200€ de Peluquería Rocío. ¿Lo asocio a alguna factura pendiente?</div>
+    </div>
+
+    <div class="chat-bubble user">
+      <div class="bubble-text">Añade factura a Carlos García, 450€ más IVA</div>
+      <div class="bubble-icon">🧑‍💼</div>
+    </div>
+    <div class="chat-bubble">
+      <div class="bubble-icon">😈</div>
+      <div class="bubble-text">📄 Factura Nº 2026-047 generada: 450€ + 94,50€ IVA = <strong>544,50€</strong>. PDF listo para enviar. ¿Se la mando a Carlos?</div>
+    </div>
+
+    <div class="chat-bubble user">
+      <div class="bubble-text">¿Cuánto me deben este mes?</div>
+      <div class="bubble-icon">🧑‍💼</div>
+    </div>
+    <div class="chat-bubble">
+      <div class="bubble-icon">😈</div>
+      <div class="bubble-text">📊 Tienes <strong>3 facturas vencidas</strong> por un total de <strong>2.840€</strong>. ¿Activo el Cazador de Cobros?</div>
+    </div>
+  </div>
+
+  <p class="mobile-tagline">Tú mandas. <span class="accent">Ella ejecuta.</span></p>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- EL PROBLEMA -->
+<section class="problema">
+  <span class="section-label">La realidad que conoces</span>
+  <h2>Estás cansado.<br>Y es completamente normal.</h2>
+  <div class="problema-paras">
+    <p>Cansado de perder horas en <strong>Excel</strong>. De olvidar facturas. De enterarte de cómo va tu negocio cuando ya es demasiado tarde.</p>
+    <p>Cansado de <strong>perseguir clientes que no pagan</strong>.<br>De llamar a tu gestor para saber si puedes gastar 500€.<br>De trabajar para tu negocio cuando debería ser al revés.</p>
+    <p style="color:#fff;font-weight:600;font-size:clamp(17px,2vw,21px);">Eso termina hoy.</p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- LA TRANSFORMACIÓN -->
+<section class="transformacion">
+  <div class="transformacion-inner">
+    <span class="section-label">La transformación</span>
+    <h2>Así funciona <span class="accent">el Pacto</span></h2>
+
+    <div class="imagina-list">
+      <div class="imagina-item">
+        <div class="imagina-icon">📤</div>
+        <div class="imagina-text">Tus facturas se generan solas, se envían solas y llegan a tu gestoría <strong>revisadas. Sin que toques nada.</strong></div>
+      </div>
+      <div class="imagina-item">
+        <div class="imagina-icon">🔢</div>
+        <div class="imagina-text">Sabes desde el día 1 del trimestre <strong>exactamente cuánto IVA vas a pagar</strong>. <span class="hl">Sin sorpresas. Sin llamadas urgentes.</span></div>
+      </div>
+      <div class="imagina-item">
+        <div class="imagina-icon">📈</div>
+        <div class="imagina-text">Tesorería real: lo que tienes hoy y lo que tendrás en <span class="hl">30, 60 y 90 días</span>. <strong>Sin adivinar.</strong></div>
+      </div>
+      <div class="imagina-item">
+        <div class="imagina-icon">🎯</div>
+        <div class="imagina-text">Un cliente se retrasa. El <strong>Cazador</strong> actúa solo. Recordatorios, seguimiento, presión. <strong>Sin que tú digas nada.</strong></div>
+      </div>
+      <div class="imagina-item">
+        <div class="imagina-icon">🤖</div>
+        <div class="imagina-text">No le preguntas a <strong>Diablilla</strong>. Le ordenas. <span class="hl">"Tráeme clientes nuevos este mes."</span> Y ella los busca, los contacta, negocia por ti y cierra el trato. Hasta gestiona el pago, la reserva o la compra — exactamente como tú mandaste.</div>
+      </div>
+    </div>
+
+    <p class="transformacion-close">
+      <strong>Diabolus</strong> no te ayuda a gestionar tu negocio.<br>Lo gestiona por ti.
+    </p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="features-header">
+    <span class="section-label">Lo que Diabolus hace por ti</span>
+    <h2>Cada día sin Diabolus es dinero que no entra.</h2>
+    <p>Mientras los demás te dan herramientas, Diabolus te da <strong>resultados</strong>.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <h3>Tesorería que no miente nunca</h3>
+      <p>Cada euro. En tiempo real. Con previsión de 90 días. Sin esperar el extracto del banco.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧾</div>
+      <h3>Facturación que vuela sola</h3>
+      <p>Segundos. Numeración, IVA, PDF. Se archiva sola. Se envía sola. Tú no tocas nada.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>El Cazador que cobra lo que te deben</h3>
+      <p>Facturas vencidas. El Cazador las persigue sin que tú digas nada. Recordatorios automáticos, seguimiento sin piedad. Tú no llamas a nadie.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <h3>Diablilla — No te asiste. Ejecuta.</h3>
+      <p>La primera IA creada para autónomos españoles. No le preguntas. Le ordenas. Busca clientes, negocia, cierra tratos y gestiona cobros.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Tu gestor ya tiene todo lo que necesita</h3>
+      <p>Exporta con un clic. Trimestre ordenado. IVA real, IRPF incluido, modelos 303/130/347 listos. Tu gestor no te pedirá nada.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚖️</div>
+      <h3>Tu abogado a las 3 de la mañana</h3>
+      <p>Legislación española real. Artículos exactos del BOE. Sin 150€/hora. Sin esperas. Cualquier consulta legal, ahora mismo.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Funcionando en minutos, no en semanas</h3>
+      <p>Sin manuales. Sin migraciones. Sin formación de tres días. Entras, configuras tu negocio y empiezas. Punto.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FISCAL / LEGAL -->
+<section class="fiscal">
+  <div class="fiscal-inner">
+    <div class="fiscal-text">
+      <span class="section-label">Sin sorpresas fiscales</span>
+      <h2>Todo bajo control,<br>también <span class="accent">lo fiscal</span></h2>
+      <p class="fiscal-desc">
+        Tu gestor recibe todo listo antes de pedírtelo. Y tú ya sabes cuánto vas a pagar antes de que llegue el susto.
+      </p>
+      <p class="fiscal-closing">
+        Tú llevas las riendas. Tu gestor firma. Nadie se lleva sorpresas.
+      </p>
+    </div>
+    <div class="fiscal-list">
+      <div class="fiscal-item">
+        <div class="fiscal-item-icon">🧮</div>
+        <div class="fiscal-item-text"><strong>IVA real al céntimo</strong> — 21%, 10%, 4% o exento. Calculado automáticamente en cada factura.</div>
+      </div>
+      <div class="fiscal-item">
+        <div class="fiscal-item-icon">📉</div>
+        <div class="fiscal-item-text"><strong>Retenciones IRPF</strong> incluidas automáticamente cuando aplica. Nada se escapa.</div>
+      </div>
+      <div class="fiscal-item">
+        <div class="fiscal-item-icon">📋</div>
+        <div class="fiscal-item-text"><strong>Exportación perfecta</strong> para tu gestoría: ordenada por trimestre, lista para las declaraciones <strong>303, 130 y 347</strong>.</div>
+      </div>
+      <div class="fiscal-item">
+        <div class="fiscal-item-icon">⏰</div>
+        <div class="fiscal-item-text"><strong>Avisos de vencimientos</strong> — te alertamos antes de cada plazo trimestral de Hacienda. Nunca más un susto.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENTE LEGAL -->
+<section class="agente-legal">
+  <span class="section-label">Agente Legal</span>
+  <h2>Tu abogado.<br>Siempre disponible.<br><span class="accent">Gratis a las 3 de la mañana.</span></h2>
+
+  <div class="legal-preguntas">
+    <div class="legal-q">"¿Puedo subir precio sin avisar al cliente?"</div>
+    <div class="legal-q">"¿Qué pasa si no pago la cuota de autónomo este mes?"</div>
+    <div class="legal-q">"¿Necesito contrato para este encargo?"</div>
+    <div class="legal-q">"¿Cuándo prescriben mis facturas impagadas?"</div>
+  </div>
+
+  <p class="legal-desc">
+    Antes gastabas <strong>150€/hora</strong>. O te conformabas con lo que encontrabas en Google.<br><br>
+    Ahora le preguntas a tu <strong>Agente Legal</strong>. Y responde en segundos.<br><br>
+    Formado con legislación española real — Estatuto de los Trabajadores, Ley de Autónomos, Código Civil, normativa fiscal vigente. Cita <strong>artículos exactos del BOE</strong>. Sin rodeos. Sin letra pequeña.<br><br>
+    No reemplaza a tu abogado en casos complejos. Pero te ahorra el <strong>90% de las consultas</strong> que antes te costaban tiempo y dinero.
+  </p>
+
+  
+</section>
+
+<div class="section-divider"></div>
+
+<!-- EXCLUSIVIDAD + FORM -->
+<section class="exclusividad" id="acceso">
+  <div class="exclusividad-inner">
+    <span class="section-label">Beta privada · Plazas muy limitadas</span>
+    <h2>Esto no es para todo el mundo.<br>Si estás aquí, probablemente <span class="accent">sí es para ti.</span></h2>
+    <p class="exclusividad-desc">
+      Beta privada. Plazas contadas. Solo para autónomos que quieren resultados, no otra herramienta más.
+    </p>
+
+    <div class="perks-list">
+      <div class="perk">
+        <div class="perk-check">✦</div>
+        <div class="perk-text"><strong>Acceso sin restricciones</strong> — antes que nadie. Los que entren después parten desde atrás.</div>
+      </div>
+      <div class="perk">
+        <div class="perk-check">✦</div>
+        <div class="perk-text"><strong>Precio de fundador</strong> — el más bajo que existirá. Jamás. El que entre después paga más.</div>
+      </div>
+      <div class="perk">
+        <div class="perk-check">✦</div>
+        <div class="perk-text"><strong>Línea directa con el equipo</strong> — tu voz moldea Diabolus. No eres usuario. Eres fundador.</div>
+      </div>
+    </div>
+
+    <form class="waitlist-form" id="waitlistForm">
+      <div class="form-row">
+        <input type="text" id="nombre" placeholder="Tu nombre" autocomplete="given-name">
+        <input type="text" id="empresa" placeholder="Tu negocio (opcional)" autocomplete="organization">
+      </div>
+      <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email">
+
+      <div class="consent-row">
+        <input type="checkbox" id="consent" required>
+        <label for="consent">
+          He leído y acepto la <a href="/privacidad.html" target="_blank">Política de Privacidad</a>.
+          Consiento que Diabolus (Gerobelleza SL) trate mis datos para informarme del acceso anticipado.
+        </label>
+      </div>
+
+      <button type="submit" class="btn-main" id="submitBtn">
+        Quiero firmar el Pacto 😈
+      </button>
+      <p class="form-note">Sin compromiso · Sin tarjeta de crédito · Te avisamos en cuanto tu plaza esté lista</p>
+    </form>
+
+    <div class="success-msg" id="successMsg">
+      ✅ El Pacto está firmado. Serás de los primeros. Prepárate. 😈
+    </div>
+  </div>
+</section>
+
+
+<div class="section-divider"></div>
+
+<!-- CONTACTO -->
+<section class="contacto" id="contacto">
+  <span class="section-label">¿Tienes preguntas?</span>
+  <h2>Escríbenos.<br><span class="accent">Respondemos rápido.</span></h2>
+  <p class="contacto-desc">
+    ¿Dudas sobre el Pacto? ¿Quieres saber si Diabolus es para tu negocio?<br>
+    Cuéntanos y te respondemos personalmente.
+  </p>
+
+  <form class="contact-form" id="contactForm">
+    <div class="form-row">
+      <input type="text" id="contactNombre" placeholder="Tu nombre" required autocomplete="given-name">
+      <input type="email" id="contactEmail" placeholder="tu@email.com" required autocomplete="email">
+    </div>
+    <textarea id="contactMensaje" placeholder="¿En qué podemos ayudarte?" required></textarea>
+    <div class="contact-error" id="contactError"></div>
+    <button type="submit" class="btn-main" id="contactBtn">
+      Enviar mensaje ✉️
+    </button>
+    <p class="form-note">Te respondemos en menos de 24h · Sin compromiso</p>
+  </form>
+
+  <div class="contact-success" id="contactSuccess">
+    ✅ Mensaje enviado. Te respondemos lo antes posible. 😈
+  </div>
+</section>
+
+<!-- SOCIAL BAR -->
+<div class="social-bar">
+  <p>Hecho para autónomos que quieren <strong>ganar, no sobrevivir</strong>. España <span class="flag">🇪🇸</span></p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">Diabolus</span>
+  <p>© 2026 Gerobelleza SL · CIF B22665194 · C/ Molinos 18, Granada 18009</p>
+  <div class="footer-links">
+    <a href="/aviso-legal.html">Aviso Legal</a>
+    <a href="/privacidad.html">Política de Privacidad</a>
+    <a href="/cookies.html">Política de Cookies</a>
+    <a href="mailto:hola@diabolus.es">hola@diabolus.es</a>
+  </div>
+</footer>
+
+<script>
+  const API = 'https://diabolus-crm-api.vercel.app'
+
+  document.getElementById('waitlistForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const btn = document.getElementById('submitBtn')
+    const nombre = document.getElementById('nombre').value.trim()
+    const email = document.getElementById('email').value.trim()
+    const empresa = document.getElementById('empresa').value.trim()
+    const consent = document.getElementById('consent').checked
+
+    if (!email) return
+    if (!consent) {
+      document.getElementById('consent').focus()
+      return
+    }
+
+    btn.disabled = true
+    btn.textContent = 'Guardando tu plaza...'
+
+    try {
+      const res = await fetch(`${API}/api/waitlist/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, empresa })
+      })
+      const data = await res.json()
+      document.getElementById('waitlistForm').style.display = 'none'
+      const msg = document.getElementById('successMsg')
+      msg.style.display = 'block'
+      if (data.msg) msg.textContent = '✅ ' + data.msg + ' 😈'
+    } catch (err) {
+      btn.disabled = false
+      btn.textContent = 'Quiero firmar el Pacto 😈'
+      alert('Error de red. Inténtalo de nuevo.')
+    }
+  })
+
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault()
+      const target = document.querySelector(a.getAttribute('href'))
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  })
+</script>
+
+
+<script>
+(async function loadPlazas() {
+  try {
+    const r = await fetch('https://diabolus-crm.vercel.app/api/waitlist/count')
+    const d = await r.json()
+    const remaining = d.remaining ?? 0
+    const total = d.total ?? 0
+    const pct = Math.min(100, Math.round((total / 100) * 100))
+
+    // Hero counter
+    const heroNum = document.getElementById('hero-num')
+    if (heroNum) heroNum.textContent = remaining
+
+    // Bar
+    const taken = document.getElementById('count-taken')
+    if (taken) taken.textContent = total
+    const rem = document.getElementById('count-remaining')
+    if (rem) rem.textContent = remaining
+    const bar = document.getElementById('plazas-bar-fill')
+    if (bar) bar.style.width = pct + '%'
+
+    // Si está completo
+    if (d.closed) {
+      document.querySelectorAll('.btn-hero, .btn-cta').forEach(btn => {
+        btn.textContent = '⛔ El Pacto está completo'
+        btn.style.pointerEvents = 'none'
+        btn.style.opacity = '0.5'
+      })
+    }
+  } catch(e) { /* silencioso */ }
+})()
+</script>
+
+
+<script>
+document.getElementById('contactForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('contactBtn');
+  const nombre = document.getElementById('contactNombre').value.trim();
+  const email = document.getElementById('contactEmail').value.trim();
+  const mensaje = document.getElementById('contactMensaje').value.trim();
+  const errorDiv = document.getElementById('contactError');
+
+  if (!nombre || !email || !mensaje) {
+    errorDiv.textContent = 'Por favor, rellena todos los campos.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  errorDiv.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const res = await fetch('https://diabolus-crm-api.vercel.app/api/contact/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, email, mensaje })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('contactForm').style.display = 'none';
+      document.getElementById('contactSuccess').style.display = 'block';
+    } else {
+      errorDiv.textContent = data.error || 'Error al enviar. Inténtalo de nuevo.';
+      errorDiv.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Enviar mensaje ✉️';
+    }
+  } catch (err) {
+    errorDiv.textContent = 'Error de red. Inténtalo de nuevo.';
+    errorDiv.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Enviar mensaje ✉️';
+  }
+});
+</script>
+
+</body>
+</html>
