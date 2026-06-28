@@ -240,6 +240,21 @@
     }
 
     /* ── Typing dots ── */
+
+    .diablo-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      color: rgba(255,255,255,.45);
+      margin-bottom: 3px;
+      padding: 1px 6px;
+      background: rgba(139,92,246,.08);
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .diablo-tag .diablo-emoji { font-size: 12px; }
+
     .typing .bubble {
       padding: 14px 18px;
       display: flex; gap: 5px; align-items: center;
@@ -516,10 +531,10 @@
       <!-- Burbuja de saludo del bot -->
       <div class="msg ai" style="width:100%;max-width:340px;margin-bottom:4px;">
         <div class="bubble">
-          😈 <strong>Hola, soy tu Diablillo.</strong><br>
-          Solo ejecuto órdenes dentro de la app:<br>
+          😈 <strong>Hola. Soy tu Diablilla.</strong><br>
+          Estoy aquí para concederte lo que necesitas:<br>
           cobros, gastos, facturas, clientes.<br><br>
-          ¿Qué apuntamos?
+          ¿Qué deseas?
         </div>
       </div>
       <!-- Chips de acción rápida -->
@@ -637,12 +652,15 @@ function hideWelcome() {
   welcomeGone = true;
 }
 
-function addMsg(role, html) {
+function addMsg(role, html, opts = {}) {
   hideWelcome();
   const wrap = document.getElementById('messages');
   const el = document.createElement('div');
   el.className = `msg ${role}`;
-  el.innerHTML = `<div class="bubble">${html}</div>`;
+  const tagHtml = (role === 'ai' && opts.diablo_emoji && opts.diablo_label)
+    ? `<div class="diablo-tag"><span class="diablo-emoji">${opts.diablo_emoji}</span> vía ${opts.diablo_label}</div>`
+    : '';
+  el.innerHTML = `${tagHtml}<div class="bubble">${html}</div>`;
   wrap.appendChild(el);
   wrap.scrollTop = wrap.scrollHeight;
   return el;
@@ -711,7 +729,7 @@ async function submit(userText) {
       addMsg('ai', '⚡ Revisa la acción a confirmar.');
     } else {
       const reply = data.message || data.reply || '✓ Hecho.';
-      addMsg('ai', escHtml(reply).replace(/\n/g,'<br>'));
+      addMsg('ai', escHtml(reply).replace(/\n/g,'<br>'), {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''});
       speakResponse(reply);  // TTS en respuestas normales
     }
   } catch (err) {
