@@ -906,6 +906,8 @@
       justify-content: center;
       gap: 0;
       overflow: hidden;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
     .voice-overlay.open { display: flex; }
 
@@ -1121,7 +1123,7 @@
 
 
 <!-- Voice overlay — Neon Waves -->
-<div class="voice-overlay" id="voiceOverlay" onclick="stopVoice()">
+<div class="voice-overlay" id="voiceOverlay" onclick="stopVoice()" ontouchend="event.preventDefault(); stopVoice()">
   <div class="voice-waves" onclick="stopVoice()">
     <div class="voice-wave-ring"></div>
     <div class="voice-wave-ring"></div>
