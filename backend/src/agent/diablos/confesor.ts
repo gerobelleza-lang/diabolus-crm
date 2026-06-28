@@ -10,6 +10,7 @@
 
 import { DIABLO_METAS } from './index'
 import { routeToLLM, callOpenRouter } from '../llm-router'
+import { logDiabloUsage } from './metrics'
 import { getSalonAIConfig } from '../memory'
 import type { BrainTier } from '../memory'
 import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
@@ -74,12 +75,19 @@ async function handle(input: AgentInput, classification: IntentClassification): 
     const brainTier: BrainTier = aiConfig.brain_tier || 'rapida'
     const routing = routeToLLM(0.3, userInput, false, brainTier)
 
-    const response = await callOpenRouter(
+    const startMs = Date.now()
+    const { text: response, usage } = await callOpenRouter(
       routing.model,
       userInput,
       CONFESOR_SYSTEM_PROMPT,
       { temperature: 0.7, max_tokens: 600 }
     )
+
+    if (usage) {
+      logDiabloUsage(userId, tenantId, {
+        diablo: 'confesor', ...usage, response_ms: Date.now() - startMs
+      })
+    }
 
     return {
       replyText: response,

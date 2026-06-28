@@ -132,8 +132,15 @@ export async function callOpenRouter(
     throw new Error(`OpenRouter error (${response.status}): ${errText}`)
   }
 
-  const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
-  return data.choices?.[0]?.message?.content || 'No response from LLM'
+  const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }>; usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }; model?: string }
+  const text = data.choices?.[0]?.message?.content || 'No response from LLM'
+  const usage = data.usage ? {
+    prompt_tokens: data.usage.prompt_tokens || 0,
+    completion_tokens: data.usage.completion_tokens || 0,
+    total_tokens: data.usage.total_tokens || 0,
+    model_used: data.model || model
+  } : null
+  return { text, usage }
 }
 
 // ─── System prompt builder (v2 — personality-aware) ───────────────────────────

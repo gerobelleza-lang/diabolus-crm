@@ -7,6 +7,7 @@
 
 import { getSupabase, DIABLO_METAS } from './index'
 import { routeToLLM, callOpenRouter, generateProactiveInsights, getTimeContext } from '../llm-router'
+import { logDiabloUsage } from './metrics'
 import { buildMemoryContext, getSalonAIConfig } from '../memory'
 import type { BrainTier } from '../memory'
 import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
@@ -136,7 +137,9 @@ async function handle(input: AgentInput, classification: IntentClassification): 
     ])
 
     const contextualPrompt = GUARDIAN_SYSTEM_PROMPT + `\n\nDATOS ACTUALES DEL NEGOCIO:\n${dashData.text}\n\nHISTORIAL RECIENTE:\n${memoryCtx}`
-    let response = await callOpenRouter(routing.model, userInput, contextualPrompt, { temperature: 0.3, max_tokens: 1000 })
+    const startMs = Date.now()
+    const { text: llmText, usage } = await callOpenRouter(routing.model, userInput, contextualPrompt, { temperature: 0.3, max_tokens: 1000 })
+    let response = llmText
 
     // Always append a proactive insight from El Guardián
     const tc = getTimeContext()
@@ -150,6 +153,12 @@ async function handle(input: AgentInput, classification: IntentClassification): 
     if (insights.length > 0) {
       const pick = insights[Math.floor(Math.random() * insights.length)]
       response += `\n\n💡 ${pick.texto}`
+    }
+
+    if (usage) {
+      logDiabloUsage(userId, tenantId, {
+        diablo: 'guardian', ...usage, response_ms: Date.now() - startMs
+      })
     }
 
     return {

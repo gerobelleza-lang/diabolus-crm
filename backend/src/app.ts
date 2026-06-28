@@ -32,6 +32,7 @@ import { ttsRoute } from './routes/tts'
 import { securityHeaders } from './middleware/security-headers'
 import { authMiddleware } from './middleware/auth'
 import { getSupabaseAdmin } from './integrations/supabase'
+import { getDiabloMetrics } from './agent/diablos/metrics'
 import { accrueCommissions } from './routes/export'
 import { adminRoutes } from './routes/admin'
 import { waitlistRoutes } from './routes/waitlist'
@@ -422,6 +423,37 @@ export function createApp() {
 
 
   // ─── Internal: Admin Panel Stats (Miguel — sin user auth, secret requerido) ─
+
+  // ── Diablo Metrics endpoint ────────────────────────────────────────────────
+  app.get('/api/internal/diablo-metrics', async (c) => {
+    const secret = c.req.header('x-internal-secret') || c.req.query('secret') || ''
+    const expected = process.env.INTERNAL_SECRET
+    if (!expected || secret !== expected) return c.json({ error: 'Forbidden' }, 403)
+
+    const salonId = c.req.query('salon_id') || undefined
+    const days = parseInt(c.req.query('days') || '30')
+
+    try {
+      const metrics = await getDiabloMetrics(salonId, days)
+      
+      const totalCalls = metrics.reduce((s, m) => s + m.total_calls, 0)
+      const totalTokens = metrics.reduce((s, m) => s + m.total_tokens, 0)
+      
+      return c.json({
+        period_days: days,
+        salon_id: salonId || 'all',
+        summary: {
+          total_calls: totalCalls,
+          total_tokens: totalTokens,
+          avg_tokens_per_call: totalCalls > 0 ? Math.round(totalTokens / totalCalls) : 0,
+        },
+        diablos: metrics
+      })
+    } catch (e: any) {
+      return c.json({ error: e.message }, 500)
+    }
+  })
+
   app.get('/api/internal/admin/panel', async (c) => {
     const secret   = c.req.query('secret') || c.req.header('x-admin-secret') || ''
     const expected = process.env.ADMIN_PANEL_SECRET

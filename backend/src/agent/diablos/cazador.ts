@@ -10,6 +10,7 @@
 
 import { getSupabase, DIABLO_METAS } from './index'
 import { routeToLLM, callOpenRouter } from '../llm-router'
+import { logDiabloUsage } from './metrics'
 import { getSalonAIConfig } from '../memory'
 import type { BrainTier } from '../memory'
 import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
@@ -97,12 +98,19 @@ async function handle(input: AgentInput, classification: IntentClassification): 
 
     const contextPrompt = `${CAZADOR_SYSTEM_PROMPT}\n\nDATOS DE LEADS:\nTotal: ${total} | Calientes: ${hot.length} | Tibios: ${warm.length} | Fríos: ${cold}\n\nTop 10:\n${leadsSummary}`
 
-    const response = await callOpenRouter(
+    const startMs = Date.now()
+    const { text: response, usage } = await callOpenRouter(
       routing.model,
       userInput,
       contextPrompt,
       { temperature: 0.4, max_tokens: 600 }
     )
+
+    if (usage) {
+      logDiabloUsage(userId, tenantId, {
+        diablo: 'cazador', ...usage, response_ms: Date.now() - startMs
+      })
+    }
 
     return {
       replyText: response,

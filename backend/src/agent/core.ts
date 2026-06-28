@@ -18,6 +18,7 @@ import { parseUserInput }                             from './parser'
 import { routeToLLM, callOpenRouter, buildSystemPrompt, getTimeContext, generateProactiveInsights } from './llm-router'
 import { createClient }                                from '@supabase/supabase-js'
 import { createPendingAction, executePendingAction, cancelPendingAction } from './confirmation'
+import { logDiabloUsage } from './diablos/metrics'
 import type { ConfirmationCard }                       from './confirmation'
 import {
   saveMessage,
@@ -253,7 +254,16 @@ async function handleLLMFallback(
     ])
 
     const systemPrompt = buildSystemPrompt(routing.label, memoryCtx, dashData.text, userInput)
-    let finalResponse = await callOpenRouter(routing.model, userInput, systemPrompt, { temperature: 0.3, max_tokens: 800 })
+    const fallbackStartMs = Date.now()
+    const { text: finalResponseText, usage: fallbackUsage } = await callOpenRouter(routing.model, userInput, systemPrompt, { temperature: 0.3, max_tokens: 800 })
+    let finalResponse = finalResponseText
+
+    // Log Diablilla fallback usage
+    if (fallbackUsage) {
+      logDiabloUsage(userId, tenantId, {
+        diablo: 'diablilla_fallback', ...fallbackUsage, response_ms: Date.now() - fallbackStartMs
+      })
+    }
 
     // Proactive insight from El Guardián (30% chance)
     if (Math.random() < 0.3) {
