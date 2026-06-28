@@ -27,8 +27,10 @@ contact.post('/submit', async (c) => {
     };
 
     // Save to Supabase
-    const sbUrl = c.env?.SUPABASE_URL || process.env.SUPABASE_URL;
-    const sbKey = c.env?.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const env = (c.env || {}) as Record<string, string | undefined>;
+    const proc = (typeof process !== 'undefined' ? process.env : {}) as Record<string, string | undefined>;
+    const sbUrl = env.SUPABASE_URL || proc.SUPABASE_URL;
+    const sbKey = env.SUPABASE_SERVICE_ROLE_KEY || proc.SUPABASE_SERVICE_ROLE_KEY;
 
     if (sbUrl && sbKey) {
       await fetch(`${sbUrl}/rest/v1/contact_messages`, {
@@ -49,7 +51,7 @@ contact.post('/submit', async (c) => {
     }
 
     // Telegram alert to Miguel
-    const tgToken = c.env?.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+    const tgToken = env.TELEGRAM_BOT_TOKEN || proc.TELEGRAM_BOT_TOKEN;
     const chatId = '8356150792';
 
     if (tgToken) {
