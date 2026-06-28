@@ -1474,19 +1474,33 @@ function addUserPhoto(objectUrl, fileName) {
 // ─── TTS globals ────────────────────────────────────────────────────────────
 let _ttsAudio = null
 let _ttsActiveBtn = null
+let _preCreatedAudio = null  // Para auto-play después de voz
 
-async function speakText(text, btn) {
-  // Si hay audio reproduciéndose, pararlo
+// Detener cualquier TTS activo
+function stopTTS() {
   if (_ttsAudio) {
-    try { if (_ttsAudio._ctx) { _ttsAudio.stop(); _ttsAudio._ctx.close() } else { _ttsAudio.pause(); _ttsAudio.currentTime = 0 } } catch(e){}
+    try { _ttsAudio.pause(); _ttsAudio.currentTime = 0 } catch(e){}
+    if (_ttsAudio._blobUrl) URL.revokeObjectURL(_ttsAudio._blobUrl)
     _ttsAudio = null
-    if (_ttsActiveBtn) { _ttsActiveBtn.textContent = '🔊'; _ttsActiveBtn.classList.remove('playing') }
-    if (_ttsActiveBtn === btn) { _ttsActiveBtn = null; return }
   }
+  if (_ttsActiveBtn) {
+    _ttsActiveBtn.textContent = '🔊'
+    _ttsActiveBtn.classList.remove('playing')
+    _ttsActiveBtn = null
+  }
+}
 
-  btn.textContent = '⏳'
-  btn.classList.add('loading')
-  btn.disabled = true
+// Reproducir TTS — btn es opcional (null = auto-play sin botón)
+async function speakText(text, btn) {
+  const hadSameBtn = _ttsActiveBtn && _ttsActiveBtn === btn
+  stopTTS()
+  if (hadSameBtn) return // toggle off
+
+  if (btn) {
+    btn.textContent = '⏳'
+    btn.classList.add('loading')
+    btn.disabled = true
+  }
 
   try {
     const res = await fetch(`${API}/api/agent/tts`, {
@@ -1496,80 +1510,47 @@ async function speakText(text, btn) {
     })
     if (!res.ok) throw new Error('TTS error')
     const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
 
-    // AudioContext con gain para más volumen + fallback robusto para móvil
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-      // Obligatorio en iOS/Android — sin esto no suena
-      if (audioCtx.state === 'suspended') await audioCtx.resume()
+    // Usar Audio() pre-creado (si existe, del gesto de voz) o crear nuevo
+    const audio = _preCreatedAudio || new Audio()
+    _preCreatedAudio = null
+    audio.src = url
+    audio.volume = 1.0
+    audio._blobUrl = url
 
-      const arrayBuf = await blob.arrayBuffer()
-      const audioBuf = await audioCtx.decodeAudioData(arrayBuf)
+    _ttsAudio = audio
+    _ttsActiveBtn = btn
 
-      const source = audioCtx.createBufferSource()
-      source.buffer = audioBuf
-
-      // Gain node — más presencia/volumen
-      const gainNode = audioCtx.createGain()
-      gainNode.gain.value = 1.6
-
-      // Solo aplicar stereo widener si el audio tiene 2+ canales
-      if (audioBuf.numberOfChannels >= 2) {
-        const splitter = audioCtx.createChannelSplitter(2)
-        const merger = audioCtx.createChannelMerger(2)
-        const delayR = audioCtx.createDelay()
-        delayR.delayTime.value = 0.0008
-        source.connect(gainNode)
-        gainNode.connect(splitter)
-        splitter.connect(merger, 0, 0)
-        splitter.connect(delayR, 1)
-        delayR.connect(merger, 0, 1)
-        merger.connect(audioCtx.destination)
-      } else {
-        // Mono — gain directo sin stereo widener
-        source.connect(gainNode)
-        gainNode.connect(audioCtx.destination)
-      }
-
-      _ttsAudio = source
-      _ttsAudio._ctx = audioCtx
-      _ttsActiveBtn = btn
+    if (btn) {
       btn.textContent = '🔈'
       btn.classList.remove('loading')
       btn.classList.add('playing')
       btn.disabled = false
-
-      source.start(0)
-      source.onended = () => {
-        btn.textContent = '🔊'
-        btn.classList.remove('playing')
-        _ttsActiveBtn = null
-        audioCtx.close()
-      }
-    } catch(ctxErr) {
-      // Fallback: Audio() clásico — siempre funciona en móvil
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
-      audio.volume = 1.0
-      _ttsAudio = audio
-      _ttsActiveBtn = btn
-      btn.textContent = '🔈'
-      btn.classList.remove('loading')
-      btn.classList.add('playing')
-      btn.disabled = false
-      audio.play()
-      audio.onended = () => {
-        btn.textContent = '🔊'
-        btn.classList.remove('playing')
-        _ttsActiveBtn = null
-        URL.revokeObjectURL(url)
-      }
     }
+
+    audio.onended = () => {
+      if (btn) { btn.textContent = '🔊'; btn.classList.remove('playing') }
+      _ttsActiveBtn = null
+      _ttsAudio = null
+      URL.revokeObjectURL(url)
+    }
+    audio.onerror = () => {
+      if (btn) { btn.textContent = '🔊'; btn.classList.remove('playing', 'loading'); btn.disabled = false }
+      _ttsActiveBtn = null
+      _ttsAudio = null
+      URL.revokeObjectURL(url)
+    }
+
+    await audio.play()
   } catch(e) {
-    btn.textContent = '🔊'
-    btn.classList.remove('loading', 'playing')
-    btn.disabled = false
-    showToast('Sin audio: ' + e.message)
+    if (btn) {
+      btn.textContent = '🔊'
+      btn.classList.remove('loading', 'playing')
+      btn.disabled = false
+    }
+    _preCreatedAudio = null
+    console.warn('TTS error:', e)
   }
 }
 
@@ -1605,6 +1586,11 @@ function addAgentMsg(text, opts = {}) {
   row.appendChild(time)
   messagesEl.appendChild(row)
   scrollToBottom()
+
+  // Auto-play TTS si viene de voz (sin necesidad de click)
+  if (opts.autoSpeak) {
+    speakText(text, ttsBtn)
+  }
 }
 
 // ── Confirmation card ─────────────────────────────────────────────────
@@ -1843,8 +1829,8 @@ async function toggleVoice() {
 
   voiceMediaRec.onstop = async () => {
     voiceStream.getTracks().forEach(t => t.stop())
-    document.getElementById('voiceOverlayLabel').textContent = 'Transcribiendo…'
-    document.getElementById('voiceOverlayTranscript').textContent = '⏳ Un momento…'
+    document.getElementById('voiceOverlayLabel').textContent = 'Procesando…'
+    document.getElementById('voiceOverlayTranscript').textContent = '⏳'
 
     const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' })
     const form = new FormData()
@@ -1864,12 +1850,13 @@ async function toggleVoice() {
         addUserMsg(`🎙 ${data.transcription}`)
       }
 
+      // autoSpeak: true → la respuesta se lee automáticamente
       if (data.status === 'success' && data.message) {
-        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||'', autoSpeak: true})
       } else if (data.status === 'pending_confirmation' && data.card) {
         addConfirmationCard(data.card)
       } else if (data.status === 'needs_info' && data.message) {
-        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||'', autoSpeak: true})
       } else if (data.error) {
         addAgentMsg('🎙 ' + data.error)
       } else {
@@ -1890,6 +1877,17 @@ async function toggleVoice() {
 function stopVoice() {
   voiceRecording = false
   document.getElementById('btn-mic').classList.remove('recording')
+
+  // Pre-crear Audio() en el gesto del usuario (OBLIGATORIO para iOS autoplay)
+  // iOS solo permite .play() si el Audio se creó en respuesta a un tap
+  try {
+    _preCreatedAudio = new Audio()
+    // "Unlock" de audio en iOS: reproducir silencio brevísimo
+    _preCreatedAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
+    _preCreatedAudio.volume = 0
+    _preCreatedAudio.play().then(() => { _preCreatedAudio.pause(); _preCreatedAudio.volume = 1.0; _preCreatedAudio.src = '' }).catch(() => {})
+  } catch(e) {}
+
   if (voiceMediaRec && voiceMediaRec.state === 'recording') {
     voiceMediaRec.stop()
   } else {
