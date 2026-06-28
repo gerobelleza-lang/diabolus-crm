@@ -8,12 +8,13 @@
  * max_tokens: 600 (resúmenes concisos)
  */
 
-import { getSupabase, DIABLO_METAS } from './index'
+import { getSupabase } from './index'
+import { DIABLO_METAS } from './metas'
 import { routeToLLM, callOpenRouter } from '../llm-router'
 import { logDiabloUsage } from './metrics'
 import { getSalonAIConfig } from '../memory'
 import type { BrainTier } from '../memory'
-import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
+import type { DiabloHandler, DiabloResponse, IntentClassification } from './metas'
 import type { AgentInput } from '../core'
 
 const CAZADOR_SYSTEM_PROMPT = `Eres El Cazador de Diabolus. Tu única misión: traer clientes nuevos.

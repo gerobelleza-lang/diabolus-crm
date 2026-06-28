@@ -8,8 +8,9 @@
 import { createPendingAction } from '../confirmation'
 import { suggestCategory } from '../tools'
 import { extractFromImage } from '../vision'
-import { getSupabase, DIABLO_METAS } from './index'
-import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
+import { getSupabase } from './index'
+import { DIABLO_METAS } from './metas'
+import type { DiabloHandler, DiabloResponse, IntentClassification } from './metas'
 import type { AgentInput } from '../core'
 
 // ── Gastos recurrentes map ──────────────────────────────────────────────────

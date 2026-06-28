@@ -8,12 +8,12 @@
  * max_tokens: 600 (paso a paso, no listas interminables)
  */
 
-import { DIABLO_METAS } from './index'
+import { DIABLO_METAS } from './metas'
 import { routeToLLM, callOpenRouter } from '../llm-router'
 import { logDiabloUsage } from './metrics'
 import { getSalonAIConfig } from '../memory'
 import type { BrainTier } from '../memory'
-import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
+import type { DiabloHandler, DiabloResponse, IntentClassification } from './metas'
 import type { AgentInput } from '../core'
 
 const CONFESOR_SYSTEM_PROMPT = `Eres El Confesor de Diabolus. El único Diablo que no empuja, no vende, no cobra. Escuchas.

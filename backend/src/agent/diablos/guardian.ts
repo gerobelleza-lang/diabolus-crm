@@ -5,12 +5,13 @@
  * Fuente única de datos de estado del negocio.
  */
 
-import { getSupabase, DIABLO_METAS } from './index'
+import { getSupabase } from './index'
+import { DIABLO_METAS } from './metas'
 import { routeToLLM, callOpenRouter, generateProactiveInsights, getTimeContext } from '../llm-router'
 import { logDiabloUsage } from './metrics'
 import { buildMemoryContext, getSalonAIConfig } from '../memory'
 import type { BrainTier } from '../memory'
-import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
+import type { DiabloHandler, DiabloResponse, IntentClassification } from './metas'
 import type { AgentInput } from '../core'
 
 const GUARDIAN_SYSTEM_PROMPT = `Eres El Guardián de Diabolus. Vigilas la salud financiera del negocio.

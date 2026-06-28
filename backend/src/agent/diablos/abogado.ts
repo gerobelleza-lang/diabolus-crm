@@ -8,8 +8,8 @@
  * max_tokens: 2000 (respuestas completas con citas)
  */
 
-import { DIABLO_METAS } from './index'
-import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
+import { DIABLO_METAS } from './metas'
+import type { DiabloHandler, DiabloResponse, IntentClassification } from './metas'
 import type { AgentInput } from '../core'
 import { routeToLLM, callOpenRouter } from '../llm-router'
 import { logDiabloUsage } from './metrics'

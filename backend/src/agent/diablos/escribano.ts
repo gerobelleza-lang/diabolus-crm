@@ -8,12 +8,12 @@
  * max_tokens: 1000 (documentos pueden ser largos)
  */
 
-import { DIABLO_METAS } from './index'
+import { DIABLO_METAS } from './metas'
 import { routeToLLM, callOpenRouter } from '../llm-router'
 import { logDiabloUsage } from './metrics'
 import { getSalonAIConfig } from '../memory'
 import type { BrainTier } from '../memory'
-import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
+import type { DiabloHandler, DiabloResponse, IntentClassification } from './metas'
 import type { AgentInput } from '../core'
 
 const ESCRIBANO_SYSTEM_PROMPT = `Eres El Escribano de Diabolus. Documentas todo lo que el negocio necesita.
