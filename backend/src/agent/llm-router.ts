@@ -99,7 +99,8 @@ export function routeToLLM(
 export async function callOpenRouter(
   model: string,
   userMessage: string,
-  systemPrompt?: string
+  systemPrompt?: string,
+  options?: { temperature?: number; max_tokens?: number }
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY
 
@@ -121,8 +122,8 @@ export async function callOpenRouter(
         ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
         { role: 'user', content: userMessage },
       ],
-      temperature: 0.3,
-      max_tokens: 800,
+      temperature: options?.temperature ?? 0.3,
+      max_tokens: options?.max_tokens ?? 800,
     }),
   })
 

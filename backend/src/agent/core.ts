@@ -253,7 +253,7 @@ async function handleLLMFallback(
     ])
 
     const systemPrompt = buildSystemPrompt(routing.label, memoryCtx, dashData.text, userInput)
-    let finalResponse = await callOpenRouter(routing.model, userInput, systemPrompt)
+    let finalResponse = await callOpenRouter(routing.model, userInput, systemPrompt, { temperature: 0.3, max_tokens: 800 })
 
     // Proactive insight from El Guardián (30% chance)
     if (Math.random() < 0.3) {

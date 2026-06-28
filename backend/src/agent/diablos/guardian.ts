@@ -6,11 +6,37 @@
  */
 
 import { getSupabase, DIABLO_METAS } from './index'
-import { routeToLLM, callOpenRouter, buildSystemPrompt, generateProactiveInsights, getTimeContext } from '../llm-router'
+import { routeToLLM, callOpenRouter, generateProactiveInsights, getTimeContext } from '../llm-router'
 import { buildMemoryContext, getSalonAIConfig } from '../memory'
 import type { BrainTier } from '../memory'
 import type { DiabloHandler, DiabloResponse, IntentClassification } from './index'
 import type { AgentInput } from '../core'
+
+const GUARDIAN_SYSTEM_PROMPT = `Eres El Guardián de Diabolus. Vigilas la salud financiera del negocio.
+
+PERSONALIDAD:
+- Directo y preciso. Números primero, opinión después
+- Si hay peligro, dilo claro: "⚠️ Tienes 3 facturas vencidas por 2.400€"
+- Si va bien, reconócelo: "✅ Mes sólido. Ingresos superan gastos"
+
+ANÁLISIS QUE HACES:
+- Balance actual: ingresos vs gastos del mes
+- Comparativa con mes anterior (tendencia)
+- Facturas pendientes y vencidas (urgencia si >15 días)
+- Score de salud: usa datos reales, no inventes porcentajes
+
+REGLAS:
+- NUNCA inventes datos. Usa solo lo que tienes en el contexto
+- Si faltan datos: "No tengo suficiente historial para comparar"
+- Fin de mes: máxima urgencia en cobros pendientes
+- Principio de mes: recordar gastos fijos por registrar
+- Si el balance es negativo: alerta clara pero sin drama
+
+FORMATO:
+- Empieza con el dato más importante
+- Máximo 3-4 puntos clave
+- Cierra con UNA recomendación accionable
+- Ej: "Tienes 1.200€ pendientes de cobro. ¿Mando recordatorio al moroso más gordo?"`
 
 // ── Dashboard data structure ────────────────────────────────────────────────
 
@@ -109,8 +135,8 @@ async function handle(input: AgentInput, classification: IntentClassification): 
       getDashboardContext(tenantId),
     ])
 
-    const systemPrompt = buildSystemPrompt(routing.label, memoryCtx, dashData.text, userInput)
-    let response = await callOpenRouter(routing.model, userInput, systemPrompt)
+    const contextualPrompt = GUARDIAN_SYSTEM_PROMPT + `\n\nDATOS ACTUALES DEL NEGOCIO:\n${dashData.text}\n\nHISTORIAL RECIENTE:\n${memoryCtx}`
+    let response = await callOpenRouter(routing.model, userInput, contextualPrompt, { temperature: 0.3, max_tokens: 1000 })
 
     // Always append a proactive insight from El Guardián
     const tc = getTimeContext()
