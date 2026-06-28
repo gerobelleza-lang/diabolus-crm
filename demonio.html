@@ -2,341 +2,313 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>El Demonio — Diabolus CRM</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink: #0a0a0f;
-      --surface: #12121a;
-      --surface2: #1a1a28;
-      --crimson: #c0392b;
-      --ember: #e74c3c;
-      --gold: #f39c12;
-      --green: #2ecc71;
-      --text: #e8e8f0;
-      --muted: #6b6b8a;
-      --border: rgba(192,57,43,.2);
-      --radius: 12px;
-      --sidebar-w: 220px;
+      --crimson:  #c0392b;
+      --ember:    #e74c3c;
+      --gold:     #f39c12;
+      --dark:     #0a0a0f;
+      --panel:    #12121a;
+      --border:   #2a2a3a;
+      --text:     #e8e8f0;
+      --muted:    #6b6b8a;
+      --sidebar-w:220px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: var(--ink);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--dark);
       color: var(--text);
-      font-family: 'Hanken Grotesk', sans-serif;
-      min-height: 100vh;
       display: flex;
+      min-height: 100vh;
     }
-    .main {
-      flex: 1;
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--panel);
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
-      overflow-x: hidden;
+      padding: 1.5rem 0;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
     }
-    .topbar {
-      padding: 1rem 2rem;
+    .sidebar-logo {
+      padding: 0 1.5rem 1.5rem;
       border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      background: var(--surface);
-      z-index: 50;
+      margin-bottom: 1rem;
     }
-    .topbar h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .status-pill { display: flex; align-items: center; gap: 6px; background: rgba(46,204,113,.12); border: 1px solid rgba(46,204,113,.3); border-radius: 20px; padding: 4px 14px; font-size: .78rem; color: #4ade80; font-weight: 700; }
-    .status-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: blink-dot 2s ease-in-out infinite; }
-    @keyframes blink-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .sidebar-logo span { font-size: 1.4rem; font-weight: 700; color: var(--crimson); }
+    .sidebar-logo small { display: block; font-size: .7rem; color: var(--muted); }
+    .sidebar nav { flex: 1; display: flex; flex-direction: column; gap: .15rem; padding: 0 .5rem; }
+    .nav-item {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .55rem 1rem; border-radius: 8px;
+      color: var(--muted); text-decoration: none; font-size: .85rem;
+      transition: all .15s;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.04); color: var(--text); }
+    .nav-item.active { background: rgba(192,57,43,.12); color: var(--crimson); border-right: 2px solid var(--crimson); }
+    .nav-icon { font-size: 1rem; width: 1.4rem; text-align: center; }
+    .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); margin-top: auto; }
+    .sidebar-ver { text-align: center; font-size: .65rem; color: var(--muted); margin-top: .5rem; }
 
-    .content { padding: 1.5rem 2rem 4rem; max-width: 1100px; }
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.6rem; }
 
-    /* Stats */
-    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 1.5rem; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; }
-    .stat-val { font-family: 'IBM Plex Mono', monospace; font-size: 1.8rem; font-weight: 700; color: var(--ember); display: block; }
-    .stat-val.green { color: var(--green); }
-    .stat-val.gold  { color: var(--gold); }
-    .stat-lbl { font-size: .73rem; color: var(--muted); margin-top: 4px; }
+    /* ── STATS ── */
+    .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.2rem; text-align: center;
+    }
+    .stat-card .val { font-size: 1.8rem; font-weight: 700; color: var(--crimson); }
+    .stat-card .lbl { font-size: .75rem; color: var(--muted); margin-top: .3rem; }
 
-    /* Kanban */
-    .section-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
-    .pipeline-board { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.5rem; }
-    .kanban-col { background: rgba(255,255,255,.03); border-radius: 10px; overflow: hidden; min-height: 140px; }
-    .kanban-hdr { display: flex; justify-content: space-between; align-items: center; padding: .6rem 1rem; font-size: .78rem; font-weight: 700; }
-    .kanban-hdr.contactado  { background: #1f2937; }
-    .kanban-hdr.respondio   { background: #1e3a5f; }
-    .kanban-hdr.cita        { background: #14532d; }
-    .kanban-hdr.descartado  { background: #3b1f1f; }
-    .kanban-cnt { background: rgba(255,255,255,.15); border-radius: 999px; padding: .1rem .5rem; font-size: .72rem; }
-    .kanban-cards { padding: .5rem; display: flex; flex-direction: column; gap: .4rem; }
-    .kanban-card { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.07); border-radius: 7px; padding: .6rem .8rem; }
-    .k-name { font-weight: 600; font-size: .8rem; color: #f3f4f6; }
-    .k-phone { color: #9ca3af; font-size: .72rem; font-family: monospace; }
-    .k-days { color: #6b7280; font-size: .7rem; margin-top: 2px; }
-    .kanban-empty { text-align: center; padding: 1.5rem .5rem; color: var(--muted); font-size: .73rem; }
+    /* ── KANBAN ── */
+    .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .kanban-col { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; min-height: 200px; }
+    .kanban-col-header {
+      padding: .7rem 1rem; border-radius: 12px 12px 0 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: .85rem; font-weight: 600;
+    }
+    .kanban-count {
+      background: rgba(255,255,255,.15); border-radius: 20px;
+      padding: .1rem .5rem; font-size: .75rem;
+    }
+    .kanban-cards { padding: .5rem; display: flex; flex-direction: column; gap: .5rem; }
+    .kanban-card {
+      background: rgba(255,255,255,.04); border: 1px solid var(--border);
+      border-radius: 8px; padding: .7rem;
+    }
+    .k-name { font-weight: 600; font-size: .85rem; margin-bottom: .2rem; }
+    .k-phone { font-size: .75rem; color: var(--muted); }
+    .k-days { font-size: .7rem; color: var(--gold); margin-top: .3rem; }
+    .k-intent { font-size: .65rem; color: var(--ember); margin-top: .2rem; text-transform: uppercase; }
 
-    /* Conversaciones recientes */
-    .conv-list { display: flex; flex-direction: column; gap: .5rem; }
-    .conv-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .9rem 1.1rem; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all .2s; }
-    .conv-item:hover { border-color: var(--crimson); }
-    .conv-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--crimson), #8e1010); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-    .conv-body { flex: 1; min-width: 0; }
-    .conv-name { font-weight: 600; font-size: .88rem; display: flex; align-items: center; gap: 6px; }
-    .conv-last { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-    .conv-meta { text-align: right; flex-shrink: 0; }
-    .conv-time { font-size: .72rem; color: var(--muted); }
-    .conv-badge { display: inline-block; background: var(--ember); color: white; border-radius: 999px; font-size: .65rem; font-weight: 700; padding: .1rem .42rem; margin-top: 4px; }
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center; padding: 3rem; color: var(--muted);
+      font-size: .95rem; grid-column: 1 / -1;
+    }
+    .empty-state .big { font-size: 3rem; margin-bottom: 1rem; }
 
-    .status-tag { font-size: .65rem; font-weight: 700; padding: .1rem .4rem; border-radius: 999px; }
-    .st-contactado { background: rgba(107,114,128,.2); color: #9ca3af; }
-    .st-respondio   { background: rgba(59,130,246,.2); color: #60a5fa; }
-    .st-cita        { background: rgba(34,197,94,.2);  color: #4ade80; }
-    .st-descartado  { background: rgba(239,68,68,.15); color: #f87171; }
-
-    /* Config card */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
-    .config-row { display: flex; align-items: center; justify-content: space-between; padding: .75rem 0; border-bottom: 1px solid rgba(255,255,255,.05); }
-    .config-row:last-child { border-bottom: none; }
-    .config-lbl { font-size: .88rem; font-weight: 600; }
-    .config-sub { font-size: .75rem; color: var(--muted); margin-top: 2px; }
-    .config-val { font-size: .85rem; color: var(--ember); font-family: monospace; }
-
-    .empty-state { text-align: center; padding: 2.5rem; color: var(--muted); font-size: .88rem; }
-    .empty-state .big { font-size: 2.5rem; margin-bottom: .75rem; }
-
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: .55rem 1.2rem; border-radius: 8px; font-size: .83rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; font-family: 'Hanken Grotesk', sans-serif; }
-    .btn-primary { background: var(--crimson); color: white; }
+    /* ── BUTTONS ── */
+    .btn { border: none; cursor: pointer; border-radius: 8px; font-size: .85rem; padding: .5rem 1rem; transition: all .15s; }
+    .btn-primary { background: var(--crimson); color: #fff; }
     .btn-primary:hover { background: var(--ember); }
-    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover { border-color: var(--crimson); }
+    .btn-secondary { background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: rgba(255,255,255,.12); }
 
-    @media(max-width:768px) {
-      .stats-row { grid-template-columns: 1fr 1fr; }
-      .pipeline-board { grid-template-columns: 1fr 1fr; }
-      .content { padding: 1rem 1rem 3rem; }
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 1rem; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .kanban-board { grid-template-columns: 1fr 1fr !important; }
     }
+
+    /* ── LOADING ── */
+    .loading { text-align: center; padding: 2rem; color: var(--muted); }
+    .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border); border-top: 3px solid var(--crimson); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-<aside class="sidebar"></aside>
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span>🔥 Diabolus</span>
+    <small>Panel de Control</small>
+  </div>
+  <nav>
+    <a href="dashboard.html"    class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="chat.html"         class="nav-item"><span class="nav-icon">💬</span> Agente</a>
+    <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+    <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+    <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+    <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+    <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+    <hr style="border-color:rgba(255,255,255,.08);margin:.5rem .5rem">
+    <a href="cazador.html"  class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
+    <a href="pacto.html"    class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+    <a href="demonio.html"  class="nav-item active"><span class="nav-icon">😈</span> El Demonio</a>
+    <a href="whatsapp.html" class="nav-item"><span class="nav-icon">💬</span> WhatsApp</a>
+    <hr style="border-color:rgba(255,255,255,.08);margin:.5rem .5rem">
+    <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="btn btn-secondary" style="width:100%;" onclick="logout()">Cerrar sesión</button>
+    <div class="sidebar-ver">Diabolus CRM v2.1</div>
+  </div>
+</aside>
 
+<!-- ═══ MAIN CONTENT ═══ -->
 <div class="main">
-  <div class="topbar">
-    <a href="dashboard.html" style="display:inline-flex;align-items:center;gap:.4rem;color:var(--text-secondary,#aaa);text-decoration:none;font-size:.85rem;padding:.3rem .7rem;border:1px solid rgba(255,255,255,.12);border-radius:6px;margin-bottom:1rem;transition:all .2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.color='var(--text-secondary,#aaa)';this.style.borderColor='rgba(255,255,255,.12)'">← Dashboard</a>
+  <div class="page-header">
     <h1>😈 El Demonio</h1>
-    <div class="status-pill"><span class="dot"></span> Activo en WhatsApp</div>
+    <div style="display:flex;gap:.5rem;">
+      <button class="btn btn-secondary" onclick="loadPipeline()">🔄 Actualizar</button>
+      <a href="pacto.html" class="btn btn-primary" style="text-decoration:none;">🔥 Gestionar Campañas</a>
+    </div>
   </div>
 
-  <div class="content">
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="val" id="stat-contactado">0</div><div class="lbl">📤 Contactados</div></div>
+    <div class="stat-card"><div class="val" id="stat-respondio">0</div><div class="lbl">💬 Respondieron</div></div>
+    <div class="stat-card"><div class="val" id="stat-cita">0</div><div class="lbl">📅 Citas</div></div>
+    <div class="stat-card"><div class="val" id="stat-descartado">0</div><div class="lbl">🚫 Descartados</div></div>
+  </div>
 
-    <!-- Stats -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <span class="stat-val" id="stat-total">—</span>
-        <div class="stat-lbl">Leads totales</div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-val" id="stat-respondieron">—</span>
-        <div class="stat-lbl">Respondieron</div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-val green" id="stat-citas">—</span>
-        <div class="stat-lbl">Citas agendadas</div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-val gold" id="stat-tasa">—</span>
-        <div class="stat-lbl">Tasa de respuesta</div>
-      </div>
-    </div>
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div style="margin-top:.5rem;">Cargando pipeline...</div>
+  </div>
 
-    <!-- Pipeline Kanban -->
-    <div class="section-title">📊 Pipeline en tiempo real
-      <button class="btn btn-secondary" style="font-size:.73rem;padding:.3rem .7rem;margin-left:auto" onclick="loadPipeline()">↻ Actualizar</button>
+  <!-- Pipeline Kanban -->
+  <div class="kanban-board" id="pipeline-board" style="display:none;">
+    <!-- Contactado -->
+    <div class="kanban-col">
+      <div class="kanban-col-header" style="background:#374151;">
+        <span>📤 Contactado</span>
+        <span class="kanban-count" id="cnt-contactado">0</span>
+      </div>
+      <div class="kanban-cards" id="col-contactado"></div>
     </div>
-    <div class="pipeline-board">
-      <div class="kanban-col">
-        <div class="kanban-hdr contactado"><span>📤 Contactado</span><span class="kanban-cnt" id="cnt-contactado">0</span></div>
-        <div class="kanban-cards" id="col-contactado"><div class="kanban-empty">—</div></div>
+    <!-- Respondió -->
+    <div class="kanban-col">
+      <div class="kanban-col-header" style="background:#1e3a5f;">
+        <span>💬 Respondió</span>
+        <span class="kanban-count" id="cnt-respondio">0</span>
       </div>
-      <div class="kanban-col">
-        <div class="kanban-hdr respondio"><span>💬 Respondió</span><span class="kanban-cnt" id="cnt-respondio">0</span></div>
-        <div class="kanban-cards" id="col-respondio"><div class="kanban-empty">—</div></div>
-      </div>
-      <div class="kanban-col">
-        <div class="kanban-hdr cita"><span>📅 Cita Agendada</span><span class="kanban-cnt" id="cnt-cita">0</span></div>
-        <div class="kanban-cards" id="col-cita"><div class="kanban-empty">—</div></div>
-      </div>
-      <div class="kanban-col">
-        <div class="kanban-hdr descartado"><span>🚫 Descartado</span><span class="kanban-cnt" id="cnt-descartado">0</span></div>
-        <div class="kanban-cards" id="col-descartado"><div class="kanban-empty">—</div></div>
-      </div>
+      <div class="kanban-cards" id="col-respondio"></div>
     </div>
+    <!-- Cita agendada -->
+    <div class="kanban-col">
+      <div class="kanban-col-header" style="background:#14532d;">
+        <span>📅 Cita Agendada</span>
+        <span class="kanban-count" id="cnt-cita">0</span>
+      </div>
+      <div class="kanban-cards" id="col-cita"></div>
+    </div>
+    <!-- Descartado -->
+    <div class="kanban-col">
+      <div class="kanban-col-header" style="background:#3b1f1f;">
+        <span>🚫 Descartado</span>
+        <span class="kanban-count" id="cnt-descartado">0</span>
+      </div>
+      <div class="kanban-cards" id="col-descartado"></div>
+    </div>
+  </div>
 
-    <!-- Conversaciones recientes -->
-    <div class="section-title" style="margin-top:.5rem">💬 Conversaciones recientes
-      <a href="pacto.html" class="btn btn-primary" style="font-size:.73rem;padding:.3rem .8rem;margin-left:auto">🔥 Nueva Campaña</a>
+  <!-- Empty state -->
+  <div id="pipeline-empty" style="display:none;">
+    <div class="empty-state">
+      <div class="big">😈</div>
+      <div>El Demonio aún no tiene leads.<br>Lanza una campaña desde <a href="pacto.html" style="color:var(--crimson);">El Pacto</a>.</div>
     </div>
-    <div class="conv-list" id="conv-list">
-      <div class="empty-state"><div class="big">😈</div><div>Cargando conversaciones...</div></div>
-    </div>
-
-    <!-- Configuración rápida -->
-    <div class="section-title" style="margin-top:1.5rem">⚙️ Configuración del agente</div>
-    <div class="card" id="config-card">
-      <div class="config-row">
-        <div><div class="config-lbl">Número WhatsApp</div><div class="config-sub">Número desde el que opera El Demonio</div></div>
-        <div class="config-val" id="cfg-number">Cargando...</div>
-      </div>
-      <div class="config-row">
-        <div><div class="config-lbl">Follow-up automático</div><div class="config-sub">Reenvío a los 3 y 7 días sin respuesta</div></div>
-        <div class="config-val">✅ Activo</div>
-      </div>
-      <div class="config-row">
-        <div><div class="config-lbl">Modelo IA</div><div class="config-sub">LLM para generación de respuestas</div></div>
-        <div class="config-val">GPT-4o-mini</div>
-      </div>
-      <div class="config-row">
-        <div><div class="config-lbl">Horario de envío</div><div class="config-sub">Ventana de envío de mensajes</div></div>
-        <div class="config-val">09:00 – 20:00</div>
-      </div>
-    </div>
-
   </div>
 </div>
 
 <script>
 const API = 'https://diabolus-crm-api.vercel.app';
 
-function getAuth() {
-  try {
-    const raw = localStorage.getItem('diabolus_auth');
-    if (!raw) return null;
-    const d = JSON.parse(raw);
-    return { token: d.token || d.access_token, salonId: d.salon_id || d.salonId };
-  } catch { return null; }
+function getToken() {
+  const auth = JSON.parse(localStorage.getItem('diabolus_auth') || '{}');
+  return auth.token || auth.access_token || '';
 }
 
-function authH() {
-  const a = getAuth();
-  return a?.token ? { Authorization: `Bearer ${a.token}` } : {};
+function logout() {
+  localStorage.removeItem('diabolus_auth');
+  window.location.href = 'index-login.html';
 }
 
-// ── Pipeline Kanban ─────────────────────────────────────────────────────────
+// ── Auth check ──
+(function checkAuth() {
+  const token = getToken();
+  if (!token) { window.location.href = 'index-login.html'; return; }
+})();
+
+// ── Load pipeline ──
 async function loadPipeline() {
+  const loading = document.getElementById('loading');
+  const board   = document.getElementById('pipeline-board');
+  const empty   = document.getElementById('pipeline-empty');
+
+  loading.style.display = 'block';
+  board.style.display   = 'none';
+  empty.style.display   = 'none';
+
   try {
-    const res = await fetch(`${API}/api/demonio/pipeline`, { headers: authH() });
-    if (!res.ok) return;
+    const res = await fetch(API + '/api/demonio/pipeline', {
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    });
+    if (!res.ok) throw new Error('API ' + res.status);
     const { pipeline } = await res.json();
 
     const cols = {
-      contactado:    { el: 'col-contactado', cnt: 'cnt-contactado' },
-      respondio:     { el: 'col-respondio',  cnt: 'cnt-respondio'  },
-      cita_agendada: { el: 'col-cita',       cnt: 'cnt-cita'       },
-      descartado:    { el: 'col-descartado', cnt: 'cnt-descartado' },
+      contactado:    { el: 'col-contactado', cnt: 'cnt-contactado', stat: 'stat-contactado' },
+      respondio:     { el: 'col-respondio',  cnt: 'cnt-respondio',  stat: 'stat-respondio'  },
+      cita_agendada: { el: 'col-cita',       cnt: 'cnt-cita',       stat: 'stat-cita'       },
+      descartado:    { el: 'col-descartado', cnt: 'cnt-descartado', stat: 'stat-descartado' },
     };
 
-    let total = 0, respondieron = 0, citas = 0;
-
+    let totalLeads = 0;
     for (const [key, cfg] of Object.entries(cols)) {
       const leads = pipeline[key] || [];
-      total += leads.length;
-      if (key === 'respondio' || key === 'cita_agendada') respondieron += leads.length;
-      if (key === 'cita_agendada') citas += leads.length;
-      document.getElementById(cfg.cnt).textContent = leads.length;
+      totalLeads += leads.length;
+      document.getElementById(cfg.cnt).textContent  = leads.length;
+      document.getElementById(cfg.stat).textContent = leads.length;
+
       const col = document.getElementById(cfg.el);
-      col.innerHTML = leads.length === 0
-        ? '<div class="kanban-empty">—</div>'
-        : leads.map(l => {
-            const dias = l.ultima_respuesta
-              ? Math.floor((Date.now() - new Date(l.ultima_respuesta)) / 86400000)
-              : '?';
-            return `<div class="kanban-card">
-              <div class="k-name">${l.name || l.nombre || '—'}</div>
-              <div class="k-phone">${l.phone || l.telefono || '—'}</div>
-              <div class="k-days">${dias !== '?' ? `Hace ${dias}d` : 'Sin fecha'}</div>
-            </div>`;
-          }).join('');
+      if (leads.length === 0) {
+        col.innerHTML = '<div style="text-align:center;padding:.8rem;color:#6b7280;font-size:.75rem;">—</div>';
+      } else {
+        col.innerHTML = leads.map(l => {
+          const dias = l.ultima_respuesta_at
+            ? Math.floor((Date.now() - new Date(l.ultima_respuesta_at).getTime()) / 86400000)
+            : null;
+          return '<div class="kanban-card">'
+            + '<div class="k-name">' + (l.nombre || 'Sin nombre') + '</div>'
+            + '<div class="k-phone">' + (l.whatsapp ? '+' + l.whatsapp : '—') + '</div>'
+            + (l.intencion ? '<div class="k-intent">' + l.intencion + '</div>' : '')
+            + (dias !== null ? '<div class="k-days">Últ. actividad: ' + (dias === 0 ? 'hoy' : 'hace ' + dias + 'd') + '</div>' : '')
+            + '</div>';
+        }).join('');
+      }
     }
 
-    document.getElementById('stat-total').textContent = total;
-    document.getElementById('stat-respondieron').textContent = respondieron;
-    document.getElementById('stat-citas').textContent = citas;
-    const tasa = total > 0 ? Math.round((respondieron / total) * 100) + '%' : '—';
-    document.getElementById('stat-tasa').textContent = tasa;
-
-  } catch(e) {
-    console.error('Pipeline error', e);
+    loading.style.display = 'none';
+    if (totalLeads === 0) {
+      empty.style.display = 'block';
+      board.style.display = 'none';
+    } else {
+      board.style.display = 'grid';
+      empty.style.display = 'none';
+    }
+  } catch (e) {
+    console.warn('Pipeline error:', e);
+    loading.style.display = 'none';
+    empty.style.display = 'block';
   }
 }
 
-// ── Conversaciones recientes ─────────────────────────────────────────────────
-async function loadConversaciones() {
-  const list = document.getElementById('conv-list');
-  try {
-    const res = await fetch(`${API}/api/demonio/conversations`, { headers: authH() });
-    if (!res.ok) throw new Error();
-    const { conversations } = await res.json();
-    if (!conversations?.length) {
-      list.innerHTML = '<div class="empty-state"><div class="big">😈</div><div>El Demonio aún no tiene conversaciones.<br>Lanza una campaña desde <a href="pacto.html" style="color:var(--ember)">El Pacto</a>.</div></div>';
-      return;
-    }
-    const stMap = { contactado: 'st-contactado', respondio: 'st-respondio', cita_agendada: 'st-cita', descartado: 'st-descartado' };
-    const stLabel = { contactado: 'Contactado', respondio: 'Respondió', cita_agendada: 'Cita Agendada', descartado: 'Descartado' };
-    list.innerHTML = conversations.slice(0, 20).map(c => {
-      const st = c.pipeline_stage || 'contactado';
-      const timeAgo = c.updated_at ? timeSince(new Date(c.updated_at)) : '—';
-      return `<div class="conv-item">
-        <div class="conv-avatar">😈</div>
-        <div class="conv-body">
-          <div class="conv-name">
-            ${c.lead_name || c.phone || '—'}
-            <span class="status-tag ${stMap[st]}">${stLabel[st] || st}</span>
-          </div>
-          <div class="conv-last">${c.last_message || 'Sin mensajes aún'}</div>
-        </div>
-        <div class="conv-meta">
-          <div class="conv-time">${timeAgo}</div>
-          ${c.unread ? `<div class="conv-badge">${c.unread}</div>` : ''}
-        </div>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    list.innerHTML = '<div class="empty-state"><div class="big">😈</div><div>El Demonio aún no tiene conversaciones.<br>Lanza una campaña desde <a href="pacto.html" style="color:var(--ember)">El Pacto</a>.</div></div>';
-  }
-}
-
-// ── Config ───────────────────────────────────────────────────────────────────
-async function loadConfig() {
-  try {
-    const res = await fetch(`${API}/api/demonio/config`, { headers: authH() });
-    if (!res.ok) return;
-    const d = await res.json();
-    if (d.wa_number) document.getElementById('cfg-number').textContent = d.wa_number;
-  } catch(e) {}
-}
-
-function timeSince(date) {
-  const diff = Math.floor((Date.now() - date) / 1000);
-  if (diff < 60)   return 'Ahora';
-  if (diff < 3600) return Math.floor(diff/60) + 'm';
-  if (diff < 86400)return Math.floor(diff/3600) + 'h';
-  return Math.floor(diff/86400) + 'd';
-}
-
-// ── Init ─────────────────────────────────────────────────────────────────────
-const auth = getAuth();
-if (!auth?.token) {
-  window.location.href = 'index-login.html';
-} else {
-  loadPipeline();
-  loadConversaciones();
-  loadConfig();
-}
+document.addEventListener('DOMContentLoaded', loadPipeline);
 </script>
-<script src="sidebar.js"></script>
 </body>
 </html>
