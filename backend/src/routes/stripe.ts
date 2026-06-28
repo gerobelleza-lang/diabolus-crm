@@ -225,6 +225,47 @@ stripeRoutes.get('/subscription', async (c) => {
   }
 })
 
+// ── POST /api/stripe/portal ──────────────────────────────────────────────
+// Crear sesión de billing portal (manage subscription, update payment method, etc)
+stripeRoutes.post('/portal', async (c) => {
+  try {
+    const token = c.req.header('Authorization')?.replace('Bearer ', '')
+    if (!token) return c.json({ error: 'Unauthorized' }, 401)
+
+    const url = sbUrl()
+    const key = sbKey()
+    const secret = stripeKey()
+
+    const user = await getUser(token)
+    if (!user?.id) return c.json({ error: 'Invalid token' }, 401)
+
+    // Get salon info with stripe_customer_id
+    const salonRes = await sb(url, key, `salons?user_id=eq.${user.id}&select=stripe_customer_id&limit=1`)
+    const salons = await salonRes.json()
+    const salon = Array.isArray(salons) ? salons[0] : null
+
+    if (!salon?.stripe_customer_id) {
+      return c.json({ error: 'No customer found' }, 404)
+    }
+
+    // Create billing portal session
+    const portal = await stripeReq(secret, '/billing_portal/sessions', 'POST', {
+      customer: salon.stripe_customer_id,
+      return_url: `${APP_URL}/dashboard.html`,
+    })
+
+    if (portal.error) {
+      console.error('[Stripe Portal]', portal.error)
+      return c.json({ error: 'Error creating portal session' }, 500)
+    }
+
+    return c.json({ url: portal.url })
+  } catch (err: any) {
+    console.error('[Stripe /portal]', err)
+    return c.json({ error: 'Internal error' }, 500)
+  }
+})
+
 // ── POST /api/stripe/webhook ───────────────────────────────────────────────
 stripeRoutes.post('/webhook', async (c) => {
   try {

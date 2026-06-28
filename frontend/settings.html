@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración — Diabolus CRM</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="diabolus-tokens.css">
+  <style>
+    .main-container { display: flex; min-height: 100vh; background-color: var(--ink); }
+    .sidebar {
+      width: 260px; background: var(--surface); border-right: 1px solid var(--border-color);
+      padding: 2rem 0; display: flex; flex-direction: column; position: fixed; height: 100vh;
+      left: 0; top: 0; overflow-y: auto; z-index: 10;
+    }
+    .sidebar-header { padding: 0 1.5rem 1.5rem; text-align: center; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+    .sidebar-salon { font-size: 0.75rem; color: var(--text-tertiary); }
+    .sidebar-nav { flex: 1; padding: 0 0.75rem; }
+    .nav-item {
+      padding: 0.65rem 1rem; margin-bottom: 0.2rem; border-radius: 0.5rem; display: flex;
+      align-items: center; gap: 0.75rem; transition: all 0.18s; color: var(--text-secondary);
+      text-decoration: none; font-weight: 500; font-size: 0.875rem;
+    }
+    .nav-item:hover { background: rgba(139,92,246,.08); color: var(--text-primary); }
+    .nav-item.active { background: rgba(139,92,246,.15); color: var(--violet); font-weight: 600; }
+    .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+    .sidebar-footer { padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); }
+    .sidebar-ver { text-align: center; font-size: 0.65rem; color: var(--text-tertiary); margin-top: 0.5rem; }
+
+    .main-content { margin-left: 260px; flex: 1; padding: 2rem 2.5rem; max-width: calc(100vw - 260px); }
+    .page-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);
+    }
+    .page-header h1 { margin: 0 0 0.25rem; font-family: var(--font-display); }
+    .user-chip {
+      display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem;
+      background: rgba(139,92,246,.05); border-radius: 0.5rem;
+    }
+    .avatar { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--violet); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+
+    .zone { background: var(--surface); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .zone-label { font-size: 0.75rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+    .section-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 1rem; }
+
+    .subscription-card {
+      background: linear-gradient(135deg, rgba(139,92,246,.1) 0%, rgba(139,92,246,.05) 100%);
+      border: 2px solid var(--violet); border-radius: 0.75rem; padding: 2rem;
+      text-align: center;
+    }
+    .subscription-status { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .subscription-plan { font-size: 2rem; font-weight: 700; color: var(--violet); margin-bottom: 0.25rem; }
+    .subscription-price { font-size: 1.125rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .subscription-info { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; text-align: left; }
+    .info-item { padding: 0.75rem; background: rgba(255,255,255,.03); border-radius: 0.5rem; }
+    .info-label { font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; }
+    .info-value { font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-top: 0.25rem; }
+
+    .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 500; font-size: 0.9rem; transition: all 0.18s; }
+    .btn-primary { background: var(--violet); color: white; }
+    .btn-primary:hover { background: #7C3AED; }
+    .btn-secondary { background: var(--surface-variant); color: var(--text-primary); }
+
+    .alert { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
+    .alert-info { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.2); color: #3B82F6; }
+
+    @media (max-width: 768px) {
+      .main-content { margin-left: 0; padding: 1.5rem; }
+      .sidebar { width: 100%; height: auto; position: relative; }
+      .subscription-info { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">😈</div>
+        <div style="font-weight: 600; color: var(--text-primary);">Diabolus</div>
+        <div class="sidebar-salon" id="salonName">—</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="chat.html"      class="nav-item"><span class="nav-icon">💬</span> Agente</a>
+        <a href="invoices.html"  class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+        <a href="clients.html"   class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+        <a href="cazador.html"   class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
+        <a href="pacto.html"     class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+        <hr style="border-color:rgba(255,255,255,.08);margin:.5rem .5rem">
+        <a href="settings.html" class="nav-item active"><span class="nav-icon">⚙️</span> Configuración</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary" style="width:100%;" onclick="logout()">Cerrar sesión</button>
+        <div class="sidebar-ver">v2.1</div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Configuración</h1>
+          <div style="font-size: 0.875rem; color: var(--text-secondary);">Gestiona tu suscripción y preferencias</div>
+        </div>
+        <div class="user-chip">
+          <div>
+            <strong id="userEmailDisplay">—</strong>
+          </div>
+          <div class="avatar" id="userAvatar">?</div>
+        </div>
+      </div>
+
+      <!-- SUSCRIPCIÓN -->
+      <div class="zone">
+        <div class="zone-label">Suscripción</div>
+        <div class="subscription-card" id="subscriptionCard">
+          <div class="subscription-status" id="subStatus">Cargando...</div>
+          <div class="subscription-plan" id="subPlan">—</div>
+          <div class="subscription-price" id="subPrice">—</div>
+          <div class="subscription-info" id="subInfo"></div>
+          <button class="btn btn-primary" id="manageSubBtn" onclick="openBillingPortal()" style="display:none;">
+            💳 Gestionar suscripción
+          </button>
+          <div id="noSubMsg" style="padding: 1rem; text-align: center; color: var(--text-secondary);">
+            No tienes El Pacto activo aún.
+            <a href="pacto.html" style="color: var(--violet); text-decoration: none; font-weight: 600;">Actívalo →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREFERENCIAS -->
+      <div class="zone">
+        <div class="zone-label">Preferencias</div>
+        <p class="section-title">Tema</p>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="radio" name="theme" value="dark" checked onchange="setTheme('dark')">
+            🌙 Oscuro
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="radio" name="theme" value="light" onchange="setTheme('light')">
+            ☀️ Claro
+          </label>
+        </div>
+      </div>
+
+      <!-- CUENTA -->
+      <div class="zone">
+        <div class="zone-label">Cuenta</div>
+        <p class="section-title">Información de usuario</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">Email</div>
+            <div id="userEmail" style="font-weight: 500; margin-top: 0.25rem;">—</div>
+          </div>
+          <div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">Salón</div>
+            <div id="salonInfo" style="font-weight: 500; margin-top: 0.25rem;">—</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary" onclick="logout()">Cerrar sesión</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('auth_token');
+    if (!token) { window.location.href = 'index.html'; }
+
+    async function loadSettings() {
+      try {
+        // Load user profile
+        const profileRes = await fetch('/api/profile', { headers: { Authorization: `Bearer ${token}` } });
+        const profile = await profileRes.json();
+
+        if (profile.salon) {
+          document.getElementById('salonName').textContent = profile.salon.name || '—';
+          document.getElementById('salonInfo').textContent = profile.salon.name || '—';
+          document.getElementById('userEmailDisplay').textContent = profile.email || '—';
+          document.getElementById('userEmail').textContent = profile.email || '—';
+
+          const initials = (profile.salon.name || 'U').substring(0, 1).toUpperCase();
+          document.getElementById('userAvatar').textContent = initials;
+        }
+
+        // Load subscription status
+        const subRes = await fetch('/api/stripe/subscription', { headers: { Authorization: `Bearer ${token}` } });
+        const sub = await subRes.json();
+
+        const card = document.getElementById('subscriptionCard');
+        const noMsg = document.getElementById('noSubMsg');
+        const manageBtn = document.getElementById('manageSubBtn');
+
+        if (sub.pacto_activo) {
+          card.style.display = 'block';
+          noMsg.style.display = 'none';
+          manageBtn.style.display = 'block';
+
+          document.getElementById('subStatus').textContent = '✅ Activo';
+          document.getElementById('subPlan').textContent = 'El Pacto';
+          document.getElementById('subPrice').textContent = '€49/mes';
+
+          const infoHtml = `
+            <div class="info-item">
+              <div class="info-label">Estado</div>
+              <div class="info-value">✅ Suscripción activa</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Renovación</div>
+              <div class="info-value">Mensual (automático)</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">ID Suscripción</div>
+              <div class="info-value" style="font-family: monospace; font-size: 0.8rem;">${sub.subscription_id ? sub.subscription_id.substring(0, 12) + '...' : '—'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Próxima factura</div>
+              <div class="info-value">${sub.expires_at ? new Date(sub.expires_at).toLocaleDateString('es-ES') : '—'}</div>
+            </div>
+          `;
+          document.getElementById('subInfo').innerHTML = infoHtml;
+        } else {
+          card.style.display = 'none';
+          noMsg.style.display = 'block';
+          manageBtn.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Error loading settings:', err);
+      }
+    }
+
+    async function openBillingPortal() {
+      try {
+        const res = await fetch('/api/stripe/portal', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('Error al abrir portal de facturación');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Error al abrir portal');
+      }
+    }
+
+    function setTheme(theme) {
+      localStorage.setItem('theme', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      window.location.href = 'index.html';
+    }
+
+    // Init
+    const theme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelector(`input[value="${theme}"]`).checked = true;
+    loadSettings();
+  </script>
+</body>
+</html>
