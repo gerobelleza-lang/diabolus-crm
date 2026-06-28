@@ -128,7 +128,7 @@ voiceRoute.post('/', async (c) => {
 
     const output = await processAgentInput({
       tenantId: salonId,
-      channel: 'voice',
+      channel: 'web',
       type: 'text',
       text: transcription,
       userId,
