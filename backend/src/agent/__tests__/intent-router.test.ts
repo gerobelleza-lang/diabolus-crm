@@ -73,7 +73,11 @@ function includesAny(text: string, keywords: string[]): boolean {
   return keywords.some(keyword => {
     const idx = text.indexOf(keyword);
     if (idx === -1) return false;
+    // Skip boundary checks for single-char punctuation (¿, ?, etc.)
+    if (keyword.length === 1 && !/[a-záéíóúñ]/i.test(keyword)) return true;
+    const before = idx > 0 ? text[idx - 1] : '';
     const after = text[idx + keyword.length];
+    if (before && /[a-záéíóúñ]/i.test(before)) return false;
     return !after || !/[a-záéíóúñ]/i.test(after);
   });
 }
@@ -716,5 +720,64 @@ describe('Bonus: Frases reales de usuario (regression)', () => {
     const r = route('Hemos cobrado 1200€ esta semana')
     expect(r.diablo).toBe('contable')
     expect(r.intent).toBe('query_income')
+  })
+})
+
+describe('7. Meta-guard: Diablo names must not misroute', () => {
+  const diabloNames: [string, string][] = [
+    ['facturador', 'facturador'],
+    ['cobrador', 'cobrador'],
+    ['contable', 'contable'],
+    ['closer', 'closer'],
+    ['cazador', 'cazador'],
+    ['abogado', 'abogado'],
+    ['escribano', 'escribano'],
+    ['guardian', 'guardian'],
+    ['confesor', 'confesor'],
+  ]
+
+  for (const [name, self] of diabloNames) {
+    it(`"${name}" alone -> confesor or self, never a DIFFERENT Diablo`, () => {
+      const result = classifyIntent(name)
+      const ok = result.diablo === 'confesor' || result.diablo === self
+      expect(ok).toBe(true)
+    })
+  }
+
+  it('"El Facturador" -> confesor or facturador', () => {
+    const r = classifyIntent('El Facturador')
+    expect(r.diablo === 'confesor' || r.diablo === 'facturador').toBe(true)
+  })
+
+  it('"El Cobrador" -> confesor or cobrador', () => {
+    const r = classifyIntent('El Cobrador')
+    expect(r.diablo === 'confesor' || r.diablo === 'cobrador').toBe(true)
+  })
+})
+
+describe('8. Leading boundary: prefixed words rejected', () => {
+  it('"recobro de deuda" should NOT match income keyword "cobro"', () => {
+    const result = parseUserInput('recobro de deuda')
+    expect(result.intent).not.toBe('income')
+  })
+
+  it('"impago" should NOT match expense keyword "pago"', () => {
+    const result = parseUserInput('tenemos un impago')
+    expect(result.intent).not.toBe('expense')
+  })
+
+  it('"prepago" should NOT match expense keyword "pago"', () => {
+    const result = parseUserInput('tarjeta prepago')
+    expect(result.intent).not.toBe('expense')
+  })
+
+  it('"autopago" should NOT match expense keyword "pago"', () => {
+    const result = parseUserInput('configurar autopago')
+    expect(result.intent).not.toBe('expense')
+  })
+
+  it('"sobregasto" should NOT match expense keyword "gasto"', () => {
+    const result = parseUserInput('hay sobregasto este mes')
+    expect(result.intent).not.toBe('expense')
   })
 })

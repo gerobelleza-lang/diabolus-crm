@@ -286,8 +286,12 @@ function includesAny(text: string, keywords: string[]): boolean {
   return keywords.some(keyword => {
     const idx = text.indexOf(keyword);
     if (idx === -1) return false;
+    // Skip boundary checks for single-char punctuation (¿, ?, etc.)
+    if (keyword.length === 1 && !/[a-záéíóúñ]/i.test(keyword)) return true;
+    const before = idx > 0 ? text[idx - 1] : '';
     const after = text[idx + keyword.length];
-    // Reject if match continues with a letter (prevents substring false positives)
+    // Reject if match is inside a larger word (prevents substring false positives)
+    if (before && /[a-záéíóúñ]/i.test(before)) return false;
     return !after || !/[a-záéíóúñ]/i.test(after);
   });
 }
