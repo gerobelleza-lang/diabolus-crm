@@ -391,6 +391,47 @@ cazadorRoutes.get('/stats', async (c) => {
   });
 });
 
+// GET /api/cazador/history — Historial de recordatorios enviados
+cazadorRoutes.get('/history', async (c) => {
+  const salon_id = c.get('salon_id');
+  if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
+  const supabase = getSupabaseAdmin();
+
+  const { client_id, from_date, to_date, level } = c.req.query();
+
+  let query = supabase
+    .from('cobros_cazador')
+    .select('id, invoice_id, client_id, level, tone, channel, status, message_sent, sent_at, clients(name, email)')
+    .eq('salon_id', salon_id)
+    .order('sent_at', { ascending: false });
+
+  if (client_id) query = query.eq('client_id', client_id);
+  if (level) query = query.eq('level', parseInt(level));
+  if (from_date) query = query.gte('sent_at', from_date);
+  if (to_date) query = query.lte('sent_at', to_date);
+
+  const { data, error } = await query;
+
+  if (error) return c.json({ error: error.message }, 500);
+
+  // Format response
+  const history = (data || []).map(item => ({
+    id: item.id,
+    invoice_id: item.invoice_id,
+    client_id: item.client_id,
+    client_name: item.clients?.name || 'Desconocido',
+    client_email: item.clients?.email,
+    level: item.level,
+    tone: item.tone || 'direct',
+    channel: item.channel,
+    status: item.status,
+    message: item.message_sent,
+    sent_at: item.sent_at,
+  }));
+
+  return c.json({ history, count: history.length });
+});
+
 cazadorRoutes.post('/run', async (c) => {
   const salon_id = c.get('salon_id');
   if (!salon_id) return c.json({ error: 'Unauthorized' }, 401);
