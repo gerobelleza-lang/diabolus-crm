@@ -237,6 +237,54 @@ export function createApp() {
         ...opts
       });
 
+    // ── Check if sender is a salon owner → route to Diablilla ──────
+    try {
+      const ownerR = await sb(`salons?whatsapp_number=eq.${from}&select=id,name,user_id`);
+      const ownerSalons: any[] = await ownerR.json();
+      if (Array.isArray(ownerSalons) && ownerSalons.length > 0) {
+        const salon = ownerSalons[0];
+        const { processAgentInput } = await import('./agent/core');
+        const result = await processAgentInput({
+          tenantId: salon.id,
+          userId:   salon.user_id,
+          channel:  'whatsapp',
+          type:     'text',
+          text:     mensaje,
+        });
+
+        // Build WhatsApp-friendly reply (strip HTML tags)
+        let reply = '';
+        if (result.replyText) {
+          reply = result.replyText.replace(/<[^>]+>/g, '');
+        } else if (result.needsInfo) {
+          reply = result.needsInfo;
+        } else if (result.card) {
+          const fields = result.card.fields.map((f: any) => `• ${f.label}: ${f.value}`).join('\n');
+          reply = `📋 ${result.card.summary}\n${fields}\n\n👉 Confirma en la app para ejecutar.`;
+        } else {
+          reply = '✅ Procesado.';
+        }
+
+        // Send reply via WhatsApp
+        if (WA_TOKEN && reply) {
+          fetch(`https://graph.facebook.com/v19.0/${WA_PHONE_ID}/messages`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${WA_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messaging_product: 'whatsapp',
+              to: from,
+              type: 'text',
+              text: { body: reply }
+            })
+          }).catch(() => {});
+        }
+
+        return c.json({ ok: true });
+      }
+    } catch (e) {
+      console.error('[WA] Salon owner check failed:', e);
+    }
+
     // Buscar lead de El Pacto por número WA
     let lead: any = null;
     try {

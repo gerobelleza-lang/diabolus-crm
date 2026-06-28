@@ -270,6 +270,26 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
     }
   }
 
+  // ── Guardar WhatsApp del dueño ────────────────────────────────────────────
+  const waMatch = userInput.match(
+    /(?:mi\s+)?(?:whatsapp|wha|wa|número|numero|teléfono|telefono|telf?)\s+(?:es|:)?\s*\+?(\d[\d\s]{6,14}\d)/i
+  )
+  if (waMatch) {
+    const rawNum = waMatch[1].replace(/\s/g, '')
+    const normalized = rawNum.startsWith('34') ? rawNum : `34${rawNum}`
+    const supabaseWa = getSupabase()
+    const { error } = await supabaseWa
+      .from('salons')
+      .update({ whatsapp_number: normalized })
+      .eq('id', tenantId)
+    if (error) {
+      return { replyText: '❌ No pude guardar tu WhatsApp. Inténtalo de nuevo.' }
+    }
+    return {
+      replyText: `✅ WhatsApp guardado: +${normalized}\n\nAhora puedes enviarme audios o mensajes por WhatsApp y los proceso como si estuvieras aquí. 😈`
+    }
+  }
+
   const supabase = getSupabase()
   const parsed   = parseUserInput(userInput)
 
