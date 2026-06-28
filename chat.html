@@ -311,6 +311,31 @@
       margin-top: 4px; padding: 0 4px;
     }
 
+
+    /* ── Diablo tag ── */
+    .diablo-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      padding: 2px 8px;
+      background: rgba(139,92,246,.08);
+      border-radius: 12px;
+      border: 1px solid rgba(139,92,246,.12);
+      font-weight: 500;
+      letter-spacing: .02em;
+    }
+    html.cyberpunk .diablo-tag {
+      background: rgba(0,255,65,.06);
+      border-color: rgba(0,255,65,.15);
+      color: var(--accent);
+    }
+    .diablo-tag .diablo-emoji {
+      font-size: 13px;
+    }
+
     /* ── Confirmation card ── */
     .card {
       background: var(--card-bg);
@@ -1213,7 +1238,8 @@ function showToast(msg, ms = 3500) {
   setTimeout(() => { toastEl.style.display = 'none' }, ms)
 }
 
-function setTyping(label = 'escribiendo…') {
+function setTyping(label = 'escribiendo…', diabloEmoji = '') {
+  if (diabloEmoji) label = diabloEmoji + ' ' + label
   typingLabelEl.textContent = label
   typingEl.style.display = 'flex'
   scrollToBottom()
@@ -1348,10 +1374,18 @@ async function speakText(text, btn) {
   }
 }
 
-function addAgentMsg(text, withTts = true) {
+function addAgentMsg(text, opts = {}) {
   const html = escHtml(text).replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
   const row = document.createElement('div')
   row.className = 'msg-row agent'
+
+  // Diablo tag (si viene metadata del backend)
+  if (opts.diablo_emoji && opts.diablo_label) {
+    const tag = document.createElement('div')
+    tag.className = 'diablo-tag'
+    tag.innerHTML = `<span class="diablo-emoji">${escHtml(opts.diablo_emoji)}</span> vía ${escHtml(opts.diablo_label)}`
+    row.appendChild(tag)
+  }
 
   const ttsBtn = document.createElement('button')
   ttsBtn.className = 'tts-btn'
@@ -1476,7 +1510,7 @@ async function sendMessage() {
 
 async function sendText(text) {
   addUserMsg(text)
-  setTyping('escribiendo…')
+  setTyping('procesando…')
   try {
     const data = await apiPost('/api/agent/chat', { userInput: text })
     hideTyping()
@@ -1509,8 +1543,12 @@ async function sendPhoto(extraText) {
 }
 
 function handleAgentResponse(data, cardOpts) {
+  const diabloOpts = {
+    diablo_emoji: data.diablo_emoji || '',
+    diablo_label: data.diablo_label || ''
+  }
   if (data.status === 'pending_confirmation' && data.card) addConfirmationCard(data.card, cardOpts)
-  else if (data.message) addAgentMsg(data.message)
+  else if (data.message) addAgentMsg(data.message, diabloOpts)
   else addAgentMsg('Recibido, pero no entendí la respuesta del servidor.')
 }
 
@@ -1628,11 +1666,11 @@ async function toggleVoice() {
       }
 
       if (data.status === 'success' && data.message) {
-        addAgentMsg(data.message)
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
       } else if (data.status === 'pending_confirmation' && data.card) {
         addConfirmationCard(data.card)
       } else if (data.status === 'needs_info' && data.message) {
-        addAgentMsg(data.message)
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
       } else if (data.error) {
         addAgentMsg('🎙 ' + data.error)
       } else {
@@ -1807,11 +1845,11 @@ async function toggleVoice() {
       }
 
       if (data.status === 'success' && data.message) {
-        addAgentMsg(data.message)
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
       } else if (data.status === 'pending_confirmation' && data.card) {
         addConfirmationCard(data.card)
       } else if (data.status === 'needs_info' && data.message) {
-        addAgentMsg(data.message)
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
       } else if (data.error) {
         addAgentMsg('🎙 ' + data.error)
       } else {
@@ -1913,11 +1951,11 @@ async function toggleVoice() {
       }
 
       if (data.status === 'success' && data.message) {
-        addAgentMsg(data.message)
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
       } else if (data.status === 'pending_confirmation' && data.card) {
         addConfirmationCard(data.card)
       } else if (data.status === 'needs_info' && data.message) {
-        addAgentMsg(data.message)
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
       } else if (data.error) {
         addAgentMsg('🎙 ' + data.error)
       } else {
@@ -2012,11 +2050,11 @@ async function toggleVoice() {
       }
 
       if (data.status === 'success' && data.message) {
-        addAgentMsg(data.message)
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
       } else if (data.status === 'pending_confirmation' && data.card) {
         addConfirmationCard(data.card)
       } else if (data.status === 'needs_info' && data.message) {
-        addAgentMsg(data.message)
+        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
       } else if (data.error) {
         addAgentMsg('🎙 ' + data.error)
       } else {

@@ -24,6 +24,7 @@
       key: 'inteligencia', label: '🧠 Inteligencia',
       items: [
         { key: 'chat',      icon: '💬', label: 'Diablilla',   href: 'chat.html' },
+        { key: 'equipo',    icon: '🔥', label: 'Mi Equipo',   href: 'equipo.html' },
         { key: 'documents', icon: '📋', label: 'Documentos',  href: 'documents.html' }
       ]
     },
