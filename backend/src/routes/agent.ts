@@ -1,3 +1,4 @@
+import { validate, agentChatSchema } from '../schemas'
 /**
  * agent.ts — Adaptador web del núcleo agéntico.
  *

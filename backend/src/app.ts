@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
+import { authLimiter, agentLimiter, apiLimiter, webhookLimiter, waitlistLimiter } from './middleware/rate-limit'
 import { authRoutes } from './routes/auth'
 import { dashboardRoutes } from './routes/dashboard'
 import { healthScoreRoutes } from './routes/health-score'
@@ -85,14 +86,18 @@ export function createApp() {
   )
 
   // ─── Public Routes ─────────────────────────────────────────────────────────
+  app.use('/auth/*', authLimiter)
   app.route('/auth', authRoutes)
 
   // ─── Waitlist (Public — sin auth, recoge emails de interesados) ────────────
+  app.use('/api/waitlist/*', waitlistLimiter)
   app.route('/api/waitlist', waitlistRoutes)
 
   // ─── Stripe & External Webhooks (Public, no auth) ──────────────────────────
   app.route('/api/stripe', stripeRoutes)
+  app.use('/webhooks/*', webhookLimiter)
   app.route('/webhooks', webhookRoutes)
+  app.use('/telegram/*', webhookLimiter)
   app.route('/telegram', telegramBotRoutes)
 
   // ─── Export Downloads (Public — validado por token firmado 15 min) ─────────
@@ -203,6 +208,7 @@ export function createApp() {
     return new Response('Forbidden', { status: 403 })
   })
 
+  app.use('/api/demonio/wa-verify', webhookLimiter)
   // ─── Public: Meta WhatsApp incoming messages ─────────────────────────────────
   app.post('/api/demonio/wa-verify', async (c) => {
     let body: any;
@@ -471,6 +477,7 @@ export function createApp() {
   })
 
   // ─── Protected Routes ──────────────────────────────────────────────────────
+  app.use('/api/*', apiLimiter)
   app.use('/api/*', authMiddleware)
   app.route('/api/dashboard', dashboardRoutes)
   app.route('/api/dashboard/health-score', healthScoreRoutes)

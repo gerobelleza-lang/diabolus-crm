@@ -1,3 +1,4 @@
+import { validate, waitlistSchema } from '../schemas'
 import { Hono } from 'hono'
 
 const app = new Hono()
@@ -156,7 +157,10 @@ app.get('/count', async (c) => {
 // ─── POST /join ──────────────────────────────────────────────────────────────
 app.post('/join', async (c) => {
   try {
-    const { nombre, email, empresa } = await c.req.json()
+    const rawBody = await c.req.json().catch(() => ({}))
+    const parsed = validate(waitlistSchema, rawBody)
+    if (!parsed.ok) return c.json({ error: parsed.error }, 400)
+    const { nombre, email, empresa } = parsed.data
 
     if (!email || !email.includes('@')) {
       return c.json({ error: 'Email inválido' }, 400)

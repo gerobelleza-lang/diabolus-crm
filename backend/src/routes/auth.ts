@@ -1,3 +1,4 @@
+import { validate, loginSchema, registerSchema } from '../schemas'
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 import { sendWelcomeEmail } from '../integrations/email'

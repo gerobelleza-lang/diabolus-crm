@@ -1,3 +1,4 @@
+import { validate, createClientSchema, updateClientSchema } from '../schemas'
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 

@@ -1,3 +1,4 @@
+import { validate, ttsSchema } from '../schemas'
 // POST /api/agent/tts — OpenAI TTS proxy (Edge Runtime)
 // Voz oficial: nova (femenina, cálida) — Diablilla V2
 // Body: { text: string, speed?: number, hd?: boolean }
@@ -14,7 +15,10 @@ const app = new Hono()
 
 app.post('/', async (c) => {
   try {
-    const body = await c.req.json();
+    const rawBody = await c.req.json().catch(() => ({}));
+    const parsed = validate(ttsSchema, rawBody);
+    if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+    const body = parsed.data;
     const { text, speed, hd } = body;
 
     if (!text || typeof text !== 'string') {
