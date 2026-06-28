@@ -441,7 +441,6 @@
       const resp = await fetch(`${API}/api/internal/diablo-metrics?days=30`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'x-internal-secret': localStorage.getItem('diabolus_internal_secret') || ''
         }
       })
       
