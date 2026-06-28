@@ -17,13 +17,15 @@
         { key: 'invoices',     icon: '📄', label: 'Facturas',      href: 'invoices.html' },
         { key: 'clients',      icon: '👥', label: 'Clientes',       href: 'clients.html' },
         { key: 'transactions', icon: '💰', label: 'Transacciones',  href: 'transactions.html' },
-        { key: 'reports',      icon: '📈', label: 'Reportes',       href: 'reports.html' }
+        { key: 'reports',      icon: '📈', label: 'Reportes',       href: 'reports.html' },
+        { key: 'catalogo',    icon: '📦', label: 'Catálogo',       href: 'catalogo.html' },
       ]
     },
     {
       key: 'inteligencia', label: '🧠 Inteligencia',
       items: [
         { key: 'chat',      icon: '💬', label: 'Diablilla',   href: 'chat.html' },
+        { key: 'equipo',    icon: '🔥', label: 'Mi Equipo',   href: 'equipo.html' },
         { key: 'documents', icon: '📋', label: 'Documentos',  href: 'documents.html' }
       ]
     },
