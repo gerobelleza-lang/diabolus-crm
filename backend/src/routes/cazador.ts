@@ -77,6 +77,12 @@ function formatEur(amount: number): string {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
 }
 
+function getToneByDays(diasVencida: number): 'friendly' | 'direct' | 'formal' {
+  if (diasVencida <= 2) return 'friendly';
+  if (diasVencida <= 6) return 'direct';
+  return 'formal';
+}
+
 async function sendEmail(to: string, subject: string, body: string) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -197,11 +203,13 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
       }
 
       if (sent) {
+        const tone = getToneByDays(diasVencida);
         await supabase.from('cobros_cazador').insert([{
           salon_id: config.salon_id,
           invoice_id: invoice.id,
           client_id: invoice.client_id,
           level,
+          tone,
           channel,
           status: 'sent',
           message_sent: mensaje,
@@ -210,7 +218,8 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
         salonEnviados++;
         totalEnviados++;
         const emoji = level === 1 ? '🟡' : level === 2 ? '🟠' : '🔴';
-        reportLines.push(`${emoji} ${client?.name || 'Desconocido'} — ${formatEur(invoice.total || 0)} · día ${diasVencida}, aviso nº${level}`);
+        const toneEmoji = tone === 'friendly' ? '💚' : tone === 'direct' ? '🟠' : '🔴';
+        reportLines.push(`${emoji} ${client?.name || 'Desconocido'} — ${formatEur(invoice.total || 0)} · día ${diasVencida}, aviso nº${level} ${toneEmoji}${tone}`);
       }
     }
 
