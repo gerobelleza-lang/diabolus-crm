@@ -123,7 +123,7 @@ export async function getDashboardContext(salonId: string): Promise<DashboardDat
 // ── Handler ─────────────────────────────────────────────────────────────────
 
 async function handle(input: AgentInput, classification: IntentClassification): Promise<DiabloResponse> {
-  const { tenantId } = input
+  const { tenantId, userId = 'unknown' } = input
   const userInput = (input.text || '').trim()
 
   try {

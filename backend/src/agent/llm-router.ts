@@ -101,7 +101,7 @@ export async function callOpenRouter(
   userMessage: string,
   systemPrompt?: string,
   options?: { temperature?: number; max_tokens?: number }
-): Promise<string> {
+): Promise<{ text: string; usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number; model_used: string } | null }> {
   const apiKey = process.env.OPENROUTER_API_KEY
 
   if (!apiKey) {

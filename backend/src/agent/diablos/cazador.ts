@@ -41,7 +41,7 @@ FORMATO:
 - UNA sugerencia de acción inmediata`
 
 async function handle(input: AgentInput, classification: IntentClassification): Promise<DiabloResponse> {
-  const { tenantId } = input
+  const { tenantId, userId = 'unknown' } = input
   const userInput = (input.text || '').trim()
 
   try {

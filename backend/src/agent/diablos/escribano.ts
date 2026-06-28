@@ -45,7 +45,7 @@ REGLAS:
 
 async function handle(input: AgentInput, classification: IntentClassification): Promise<DiabloResponse> {
   const userInput = (input.text || '').trim()
-  const { tenantId } = input
+  const { tenantId, userId = 'unknown' } = input
 
   if (classification.intent === 'crear_albaran') {
     return {

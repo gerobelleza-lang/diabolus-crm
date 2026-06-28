@@ -208,7 +208,7 @@ async function processAgentInputInternal(input: AgentInput): Promise<AgentOutput
     !response.replyText?.includes('Confesor') &&
     !response.card
   ) {
-    return await handleLLMFallback(userInput, tenantId, parsed, classification)
+    return await handleLLMFallback(userInput, tenantId, userId, parsed, classification)
   }
 
   return wrapResponse(response, diabloName)
@@ -240,6 +240,7 @@ function handleGreeting(userInput: string): AgentOutput {
 async function handleLLMFallback(
   userInput: string,
   tenantId: string,
+  userId: string,
   parsed: { intent: string; confidence: number },
   classification: IntentClassification
 ): Promise<AgentOutput> {

@@ -47,7 +47,7 @@ LÍMITES ESTRICTOS:
 - Si no puedes resolver: "Esto se lo paso a Diablilla"`
 
 async function handle(input: AgentInput, classification: IntentClassification): Promise<DiabloResponse> {
-  const { tenantId } = input
+  const { tenantId, userId = 'unknown' } = input
   const userInput = (input.text || '').trim()
 
   // ── Static help response ──────────────────────────────────────────────────
