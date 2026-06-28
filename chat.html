@@ -835,79 +835,214 @@
     .brain-option.active .brain-option-check { visibility: visible; }
 
 
-    /* ── Mic button (voice input) ── */
+    /* ── Mic button "HABLAR" (voice input) ── */
     #btn-mic {
-      width: 38px; height: 38px;
-      border-radius: 50%;
-      border: 1.5px solid var(--border);
-      background: var(--surface2);
-      color: var(--text-muted);
-      font-size: 18px;
+      height: 42px;
+      border-radius: 21px;
+      border: 1.5px solid #dc2626;
+      background: linear-gradient(135deg, rgba(220,38,38,.15), rgba(185,28,28,.08));
+      color: #ef4444;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font);
+      letter-spacing: 0.5px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all .2s;
+      gap: 6px;
+      padding: 0 16px;
+      transition: all .25s;
       flex-shrink: 0;
+      text-transform: uppercase;
+      box-shadow: 0 0 12px rgba(220,38,38,.2), inset 0 0 6px rgba(220,38,38,.1);
     }
-    #btn-mic:hover { border-color: var(--accent); color: var(--accent-glow); }
+    #btn-mic:hover {
+      border-color: #ef4444;
+      box-shadow: 0 0 20px rgba(239,68,68,.35), inset 0 0 8px rgba(239,68,68,.15);
+      color: #fca5a5;
+      transform: scale(1.03);
+    }
+    #btn-mic:active { transform: scale(.96); }
+    #btn-mic .mic-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
     #btn-mic.recording {
-      border-color: #f87171;
-      background: rgba(248,113,113,.15);
-      animation: mic-pulse 1.2s ease-in-out infinite;
+      border-color: #ef4444;
+      background: linear-gradient(135deg, rgba(239,68,68,.25), rgba(185,28,28,.2));
+      box-shadow: 0 0 24px rgba(239,68,68,.5), 0 0 48px rgba(239,68,68,.15);
+      animation: mic-btn-glow 1.5s ease-in-out infinite;
     }
-    @keyframes mic-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,.4); }
-      50%      { box-shadow: 0 0 0 10px rgba(248,113,113,0); }
+    @keyframes mic-btn-glow {
+      0%, 100% { box-shadow: 0 0 16px rgba(239,68,68,.4), 0 0 32px rgba(239,68,68,.1); }
+      50%      { box-shadow: 0 0 28px rgba(239,68,68,.6), 0 0 56px rgba(239,68,68,.2); }
+    }
+    html.cyberpunk #btn-mic {
+      border-color: #00ff41;
+      background: linear-gradient(135deg, rgba(0,255,65,.1), rgba(0,200,50,.05));
+      color: #00ff41;
+      box-shadow: 0 0 12px rgba(0,255,65,.2);
+    }
+    html.cyberpunk #btn-mic:hover {
+      box-shadow: 0 0 20px rgba(0,255,65,.4);
+      color: #4dff7f;
+    }
+    html.cyberpunk #btn-mic.recording {
+      box-shadow: 0 0 24px rgba(0,255,65,.5), 0 0 48px rgba(0,255,65,.15);
     }
 
-    /* Voice overlay */
+    /* ══════════════════════════════════════════
+       VOICE OVERLAY — NEON WAVES
+    ══════════════════════════════════════════ */
     .voice-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.85);
+      background: #000;
       z-index: 999;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1.5rem;
+      gap: 0;
+      overflow: hidden;
     }
     .voice-overlay.open { display: flex; }
-    .voice-overlay-label {
-      font-family: var(--font);
-      font-size: 1.1rem;
-      color: #a78bfa;
-      font-weight: 600;
-    }
-    .voice-overlay-circle {
-      width: 100px; height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #a78bfa, #7c3aed);
+
+    /* Neon wave rings */
+    .voice-waves {
+      position: relative;
+      width: 260px;
+      height: 260px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.5rem;
       cursor: pointer;
-      animation: mic-pulse 1.2s ease-in-out infinite;
+      -webkit-tap-highlight-color: transparent;
     }
-    .voice-overlay-transcript {
+    .voice-wave-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid rgba(239,68,68,.6);
+      box-shadow: 0 0 15px rgba(239,68,68,.3), inset 0 0 15px rgba(239,68,68,.1);
+      animation: wave-expand 2.4s ease-out infinite;
+    }
+    .voice-wave-ring:nth-child(1) {
+      width: 80px; height: 80px;
+      animation-delay: 0s;
+      border-color: rgba(239,68,68,.9);
+      box-shadow: 0 0 20px rgba(239,68,68,.5), inset 0 0 20px rgba(239,68,68,.2);
+    }
+    .voice-wave-ring:nth-child(2) {
+      width: 80px; height: 80px;
+      animation-delay: 0.6s;
+      border-color: rgba(239,68,68,.7);
+      box-shadow: 0 0 18px rgba(239,68,68,.4), inset 0 0 18px rgba(239,68,68,.15);
+    }
+    .voice-wave-ring:nth-child(3) {
+      width: 80px; height: 80px;
+      animation-delay: 1.2s;
+      border-color: rgba(239,68,68,.5);
+      box-shadow: 0 0 14px rgba(239,68,68,.3), inset 0 0 14px rgba(239,68,68,.1);
+    }
+    .voice-wave-ring:nth-child(4) {
+      width: 80px; height: 80px;
+      animation-delay: 1.8s;
+      border-color: rgba(239,68,68,.3);
+      box-shadow: 0 0 10px rgba(239,68,68,.2), inset 0 0 10px rgba(239,68,68,.05);
+    }
+    @keyframes wave-expand {
+      0%   { transform: scale(1);   opacity: 1; }
+      100% { transform: scale(3.2); opacity: 0; }
+    }
+
+    /* Center core button */
+    .voice-core {
+      position: relative;
+      z-index: 2;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #dc2626 0%, #991b1b 70%, #450a0a 100%);
+      border: 2px solid rgba(239,68,68,.8);
+      box-shadow: 0 0 30px rgba(239,68,68,.6), 0 0 60px rgba(239,68,68,.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 2px;
+      cursor: pointer;
+      transition: transform .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .voice-core:active { transform: scale(.92); }
+    .voice-core-icon {
+      font-size: 28px;
+      filter: drop-shadow(0 0 8px rgba(255,255,255,.5));
+    }
+    .voice-core-label {
       font-family: var(--font);
-      font-size: 0.9rem;
-      color: rgba(255,255,255,.6);
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255,255,255,.85);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    /* Status text */
+    .voice-status {
+      margin-top: 32px;
+      font-family: var(--font);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #ef4444;
+      text-shadow: 0 0 20px rgba(239,68,68,.5);
+      letter-spacing: 0.5px;
+    }
+    .voice-transcript {
+      margin-top: 12px;
+      font-family: var(--font);
+      font-size: 0.85rem;
+      color: rgba(255,255,255,.45);
       max-width: 80%;
       text-align: center;
+      min-height: 20px;
     }
-    .voice-overlay-cancel {
-      background: none;
-      border: 1px solid rgba(255,255,255,.2);
-      color: rgba(255,255,255,.5);
-      padding: 8px 24px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.85rem;
+    .voice-hint {
+      margin-top: 24px;
+      font-family: var(--font);
+      font-size: 0.75rem;
+      color: rgba(255,255,255,.2);
+      letter-spacing: 0.5px;
     }
-    .voice-overlay-cancel:hover { border-color: #f87171; color: #f87171; }
+
+    /* Cyberpunk voice overlay */
+    html.cyberpunk .voice-wave-ring {
+      border-color: rgba(0,255,65,.6);
+      box-shadow: 0 0 15px rgba(0,255,65,.3), inset 0 0 15px rgba(0,255,65,.1);
+    }
+    html.cyberpunk .voice-wave-ring:nth-child(1) {
+      border-color: rgba(0,255,65,.9);
+      box-shadow: 0 0 20px rgba(0,255,65,.5), inset 0 0 20px rgba(0,255,65,.2);
+    }
+    html.cyberpunk .voice-wave-ring:nth-child(2) {
+      border-color: rgba(0,255,65,.7);
+    }
+    html.cyberpunk .voice-wave-ring:nth-child(3) {
+      border-color: rgba(0,255,65,.5);
+    }
+    html.cyberpunk .voice-wave-ring:nth-child(4) {
+      border-color: rgba(0,255,65,.3);
+    }
+    html.cyberpunk .voice-core {
+      background: radial-gradient(circle, #00cc33 0%, #006622 70%, #001a0e 100%);
+      border-color: rgba(0,255,65,.8);
+      box-shadow: 0 0 30px rgba(0,255,65,.6), 0 0 60px rgba(0,255,65,.2);
+    }
+    html.cyberpunk .voice-status {
+      color: #00ff41;
+      text-shadow: 0 0 20px rgba(0,255,65,.5);
+    }
 
   </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
@@ -975,7 +1110,7 @@
           spellcheck="true"
         ></textarea>
       </div>
-      <button id="btn-mic" title="Hablar" aria-label="Grabar voz" onclick="toggleVoice()">🎙</button>
+      <button id="btn-mic" title="Hablar" aria-label="Grabar voz" onclick="toggleVoice()"><span class="mic-icon">🎙</span> Hablar</button>
       <button id="btn-send" aria-label="Enviar">
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
@@ -984,12 +1119,21 @@
 </div>
 
 
-<!-- Voice overlay -->
+<!-- Voice overlay — Neon Waves -->
 <div class="voice-overlay" id="voiceOverlay">
-  <div class="voice-overlay-label" id="voiceOverlayLabel">Escuchando…</div>
-  <div class="voice-overlay-circle" onclick="stopVoice()">🎙</div>
-  <div class="voice-overlay-transcript" id="voiceOverlayTranscript">Di tu orden…</div>
-  <button class="voice-overlay-cancel" onclick="stopVoice()">Cancelar</button>
+  <div class="voice-waves" onclick="stopVoice()">
+    <div class="voice-wave-ring"></div>
+    <div class="voice-wave-ring"></div>
+    <div class="voice-wave-ring"></div>
+    <div class="voice-wave-ring"></div>
+    <div class="voice-core" onclick="stopVoice()">
+      <span class="voice-core-icon">🎙</span>
+      <span class="voice-core-label">Parar</span>
+    </div>
+  </div>
+  <div class="voice-status" id="voiceOverlayLabel">Escuchando…</div>
+  <div class="voice-transcript" id="voiceOverlayTranscript">Di tu orden…</div>
+  <div class="voice-hint">Toca las ondas para detener</div>
 </div>
 
 <div id="toast"></div>
@@ -1333,8 +1477,8 @@ let _ttsActiveBtn = null
 
 async function speakText(text, btn) {
   // Si hay audio reproduciéndose, pararlo
-  if (_ttsAudio && !_ttsAudio.ended) {
-    _ttsAudio.pause()
+  if (_ttsAudio) {
+    try { _ttsAudio.stop(); if (_ttsAudio._ctx) _ttsAudio._ctx.close() } catch(e){}
     _ttsAudio = null
     if (_ttsActiveBtn) { _ttsActiveBtn.textContent = '🔊'; _ttsActiveBtn.classList.remove('playing') }
     if (_ttsActiveBtn === btn) { _ttsActiveBtn = null; return }
@@ -1352,19 +1496,50 @@ async function speakText(text, btn) {
     })
     if (!res.ok) throw new Error('TTS error')
     const blob = await res.blob()
-    const url = URL.createObjectURL(blob)
-    _ttsAudio = new Audio(url)
+
+    // AudioContext para mejor calidad + ganancia (más potencia/estéreo)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const arrayBuf = await blob.arrayBuffer()
+    const audioBuf = await audioCtx.decodeAudioData(arrayBuf)
+
+    // Gain node — subimos volumen para más presencia
+    const gainNode = audioCtx.createGain()
+    gainNode.gain.value = 1.6
+
+    // Stereo widener — leve ensanchamiento
+    const splitter = audioCtx.createChannelSplitter(2)
+    const merger = audioCtx.createChannelMerger(2)
+    const delayL = audioCtx.createDelay()
+    const delayR = audioCtx.createDelay()
+    delayL.delayTime.value = 0.0
+    delayR.delayTime.value = 0.0008 // sutil delay para efecto estéreo
+
+    const source = audioCtx.createBufferSource()
+    source.buffer = audioBuf
+
+    // Chain: source → gain → splitter → delays → merger → destination
+    source.connect(gainNode)
+    gainNode.connect(splitter)
+    splitter.connect(delayL, 0)
+    splitter.connect(delayR, 1)
+    delayL.connect(merger, 0, 0)
+    delayR.connect(merger, 0, 1)
+    merger.connect(audioCtx.destination)
+
+    _ttsAudio = source
+    _ttsAudio._ctx = audioCtx
     _ttsActiveBtn = btn
     btn.textContent = '🔈'
     btn.classList.remove('loading')
     btn.classList.add('playing')
     btn.disabled = false
-    _ttsAudio.play()
-    _ttsAudio.onended = () => {
+
+    source.start(0)
+    source.onended = () => {
       btn.textContent = '🔊'
       btn.classList.remove('playing')
       _ttsActiveBtn = null
-      URL.revokeObjectURL(url)
+      audioCtx.close()
     }
   } catch(e) {
     btn.textContent = '🔊'
@@ -1786,103 +1961,6 @@ if (token) loadBrainConfig()
 updateBrainUI(currentBrain)
 
 
-
-// ── Voice Input ─────────────────────────────────────────────────────────────
-let voiceRecording = false
-let voiceMediaRec = null
-let voiceStream = null
-
-async function toggleVoice() {
-  if (voiceRecording) { stopVoice(); return }
-  voiceRecording = true
-  document.getElementById('btn-mic').classList.add('recording')
-
-  try {
-    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  } catch(e) {
-    showToast('No se pudo acceder al micrófono')
-    voiceRecording = false
-    document.getElementById('btn-mic').classList.remove('recording')
-    return
-  }
-
-  // Open overlay
-  const overlay = document.getElementById('voiceOverlay')
-  overlay.classList.add('open')
-  document.getElementById('voiceOverlayLabel').textContent = 'Escuchando…'
-  document.getElementById('voiceOverlayTranscript').textContent = 'Di tu orden…'
-
-  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
-    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
-    : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
-    : ''
-
-  const chunks = []
-  voiceMediaRec = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined)
-  voiceMediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
-
-  voiceMediaRec.onstop = async () => {
-    voiceStream.getTracks().forEach(t => t.stop())
-    document.getElementById('voiceOverlayLabel').textContent = 'Transcribiendo…'
-    document.getElementById('voiceOverlayTranscript').textContent = '⏳ Un momento…'
-
-    const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' })
-    const form = new FormData()
-    form.append('audio', blob, mimeType.includes('webm') ? 'voice.webm' : 'voice.mp4')
-
-    try {
-      const res = await fetch(`${API}/api/agent/voice`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: form
-      })
-      const data = await res.json()
-
-      closeVoiceOverlay()
-
-      if (data.transcription) {
-        addUserMsg(`🎙 ${data.transcription}`)
-      }
-
-      if (data.status === 'success' && data.message) {
-        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
-      } else if (data.status === 'pending_confirmation' && data.card) {
-        addConfirmationCard(data.card)
-      } else if (data.status === 'needs_info' && data.message) {
-        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
-      } else if (data.error) {
-        addAgentMsg('🎙 ' + data.error)
-      } else {
-        addAgentMsg('🎙 No pude procesar el audio. Intenta de nuevo o escribe tu orden.')
-      }
-    } catch(e) {
-      closeVoiceOverlay()
-      addAgentMsg('🎙 Error de voz. Escribe tu orden y funciona igual de bien 😉')
-    }
-  }
-
-  voiceMediaRec.start()
-
-  // Auto-stop after 30 seconds
-  setTimeout(() => { if (voiceRecording) stopVoice() }, 30000)
-}
-
-function stopVoice() {
-  voiceRecording = false
-  document.getElementById('btn-mic').classList.remove('recording')
-  if (voiceMediaRec && voiceMediaRec.state === 'recording') {
-    voiceMediaRec.stop()
-  } else {
-    closeVoiceOverlay()
-    if (voiceStream) voiceStream.getTracks().forEach(t => t.stop())
-  }
-}
-
-function closeVoiceOverlay() {
-  document.getElementById('voiceOverlay').classList.remove('open')
-  document.getElementById('btn-mic').classList.remove('recording')
-}
-
 </script>
 
 <script>
@@ -1892,202 +1970,7 @@ function closeVoiceOverlay() {
     })
   }
 
-
-// ── Voice Input ─────────────────────────────────────────────────────────────
-let voiceRecording = false
-let voiceMediaRec = null
-let voiceStream = null
-
-async function toggleVoice() {
-  if (voiceRecording) { stopVoice(); return }
-  voiceRecording = true
-  document.getElementById('btn-mic').classList.add('recording')
-
-  try {
-    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  } catch(e) {
-    showToast('No se pudo acceder al micrófono')
-    voiceRecording = false
-    document.getElementById('btn-mic').classList.remove('recording')
-    return
-  }
-
-  // Open overlay
-  const overlay = document.getElementById('voiceOverlay')
-  overlay.classList.add('open')
-  document.getElementById('voiceOverlayLabel').textContent = 'Escuchando…'
-  document.getElementById('voiceOverlayTranscript').textContent = 'Di tu orden…'
-
-  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
-    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
-    : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
-    : ''
-
-  const chunks = []
-  voiceMediaRec = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined)
-  voiceMediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
-
-  voiceMediaRec.onstop = async () => {
-    voiceStream.getTracks().forEach(t => t.stop())
-    document.getElementById('voiceOverlayLabel').textContent = 'Transcribiendo…'
-    document.getElementById('voiceOverlayTranscript').textContent = '⏳ Un momento…'
-
-    const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' })
-    const form = new FormData()
-    form.append('audio', blob, mimeType.includes('webm') ? 'voice.webm' : 'voice.mp4')
-
-    try {
-      const res = await fetch(`${API}/api/agent/voice`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: form
-      })
-      const data = await res.json()
-
-      closeVoiceOverlay()
-
-      if (data.transcription) {
-        addUserMsg(`🎙 ${data.transcription}`)
-      }
-
-      if (data.status === 'success' && data.message) {
-        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
-      } else if (data.status === 'pending_confirmation' && data.card) {
-        addConfirmationCard(data.card)
-      } else if (data.status === 'needs_info' && data.message) {
-        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
-      } else if (data.error) {
-        addAgentMsg('🎙 ' + data.error)
-      } else {
-        addAgentMsg('🎙 No pude procesar el audio. Intenta de nuevo o escribe tu orden.')
-      }
-    } catch(e) {
-      closeVoiceOverlay()
-      addAgentMsg('🎙 Error de voz. Escribe tu orden y funciona igual de bien 😉')
-    }
-  }
-
-  voiceMediaRec.start()
-
-  // Auto-stop after 30 seconds
-  setTimeout(() => { if (voiceRecording) stopVoice() }, 30000)
-}
-
-function stopVoice() {
-  voiceRecording = false
-  document.getElementById('btn-mic').classList.remove('recording')
-  if (voiceMediaRec && voiceMediaRec.state === 'recording') {
-    voiceMediaRec.stop()
-  } else {
-    closeVoiceOverlay()
-    if (voiceStream) voiceStream.getTracks().forEach(t => t.stop())
-  }
-}
-
-function closeVoiceOverlay() {
-  document.getElementById('voiceOverlay').classList.remove('open')
-  document.getElementById('btn-mic').classList.remove('recording')
-}
-
 </script>
-<script src="sidebar.js?v=3">
-
-// ── Voice Input ─────────────────────────────────────────────────────────────
-let voiceRecording = false
-let voiceMediaRec = null
-let voiceStream = null
-
-async function toggleVoice() {
-  if (voiceRecording) { stopVoice(); return }
-  voiceRecording = true
-  document.getElementById('btn-mic').classList.add('recording')
-
-  try {
-    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  } catch(e) {
-    showToast('No se pudo acceder al micrófono')
-    voiceRecording = false
-    document.getElementById('btn-mic').classList.remove('recording')
-    return
-  }
-
-  // Open overlay
-  const overlay = document.getElementById('voiceOverlay')
-  overlay.classList.add('open')
-  document.getElementById('voiceOverlayLabel').textContent = 'Escuchando…'
-  document.getElementById('voiceOverlayTranscript').textContent = 'Di tu orden…'
-
-  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
-    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
-    : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
-    : ''
-
-  const chunks = []
-  voiceMediaRec = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined)
-  voiceMediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
-
-  voiceMediaRec.onstop = async () => {
-    voiceStream.getTracks().forEach(t => t.stop())
-    document.getElementById('voiceOverlayLabel').textContent = 'Transcribiendo…'
-    document.getElementById('voiceOverlayTranscript').textContent = '⏳ Un momento…'
-
-    const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' })
-    const form = new FormData()
-    form.append('audio', blob, mimeType.includes('webm') ? 'voice.webm' : 'voice.mp4')
-
-    try {
-      const res = await fetch(`${API}/api/agent/voice`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: form
-      })
-      const data = await res.json()
-
-      closeVoiceOverlay()
-
-      if (data.transcription) {
-        addUserMsg(`🎙 ${data.transcription}`)
-      }
-
-      if (data.status === 'success' && data.message) {
-        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
-      } else if (data.status === 'pending_confirmation' && data.card) {
-        addConfirmationCard(data.card)
-      } else if (data.status === 'needs_info' && data.message) {
-        addAgentMsg(data.message, {diablo_emoji: data.diablo_emoji||'', diablo_label: data.diablo_label||''})
-      } else if (data.error) {
-        addAgentMsg('🎙 ' + data.error)
-      } else {
-        addAgentMsg('🎙 No pude procesar el audio. Intenta de nuevo o escribe tu orden.')
-      }
-    } catch(e) {
-      closeVoiceOverlay()
-      addAgentMsg('🎙 Error de voz. Escribe tu orden y funciona igual de bien 😉')
-    }
-  }
-
-  voiceMediaRec.start()
-
-  // Auto-stop after 30 seconds
-  setTimeout(() => { if (voiceRecording) stopVoice() }, 30000)
-}
-
-function stopVoice() {
-  voiceRecording = false
-  document.getElementById('btn-mic').classList.remove('recording')
-  if (voiceMediaRec && voiceMediaRec.state === 'recording') {
-    voiceMediaRec.stop()
-  } else {
-    closeVoiceOverlay()
-    if (voiceStream) voiceStream.getTracks().forEach(t => t.stop())
-  }
-}
-
-function closeVoiceOverlay() {
-  document.getElementById('voiceOverlay').classList.remove('open')
-  document.getElementById('btn-mic').classList.remove('recording')
-}
-
-</script>
+<script src="sidebar.js?v=3"></script>
 </body>
 </html>
