@@ -809,6 +809,81 @@
     .brain-option-check { font-size: 14px; color: var(--green); visibility: hidden; }
     .brain-option.active .brain-option-check { visibility: visible; }
 
+
+    /* ── Mic button (voice input) ── */
+    #btn-mic {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+    #btn-mic:hover { border-color: var(--accent); color: var(--accent-glow); }
+    #btn-mic.recording {
+      border-color: #f87171;
+      background: rgba(248,113,113,.15);
+      animation: mic-pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes mic-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,.4); }
+      50%      { box-shadow: 0 0 0 10px rgba(248,113,113,0); }
+    }
+
+    /* Voice overlay */
+    .voice-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.85);
+      z-index: 999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+    .voice-overlay.open { display: flex; }
+    .voice-overlay-label {
+      font-family: var(--font);
+      font-size: 1.1rem;
+      color: #a78bfa;
+      font-weight: 600;
+    }
+    .voice-overlay-circle {
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a78bfa, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      cursor: pointer;
+      animation: mic-pulse 1.2s ease-in-out infinite;
+    }
+    .voice-overlay-transcript {
+      font-family: var(--font);
+      font-size: 0.9rem;
+      color: rgba(255,255,255,.6);
+      max-width: 80%;
+      text-align: center;
+    }
+    .voice-overlay-cancel {
+      background: none;
+      border: 1px solid rgba(255,255,255,.2);
+      color: rgba(255,255,255,.5);
+      padding: 8px 24px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .voice-overlay-cancel:hover { border-color: #f87171; color: #f87171; }
+
   </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
@@ -875,11 +950,21 @@
           spellcheck="true"
         ></textarea>
       </div>
+      <button id="btn-mic" title="Hablar" aria-label="Grabar voz" onclick="toggleVoice()">🎙</button>
       <button id="btn-send" aria-label="Enviar">
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
     </div>
   </div>
+</div>
+
+
+<!-- Voice overlay -->
+<div class="voice-overlay" id="voiceOverlay">
+  <div class="voice-overlay-label" id="voiceOverlayLabel">Escuchando…</div>
+  <div class="voice-overlay-circle" onclick="stopVoice()">🎙</div>
+  <div class="voice-overlay-transcript" id="voiceOverlayTranscript">Di tu orden…</div>
+  <button class="voice-overlay-cancel" onclick="stopVoice()">Cancelar</button>
 </div>
 
 <div id="toast"></div>
@@ -1483,6 +1568,104 @@ Antes de guardar cualquier cosa, verás una tarjeta para confirmar. ✅`)
 
 scrollToBottom(false)
 inputEl.focus()
+
+
+// ── Voice Input ─────────────────────────────────────────────────────────────
+let voiceRecording = false
+let voiceMediaRec = null
+let voiceStream = null
+
+async function toggleVoice() {
+  if (voiceRecording) { stopVoice(); return }
+  voiceRecording = true
+  document.getElementById('btn-mic').classList.add('recording')
+
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  } catch(e) {
+    showToast('No se pudo acceder al micrófono')
+    voiceRecording = false
+    document.getElementById('btn-mic').classList.remove('recording')
+    return
+  }
+
+  // Open overlay
+  const overlay = document.getElementById('voiceOverlay')
+  overlay.classList.add('open')
+  document.getElementById('voiceOverlayLabel').textContent = 'Escuchando…'
+  document.getElementById('voiceOverlayTranscript').textContent = 'Di tu orden…'
+
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+    : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+    : ''
+
+  const chunks = []
+  voiceMediaRec = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined)
+  voiceMediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
+
+  voiceMediaRec.onstop = async () => {
+    voiceStream.getTracks().forEach(t => t.stop())
+    document.getElementById('voiceOverlayLabel').textContent = 'Transcribiendo…'
+    document.getElementById('voiceOverlayTranscript').textContent = '⏳ Un momento…'
+
+    const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' })
+    const form = new FormData()
+    form.append('audio', blob, mimeType.includes('webm') ? 'voice.webm' : 'voice.mp4')
+
+    try {
+      const res = await fetch(`${API}/api/agent/voice`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form
+      })
+      const data = await res.json()
+
+      closeVoiceOverlay()
+
+      if (data.transcription) {
+        addUserMsg(`🎙 ${data.transcription}`)
+      }
+
+      if (data.status === 'success' && data.message) {
+        addAgentMsg(data.message)
+      } else if (data.status === 'pending_confirmation' && data.card) {
+        addConfirmationCard(data.card)
+      } else if (data.status === 'needs_info' && data.message) {
+        addAgentMsg(data.message)
+      } else if (data.error) {
+        addAgentMsg('🎙 ' + data.error)
+      } else {
+        addAgentMsg('🎙 No pude procesar el audio. Intenta de nuevo o escribe tu orden.')
+      }
+    } catch(e) {
+      closeVoiceOverlay()
+      addAgentMsg('🎙 Error de voz. Escribe tu orden y funciona igual de bien 😉')
+    }
+  }
+
+  voiceMediaRec.start()
+
+  // Auto-stop after 30 seconds
+  setTimeout(() => { if (voiceRecording) stopVoice() }, 30000)
+}
+
+function stopVoice() {
+  voiceRecording = false
+  document.getElementById('btn-mic').classList.remove('recording')
+  if (voiceMediaRec && voiceMediaRec.state === 'recording') {
+    voiceMediaRec.stop()
+  } else {
+    closeVoiceOverlay()
+    if (voiceStream) voiceStream.getTracks().forEach(t => t.stop())
+  }
+}
+
+function closeVoiceOverlay() {
+  document.getElementById('voiceOverlay').classList.remove('open')
+  document.getElementById('btn-mic').classList.remove('recording')
+}
+
 </script>
 
 <script>
@@ -1564,6 +1747,104 @@ async function loadBrainConfig() {
 if (token) loadBrainConfig()
 updateBrainUI(currentBrain)
 
+
+
+// ── Voice Input ─────────────────────────────────────────────────────────────
+let voiceRecording = false
+let voiceMediaRec = null
+let voiceStream = null
+
+async function toggleVoice() {
+  if (voiceRecording) { stopVoice(); return }
+  voiceRecording = true
+  document.getElementById('btn-mic').classList.add('recording')
+
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  } catch(e) {
+    showToast('No se pudo acceder al micrófono')
+    voiceRecording = false
+    document.getElementById('btn-mic').classList.remove('recording')
+    return
+  }
+
+  // Open overlay
+  const overlay = document.getElementById('voiceOverlay')
+  overlay.classList.add('open')
+  document.getElementById('voiceOverlayLabel').textContent = 'Escuchando…'
+  document.getElementById('voiceOverlayTranscript').textContent = 'Di tu orden…'
+
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+    : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+    : ''
+
+  const chunks = []
+  voiceMediaRec = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined)
+  voiceMediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
+
+  voiceMediaRec.onstop = async () => {
+    voiceStream.getTracks().forEach(t => t.stop())
+    document.getElementById('voiceOverlayLabel').textContent = 'Transcribiendo…'
+    document.getElementById('voiceOverlayTranscript').textContent = '⏳ Un momento…'
+
+    const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' })
+    const form = new FormData()
+    form.append('audio', blob, mimeType.includes('webm') ? 'voice.webm' : 'voice.mp4')
+
+    try {
+      const res = await fetch(`${API}/api/agent/voice`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form
+      })
+      const data = await res.json()
+
+      closeVoiceOverlay()
+
+      if (data.transcription) {
+        addUserMsg(`🎙 ${data.transcription}`)
+      }
+
+      if (data.status === 'success' && data.message) {
+        addAgentMsg(data.message)
+      } else if (data.status === 'pending_confirmation' && data.card) {
+        addConfirmationCard(data.card)
+      } else if (data.status === 'needs_info' && data.message) {
+        addAgentMsg(data.message)
+      } else if (data.error) {
+        addAgentMsg('🎙 ' + data.error)
+      } else {
+        addAgentMsg('🎙 No pude procesar el audio. Intenta de nuevo o escribe tu orden.')
+      }
+    } catch(e) {
+      closeVoiceOverlay()
+      addAgentMsg('🎙 Error de voz. Escribe tu orden y funciona igual de bien 😉')
+    }
+  }
+
+  voiceMediaRec.start()
+
+  // Auto-stop after 30 seconds
+  setTimeout(() => { if (voiceRecording) stopVoice() }, 30000)
+}
+
+function stopVoice() {
+  voiceRecording = false
+  document.getElementById('btn-mic').classList.remove('recording')
+  if (voiceMediaRec && voiceMediaRec.state === 'recording') {
+    voiceMediaRec.stop()
+  } else {
+    closeVoiceOverlay()
+    if (voiceStream) voiceStream.getTracks().forEach(t => t.stop())
+  }
+}
+
+function closeVoiceOverlay() {
+  document.getElementById('voiceOverlay').classList.remove('open')
+  document.getElementById('btn-mic').classList.remove('recording')
+}
+
 </script>
 
 <script>
@@ -1572,7 +1853,203 @@ updateBrainUI(currentBrain)
       navigator.serviceWorker.register('/sw.js').catch(() => {})
     })
   }
+
+
+// ── Voice Input ─────────────────────────────────────────────────────────────
+let voiceRecording = false
+let voiceMediaRec = null
+let voiceStream = null
+
+async function toggleVoice() {
+  if (voiceRecording) { stopVoice(); return }
+  voiceRecording = true
+  document.getElementById('btn-mic').classList.add('recording')
+
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  } catch(e) {
+    showToast('No se pudo acceder al micrófono')
+    voiceRecording = false
+    document.getElementById('btn-mic').classList.remove('recording')
+    return
+  }
+
+  // Open overlay
+  const overlay = document.getElementById('voiceOverlay')
+  overlay.classList.add('open')
+  document.getElementById('voiceOverlayLabel').textContent = 'Escuchando…'
+  document.getElementById('voiceOverlayTranscript').textContent = 'Di tu orden…'
+
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+    : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+    : ''
+
+  const chunks = []
+  voiceMediaRec = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined)
+  voiceMediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
+
+  voiceMediaRec.onstop = async () => {
+    voiceStream.getTracks().forEach(t => t.stop())
+    document.getElementById('voiceOverlayLabel').textContent = 'Transcribiendo…'
+    document.getElementById('voiceOverlayTranscript').textContent = '⏳ Un momento…'
+
+    const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' })
+    const form = new FormData()
+    form.append('audio', blob, mimeType.includes('webm') ? 'voice.webm' : 'voice.mp4')
+
+    try {
+      const res = await fetch(`${API}/api/agent/voice`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form
+      })
+      const data = await res.json()
+
+      closeVoiceOverlay()
+
+      if (data.transcription) {
+        addUserMsg(`🎙 ${data.transcription}`)
+      }
+
+      if (data.status === 'success' && data.message) {
+        addAgentMsg(data.message)
+      } else if (data.status === 'pending_confirmation' && data.card) {
+        addConfirmationCard(data.card)
+      } else if (data.status === 'needs_info' && data.message) {
+        addAgentMsg(data.message)
+      } else if (data.error) {
+        addAgentMsg('🎙 ' + data.error)
+      } else {
+        addAgentMsg('🎙 No pude procesar el audio. Intenta de nuevo o escribe tu orden.')
+      }
+    } catch(e) {
+      closeVoiceOverlay()
+      addAgentMsg('🎙 Error de voz. Escribe tu orden y funciona igual de bien 😉')
+    }
+  }
+
+  voiceMediaRec.start()
+
+  // Auto-stop after 30 seconds
+  setTimeout(() => { if (voiceRecording) stopVoice() }, 30000)
+}
+
+function stopVoice() {
+  voiceRecording = false
+  document.getElementById('btn-mic').classList.remove('recording')
+  if (voiceMediaRec && voiceMediaRec.state === 'recording') {
+    voiceMediaRec.stop()
+  } else {
+    closeVoiceOverlay()
+    if (voiceStream) voiceStream.getTracks().forEach(t => t.stop())
+  }
+}
+
+function closeVoiceOverlay() {
+  document.getElementById('voiceOverlay').classList.remove('open')
+  document.getElementById('btn-mic').classList.remove('recording')
+}
+
 </script>
-<script src="sidebar.js"></script>
+<script src="sidebar.js">
+
+// ── Voice Input ─────────────────────────────────────────────────────────────
+let voiceRecording = false
+let voiceMediaRec = null
+let voiceStream = null
+
+async function toggleVoice() {
+  if (voiceRecording) { stopVoice(); return }
+  voiceRecording = true
+  document.getElementById('btn-mic').classList.add('recording')
+
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  } catch(e) {
+    showToast('No se pudo acceder al micrófono')
+    voiceRecording = false
+    document.getElementById('btn-mic').classList.remove('recording')
+    return
+  }
+
+  // Open overlay
+  const overlay = document.getElementById('voiceOverlay')
+  overlay.classList.add('open')
+  document.getElementById('voiceOverlayLabel').textContent = 'Escuchando…'
+  document.getElementById('voiceOverlayTranscript').textContent = 'Di tu orden…'
+
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+    : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+    : ''
+
+  const chunks = []
+  voiceMediaRec = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined)
+  voiceMediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
+
+  voiceMediaRec.onstop = async () => {
+    voiceStream.getTracks().forEach(t => t.stop())
+    document.getElementById('voiceOverlayLabel').textContent = 'Transcribiendo…'
+    document.getElementById('voiceOverlayTranscript').textContent = '⏳ Un momento…'
+
+    const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' })
+    const form = new FormData()
+    form.append('audio', blob, mimeType.includes('webm') ? 'voice.webm' : 'voice.mp4')
+
+    try {
+      const res = await fetch(`${API}/api/agent/voice`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form
+      })
+      const data = await res.json()
+
+      closeVoiceOverlay()
+
+      if (data.transcription) {
+        addUserMsg(`🎙 ${data.transcription}`)
+      }
+
+      if (data.status === 'success' && data.message) {
+        addAgentMsg(data.message)
+      } else if (data.status === 'pending_confirmation' && data.card) {
+        addConfirmationCard(data.card)
+      } else if (data.status === 'needs_info' && data.message) {
+        addAgentMsg(data.message)
+      } else if (data.error) {
+        addAgentMsg('🎙 ' + data.error)
+      } else {
+        addAgentMsg('🎙 No pude procesar el audio. Intenta de nuevo o escribe tu orden.')
+      }
+    } catch(e) {
+      closeVoiceOverlay()
+      addAgentMsg('🎙 Error de voz. Escribe tu orden y funciona igual de bien 😉')
+    }
+  }
+
+  voiceMediaRec.start()
+
+  // Auto-stop after 30 seconds
+  setTimeout(() => { if (voiceRecording) stopVoice() }, 30000)
+}
+
+function stopVoice() {
+  voiceRecording = false
+  document.getElementById('btn-mic').classList.remove('recording')
+  if (voiceMediaRec && voiceMediaRec.state === 'recording') {
+    voiceMediaRec.stop()
+  } else {
+    closeVoiceOverlay()
+    if (voiceStream) voiceStream.getTracks().forEach(t => t.stop())
+  }
+}
+
+function closeVoiceOverlay() {
+  document.getElementById('voiceOverlay').classList.remove('open')
+  document.getElementById('btn-mic').classList.remove('recording')
+}
+
+</script>
 </body>
 </html>
