@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diabolus CRM — Importar Datos</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <style>
+    .main-container { display: flex; min-height: 100vh; background-color: var(--bg-primary); }
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border-right: 1px solid var(--border-color); padding: 2rem 0; display: flex; flex-direction: column; position: fixed; height: 100vh; left: 0; top: 0; overflow-y: auto; }
+    .sidebar-header { padding: 0 1.5rem 2rem; text-align: center; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+    .sidebar-header .logo { font-size: 2rem; margin-bottom: 0.5rem; }
+    .sidebar-header h3 { margin: 0; font-size: 1.125rem; }
+    .sidebar-nav { flex: 1; padding: 0 1rem; }
+    .nav-item { padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; transition: all 0.3s ease; color: var(--text-secondary); text-decoration: none; font-weight: 600; }
+    .nav-item:hover { background-color: var(--bg-tertiary); color: var(--text-primary); }
+    .nav-item.active { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; box-shadow: 0 0 15px rgba(139, 21, 56, 0.3); }
+    .nav-item span { font-size: 1.25rem; }
+    .sidebar-footer { padding: 1.5rem; border-top: 1px solid var(--border-color); }
+    .main-content { margin-left: 280px; flex: 1; padding: 2rem; overflow-y: auto; }
+    .nav-section-label { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); cursor: pointer; user-select: none; }
+    .nav-group-items { overflow: hidden; max-height: 500px; transition: max-height 0.3s ease; }
+    .nav-group-items.collapsed { max-height: 0; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 1rem; }
+    .header h1 { margin: 0; }
+
+    /* Import specific */
+    .import-section { max-width: 800px; }
+    .type-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+    .type-card { background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; cursor: pointer; text-align: center; transition: all 0.3s ease; }
+    .type-card:hover { border-color: var(--primary); }
+    .type-card.selected { border-color: var(--primary); background: rgba(139,92,246,0.08); box-shadow: 0 0 20px rgba(139,92,246,0.2); }
+    .type-card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .type-card h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
+    .type-card p { margin: 0; font-size: 0.85rem; color: var(--text-tertiary); }
+
+    .drop-zone { border: 2px dashed var(--border-color); border-radius: 1rem; padding: 3rem 2rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--bg-secondary); margin-bottom: 1.5rem; }
+    .drop-zone:hover, .drop-zone.dragover { border-color: var(--primary); background: rgba(139,92,246,0.05); }
+    .drop-zone .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .drop-zone h3 { margin: 0 0 0.5rem; }
+    .drop-zone p { margin: 0; color: var(--text-tertiary); font-size: 0.85rem; }
+    .drop-zone input { display: none; }
+
+    .template-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: 600; cursor: pointer; font-size: 0.9rem; margin-bottom: 1.5rem; text-decoration: none; }
+    .template-link:hover { text-decoration: underline; }
+
+    /* Preview table */
+    .preview-section { margin-top: 1.5rem; }
+    .preview-table { width: 100%; border-collapse: collapse; background: var(--bg-secondary); border-radius: 0.75rem; overflow: hidden; font-size: 0.85rem; }
+    .preview-table th { background: var(--bg-tertiary); padding: 0.75rem; text-align: left; font-weight: 700; border-bottom: 1px solid var(--border-color); }
+    .preview-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border-color); }
+    .preview-table tr:last-child td { border-bottom: none; }
+
+    /* Stats */
+    .import-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+    .import-stat { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1rem; text-align: center; }
+    .import-stat .number { font-size: 1.75rem; font-weight: 700; }
+    .import-stat .label { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.25rem; }
+    .import-stat.valid .number { color: #22c55e; }
+    .import-stat.errors .number { color: #ef4444; }
+    .import-stat.skipped .number { color: #f59e0b; }
+
+    /* Error list */
+    .error-list { max-height: 200px; overflow-y: auto; margin: 1rem 0; }
+    .error-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.8rem; border-bottom: 1px solid var(--border-color); }
+    .error-item .row-num { background: rgba(239,68,68,0.15); color: #ef4444; padding: 0.15rem 0.5rem; border-radius: 1rem; font-weight: 700; font-size: 0.7rem; white-space: nowrap; }
+    .skip-item .row-num { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+    /* Buttons */
+    .btn-import { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; border: none; padding: 1rem 2rem; border-radius: 0.75rem; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.3s; }
+    .btn-import:hover { opacity: 0.9; box-shadow: 0 0 20px rgba(139,92,246,0.3); }
+    .btn-import:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+
+    /* Result */
+    .result-box { padding: 1.5rem; border-radius: 1rem; margin-top: 1.5rem; text-align: center; }
+    .result-box.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); }
+    .result-box.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+    .result-box h2 { margin: 0 0 0.5rem; }
+    .result-box p { margin: 0; color: var(--text-secondary); }
+
+    /* Progress */
+    .progress-bar { width: 100%; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; margin: 1rem 0; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #22c55e); border-radius: 3px; transition: width 0.5s ease; width: 0%; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 1rem; }
+      .type-selector { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
+</head>
+<body>
+  <div class="main-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">😈</div>
+        <h3>Diabolus</h3>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('mando')">
+            <span>Mando</span><span class="nav-chevron" id="chv-mando">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-mando">
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente IA</a>
+          </div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('negocio')">
+            <span>Negocio</span><span class="nav-chevron" id="chv-negocio">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-negocio">
+            <a href="invoices.html" class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+            <a href="clients.html" class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+            <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+            <a href="catalogo.html" class="nav-item"><span class="nav-icon">📦</span> Catálogo</a>
+            <a href="importar.html" class="nav-item active"><span class="nav-icon">📥</span> Importar</a>
+          </div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('inteligencia')">
+            <span>Inteligencia</span><span class="nav-chevron" id="chv-inteligencia">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-inteligencia">
+            <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+            <a href="cazador.html" class="nav-item"><span class="nav-icon">🦅</span> Cazador</a>
+            <a href="pacto.html?v=2" class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+          </div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('modulos')">
+            <span>Módulos</span><span class="nav-chevron" id="chv-modulos">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-modulos">
+            <a href="documents.html" class="nav-item"><span class="nav-icon">✍️</span> Documentos</a>
+            <a href="legal.html" class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
+          </div>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary" style="width:100%" onclick="logout()">Cerrar Sesión</button>
+        <p style="font-size:0.75rem;color:var(--text-tertiary);margin-top:1rem;text-align:center">v1.0 — Premium UI ✨</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="import-section">
+        <div class="header">
+          <h1>📥 Importar Datos</h1>
+        </div>
+
+        <!-- Step 1: Type selection -->
+        <div id="step1">
+          <h2 style="margin-bottom:1rem;font-size:1.1rem;color:var(--text-secondary)">¿Qué quieres importar?</h2>
+          <div class="type-selector">
+            <div class="type-card" id="typeProducts" onclick="selectType('products')">
+              <div class="icon">📦</div>
+              <h3>Productos y Servicios</h3>
+              <p>Importa tu catálogo completo desde CSV</p>
+            </div>
+            <div class="type-card" id="typeClients" onclick="selectType('clients')">
+              <div class="icon">👥</div>
+              <h3>Clientes</h3>
+              <p>Importa tu cartera de clientes desde CSV</p>
+            </div>
+          </div>
+
+          <div id="templateArea" style="display:none">
+            <a class="template-link" id="templateLink" onclick="downloadTemplate()">
+              📄 Descargar plantilla CSV de ejemplo
+            </a>
+            <p style="font-size:0.8rem;color:var(--text-tertiary);margin-bottom:1.5rem">
+              Usa la plantilla o exporta desde tu aplicación actual. Aceptamos CSV con separador coma (,) o punto y coma (;).
+            </p>
+
+            <!-- Drop zone -->
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+                 ondragover="event.preventDefault(); this.classList.add('dragover')"
+                 ondragleave="this.classList.remove('dragover')"
+                 ondrop="handleDrop(event)">
+              <div class="icon">📂</div>
+              <h3>Arrastra tu archivo CSV aquí</h3>
+              <p>o haz clic para seleccionar</p>
+              <input type="file" id="fileInput" accept=".csv,.txt" onchange="handleFile(this.files[0])">
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Preview -->
+        <div id="step2" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <h2 style="margin:0;font-size:1.1rem">Vista previa de importación</h2>
+            <button class="btn-secondary" onclick="resetImport()">← Volver</button>
+          </div>
+
+          <div class="import-stats">
+            <div class="import-stat valid">
+              <div class="number" id="statValid">0</div>
+              <div class="label">✅ Válidos</div>
+            </div>
+            <div class="import-stat errors">
+              <div class="number" id="statErrors">0</div>
+              <div class="label">❌ Con errores</div>
+            </div>
+            <div class="import-stat skipped">
+              <div class="number" id="statSkipped">0</div>
+              <div class="label">⏭️ Duplicados</div>
+            </div>
+            <div class="import-stat">
+              <div class="number" id="statTotal">0</div>
+              <div class="label">📊 Total filas</div>
+            </div>
+          </div>
+
+          <!-- Preview table -->
+          <div class="preview-section" id="previewTable"></div>
+
+          <!-- Errors -->
+          <div id="errorsSection" style="display:none">
+            <h3 style="font-size:0.95rem;margin:1rem 0 0.5rem">❌ Errores encontrados</h3>
+            <div class="error-list" id="errorList"></div>
+          </div>
+
+          <!-- Skipped -->
+          <div id="skippedSection" style="display:none">
+            <h3 style="font-size:0.95rem;margin:1rem 0 0.5rem">⏭️ Duplicados (se omitirán)</h3>
+            <div class="error-list" id="skippedList"></div>
+          </div>
+
+          <!-- Import button -->
+          <div style="margin-top:1.5rem">
+            <button class="btn-import" id="importBtn" onclick="executeImport()">
+              🔥 Importar datos
+            </button>
+            <div class="progress-bar" id="progressBar" style="display:none">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Result -->
+        <div id="step3" style="display:none"></div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="sidebar.js"></script>
+  <script>
+    const API = 'https://diabolus-crm-api.vercel.app'
+    let selectedType = null
+    let csvContent = null
+    let previewData = null
+
+    function getAuth() {
+      try { return JSON.parse(localStorage.getItem('diabolus_auth') || '{}') } catch { return {} }
+    }
+    function headers() {
+      const auth = getAuth()
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (auth.token || '') }
+    }
+
+    // Auth check
+    ;(function() {
+      const auth = getAuth()
+      if (!auth.token) { window.location.href = 'index-login.html'; return }
+    })()
+
+    function selectType(type) {
+      selectedType = type
+      document.getElementById('typeProducts').classList.toggle('selected', type === 'products')
+      document.getElementById('typeClients').classList.toggle('selected', type === 'clients')
+      document.getElementById('templateArea').style.display = 'block'
+    }
+
+    function downloadTemplate() {
+      if (!selectedType) return
+      window.open(API + '/api/import/template/' + selectedType, '_blank')
+    }
+
+    function handleDrop(e) {
+      e.preventDefault()
+      e.currentTarget.classList.remove('dragover')
+      const file = e.dataTransfer.files[0]
+      if (file) handleFile(file)
+    }
+
+    function handleFile(file) {
+      if (!file) return
+      if (!selectedType) { alert('Primero selecciona si importas productos o clientes'); return }
+
+      const reader = new FileReader()
+      reader.onload = async function(e) {
+        csvContent = e.target.result
+        await runDryRun()
+      }
+      reader.readAsText(file, 'UTF-8')
+    }
+
+    async function runDryRun() {
+      try {
+        const res = await fetch(API + '/api/import/' + selectedType, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ csv: csvContent, dry_run: true })
+        })
+
+        if (res.status === 401) { window.location.href = 'index-login.html'; return }
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          alert(data.error || 'Error procesando archivo')
+          return
+        }
+
+        previewData = data
+        showPreview(data)
+      } catch (err) {
+        alert('Error de conexión: ' + err.message)
+      }
+    }
+
+    function showPreview(data) {
+      document.getElementById('step1').style.display = 'none'
+      document.getElementById('step2').style.display = 'block'
+      document.getElementById('step3').style.display = 'none'
+
+      document.getElementById('statValid').textContent = data.valid
+      document.getElementById('statErrors').textContent = data.errors.length
+      document.getElementById('statSkipped').textContent = data.skipped.length
+      document.getElementById('statTotal').textContent = data.total_rows
+
+      // Preview table
+      const preview = data.preview || []
+      if (preview.length > 0) {
+        const keys = Object.keys(preview[0]).filter(k => k !== 'salon_id')
+        const labelMap = {
+          name: 'Nombre', price: 'Precio', sku: 'Ref', category: 'Categoría',
+          iva_rate: 'IVA', unit: 'Unidad', description: 'Descripción',
+          phone: 'Teléfono', email: 'Email', nif: 'NIF', address: 'Dirección', notes: 'Notas'
+        }
+        let html = '<table class="preview-table"><thead><tr>'
+        keys.forEach(k => { html += '<th>' + (labelMap[k] || k) + '</th>' })
+        html += '</tr></thead><tbody>'
+        preview.forEach(row => {
+          html += '<tr>'
+          keys.forEach(k => {
+            let val = row[k]
+            if (val === null || val === undefined) val = ''
+            if (k === 'price') val = Number(val).toFixed(2) + ' €'
+            if (k === 'iva_rate') val = val + '%'
+            html += '<td>' + esc(String(val)) + '</td>'
+          })
+          html += '</tr>'
+        })
+        if (data.valid > 10) {
+          html += '<tr><td colspan="' + keys.length + '" style="text-align:center;color:var(--text-tertiary);font-style:italic">... y ' + (data.valid - 10) + ' más</td></tr>'
+        }
+        html += '</tbody></table>'
+        document.getElementById('previewTable').innerHTML = html
+      }
+
+      // Errors
+      if (data.errors.length > 0) {
+        document.getElementById('errorsSection').style.display = 'block'
+        document.getElementById('errorList').innerHTML = data.errors.map(e =>
+          '<div class="error-item"><span class="row-num">Fila ' + e.row + '</span> <strong>' + esc(e.field) + ':</strong> ' + esc(e.message) + '</div>'
+        ).join('')
+      } else {
+        document.getElementById('errorsSection').style.display = 'none'
+      }
+
+      // Skipped
+      if (data.skipped.length > 0) {
+        document.getElementById('skippedSection').style.display = 'block'
+        document.getElementById('skippedList').innerHTML = data.skipped.map(s =>
+          '<div class="error-item skip-item"><span class="row-num">Fila ' + s.row + '</span> ' + esc(s.reason) + '</div>'
+        ).join('')
+      } else {
+        document.getElementById('skippedSection').style.display = 'none'
+      }
+
+      // Disable button if no valid rows
+      const btn = document.getElementById('importBtn')
+      if (data.valid === 0) {
+        btn.disabled = true
+        btn.textContent = 'Sin datos válidos para importar'
+      } else {
+        btn.disabled = false
+        btn.textContent = '🔥 Importar ' + data.valid + ' ' + (selectedType === 'products' ? 'productos' : 'clientes')
+      }
+    }
+
+    async function executeImport() {
+      const btn = document.getElementById('importBtn')
+      const validCount = previewData?.valid || 0
+
+      if (!confirm('¿Importar ' + validCount + ' ' + (selectedType === 'products' ? 'productos' : 'clientes') + '?\n\nEsta acción no se puede deshacer fácilmente.')) return
+
+      btn.disabled = true
+      btn.textContent = 'Importando...'
+      document.getElementById('progressBar').style.display = 'block'
+      document.getElementById('progressFill').style.width = '60%'
+
+      try {
+        const res = await fetch(API + '/api/import/' + selectedType, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ csv: csvContent, dry_run: false })
+        })
+
+        document.getElementById('progressFill').style.width = '100%'
+
+        const data = await res.json()
+        document.getElementById('step2').style.display = 'none'
+
+        if (data.ok) {
+          const typeLabel = selectedType === 'products' ? 'productos' : 'clientes'
+          const targetPage = selectedType === 'products' ? 'catalogo.html' : 'clients.html'
+          document.getElementById('step3').innerHTML =
+            '<div class="result-box success">' +
+              '<h2>✅ ¡Importación completada!</h2>' +
+              '<p style="font-size:1.5rem;font-weight:700;margin:1rem 0">' + data.imported + ' ' + typeLabel + ' importados</p>' +
+              (data.errors.length > 0 ? '<p>' + data.errors.length + ' filas con errores (omitidas)</p>' : '') +
+              (data.skipped.length > 0 ? '<p>' + data.skipped.length + ' duplicados (omitidos)</p>' : '') +
+              '<div style="margin-top:1.5rem;display:flex;gap:1rem;justify-content:center">' +
+                '<a href="' + targetPage + '" class="btn-import" style="max-width:200px;text-decoration:none;display:inline-block;text-align:center">Ver ' + typeLabel + '</a>' +
+                '<button class="btn-secondary" onclick="resetImport()">Importar más</button>' +
+              '</div>' +
+            '</div>'
+          document.getElementById('step3').style.display = 'block'
+        } else {
+          document.getElementById('step3').innerHTML =
+            '<div class="result-box error">' +
+              '<h2>❌ Error en la importación</h2>' +
+              '<p>' + esc(data.error || 'Error desconocido') + '</p>' +
+              (data.inserted_before_error ? '<p>Se insertaron ' + data.inserted_before_error + ' antes del error.</p>' : '') +
+              '<button class="btn-secondary" style="margin-top:1rem" onclick="resetImport()">Intentar de nuevo</button>' +
+            '</div>'
+          document.getElementById('step3').style.display = 'block'
+        }
+      } catch (err) {
+        btn.disabled = false
+        btn.textContent = '🔥 Importar datos'
+        alert('Error de conexión: ' + err.message)
+      }
+    }
+
+    function resetImport() {
+      selectedType = null
+      csvContent = null
+      previewData = null
+      document.getElementById('step1').style.display = 'block'
+      document.getElementById('step2').style.display = 'none'
+      document.getElementById('step3').style.display = 'none'
+      document.getElementById('templateArea').style.display = 'none'
+      document.getElementById('typeProducts').classList.remove('selected')
+      document.getElementById('typeClients').classList.remove('selected')
+      document.getElementById('fileInput').value = ''
+      document.getElementById('progressBar').style.display = 'none'
+      document.getElementById('progressFill').style.width = '0%'
+    }
+
+    function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;') }
+    function logout() { localStorage.removeItem('diabolus_auth'); window.location.href = 'index-login.html' }
+    function toggleNav(id) {
+      const el = document.getElementById('items-' + id)
+      const chv = document.getElementById('chv-' + id)
+      if (el) { el.classList.toggle('collapsed'); if (chv) chv.textContent = el.classList.contains('collapsed') ? '▸' : '▾' }
+    }
+  </script>
+</body>
+</html>
