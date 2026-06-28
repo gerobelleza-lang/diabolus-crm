@@ -126,6 +126,33 @@
     .toast.success { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; }
     .toast.error { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; }
     @media (max-width: 768px) { .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); } .main-content { margin-left: 0; } .form-row { grid-template-columns: 1fr; } }
+
+    /* FICHA 360 TABS */
+    .ficha-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border-color); margin-bottom: 1.25rem; }
+    .ficha-tab { padding: 0.625rem 1rem; font-size: 0.8rem; font-weight: 700; color: var(--text-tertiary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; }
+    .ficha-tab:hover { color: var(--text-secondary); }
+    .ficha-tab.active { color: #8B5CF6; border-bottom-color: #8B5CF6; }
+    .ficha-section { display: none; }
+    .ficha-section.active { display: block; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .summary-card { background: var(--bg-tertiary); border-radius: 0.625rem; padding: 0.875rem; }
+    .summary-card .sc-label { font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 0.25rem; }
+    .summary-card .sc-value { font-size: 1.125rem; font-weight: 700; }
+    .summary-card .sc-value.green { color: #10b981; }
+    .summary-card .sc-value.amber { color: #f59e0b; }
+    .summary-card .sc-value.red { color: #ef4444; }
+    .timeline-item { display: flex; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 0.4rem; flex-shrink: 0; }
+    .timeline-dot.income { background: #10b981; }
+    .timeline-dot.expense { background: #ef4444; }
+    .timeline-dot.reminder { background: #8B5CF6; }
+    .timeline-dot.action { background: #3b82f6; }
+    .timeline-body { flex: 1; min-width: 0; }
+    .timeline-body .tl-title { font-size: 0.875rem; font-weight: 600; }
+    .timeline-body .tl-sub { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.125rem; }
+    .detail-panel { max-width: 560px; }
+    .ficha-empty { text-align: center; padding: 2rem; color: var(--text-tertiary); font-size: 0.875rem; }
   </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
@@ -165,14 +192,51 @@
       </div>
       <p style="margin:0;font-size:0.75rem;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%" id="salonName">Cargando...</p>
     </div>
-    <nav class="sidebar-nav">
-      <a href="dashboard.html" class="nav-item"><span>📊</span>Dashboard</a>
-      <a href="chat.html" class="nav-item"><span>💬</span>Agente</a>
-      <a href="invoices.html" class="nav-item"><span>📄</span>Facturas</a>
-      <a href="clients.html" class="nav-item active"><span>👥</span>Clientes</a>
-      <a href="transactions.html" class="nav-item"><span>💰</span>Transacciones</a>
-      <a href="reports.html" class="nav-item"><span>📈</span>Reportes</a>
-    </nav>
+          <nav class="sidebar-nav">
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('mando')">
+            <span>Mando</span><span class="nav-chevron" id="chv-mando">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-mando">
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente IA</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('negocio')">
+            <span>Negocio</span><span class="nav-chevron" id="chv-negocio">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-negocio">
+            <a href="invoices.html" class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+            <a href="clients.html" class="nav-item active"><span class="nav-icon">👥</span> Clientes</a>
+            <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('inteligencia')">
+            <span>Inteligencia</span><span class="nav-chevron" id="chv-inteligencia">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-inteligencia">
+            <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+            <a href="cazador.html" class="nav-item"><span class="nav-icon">🦅</span> Cazador</a>
+            <a href="pacto.html?v=2" class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-section-label" onclick="toggleNav('modulos')">
+            <span>Módulos</span><span class="nav-chevron" id="chv-modulos">▾</span>
+          </div>
+          <div class="nav-group-items" id="items-modulos">
+            <a href="documents.html" class="nav-item"><span class="nav-icon">✍️</span> Documentos</a>
+            <a href="legal.html" class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
+          </div>
+        </div>
+
+      </nav>
     <div class="sidebar-footer">
       <button class="btn btn-secondary" style="width:100%" onclick="logout()">Cerrar Sesión</button>
       <p style="font-size:0.75rem;color:var(--text-tertiary);margin-top:1rem;text-align:center">v1.0 — Premium UI ✨</p>
@@ -468,50 +532,157 @@ function renderTable(clients) {
     </table>`;
 }
 
-function openDetail(clientId) {
-  const client = allClients.find(c => c.id === clientId);
-  if (!client) return;
-  const invoices = getClientInvoices(clientId);
-  const totalFact = invoices.reduce((s, i) => s + (i.total || 0), 0);
-  const debt = getClientDebt(clientId);
-
-  document.getElementById('detailTitle').querySelector('span').textContent = `👤 ${client.name}`;
-
-  const invRows = invoices.length
-    ? invoices.map(i => {
-        const badgeMap = { pending: 'badge-pending', paid: 'badge-paid', overdue: 'badge-overdue' };
-        return `<div class="detail-invoice-row">
-          <div>
-            <div style="font-weight:700;font-size:0.875rem">${i.invoice_number || i.id?.slice(0,8)}</div>
-            <div style="font-size:0.75rem;color:var(--text-tertiary)">${fmtDate(i.due_date)}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:0.75rem">
-            <span style="font-weight:700">${fmt(i.total)}</span>
-            <span class="badge ${badgeMap[i.status] || 'badge-pending'}">${i.status === 'paid' ? '✅' : i.status === 'overdue' ? '🔴' : '⏳'}</span>
-          </div>
-        </div>`;
-      }).join('')
-    : '<p style="color:var(--text-tertiary);text-align:center;padding:1rem">Sin facturas aún</p>';
-
-  document.getElementById('detailContent').innerHTML = `
-    <div style="background:var(--bg-tertiary);border-radius:0.75rem;padding:1rem;margin-bottom:1.5rem">
-      <div class="info-row"><span class="lbl">Email</span><span class="val">${client.email || '—'}</span></div>
-      <div class="info-row"><span class="lbl">Teléfono</span><span class="val">${client.phone || '—'}</span></div>
-      <div class="info-row"><span class="lbl">NIF</span><span class="val">${client.nif || '—'}</span></div>
-      <div class="info-row"><span class="lbl">Dirección</span><span class="val">${client.address || '—'}</span></div>
-      <div class="info-row"><span class="lbl">Total facturado</span><span class="val">${fmt(totalFact)}</span></div>
-      <div class="info-row"><span class="lbl">Deuda pendiente</span><span class="val" style="color:${debt>0?'#f59e0b':'#10b981'}">${fmt(debt)}</span></div>
-    </div>
-    <h3 style="margin:0 0 1rem">📄 Facturas (${invoices.length})</h3>
-    <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:0.75rem;overflow:hidden">
-      ${invRows}
-    </div>
-    <div style="margin-top:1rem;display:flex;gap:0.75rem">
-      <a href="invoices.html" class="btn btn-primary" style="flex:1;text-align:center;text-decoration:none">+ Nueva Factura</a>
-      <button class="btn btn-secondary" onclick="openEditModal('${clientId}')">✏️ Editar</button>
-    </div>`;
-
+async function openDetail(clientId) {
+  const detailContent = document.getElementById('detailContent');
+  document.getElementById('detailTitle').querySelector('span').textContent = '⏳ Cargando ficha...';
+  detailContent.innerHTML = '<div class="loading-state">⏳ Cargando ficha 360°...</div>';
   document.getElementById('detailOverlay').classList.add('open');
+
+  try {
+    const res = await apiGet(`/api/clients/${clientId}/ficha`);
+    if (!res || res.error) {
+      detailContent.innerHTML = '<div class="ficha-empty">❌ Error cargando ficha</div>';
+      return;
+    }
+
+    const { client, invoices, transactions, auditLog, summary } = res;
+    document.getElementById('detailTitle').querySelector('span').textContent = `👤 ${client.name}`;
+
+    // Build tabs
+    const tabsHtml = `
+      <div class="ficha-tabs">
+        <button class="ficha-tab active" onclick="switchFichaTab('resumen', this)">📊 Resumen</button>
+        <button class="ficha-tab" onclick="switchFichaTab('facturas', this)">📄 Facturas (${invoices.length})</button>
+        <button class="ficha-tab" onclick="switchFichaTab('pagos', this)">💰 Pagos (${transactions.length})</button>
+        <button class="ficha-tab" onclick="switchFichaTab('recordatorios', this)">🔔 Historial (${auditLog.length})</button>
+      </div>`;
+
+    // RESUMEN tab
+    const debtColor = summary.deudaPendiente > 0 ? 'amber' : 'green';
+    const resumenHtml = `
+      <div class="ficha-section active" id="tab-resumen">
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="sc-label">💰 Total facturado</div>
+            <div class="sc-value">${fmt(summary.totalFacturado)}</div>
+          </div>
+          <div class="summary-card">
+            <div class="sc-label">✅ Total cobrado</div>
+            <div class="sc-value green">${fmt(summary.totalCobrado)}</div>
+          </div>
+          <div class="summary-card">
+            <div class="sc-label">⏳ Deuda pendiente</div>
+            <div class="sc-value ${debtColor}">${fmt(summary.deudaPendiente)}</div>
+          </div>
+          <div class="summary-card">
+            <div class="sc-label">📄 Facturas</div>
+            <div class="sc-value">${summary.facturas}</div>
+          </div>
+          <div class="summary-card">
+            <div class="sc-label">💳 Pagos registrados</div>
+            <div class="sc-value">${summary.pagos}</div>
+          </div>
+          <div class="summary-card">
+            <div class="sc-label">🔔 Recordatorios</div>
+            <div class="sc-value">${summary.recordatoriosEnviados}</div>
+          </div>
+        </div>
+        <div style="background:var(--bg-tertiary);border-radius:0.75rem;padding:1rem;margin-bottom:1rem">
+          <div class="info-row"><span class="lbl">Email</span><span class="val">${client.email || '—'}</span></div>
+          <div class="info-row"><span class="lbl">Teléfono</span><span class="val">${client.phone || '—'}</span></div>
+          <div class="info-row"><span class="lbl">NIF</span><span class="val">${client.nif || '—'}</span></div>
+          <div class="info-row"><span class="lbl">Dirección</span><span class="val">${client.address || '—'}</span></div>
+          <div class="info-row"><span class="lbl">Cliente desde</span><span class="val">${fmtDate(client.created_at)}</span></div>
+          <div class="info-row"><span class="lbl">Última actividad</span><span class="val">${fmtDate(summary.ultimaActividad)}</span></div>
+        </div>
+        <div style="display:flex;gap:0.75rem">
+          <a href="invoices.html" class="btn btn-primary" style="flex:1;text-align:center;text-decoration:none">+ Nueva Factura</a>
+          <button class="btn btn-secondary" onclick="openEditModal('${clientId}')">✏️ Editar</button>
+        </div>
+      </div>`;
+
+    // FACTURAS tab
+    const invRows = invoices.length
+      ? invoices.map(i => {
+          const badgeMap = { pending: 'badge-pending', paid: 'badge-paid', overdue: 'badge-overdue', sent: 'badge-pending', draft: 'badge-pending', cancelled: 'badge-overdue' };
+          const iconMap = { paid: '✅', overdue: '🔴', cancelled: '❌' };
+          return `<div class="detail-invoice-row">
+            <div>
+              <div style="font-weight:700;font-size:0.875rem">${i.number || i.id?.slice(0,8) || '—'}</div>
+              <div style="font-size:0.75rem;color:var(--text-tertiary)">${i.description || ''}</div>
+              <div style="font-size:0.7rem;color:var(--text-tertiary)">Vence: ${fmtDate(i.due_date)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem">
+              <span style="font-weight:700">${fmt(i.total)}</span>
+              <span class="badge ${badgeMap[i.status] || 'badge-pending'}">${iconMap[i.status] || '⏳'} ${i.status}</span>
+            </div>
+          </div>`;
+        }).join('')
+      : '<div class="ficha-empty">📭 Sin facturas aún</div>';
+
+    const facturasHtml = `
+      <div class="ficha-section" id="tab-facturas">
+        <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:0.75rem;overflow:hidden">
+          ${invRows}
+        </div>
+      </div>`;
+
+    // PAGOS tab
+    const pagosRows = transactions.length
+      ? transactions.map(t => `
+          <div class="timeline-item">
+            <div class="timeline-dot ${t.type}"></div>
+            <div class="timeline-body">
+              <div class="tl-title">${t.concept || t.category || 'Movimiento'}</div>
+              <div class="tl-sub">${fmtDate(t.date)} · ${t.category || ''} ${t.status ? '· ' + t.status : ''}</div>
+            </div>
+            <div style="font-weight:700;font-size:0.875rem;color:${t.type === 'income' ? '#10b981' : '#ef4444'};white-space:nowrap">
+              ${t.type === 'income' ? '+' : '-'}${fmt(Math.abs(t.amount))}
+            </div>
+          </div>`).join('')
+      : '<div class="ficha-empty">📭 Sin movimientos registrados</div>';
+
+    const pagosHtml = `
+      <div class="ficha-section" id="tab-pagos">
+        ${pagosRows}
+      </div>`;
+
+    // RECORDATORIOS tab (audit log timeline)
+    const auditRows = auditLog.length
+      ? auditLog.map(a => {
+          const toolIcons = { send_reminder: '🔔', cazador_reminder: '🦅', create_invoice: '📄', confirm_action: '✅' };
+          const icon = toolIcons[a.tool_name] || '📋';
+          const toolLabel = (a.tool_name || '').replace(/_/g, ' ');
+          const detail = a.payload?.message || a.payload?.description || a.result?.message || JSON.stringify(a.payload || {}).slice(0, 80);
+          return `<div class="timeline-item">
+            <div class="timeline-dot ${a.tool_name?.includes('reminder') ? 'reminder' : 'action'}"></div>
+            <div class="timeline-body">
+              <div class="tl-title">${icon} ${toolLabel}</div>
+              <div class="tl-sub">${fmtDate(a.created_at)} · ${a.confirmed ? '✅ confirmado' : '⏳ sin confirmar'}</div>
+              <div style="font-size:0.75rem;color:var(--text-tertiary);margin-top:0.25rem;word-break:break-word">${detail}</div>
+            </div>
+          </div>`;
+        }).join('')
+      : '<div class="ficha-empty">📭 Sin historial de acciones</div>';
+
+    const recordatoriosHtml = `
+      <div class="ficha-section" id="tab-recordatorios">
+        ${auditRows}
+      </div>`;
+
+    detailContent.innerHTML = tabsHtml + resumenHtml + facturasHtml + pagosHtml + recordatoriosHtml;
+
+  } catch(e) {
+    detailContent.innerHTML = '<div class="ficha-empty">❌ Error de conexión</div>';
+  }
+}
+
+function switchFichaTab(tabName, btn) {
+  document.querySelectorAll('.ficha-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.ficha-section').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  const section = document.getElementById('tab-' + tabName);
+  if (section) section.classList.add('active');
 }
 
 function closeDetail(e) {
@@ -642,6 +813,5 @@ loadMe();
       });
     }
   </script>
-<script src="sidebar.js"></script>
 </body>
 </html>
