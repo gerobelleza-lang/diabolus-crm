@@ -12,6 +12,7 @@ import { agentRoutes } from './routes/agent'
 import { voiceRoute } from './routes/voice'
 import { reportRoutes } from './routes/reports'
 import { stripeRoutes } from './routes/stripe'
+import { waTemplateRoutes } from './routes/whatsapp-templates'
 import { webhookRoutes } from './routes/webhooks'
 import { demonioRoutes } from './routes/demonio'
 import { registerPrivacidadRoute } from './routes/privacidad'
@@ -29,6 +30,7 @@ import { pactoRoutes } from './routes/pacto'
 import { albaranRoute } from './routes/albaran'
 import { transcribeRoute } from './routes/transcribe'
 import { ttsRoute } from './routes/tts'
+import { securityHeaders } from './middleware/security-headers'
 import { authMiddleware } from './middleware/auth'
 import { securityHeaders } from './middleware/security-headers'
 import { getSupabaseAdmin } from './integrations/supabase'
@@ -78,6 +80,9 @@ export function createApp() {
   app.use('*', corsMiddleware)
   app.use('*', securityHeaders)
 
+  // Security headers
+  app.use('*', securityHeaders)
+
   // Explicit preflight handler — runs BEFORE authMiddleware, returns 204 immediately
   app.options('*', (c) => {
     return c.newResponse(null, 204)
@@ -98,6 +103,7 @@ export function createApp() {
 
   // ─── Stripe & External Webhooks (Public, no auth) ──────────────────────────
   app.route('/api/stripe', stripeRoutes)
+  app.route('/api/whatsapp', waTemplateRoutes)
   app.use('/webhooks/*', webhookLimiter)
   app.route('/webhooks', webhookRoutes)
   app.use('/telegram/*', webhookLimiter)
