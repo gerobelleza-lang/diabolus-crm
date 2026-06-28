@@ -3,6 +3,7 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { authRoutes } from './routes/auth'
 import { dashboardRoutes } from './routes/dashboard'
+import { healthScoreRoutes } from './routes/health-score'
 import { clientRoutes } from './routes/clients'
 import { transactionRoutes } from './routes/transactions'
 import { invoiceRoutes } from './routes/invoices'
@@ -391,6 +392,7 @@ export function createApp() {
   // ─── Protected Routes ──────────────────────────────────────────────────────
   app.use('/api/*', authMiddleware)
   app.route('/api/dashboard', dashboardRoutes)
+  app.route('/api/dashboard/health-score', healthScoreRoutes)
   app.route('/api/clients', clientRoutes)
   app.route('/api/transactions', transactionRoutes)
   app.route('/api/invoices', invoiceRoutes)

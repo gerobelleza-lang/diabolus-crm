@@ -52,41 +52,7 @@
       text-overflow: ellipsis;
       max-width: 100%;
     }
-    .sidebar-nav { flex: 1; padding: 0 0.75rem; overflow-y: auto; }
-    .nav-section-label {
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted, #6b7280);
-      padding: 0.75rem 0.5rem 0.25rem;
-      margin-top: 0.25rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      user-select: none;
-      border-radius: 0.35rem;
-      transition: color 0.15s;
-    }
-    .nav-section-label:hover { color: rgba(255,255,255,.6); }
-    .nav-chevron {
-      font-size: 0.55rem;
-      transition: transform 0.22s ease;
-      opacity: 0.5;
-      flex-shrink: 0;
-    }
-    .nav-chevron.rotated { transform: rotate(-90deg); }
-    .nav-group-items {
-      overflow: hidden;
-      max-height: 300px;
-      opacity: 1;
-      transition: max-height 0.28s ease, opacity 0.2s ease;
-    }
-    .nav-group-items.collapsed {
-      max-height: 0;
-      opacity: 0;
-    }
+    .sidebar-nav { flex: 1; padding: 0 0.75rem; }
     .nav-item {
       padding: 0.65rem 1rem;
       margin-bottom: 0.2rem;
@@ -230,6 +196,27 @@
       border-color: rgba(139,92,246,.7);
       box-shadow: 0 0 18px rgba(139,92,246,.3);
     }
+    /* ── Usage widget ── */
+    .usage-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .usage-card.warn  { border-color: rgba(251,191,36,.4); }
+    .usage-card.block { border-color: rgba(239,68,68,.5); }
+    .usage-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem; }
+    .usage-title  { font-size:.75rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; }
+    .usage-badge  { font-size:.72rem; font-weight:600; padding:.2rem .5rem; border-radius:20px; background:rgba(139,92,246,.15); color:var(--violet); }
+    .usage-badge.warn  { background:rgba(251,191,36,.15); color:#fbbf24; }
+    .usage-badge.block { background:rgba(239,68,68,.15); color:#f87171; }
+    .usage-bar-bg   { height:6px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; }
+    .usage-bar-fill { height:100%; background:var(--violet); border-radius:99px; transition:width .6s ease; }
+    .usage-bar-fill.warn  { background:#fbbf24; }
+    .usage-bar-fill.block { background:#f87171; }
+    .usage-meta { font-size:.68rem; color:var(--text-tertiary); margin-top:.45rem; }
+
     .kpi-card.alert {
       border-color: rgba(239,68,68,.5);
       box-shadow: 0 0 12px rgba(239,68,68,.2);
@@ -489,115 +476,146 @@
       .quick-actions { grid-template-columns: 1fr; }
     }
 
-    /* ── Banner El Pacto (upgrade) ── */
-    .pacto-banner {
-      display: flex;
+    /* ── HEALTH SCORE WIDGET ── */
+    .health-score-section {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 2rem;
       align-items: center;
-      gap: 1rem;
-      background: linear-gradient(135deg, #1a0a2e 0%, #2d1060 100%);
+      background: var(--surface);
       border: 1px solid rgba(139,92,246,.45);
-      border-radius: 14px;
-      padding: 1rem 1.25rem;
-      margin: 0 0 1.25rem;
-      cursor: pointer;
-      text-decoration: none;
-      transition: box-shadow .2s, transform .15s;
-      box-shadow: 0 0 18px rgba(139,92,246,.18);
+      border-radius: 1rem;
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 24px rgba(139,92,246,.15), inset 0 0 12px rgba(139,92,246,.04);
+      transition: border-color .22s, box-shadow .22s;
     }
-    .pacto-banner:hover { transform: translateY(-2px); box-shadow: 0 0 28px rgba(139,92,246,.35); }
-    .pacto-banner-icon { font-size: 2rem; flex-shrink: 0; }
-    .pacto-banner-body { flex: 1; }
-    .pacto-banner-title { font-size: .92rem; font-weight: 700; color: #e2d9f3; }
-    .pacto-banner-sub   { font-size: .75rem; color: rgba(226,217,243,.6); margin-top: .2rem; }
-    .pacto-banner-cta {
+    .health-score-section:hover {
+      border-color: rgba(139,92,246,.8);
+      box-shadow: 0 0 36px rgba(139,92,246,.3), inset 0 0 16px rgba(139,92,246,.06);
+    }
+    .health-gauge {
+      position: relative;
+      width: 140px;
+      height: 140px;
       flex-shrink: 0;
-      background: var(--violet);
-      color: #fff;
-      font-size: .75rem;
+    }
+    .health-gauge svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+    .health-gauge .gauge-bg {
+      fill: none;
+      stroke: rgba(255,255,255,.06);
+      stroke-width: 10;
+    }
+    .health-gauge .gauge-fill {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1.2s ease, stroke .6s ease;
+    }
+    .health-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .health-number {
+      font-family: var(--font-mono);
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .health-grade {
+      font-family: var(--font-display);
+      font-size: 0.72rem;
       font-weight: 700;
-      padding: .45rem .9rem;
-      border-radius: 8px;
-      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.2rem;
     }
-
-    /* ── CAZADOR BANNER ── */
-    /* ── Banner Demonio ── */
-    .demonio-banner {
-      display: flex; align-items: center; gap: 1rem;
-      background: linear-gradient(135deg, #3d0a0a 0%, #1a0a0a 100%);
-      border: 1px solid rgba(220,50,50,.35);
-      border-radius: 12px; padding: 1rem 1.25rem;
-      margin-bottom: .75rem; cursor: pointer;
-      text-decoration: none; color: inherit;
-      transition: transform .15s, box-shadow .15s;
+    .health-details {
+      flex: 1;
+      min-width: 0;
     }
-    .demonio-banner:hover { transform: translateY(-2px); box-shadow: 0 0 24px rgba(220,50,50,.3); }
-    .demonio-banner-icon { font-size: 1.8rem; flex-shrink: 0; animation: demonio-pulse 3s ease-in-out infinite; }
-    @keyframes demonio-pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
-    .demonio-banner-body { flex: 1; }
-    .demonio-banner-title { font-size: .88rem; font-weight: 700; color: #f5c0c0; }
-    .demonio-banner-sub { font-size: .73rem; color: rgba(245,192,192,.6); margin-top: .15rem; }
-    .demonio-banner-stats { display: flex; gap: .6rem; margin-top: .4rem; flex-wrap: wrap; }
-    .demonio-stat {
-      font-size: .7rem; padding: .18rem .5rem; border-radius: 6px;
-      background: rgba(220,50,50,.15); color: #f5c0c0; font-weight: 600;
+    .health-title {
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+      margin-bottom: 0.5rem;
     }
-    .demonio-banner-arrow { color: rgba(245,192,192,.5); font-size: 1.4rem; font-weight: 300; }
-
-    .cazador-banner {
+    .health-message {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+    .health-components {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 1.5rem;
+    }
+    .health-comp {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      background: linear-gradient(135deg, rgba(251,146,60,.12) 0%, rgba(239,68,68,.08) 100%);
-      border: 1px solid rgba(251,146,60,.25);
-      border-radius: 0.875rem;
-      padding: 0.875rem 1.25rem;
-      margin-bottom: 1.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
+      gap: 0.6rem;
     }
-    .cazador-banner:hover {
-      background: linear-gradient(135deg, rgba(251,146,60,.18) 0%, rgba(239,68,68,.12) 100%);
-      border-color: rgba(251,146,60,.4);
-      transform: translateY(-1px);
-    }
-    .cazador-banner-icon {
-      font-size: 1.5rem;
-      flex-shrink: 0;
-      animation: cazador-pulse 2.5s ease-in-out infinite;
-    }
-    @keyframes cazador-pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.08); opacity: 0.85; }
-    }
-    .cazador-banner-body { flex: 1; }
-    .cazador-banner-title {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #fb923c;
-      margin-bottom: 0.2rem;
-    }
-    .cazador-banner-sub {
-      font-size: 0.75rem;
+    .health-comp-label {
+      font-size: 0.72rem;
       color: var(--text-tertiary);
+      white-space: nowrap;
+      min-width: 100px;
     }
-    .cazador-banner-badge {
-      background: rgba(251,146,60,.2);
-      border: 1px solid rgba(251,146,60,.35);
-      color: #fb923c;
+    .health-comp-bar {
+      flex: 1;
+      height: 5px;
+      background: rgba(255,255,255,.06);
+      border-radius: 99px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+    .health-comp-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 1s ease;
+    }
+    .health-comp-val {
       font-family: var(--font-mono);
-      font-size: 0.8rem;
-      font-weight: 700;
-      padding: 0.3rem 0.7rem;
-      border-radius: 2rem;
-      flex-shrink: 0;
+      font-size: 0.68rem;
+      font-weight: 600;
+      min-width: 28px;
+      text-align: right;
     }
-    .cazador-banner-arrow {
-      color: rgba(251,146,60,.6);
-      font-size: 1rem;
-      flex-shrink: 0;
+    .fill-excellent { background: #4ade80; }
+    .fill-good { background: #a78bfa; }
+    .fill-warning { background: #fbbf24; }
+    .fill-critical { background: #f87171; }
+    .text-excellent { color: #4ade80; }
+    .text-good { color: #a78bfa; }
+    .text-warning { color: #fbbf24; }
+    .text-critical { color: #f87171; }
+
+    @media (max-width: 768px) {
+      .health-score-section {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+        padding: 1.25rem;
+      }
+      .health-gauge { width: 120px; height: 120px; }
+      .health-number { font-size: 2.2rem; }
+      .health-components { grid-template-columns: 1fr; }
+      .health-details { width: 100%; }
     }
+
   </style>
 </head>
 <body>
@@ -638,51 +656,18 @@
         </div>
         <div class="sidebar-salon" id="salonNameSidebar">—</div>
       </div>
-            <nav class="sidebar-nav">
-
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('mando')">
-            <span>Mando</span><span class="nav-chevron" id="chv-mando">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-mando">
-            <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
-            <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Agente IA</a>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('negocio')">
-            <span>Negocio</span><span class="nav-chevron" id="chv-negocio">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-negocio">
-            <a href="invoices.html" class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
-            <a href="clients.html" class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
-            <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('inteligencia')">
-            <span>Inteligencia</span><span class="nav-chevron" id="chv-inteligencia">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-inteligencia">
-            <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
-            <a href="cazador.html" class="nav-item"><span class="nav-icon">🦅</span> Cazador</a>
-            <a href="demonio.html" class="nav-item"><span class="nav-icon">😈</span> Demonio</a>
-            <a href="pacto.html?v=2" class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label" onclick="toggleNav('modulos')">
-            <span>Módulos</span><span class="nav-chevron" id="chv-modulos">▾</span>
-          </div>
-          <div class="nav-group-items" id="items-modulos">
-            <a href="documents.html" class="nav-item"><span class="nav-icon">✍️</span> Documentos</a>
-            <a href="legal.html" class="nav-item"><span class="nav-icon">⚖️</span> Legal</a>
-          </div>
-        </div>
-
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="chat.html"         class="nav-item"><span class="nav-icon">💬</span> Agente</a>
+        <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
+        <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
+        <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+        <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
+        <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
+        <hr style="border-color:rgba(255,255,255,.08);margin:.5rem .5rem">
+        <a href="cazador.html"  class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
+        <a href="pacto.html"    class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
+        <a href="demonio.html"  class="nav-item"><span class="nav-icon">😈</span> El Demonio</a>
       </nav>
       <div class="sidebar-footer">
         <button class="btn btn-secondary" style="width:100%;" onclick="logout()">Cerrar sesión</button>
@@ -708,43 +693,32 @@
         </div>
       </div>
 
-      <!-- ── CAZADOR BANNER (solo visible si hay facturas en caza) ── -->
-      <!-- Banner upgrade El Pacto (solo si plan != pacto_activo) -->
-      <div id="pactoBanner" class="pacto-banner" style="display:none;" onclick="activarPacto()">
-        <div class="pacto-banner-icon">🔥</div>
-        <div class="pacto-banner-body">
-          <div class="pacto-banner-title">Activa El Pacto — €49/mes</div>
-          <div class="pacto-banner-sub">Tesorería completa · Diablilla · Cazador · Sin límites</div>
-        </div>
-        <div class="pacto-banner-cta">Activar ahora →</div>
-      </div>
-
-      <!-- ── Banner Demonio (pipeline de leads) ── -->
-      <a href="demonio.html" id="demonioBanner" class="demonio-banner" style="display:none;">
-        <div class="demonio-banner-icon">😈</div>
-        <div class="demonio-banner-body">
-          <div class="demonio-banner-title" id="demonioBannerTitle">El Demonio está cazando leads</div>
-          <div class="demonio-banner-sub" id="demonioBannerSub">Cargando pipeline…</div>
-          <div class="demonio-banner-stats" id="demonioBannerStats"></div>
-        </div>
-        <div class="demonio-banner-arrow">›</div>
-      </a>
-
-      <a href="cazador.html" id="cazadorBanner" class="cazador-banner" style="display:none;">
-        <div class="cazador-banner-icon">🦅</div>
-        <div class="cazador-banner-body">
-          <div class="cazador-banner-title" id="cazadorBannerTitle">El Cazador está trabajando</div>
-          <div class="cazador-banner-sub" id="cazadorBannerSub">Cargando…</div>
-        </div>
-        <div class="cazador-banner-badge" id="cazadorBannerBadge">—</div>
-        <div class="cazador-banner-arrow">›</div>
-      </a>
-
       <!-- ══════════════════════════════════════ -->
       <!-- ZONA 1 — FINANZAS                      -->
       <!-- ══════════════════════════════════════ -->
       <div class="zone">
         <div class="zone-label">Finanzas</div>
+
+
+        <!-- HEALTH SCORE WIDGET -->
+        <div class="health-score-section" id="healthScoreSection" style="display:none;">
+          <div class="health-gauge">
+            <svg viewBox="0 0 140 140">
+              <circle class="gauge-bg" cx="70" cy="70" r="58"></circle>
+              <circle class="gauge-fill" id="gaugeFill" cx="70" cy="70" r="58"
+                stroke-dasharray="364.42" stroke-dashoffset="364.42"></circle>
+            </svg>
+            <div class="health-center">
+              <div class="health-number" id="healthNumber">—</div>
+              <div class="health-grade" id="healthGrade">—</div>
+            </div>
+          </div>
+          <div class="health-details">
+            <div class="health-title">🩺 Salud financiera</div>
+            <div class="health-message" id="healthMessage">Calculando...</div>
+            <div class="health-components" id="healthComponents"></div>
+          </div>
+        </div>
 
         <!-- Hero + KPI row -->
         <div class="hero-row" id="heroRow">
@@ -767,17 +741,29 @@
             <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
           </div>
           <!-- Por cobrar -->
-          <div class="kpi-card" id="kpiPendientes" style="grid-column:span 2;">
+          <div class="kpi-card" id="kpiPendiente">
             <div class="kpi-label">🕐 Por cobrar</div>
             <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
             <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
           </div>
-          <!-- Vencidas -->
-          <div class="kpi-card" id="kpiVencidas" style="grid-column:span 2;">
-            <div class="kpi-label">🔴 Vencidas</div>
+          <!-- Riesgo activo -->
+          <div class="kpi-card" id="kpiVencidas">
+            <div class="kpi-label">🔴 Riesgo vencidas</div>
             <div class="kpi-value skeleton" style="width:70%;height:1.35rem;">&nbsp;</div>
             <div class="kpi-sub skeleton" style="width:50%;height:.7rem;margin-top:.3rem;">&nbsp;</div>
           </div>
+        </div>
+
+        <!-- 💬 Uso de mensajes del Agente IA -->
+        <div class="usage-card" id="usageCard" style="display:none">
+          <div class="usage-header">
+            <span class="usage-title">💬 Agente IA — mensajes este mes</span>
+            <span class="usage-badge" id="usageBadge">...</span>
+          </div>
+          <div class="usage-bar-bg">
+            <div class="usage-bar-fill" id="usageBarFill" style="width:0%"></div>
+          </div>
+          <div class="usage-meta" id="usageMeta">&nbsp;</div>
         </div>
 
         <!-- Charts -->
@@ -892,11 +878,22 @@
     const auth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null')
     if (!auth?.token) window.location.href = 'index-login.html'
 
-    // ── Mobile → Panel de Mando (salvo que el usuario haya pedido escritorio) ──
-    if (!sessionStorage.getItem('forceDesktop') &&
-        (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768)) {
-      window.location.replace('mobile.html')
-    }
+    // ── Onboarding guard (safety net) ──
+    // Si el usuario llega al dashboard sin haber completado el onboarding,
+    // lo redirigimos al wizard. Nunca bloqueamos si el check falla.
+    ;(async () => {
+      try {
+        const r = await fetch(`${API}/api/onboarding/status`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (r.ok) {
+          const s = await r.json()
+          if (s.onboarding_completed === false) {
+            window.location.replace('onboarding.html')
+          }
+        }
+      } catch (_) { /* no bloquear dashboard si check falla */ }
+    })()
 
     function logout() {
       localStorage.removeItem('diabolus_auth')
@@ -935,71 +932,6 @@
     const eur = (n) =>
       new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(n ?? 0)
 
-    // ── El Pacto: checkout ──
-    async function activarPacto() {
-      // Auto-refresh del token Supabase si está caducado
-      try {
-        const storedAuth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null')
-        if (storedAuth?.refresh_token) {
-          const rr = await fetch('https://emygbvxkhfbwyhbapaae.supabase.co/auth/v1/token?grant_type=refresh_token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODM3MjcsImV4cCI6MjA5Njg1OTcyN30.HpcYlWwggML7FGHLKerj17sLwj3CiFmYKZdL4iSV9YM' },
-            body: JSON.stringify({ refresh_token: storedAuth.refresh_token })
-          })
-          const rd = await rr.json()
-          if (rd.access_token) {
-            storedAuth.token = rd.access_token
-            storedAuth.refresh_token = rd.refresh_token || storedAuth.refresh_token
-            localStorage.setItem('diabolus_auth', JSON.stringify(storedAuth))
-            // Actualizar 'auth' en scope global
-            Object.assign(auth, storedAuth)
-          }
-        }
-      } catch(e) { console.warn('Token refresh failed:', e) }
-      const btn = document.querySelector('.pacto-banner-cta')
-      if (btn) btn.textContent = 'Cargando…'
-      try {
-        // Re-leer auth del localStorage (token más fresco posible)
-        const freshAuth = JSON.parse(localStorage.getItem('diabolus_auth') || 'null') || auth
-        const res = await fetch(`${API}/api/stripe/checkout`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${freshAuth.token || ''}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            priceId:  'price_1Tlwsw1UnR4OJAljw7DR4M2R',
-            email:    freshAuth.email    || auth.email    || '',
-            salonId:  freshAuth.salonId  || auth.salonId  || '',
-          })
-        })
-        const data = await res.json()
-        if (data.url) {
-          window.location.href = data.url
-        } else {
-          alert('Error Stripe: ' + (data.error || 'Respuesta sin URL: ' + JSON.stringify(data)))
-          if (btn) btn.textContent = 'Activar ahora →'
-        }
-      } catch (e) {
-        alert('Error de conexión. Inténtalo de nuevo.')
-        if (btn) btn.textContent = 'Activar ahora →'
-      }
-    }
-
-    // ── Comprobar plan ──
-    async function checkPlan() {
-      try {
-        const res = await fetch(`${API}/api/stripe/subscription`, {
-          headers: { 'Authorization': `Bearer ${auth.token}` }
-        })
-        const data = res.ok ? await res.json() : {}
-        // Mostrar banner si no tiene pacto activo
-        const pactoActivo = data.plan === 'pacto' || data.pacto_activo === true
-        if (!pactoActivo) {
-          document.getElementById('pactoBanner').style.display = 'flex'
-        }
-      } catch (_) { /* silencioso — mostrar banner por defecto */
-        document.getElementById('pactoBanner').style.display = 'flex'
-      }
-    }
-
     // ── Load dashboard ──
     async function loadDashboard() {
       const headers = { 'Authorization': `Bearer ${auth.token}` }
@@ -1033,11 +965,9 @@
     }
 
     function renderFinanzas(s) {
-      const balance    = (s.month ?? 0) - (s.expenses ?? 0)
+      const balance   = (s.month ?? 0) - (s.expenses ?? 0)
       const isPositive = balance >= 0
-      const hasOverdue = (s.overdue_count ?? 0) > 0
 
-      // Hero: Balance
       document.getElementById('heroBalance').innerHTML = `
         <div class="hero-label">💰 Balance neto del mes</div>
         <div class="hero-value">${eur(balance)}</div>
@@ -1045,49 +975,46 @@
           ${isPositive ? '▲ Positivo' : '▼ Negativo'} · ${new Date().toLocaleDateString('es-ES', { month:'long', year:'numeric' })}
         </div>
       `
-
-      // KPI: Ingresos
       document.getElementById('kpiIngresos').innerHTML = `
         <div class="kpi-label">📈 Ingresos mes</div>
         <div class="kpi-value">${eur(s.month)}</div>
         <div class="kpi-sub">Hoy: ${eur(s.today)} · Semana: ${eur(s.week)}</div>
       `
-
-      // KPI: Gastos (corregido — sin div anidado)
-      const gastoEl = document.getElementById('kpiGastos')
-      if ((s.expenses ?? 0) > (s.month ?? 0)) gastoEl.classList.add('alert')
-      gastoEl.innerHTML = `
+      // Fix: kpiGastos is already a kpi-card, no double-wrapper
+      const gastosEl = document.getElementById('kpiGastos')
+      if ((s.expenses ?? 0) > (s.month ?? 0)) gastosEl.classList.add('alert')
+      else gastosEl.classList.remove('alert')
+      gastosEl.innerHTML = `
         <div class="kpi-label">📉 Gastos mes</div>
         <div class="kpi-value">${eur(s.expenses)}</div>
-        <div class="kpi-sub">Balance: <span style="color:${isPositive?'#4ade80':'#f87171'}">${eur(balance)}</span></div>
+        <div class="kpi-sub">Balance: ${eur(s.month - s.expenses)}</div>
       `
-
-      // KPI: Por cobrar (facturas pendientes)
-      const pendCount = s.pending_count ?? 0
-      const pendLabel = pendCount === 1 ? '1 factura pendiente' : `${pendCount} facturas pendientes`
-      document.getElementById('kpiPendientes').innerHTML = `
+      // Por cobrar — facturas sent/pending
+      const pendienteEl = document.getElementById('kpiPendiente')
+      if ((s.pending_count ?? 0) > 0) pendienteEl.classList.add('alert')
+      else pendienteEl.classList.remove('alert')
+      pendienteEl.innerHTML = `
         <div class="kpi-label">🕐 Por cobrar</div>
         <div class="kpi-value">${eur(s.pending_amount)}</div>
-        <div class="kpi-sub">${pendLabel}</div>
+        <div class="kpi-sub">${s.pending_count ?? 0} factura${(s.pending_count ?? 0) !== 1 ? 's' : ''} pendiente${(s.pending_count ?? 0) !== 1 ? 's' : ''}</div>
       `
-
-      // KPI: Vencidas (riesgo activo)
-      const ovdEl = document.getElementById('kpiVencidas')
-      if (hasOverdue) ovdEl.classList.add('alert')
-      const ovdCount = s.overdue_count ?? 0
-      const ovdLabel = ovdCount === 0 ? 'Sin facturas vencidas ✓' : `${ovdCount} factura${ovdCount !== 1 ? 's' : ''} sin cobrar`
-      ovdEl.innerHTML = `
-        <div class="kpi-label">🔴 Vencidas</div>
-        <div class="kpi-value">${eur(s.overdue_amount)}</div>
-        <div class="kpi-sub${hasOverdue ? ' danger' : ''}">${ovdLabel}</div>
+      // Riesgo vencidas
+      const vencidasEl = document.getElementById('kpiVencidas')
+      if ((s.overdue_count ?? 0) > 0) vencidasEl.classList.add('alert')
+      else vencidasEl.classList.remove('alert')
+      vencidasEl.innerHTML = `
+        <div class="kpi-label">🔴 Riesgo vencidas</div>
+        <div class="kpi-value" style="${(s.overdue_count ?? 0) > 0 ? 'color:#f87171' : ''}">${eur(s.overdue_amount)}</div>
+        <div class="kpi-sub${(s.overdue_count ?? 0) > 0 ? ' danger' : ''}">${s.overdue_count ?? 0} factura${(s.overdue_count ?? 0) !== 1 ? 's' : ''} vencida${(s.overdue_count ?? 0) !== 1 ? 's' : ''}</div>
       `
     }
+
     function renderFiscalAlerts(s) {
       const alerts = []
       if ((s.overdue_count ?? 0) > 0) {
         alerts.push(`⚠️ ${s.overdue_count} factura${s.overdue_count !== 1 ? 's' : ''} vencida${s.overdue_count !== 1 ? 's' : ''} — ${eur(s.overdue_amount)} pendientes`)
       }
-      if ((s.pending_count ?? 0) > 3) {
+      if ((s.pending_count ?? 0) > 0) {
         alerts.push(`🕐 ${s.pending_count} facturas por cobrar (${eur(s.pending_amount)})`)
       }
 
@@ -1185,88 +1112,116 @@
       })
     }
 
-    // ── Cazador Banner ── (siempre visible)
-    async function loadCazadorBanner() {
-      const banner = document.getElementById('cazadorBanner')
-      const title  = document.getElementById('cazadorBannerTitle')
-      const sub    = document.getElementById('cazadorBannerSub')
-      const badge  = document.getElementById('cazadorBannerBadge')
-      banner.style.display = 'flex' // visible desde el inicio
+
+    // ── Health Score ──
+    async function loadHealthScore() {
       try {
-        const res = await fetch(`${API}/api/cazador/stats`, {
+        const res = await fetch(`${API}/api/dashboard/health-score`, {
           headers: { 'Authorization': `Bearer ${auth.token}` }
         })
-        if (!res.ok) {
-          title.textContent = 'El Cazador — ver facturas vencidas'
-          sub.textContent   = 'Toca para gestionar cobros'
-          badge.textContent = '🦅'
-          return
+        if (!res.ok) return
+        const d = await res.json()
+
+        const section = document.getElementById('healthScoreSection')
+        section.style.display = ''
+
+        // Score color
+        const scoreColor = d.score >= 75 ? '#4ade80' : d.score >= 50 ? '#a78bfa' : d.score >= 30 ? '#fbbf24' : '#f87171'
+        const scoreStatus = d.score >= 75 ? 'excellent' : d.score >= 50 ? 'good' : d.score >= 30 ? 'warning' : 'critical'
+
+        // Animate gauge
+        const circumference = 2 * Math.PI * 58 // ~364.42
+        const offset = circumference - (d.score / 100) * circumference
+        const gauge = document.getElementById('gaugeFill')
+        gauge.style.stroke = scoreColor
+        setTimeout(() => { gauge.style.strokeDashoffset = offset }, 100)
+
+        // Number + grade
+        const numEl = document.getElementById('healthNumber')
+        numEl.textContent = d.score
+        numEl.style.color = scoreColor
+
+        const gradeEl = document.getElementById('healthGrade')
+        gradeEl.textContent = d.grade
+        gradeEl.className = 'health-grade text-' + scoreStatus
+
+        // Message
+        document.getElementById('healthMessage').textContent = d.message
+
+        // Components
+        const compsEl = document.getElementById('healthComponents')
+        const compIcons = {
+          cash_flow: '💰',
+          overdue_risk: '🔴',
+          pending_collections: '🕐',
+          financial_cushion: '🛡️',
+          revenue_trend: '📈'
         }
-        const data  = await res.json()
-        const count = data.overdue_count ?? 0
-        const total = data.overdue_total ?? 0
-        if (count === 0) {
-          title.textContent = 'El Cazador — al día'
-          sub.textContent   = 'No hay facturas vencidas · Buen trabajo 💪'
-          badge.textContent = '✓'
-        } else {
-          const plural = count === 1 ? 'factura vencida' : 'facturas vencidas'
-          title.textContent = `El Cazador tiene ${count} ${plural} en seguimiento`
-          sub.textContent   = `${eur(total)} pendientes de cobro · Toca para gestionar`
-          badge.textContent = `${count} en caza`
-        }
-      } catch (_) {
-        title.textContent = 'El Cazador — gestionar cobros'
-        sub.textContent   = 'Ver facturas vencidas'
-        badge.textContent = '🦅'
+        compsEl.innerHTML = d.components.map(comp => {
+          const pct = (comp.score / comp.max * 100).toFixed(0)
+          const icon = compIcons[comp.name] || '•'
+          return `
+            <div class="health-comp">
+              <span class="health-comp-label">${icon} ${comp.label}</span>
+              <div class="health-comp-bar">
+                <div class="health-comp-fill fill-${comp.status}" style="width:${pct}%"></div>
+              </div>
+              <span class="health-comp-val text-${comp.status}">${comp.score}/${comp.max}</span>
+            </div>
+          `
+        }).join('')
+
+      } catch (e) {
+        console.warn('Health score error:', e)
       }
     }
 
-    // ── Demonio Banner ── (siempre visible)
-    async function loadDemonioBanner() {
-      const banner = document.getElementById('demonioBanner')
-      const title  = document.getElementById('demonioBannerTitle')
-      const sub    = document.getElementById('demonioBannerSub')
-      const stats  = document.getElementById('demonioBannerStats')
-      banner.style.display = 'flex' // visible desde el inicio
-      try {
-        const res = await fetch(`${API}/api/demonio/pipeline`, {
-          headers: { 'Authorization': `Bearer ${auth.token}` }
-        })
-        if (!res.ok) {
-          title.textContent = 'El Demonio — pipeline de leads'
-          sub.textContent   = 'Toca para ver el estado'
-          return
-        }
-        const data  = await res.json()
-        const pipe  = data.pipeline || {}
-        const total = data.total || 0
-        const activos    = (pipe.contactado?.length || 0) + (pipe.respondio?.length || 0)
-        const citas      = pipe.cita_agendada?.length || 0
-        const descartados = pipe.descartado?.length || 0
-        title.textContent = total === 0
-          ? 'El Demonio — sin leads activos'
-          : `El Demonio tiene ${total} lead${total === 1 ? '' : 's'} en el pipeline`
-        sub.textContent = total === 0
-          ? 'Lanza una campaña desde Demonio'
-          : `${activos} activo${activos === 1 ? '' : 's'} · ${citas} cita${citas === 1 ? '' : 's'} · ${descartados} descartado${descartados === 1 ? '' : 's'}`
-        if (total > 0) {
-          stats.innerHTML = [
-            activos    ? `<span class="demonio-stat">👤 ${activos} activos</span>` : '',
-            citas      ? `<span class="demonio-stat">📅 ${citas} citas</span>` : '',
-            descartados ? `<span class="demonio-stat">✗ ${descartados} desc.</span>` : '',
-          ].join('')
-        }
-      } catch (_) {
-        title.textContent = 'El Demonio — ver pipeline'
-        sub.textContent   = 'Gestiona tus leads'
-      }
-    }
-
+    loadHealthScore()
     loadDashboard()
-    checkPlan()
-    loadCazadorBanner()
-    loadDemonioBanner()
+    loadUsage()
+
+    // ── Uso del agente IA ──
+    async function loadUsage() {
+      try {
+        const res = await fetch(`${API}/api/agent/usage`, {
+          headers: { 'Authorization': `Bearer ${auth.token}` }
+        })
+        if (!res.ok) return
+        const d = await res.json()
+
+        // Enterprise sin límite → no mostrar
+        if (d.limit === -1) return
+
+        const card  = document.getElementById('usageCard')
+        const fill  = document.getElementById('usageBarFill')
+        const badge = document.getElementById('usageBadge')
+        const meta  = document.getElementById('usageMeta')
+
+        card.style.display = ''
+
+        const pct  = d.pct || 0
+        const isWarn  = pct >= 80 && pct < 100
+        const isBlock = pct >= 100
+
+        fill.style.width = Math.min(pct, 100) + '%'
+        fill.className   = 'usage-bar-fill' + (isBlock ? ' block' : isWarn ? ' warn' : '')
+        badge.className  = 'usage-badge' + (isBlock ? ' block' : isWarn ? ' warn' : '')
+        card.className   = 'usage-card'  + (isBlock ? ' block' : isWarn ? ' warn' : '')
+
+        const planLabel = { basico:'Básico', pro:'Pro', pro_plus:'Pro+', enterprise:'Enterprise' }[d.plan] || d.plan
+        badge.textContent = `${d.count} / ${d.limit} msgs`
+
+        if (isBlock) {
+          meta.innerHTML = `⛔ Límite alcanzado. <a href="mailto:hola@diabolus.es" style="color:#f87171">Amplía tu plan →</a>`
+        } else if (isWarn) {
+          meta.textContent = `⚠️ Quedan ${d.remaining} mensajes — Plan ${planLabel}`
+        } else {
+          meta.textContent = `Plan ${planLabel} · Quedan ${d.remaining} mensajes este mes`
+        }
+      } catch(e) {
+        // silencioso — no crítico
+      }
+    }
 
     // ── PWA ──
     if ('serviceWorker' in navigator) {
@@ -1276,16 +1231,7 @@
           .catch(e => console.warn('[SW] error:', e))
       })
     }
-  
-    // ── Acordeón sidebar ──
-    function toggleNav(group) {
-      const items = document.getElementById('items-' + group);
-      const chv   = document.getElementById('chv-' + group);
-      if (!items) return;
-      const isOpen = !items.classList.contains('collapsed');
-      items.classList.toggle('collapsed', isOpen);
-      if (chv) chv.classList.toggle('rotated', isOpen);
-    }
-</script>
+  </script>
+<script src="sidebar.js"></script>
 </body>
 </html>
