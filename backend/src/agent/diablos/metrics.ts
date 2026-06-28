@@ -3,7 +3,7 @@
  * Logs to audit_log with action='diablo_usage'
  */
 
-import { getSupabaseAdmin } from '../integrations/supabase'
+import { getSupabaseAdmin } from '../../integrations/supabase'
 
 export interface DiabloUsage {
   diablo: string        // e.g. 'facturador', 'abogado'
