@@ -1,4 +1,3 @@
-import { validate, createClientSchema, updateClientSchema } from '../schemas'
 import { Hono } from 'hono'
 import { getSupabaseAdmin } from '../integrations/supabase'
 
@@ -86,8 +85,7 @@ clientRoutes.get('/:id/ficha', async (c) => {
   const { id } = c.req.param()
   const supabase = getSupabaseAdmin()
 
-  // Parallel fetch: client + invoices + transactions + audit_log (reminders)
-  const [clientRes, invoicesRes, transactionsRes, auditRes] = await Promise.all([
+  const [clientRes, invoicesRes, transactionsRes, cazadorRes] = await Promise.all([
     supabase
       .from('clients')
       .select('*')
@@ -99,66 +97,127 @@ clientRoutes.get('/:id/ficha', async (c) => {
       .select('id, number, total, amount, status, date, due_date, description, iva_pct, sent_at, created_at')
       .eq('salon_id', salonId)
       .eq('client_id', id)
-      .order('created_at', { ascending: false }),
+      .order('date', { ascending: false }),
     supabase
       .from('transactions')
       .select('id, type, amount, concept, date, category, tags, status, created_at')
       .eq('salon_id', salonId)
       .eq('client_id', id)
-      .order('created_at', { ascending: false }),
+      .order('date', { ascending: false }),
     supabase
-      .from('audit_log')
-      .select('id, tool_name, payload, result, confirmed, created_at')
+      .from('cobros_cazador')
+      .select('id, invoice_id, client_id, level, sent_at, channel, status, message_sent, tone')
       .eq('salon_id', salonId)
-      .or(`payload->>client_id.eq.${id},payload->>clientId.eq.${id}`)
-      .order('created_at', { ascending: false })
-      .limit(50),
+      .eq('client_id', id)
+      .order('sent_at', { ascending: false }),
   ])
 
-  if (clientRes.error) return c.json({ error: 'Client not found' }, 404)
+  if (clientRes.error || !clientRes.data) return c.json({ error: 'Client not found' }, 404)
 
   const invoices = invoicesRes.data || []
   const transactions = transactionsRes.data || []
-  const auditLog = auditRes.data || []
+  const cazador = cazadorRes.data || []
 
-  // Compute summary stats
-  const totalFacturado = invoices.reduce((s, i) => s + Number(i.total || 0), 0)
-  const totalCobrado = invoices
-    .filter(i => i.status === 'paid')
-    .reduce((s, i) => s + Number(i.total || 0), 0)
-  const deudaPendiente = invoices
-    .filter(i => ['pending', 'sent', 'overdue'].includes(i.status))
-    .reduce((s, i) => s + Number(i.total || 0), 0)
+  const hoy = new Date()
+
+  // ── KPIs ──
+  const totalFacturado = invoices.reduce((s, i) => s + Number(i.total || i.amount || 0), 0)
+  const pagadas = invoices.filter(i => i.status === 'paid')
+  const totalCobrado = pagadas.reduce((s, i) => s + Number(i.total || i.amount || 0), 0)
+
+  const pendientes = invoices.filter(i => i.status !== 'paid')
+  const saldoPendiente = pendientes.reduce((s, i) => s + Number(i.total || i.amount || 0), 0)
+
+  const vencidas = pendientes.filter(i => i.due_date && new Date(i.due_date) < hoy)
+  const numVencidas = vencidas.length
+  const importeVencido = vencidas.reduce((s, i) => s + Number(i.total || i.amount || 0), 0)
+
+  // DSO: approximate using income transactions after invoice date
+  let dso = null
+  if (pagadas.length > 0) {
+    const incomeTxns = transactions.filter(t => t.type === 'income').sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    let totalDays = 0
+    let counted = 0
+    for (const inv of pagadas) {
+      const invDate = new Date(inv.date)
+      const matchingTxn = incomeTxns.find(t => new Date(t.date) >= invDate)
+      if (matchingTxn) {
+        const days = Math.round((new Date(matchingTxn.date).getTime() - invDate.getTime()) / 86400000)
+        totalDays += Math.max(0, days)
+        counted++
+      }
+    }
+    dso = counted > 0 ? Math.round(totalDays / counted) : null
+  }
+
+  // Semáforo de salud
+  const maxDiasVencido = vencidas.length > 0
+    ? Math.max(...vencidas.map(i => Math.round((hoy.getTime() - new Date(i.due_date!).getTime()) / 86400000)))
+    : 0
+  const salud = numVencidas >= 2 || maxDiasVencido > 60 ? 'rojo'
+    : numVencidas === 1 ? 'amarillo'
+    : 'verde'
+
   const totalPagos = transactions
     .filter(t => t.type === 'income')
     .reduce((s, t) => s + Number(t.amount || 0), 0)
-  const recordatoriosEnviados = auditLog.filter(a =>
-    a.tool_name === 'send_reminder' || a.tool_name === 'cazador_reminder'
-  ).length
 
-  // Last interaction: most recent of any activity
+  // Última actividad
   const dates = [
     ...invoices.map(i => i.created_at),
     ...transactions.map(t => t.created_at),
-    ...auditLog.map(a => a.created_at),
+    ...cazador.map(r => r.sent_at),
   ].filter(Boolean).sort().reverse()
   const ultimaActividad = dates[0] || clientRes.data.created_at
 
+  // Timeline unificado
+  const timeline = [
+    ...invoices.map(i => ({
+      type: 'invoice' as const,
+      date: i.date || i.created_at,
+      id: i.id,
+      number: i.number,
+      amount: Number(i.total || i.amount || 0),
+      status: i.status,
+      due_date: i.due_date,
+    })),
+    ...transactions.filter(t => t.type === 'income').map(t => ({
+      type: 'payment' as const,
+      date: t.date || t.created_at,
+      id: t.id,
+      amount: Number(t.amount || 0),
+      concept: t.concept,
+      category: t.category,
+    })),
+    ...cazador.map(r => ({
+      type: 'reminder' as const,
+      date: r.sent_at,
+      id: r.id,
+      level: r.level,
+      channel: r.channel,
+      tone: r.tone,
+      status: r.status,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
   return c.json({
     client: clientRes.data,
-    invoices,
-    transactions,
-    auditLog,
-    summary: {
+    kpis: {
       totalFacturado,
       totalCobrado,
-      deudaPendiente,
+      saldoPendiente,
+      importeVencido,
+      numFacturas: invoices.length,
+      numVencidas,
+      dso,
+      salud,
       totalPagos,
-      facturas: invoices.length,
-      pagos: transactions.length,
-      recordatoriosEnviados,
       ultimaActividad,
-    }
+    },
+    timeline,
+    invoices,
+    transactions,
+    cazador,
   })
 })
 
@@ -169,7 +228,7 @@ clientRoutes.put('/:id/cazador-pause', async (c) => {
   const body = await c.req.json()
   const supabase = getSupabaseAdmin()
 
-  const { paused_until } = body // null para reanudar, ISO date string para pausar
+  const { paused_until } = body
 
   const { data, error } = await supabase
     .from('clients')
