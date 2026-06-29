@@ -105,7 +105,7 @@
   </ul>
   <div class="actions-bar">
     <a href="invoices.html" class="action-btn action-primary" id="btnNewInvoice">📄 Nueva factura</a>
-    <button class="action-btn action-warning" id="btnPauseCazador" onclick="toggleCazador()">⏸ Pausar Cazador</button>
+    <button class="action-btn action-warning" id="btnPauseCazador" onclick="toggleCazador()">⏸ En negociación</button>
   </div>
 </div>
 <script>
@@ -149,13 +149,13 @@ function render(d){
     <div class="kpi-pill"><div class="kpi-pill-label">Saldo pendiente</div><div class="kpi-pill-value">${eur(k.saldoPendiente)}</div><div class="kpi-pill-sub">${pendCount} factura${pendCount!==1?'s':''}</div></div>
     <div class="kpi-pill ${k.numVencidas>0?'danger':''}"><div class="kpi-pill-label">Vencido</div><div class="kpi-pill-value ${k.numVencidas>0?'danger':''}">${k.numVencidas>0?eur(k.importeVencido):'€0'}</div><div class="kpi-pill-sub">${k.numVencidas} factura${k.numVencidas!==1?'s':''}</div></div>
     <div class="kpi-pill"><div class="kpi-pill-label">Facturado total</div><div class="kpi-pill-value">${eur(k.totalFacturado)}</div><div class="kpi-pill-sub">${k.numFacturas} factura${k.numFacturas!==1?'s':''}</div></div>
-    <div class="kpi-pill"><div class="kpi-pill-label">DSO</div><div class="kpi-pill-value">${k.dso!==null?k.dso+'d':'—'}</div><div class="kpi-pill-sub">Días medio cobro</div></div>`
+    <div class="kpi-pill"><div class="kpi-pill-label">Deuda más vieja</div><div class="kpi-pill-value">${k.diasDeudaMasVieja>0?k.diasDeudaMasVieja+'d':'0'}</div><div class="kpi-pill-sub">días vencida</div></div>`
   const cazadorEl=document.getElementById('cazadorStatus')
   cazadorEl.style.display=''
   const isPaused=c.cazador_paused_until&&new Date(c.cazador_paused_until)>new Date()
   const cazVal=document.getElementById('cazadorValue')
-  if(isPaused){cazVal.textContent='⏸ Pausado hasta '+fmtDateShort(c.cazador_paused_until);cazVal.className='cazador-value cazador-paused';document.getElementById('btnPauseCazador').textContent='▶️ Reanudar Cazador'}
-  else{cazVal.textContent='✅ Activo';cazVal.className='cazador-value cazador-active';document.getElementById('btnPauseCazador').textContent='⏸ Pausar Cazador'}
+  if(isPaused){cazVal.textContent='⏸ En negociación';cazVal.className='cazador-value cazador-paused';document.getElementById('btnPauseCazador').textContent='▶️ Reactivar Cazador'}
+  else{cazVal.textContent='✅ Activo';cazVal.className='cazador-value cazador-active';document.getElementById('btnPauseCazador').textContent='⏸ En negociación'}
   document.getElementById('btnNewInvoice').href='invoices.html?new=1&client_id='+clientId
   renderTimeline(d.timeline,'todo')
 }
@@ -195,9 +195,9 @@ async function toggleCazador(){
   if(!fichaData)return
   const c=fichaData.client
   const isPaused=c.cazador_paused_until&&new Date(c.cazador_paused_until)>new Date()
-  const paused_until=isPaused?null:new Date(Date.now()+30*86400000).toISOString()
+  const action=isPaused?'resume':'pause'
   try{
-    const res=await fetch(`${API}/api/clients/${clientId}/cazador-pause`,{method:'PUT',headers:{'Authorization':`Bearer ${auth.token}`,'Content-Type':'application/json'},body:JSON.stringify({paused_until})})
+    const res=await fetch(`${API}/api/clients/${clientId}/cazador-pause`,{method:'PUT',headers:{'Authorization':`Bearer ${auth.token}`,'Content-Type':'application/json'},body:JSON.stringify({action})})
     if(res.ok){const r=await res.json();fichaData.client=r.client;render(fichaData)}
   }catch(err){console.error('Toggle cazador error:',err)}
 }
