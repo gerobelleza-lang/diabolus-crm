@@ -125,30 +125,18 @@ clientRoutes.get('/:id/ficha', async (c) => {
   const pagadas = invoices.filter(i => i.status === 'paid')
   const totalCobrado = pagadas.reduce((s, i) => s + Number(i.total || i.amount || 0), 0)
 
-  const pendientes = invoices.filter(i => i.status !== 'paid')
+  const pendientes = invoices.filter(i => i.status === 'sent')
   const saldoPendiente = pendientes.reduce((s, i) => s + Number(i.total || i.amount || 0), 0)
 
   const vencidas = pendientes.filter(i => i.due_date && new Date(i.due_date) < hoy)
   const numVencidas = vencidas.length
   const importeVencido = vencidas.reduce((s, i) => s + Number(i.total || i.amount || 0), 0)
 
-  // DSO: approximate using income transactions after invoice date
-  let dso = null
-  if (pagadas.length > 0) {
-    const incomeTxns = transactions.filter(t => t.type === 'income').sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    let totalDays = 0
-    let counted = 0
-    for (const inv of pagadas) {
-      const invDate = new Date(inv.date)
-      const matchingTxn = incomeTxns.find(t => new Date(t.date) >= invDate)
-      if (matchingTxn) {
-        const days = Math.round((new Date(matchingTxn.date).getTime() - invDate.getTime()) / 86400000)
-        totalDays += Math.max(0, days)
-        counted++
-      }
-    }
-    dso = counted > 0 ? Math.round(totalDays / counted) : null
-  }
+  // Días deuda más vieja: max days since oldest overdue sent invoice due_date
+  // Real metric — no estimation needed (replaces unreliable DSO)
+  const diasDeudaMasVieja = vencidas.length
+    ? Math.max(...vencidas.map(i => Math.floor((hoy.getTime() - new Date(i.due_date!).getTime()) / 86400000)))
+    : 0
 
   // Semáforo de salud
   const maxDiasVencido = vencidas.length > 0
@@ -209,7 +197,7 @@ clientRoutes.get('/:id/ficha', async (c) => {
       importeVencido,
       numFacturas: invoices.length,
       numVencidas,
-      dso,
+      diasDeudaMasVieja,
       salud,
       totalPagos,
       ultimaActividad,
@@ -228,11 +216,24 @@ clientRoutes.put('/:id/cazador-pause', async (c) => {
   const body = await c.req.json()
   const supabase = getSupabaseAdmin()
 
-  const { paused_until } = body
+  // Toggle semantics:
+  // action: 'pause' → cazador_paused_until = 2999-12-31 (indefinite / "en negociación")
+  // action: 'resume' → cazador_paused_until = null (active)
+  // paused_until: specific date → timed pause
+  const { action, paused_until } = body
+  
+  let newValue: string | null = null
+  if (action === 'pause') {
+    newValue = '2999-12-31T00:00:00.000Z'  // indefinite
+  } else if (action === 'resume') {
+    newValue = null
+  } else if (paused_until) {
+    newValue = paused_until  // specific date
+  }
 
   const { data, error } = await supabase
     .from('clients')
-    .update({ cazador_paused_until: paused_until })
+    .update({ cazador_paused_until: newValue })
     .eq('salon_id', salonId)
     .eq('id', id)
     .select()
