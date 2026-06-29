@@ -125,7 +125,7 @@ export async function runCazador(salonId?: string): Promise<{ enviados: number; 
       .from('invoices')
       .select('*, clients(name, email, phone)')
       .eq('salon_id', config.salon_id)
-      .eq('status', 'pending')
+      .eq('status', 'sent')
       .lt('due_date', today.toISOString().split('T')[0]);
 
     if (!invoices?.length) continue;
@@ -318,7 +318,7 @@ cazadorRoutes.get('/overdue', async (c) => {
       .from('invoices')
       .select('id, number, total, due_date, status, client_id, clients(name, email, phone)')
       .eq('salon_id', salon_id)
-      .eq('status', 'pending')
+      .eq('status', 'sent')
       .lt('due_date', today)
       .order('due_date', { ascending: true }),
     supabase
@@ -372,7 +372,7 @@ cazadorRoutes.get('/stats', async (c) => {
       .from('invoices')
       .select('id, total')
       .eq('salon_id', salon_id)
-      .eq('status', 'pending')
+      .eq('status', 'sent')
       .lt('due_date', today),
     supabase
       .from('cobros_cazador')
@@ -503,7 +503,7 @@ export async function runCazadorPreview(): Promise<{ salones: number; total_fact
       .from('invoices')
       .select('*, clients(name, email, phone)')
       .eq('salon_id', config.salon_id)
-      .eq('status', 'pending')
+      .eq('status', 'sent')
       .lt('due_date', today.toISOString().split('T')[0]);
 
     const previewLines: string[] = [];
