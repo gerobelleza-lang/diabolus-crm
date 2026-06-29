@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Ficha 360° — Diabolus CRM</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="diabolus-tokens.css">
+  <style>
+    body { margin: 0; padding: 0; }
+    .ficha-container { max-width: 720px; margin: 0 auto; padding: 0 1rem 2rem; min-height: 100vh; }
+    .ficha-nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 0; position: sticky; top: 0; background: var(--ink); z-index: 10; }
+    .btn-back { display: flex; align-items: center; gap: 0.4rem; color: var(--violet); text-decoration: none; font-size: 0.85rem; font-weight: 600; font-family: var(--font-body); padding: 0.4rem 0.75rem; border-radius: 0.5rem; transition: background 0.15s; }
+    .btn-back:hover { background: rgba(139,92,246,.1); }
+    .salud-badge { font-size: 0.75rem; font-weight: 700; font-family: var(--font-display); padding: 0.35rem 0.85rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .salud-verde { background: rgba(52,211,153,.12); color: #34d399; border: 1px solid rgba(52,211,153,.3); }
+    .salud-amarillo { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
+    .salud-rojo { background: rgba(248,113,113,.12); color: #f87171; border: 1px solid rgba(248,113,113,.3); }
+    .client-header { margin-bottom: 1.25rem; }
+    .client-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text); margin: 0 0 0.25rem; line-height: 1.2; }
+    .client-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.78rem; color: var(--muted); }
+    .client-meta a { color: var(--violet); text-decoration: none; }
+    .client-since { font-size: 0.7rem; color: var(--muted); font-family: var(--font-mono); margin-top: 0.3rem; }
+    .kpi-strip { display: flex; gap: 0.75rem; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding: 0.25rem 0 0.5rem; margin-bottom: 1.25rem; }
+    .kpi-strip::-webkit-scrollbar { display: none; }
+    .kpi-pill { flex-shrink: 0; scroll-snap-align: start; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 12px; padding: 0.875rem 1.1rem; min-width: 130px; box-shadow: 0 0 10px rgba(139,92,246,.1); }
+    .kpi-pill.danger { border-color: rgba(248,113,113,.4); }
+    .kpi-pill-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+    .kpi-pill-value { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; color: var(--gold); line-height: 1; }
+    .kpi-pill-value.danger { color: #f87171; }
+    .kpi-pill-sub { font-size: 0.65rem; color: var(--muted); margin-top: 0.2rem; }
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border-default); margin-bottom: 1rem; }
+    .tab { flex: 1; padding: 0.65rem 0.5rem; text-align: center; font-size: 0.8rem; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; font-family: var(--font-body); background: none; border-top: none; border-left: none; border-right: none; }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--violet); border-bottom-color: var(--violet); }
+    .timeline { list-style: none; margin: 0; padding: 0; }
+    .timeline-item { display: flex; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-default); align-items: flex-start; }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-dot { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+    .dot-invoice { background: rgba(139,92,246,.15); }
+    .dot-payment { background: rgba(52,211,153,.15); }
+    .dot-reminder { background: rgba(245,158,11,.15); }
+    .timeline-body { flex: 1; min-width: 0; }
+    .timeline-title { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+    .timeline-detail { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; }
+    .timeline-amount { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; flex-shrink: 0; align-self: center; }
+    .amount-income { color: #4ade80; }
+    .amount-pending { color: var(--gold); }
+    .amount-overdue { color: #f87171; }
+    .status-badge { display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.04em; margin-left: 0.3rem; vertical-align: middle; }
+    .badge-paid { background: rgba(52,211,153,.15); color: #34d399; }
+    .badge-sent { background: rgba(245,158,11,.15); color: #f59e0b; }
+    .badge-draft { background: rgba(139,92,246,.15); color: var(--violet); }
+    .badge-overdue { background: rgba(248,113,113,.15); color: #f87171; }
+    .actions-bar { display: flex; gap: 0.6rem; margin-top: 1.25rem; flex-wrap: wrap; }
+    .action-btn { flex: 1; min-width: 140px; padding: 0.65rem 1rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; text-align: center; text-decoration: none; display: block; border: none; }
+    .action-primary { background: rgba(139,92,246,.15); border: 1px solid rgba(139,92,246,.35); color: var(--violet); }
+    .action-primary:hover { background: rgba(139,92,246,.25); }
+    .action-warning { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); color: #f59e0b; }
+    .action-warning:hover { background: rgba(245,158,11,.2); }
+    .cazador-status { background: var(--surface); border: 1px solid var(--border-default); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; }
+    .cazador-label { color: var(--muted); }
+    .cazador-value { font-weight: 700; }
+    .cazador-active { color: #34d399; }
+    .cazador-paused { color: #f59e0b; }
+    .empty-state { text-align: center; padding: 2rem 1rem; color: var(--muted); font-size: 0.85rem; }
+    .skeleton { background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 0.35rem; }
+    @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+    @media (min-width: 768px) { .ficha-container { max-width: 960px; padding: 0 2rem 2rem; } .kpi-strip { flex-wrap: wrap; overflow: visible; } .kpi-pill { min-width: 0; flex: 1; } }
+  </style>
+</head>
+<body>
+<div class="ficha-container">
+  <div class="ficha-nav">
+    <a href="clients.html" class="btn-back">← Clientes</a>
+    <span class="salud-badge" id="saludBadge">...</span>
+  </div>
+  <div class="client-header" id="clientHeader">
+    <h1 class="client-name skeleton" style="width:60%;height:1.5rem;">&nbsp;</h1>
+    <div class="client-meta skeleton" style="width:40%;height:0.78rem;margin-top:0.5rem;">&nbsp;</div>
+  </div>
+  <div class="kpi-strip" id="kpiStrip">
+    <div class="kpi-pill"><div class="skeleton" style="width:100%;height:3rem;">&nbsp;</div></div>
+    <div class="kpi-pill"><div class="skeleton" style="width:100%;height:3rem;">&nbsp;</div></div>
+    <div class="kpi-pill"><div class="skeleton" style="width:100%;height:3rem;">&nbsp;</div></div>
+    <div class="kpi-pill"><div class="skeleton" style="width:100%;height:3rem;">&nbsp;</div></div>
+  </div>
+  <div class="cazador-status" id="cazadorStatus" style="display:none;">
+    <span class="cazador-label">🗡️ Cazador</span>
+    <span class="cazador-value" id="cazadorValue">—</span>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="todo" onclick="switchTab('todo')">📋 Todo</button>
+    <button class="tab" data-tab="facturas" onclick="switchTab('facturas')">📄 Facturas</button>
+    <button class="tab" data-tab="pagos" onclick="switchTab('pagos')">💰 Pagos</button>
+    <button class="tab" data-tab="cazador" onclick="switchTab('cazador')">🗡️ Cazador</button>
+  </div>
+  <ul class="timeline" id="timeline">
+    <li class="timeline-item"><div class="timeline-dot skeleton">&nbsp;</div><div class="timeline-body"><div class="skeleton" style="width:70%;height:0.82rem;">&nbsp;</div></div></li>
+  </ul>
+  <div class="actions-bar">
+    <a href="invoices.html" class="action-btn action-primary" id="btnNewInvoice">📄 Nueva factura</a>
+    <button class="action-btn action-warning" id="btnPauseCazador" onclick="toggleCazador()">⏸ En negociación</button>
+  </div>
+</div>
+<script>
+const API='https://diabolus-crm-api.vercel.app'
+const auth=JSON.parse(localStorage.getItem('diabolus_auth')||'null')
+if(!auth?.token)window.location.href='index-login.html'
+const params=new URLSearchParams(window.location.search)
+const clientId=params.get('id')
+if(!clientId)window.location.href='clients.html'
+const eur=n=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:n>=1000?0:2}).format(n??0)
+const fmtDate=d=>d?new Date(d).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'}):'—'
+const fmtDateShort=d=>d?new Date(d).toLocaleDateString('es-ES',{day:'numeric',month:'short'}):'—'
+let fichaData=null
+async function loadFicha(){
+  try{
+    const res=await fetch(`${API}/api/clients/${clientId}/ficha`,{headers:{'Authorization':`Bearer ${auth.token}`}})
+    if(res.status===401){localStorage.removeItem('diabolus_auth');window.location.href='index-login.html';return}
+    if(!res.ok)throw new Error(`${res.status}`)
+    fichaData=await res.json()
+    render(fichaData)
+  }catch(err){
+    console.error('Ficha load error:',err)
+    document.getElementById('timeline').innerHTML='<li class="empty-state">Error al cargar. <a href="" style="color:var(--violet)">Reintentar</a></li>'
+  }
+}
+function render(d){
+  const c=d.client,k=d.kpis
+  document.getElementById('clientHeader').innerHTML=`
+    <h1 class="client-name">${c.nombre_comercial||c.name}</h1>
+    <div class="client-meta">
+      ${c.phone?`<span>📞 <a href="tel:${c.phone}">${c.phone}</a></span>`:''}
+      ${c.email?`<span>✉️ <a href="mailto:${c.email}">${c.email}</a></span>`:''}
+    </div>
+    <div class="client-since">Cliente desde ${fmtDate(c.created_at)}</div>`
+  const saludEl=document.getElementById('saludBadge')
+  const sl={verde:'🟢 Al día',amarillo:'🟡 Atención',rojo:'🔴 Riesgo'}
+  saludEl.textContent=sl[k.salud]||'—'
+  saludEl.className='salud-badge salud-'+k.salud
+  const pendCount=d.invoices?d.invoices.filter(i=>i.status!=='paid').length:0
+  document.getElementById('kpiStrip').innerHTML=`
+    <div class="kpi-pill"><div class="kpi-pill-label">Saldo pendiente</div><div class="kpi-pill-value">${eur(k.saldoPendiente)}</div><div class="kpi-pill-sub">${pendCount} factura${pendCount!==1?'s':''}</div></div>
+    <div class="kpi-pill ${k.numVencidas>0?'danger':''}"><div class="kpi-pill-label">Vencido</div><div class="kpi-pill-value ${k.numVencidas>0?'danger':''}">${k.numVencidas>0?eur(k.importeVencido):'€0'}</div><div class="kpi-pill-sub">${k.numVencidas} factura${k.numVencidas!==1?'s':''}</div></div>
+    <div class="kpi-pill"><div class="kpi-pill-label">Facturado total</div><div class="kpi-pill-value">${eur(k.totalFacturado)}</div><div class="kpi-pill-sub">${k.numFacturas} factura${k.numFacturas!==1?'s':''}</div></div>
+    <div class="kpi-pill"><div class="kpi-pill-label">Deuda más vieja</div><div class="kpi-pill-value">${k.diasDeudaMasVieja>0?k.diasDeudaMasVieja+'d':'0'}</div><div class="kpi-pill-sub">días vencida</div></div>`
+  const cazadorEl=document.getElementById('cazadorStatus')
+  cazadorEl.style.display=''
+  const isPaused=c.cazador_paused_until&&new Date(c.cazador_paused_until)>new Date()
+  const cazVal=document.getElementById('cazadorValue')
+  if(isPaused){cazVal.textContent='⏸ En negociación';cazVal.className='cazador-value cazador-paused';document.getElementById('btnPauseCazador').textContent='▶️ Reactivar Cazador'}
+  else{cazVal.textContent='✅ Activo';cazVal.className='cazador-value cazador-active';document.getElementById('btnPauseCazador').textContent='⏸ En negociación'}
+  document.getElementById('btnNewInvoice').href='invoices.html?new=1&client_id='+clientId
+  renderTimeline(d.timeline,'todo')
+}
+function renderTimeline(items,filter){
+  const el=document.getElementById('timeline')
+  let f=items
+  if(filter==='facturas')f=items.filter(i=>i.type==='invoice')
+  else if(filter==='pagos')f=items.filter(i=>i.type==='payment')
+  else if(filter==='cazador')f=items.filter(i=>i.type==='reminder')
+  if(!f.length){el.innerHTML='<li class="empty-state">Sin actividad en esta categoría.</li>';return}
+  el.innerHTML=f.map(item=>{
+    if(item.type==='invoice'){
+      const isOv=item.status!=='paid'&&item.due_date&&new Date(item.due_date)<new Date()
+      const sl=isOv?'overdue':item.status
+      const st={paid:'Pagada',sent:'Enviada',draft:'Borrador',overdue:'Vencida'}[sl]||item.status
+      const bc={paid:'badge-paid',sent:'badge-sent',draft:'badge-draft',overdue:'badge-overdue'}[sl]||''
+      const ac=item.status==='paid'?'amount-income':isOv?'amount-overdue':'amount-pending'
+      return `<li class="timeline-item"><div class="timeline-dot dot-invoice">📄</div><div class="timeline-body"><div class="timeline-title">Factura ${item.number||'—'} <span class="status-badge ${bc}">${st}</span></div><div class="timeline-detail">${fmtDateShort(item.date)}${item.due_date?' · Vence '+fmtDateShort(item.due_date):''}</div></div><div class="timeline-amount ${ac}">${eur(item.amount)}</div></li>`
+    }
+    if(item.type==='payment'){
+      return `<li class="timeline-item"><div class="timeline-dot dot-payment">💰</div><div class="timeline-body"><div class="timeline-title">Pago recibido</div><div class="timeline-detail">${fmtDateShort(item.date)}${item.concept?' · '+item.concept:''}</div></div><div class="timeline-amount amount-income">+${eur(item.amount)}</div></li>`
+    }
+    if(item.type==='reminder'){
+      const te={friendly:'😊',direct:'📢',formal:'📜'}[item.tone]||'🗡️'
+      const ch={email:'✉️',whatsapp:'💬',telegram:'📲'}[item.channel]||item.channel
+      return `<li class="timeline-item"><div class="timeline-dot dot-reminder">${te}</div><div class="timeline-body"><div class="timeline-title">Recordatorio nivel ${item.level}</div><div class="timeline-detail">${fmtDateShort(item.date)} · ${ch} · ${item.tone||'direct'}</div></div><div class="timeline-amount" style="color:var(--muted);font-size:0.72rem;">${item.status==='paid'?'✅':item.status==='ignored'?'⏳':'📤'}</div></li>`
+    }
+    return ''
+  }).join('')
+}
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'))
+  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active')
+  if(fichaData)renderTimeline(fichaData.timeline,tab)
+}
+async function toggleCazador(){
+  if(!fichaData)return
+  const c=fichaData.client
+  const isPaused=c.cazador_paused_until&&new Date(c.cazador_paused_until)>new Date()
+  const action=isPaused?'resume':'pause'
+  try{
+    const res=await fetch(`${API}/api/clients/${clientId}/cazador-pause`,{method:'PUT',headers:{'Authorization':`Bearer ${auth.token}`,'Content-Type':'application/json'},body:JSON.stringify({action})})
+    if(res.ok){const r=await res.json();fichaData.client=r.client;render(fichaData)}
+  }catch(err){console.error('Toggle cazador error:',err)}
+}
+loadFicha()
+</script>
+</body>
+</html>
