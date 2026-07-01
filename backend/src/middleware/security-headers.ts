@@ -10,7 +10,6 @@ export async function securityHeaders(c: Context, next: Next) {
   c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
 
   // CSP — Content Security Policy
-  // Blocks inline scripts, requires HTTPS, restricts external resources
   const csp = [
     "default-src 'self'",
     "script-src 'self' https://cdn.jsdelivr.net",
@@ -37,11 +36,11 @@ export async function securityHeaders(c: Context, next: Next) {
   // Referrer-Policy — Limit referrer info
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
 
-  // Permissions-Policy — Disable unused features
+  // Permissions-Policy — Disable unused features (microphone + autoplay enabled for Voice UI)
   c.header('Permissions-Policy', [
     'accelerometer=()',
     'ambient-light-sensor=()',
-    'autoplay=()',
+    'autoplay=(self)',
     'battery=()',
     'camera=()',
     'document-domain=()',
@@ -50,7 +49,7 @@ export async function securityHeaders(c: Context, next: Next) {
     'geolocation=()',
     'gyroscope=()',
     'magnetometer=()',
-    'microphone=()',
+    'microphone=(self)',
     'midi=()',
     'payment=()',
     'picture-in-picture=()',

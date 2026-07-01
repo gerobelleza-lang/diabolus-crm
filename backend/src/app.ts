@@ -49,8 +49,6 @@ import { brainSettingsRoutes } from './routes/brain-settings'
 import { guardianRoutes } from './routes/guardian'
 import { whatsappTemplatesRoutes } from './routes/whatsapp-templates'
 import { productsRoutes } from './routes/products'
-import { importRoutes } from './routes/import'
-import contactRoutes from './routes/contact'
 
 export function createApp() {
   const app = new Hono()
@@ -144,9 +142,6 @@ export function createApp() {
 
   // ─── Internal: Guardián Proactivo (scan detectores → Confesor → entrega) ──
   app.route('/api/internal/guardian', guardianRoutes)
-
-  // ─── Contact Form (Public — landing page form) ────────────────────────────
-  app.route('/api/contact', contactRoutes)
 
   // ─── Demonio Callback (Public — N8N webhook, no user auth) ─────────────────
   app.post('/api/demonio/callback', async (c) => {
@@ -435,13 +430,9 @@ export function createApp() {
 
   // ── Diablo Metrics endpoint ────────────────────────────────────────────────
   app.get('/api/internal/diablo-metrics', async (c) => {
-    // Auth: JWT only (secret branch removed — surface-of-attack reduction per audit)
-    const auth = c.req.header('Authorization')
-    if (!auth?.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401)
-    const token = auth.slice(7)
-    const supabase = getSupabaseAdmin()
-    const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
-    if (authErr || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const secret = c.req.header('x-internal-secret') || ''
+    const expected = process.env.INTERNAL_SECRET
+    if (!expected || secret !== expected) return c.json({ error: 'Forbidden' }, 403)
 
     const salonId = c.req.query('salon_id') || undefined
     const days = parseInt(c.req.query('days') || '30')
@@ -468,7 +459,7 @@ export function createApp() {
   })
 
   app.get('/api/internal/admin/panel', async (c) => {
-    const secret   = c.req.query('secret') || c.req.header('x-admin-secret') || ''
+    const secret   = c.req.header('x-admin-secret') || ''
     const expected = process.env.ADMIN_PANEL_SECRET
     if (!expected) return c.json({ error: 'Server misconfigured' }, 500)
     if (secret !== expected) return c.json({ error: 'Forbidden' }, 403)
@@ -559,8 +550,6 @@ export function createApp() {
   app.route('/api/leads-b2b', leadsB2bProtectedRoutes)
   app.route('/api/salons', salonsRoutes)   // ← Selector multiempresa
   app.route('/api/products', productsRoutes)
-  // ─── Importador Masivo (CSV productos + clientes) ─────────────────────────
-  app.route('/api/import', importRoutes)
 
   // ─── Error Handling ────────────────────────────────────────────────────────
   app.notFound((c) => c.json({ error: 'Not Found', path: c.req.path }, 404))
