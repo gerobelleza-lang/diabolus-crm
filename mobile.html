@@ -141,6 +141,21 @@
       transition: background 0.15s;
     }
     .btn-header:active { background: rgba(255,255,255,0.06); }
+
+    .btn-header.btn-dashboard {
+      background: rgba(139,92,246,0.15);
+      color: var(--purple);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(139,92,246,0.25);
+    }
+    .btn-header.btn-dashboard:active {
+      background: rgba(139,92,246,0.3);
+    }
+
     .btn-header.muted { opacity: 0.35; }
 
     /* ═══════════════════════════════
@@ -635,7 +650,7 @@
         <div class="dot-alive"></div>
         <span id="statusLabel">Listo</span>
       </div>
-      <button class="btn-header" onclick="goDesktop()" title="Dashboard">⊞</button>
+      <button class="btn-header btn-dashboard" onclick="goDesktop()" title="Ver App">📊 App</button>
       <button class="btn-header" id="btnSound" onclick="toggleSound()" title="Silenciar voz">🔊</button>
     </div>
   </header>
