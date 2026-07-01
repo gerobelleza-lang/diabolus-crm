@@ -14,7 +14,7 @@
  *   enterprise:  -1 (ilimitado)
  */
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Context, Next } from 'hono'
 
 const PLAN_LIMITS: Record<string, number> = {
@@ -24,11 +24,16 @@ const PLAN_LIMITS: Record<string, number> = {
   enterprise:  -1,
 }
 
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+// Singleton Supabase admin client — reused across invocations within same Edge instance
+let _supabase: SupabaseClient | null = null
+function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+  }
+  return _supabase
 }
 
 function getCurrentYearMonth(): string {

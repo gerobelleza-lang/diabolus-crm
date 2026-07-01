@@ -8,14 +8,6 @@ interface RateLimitEntry {
 // In-memory store (per Edge instance — effective against burst attacks)
 const store = new Map<string, RateLimitEntry>()
 
-// Cleanup stale entries every 5 minutes
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, entry] of store) {
-    if (now > entry.resetAt) store.delete(key)
-  }
-}, 5 * 60 * 1000)
-
 interface RateLimitOptions {
   windowMs: number    // Time window in ms
   max: number         // Max requests per window
@@ -40,6 +32,8 @@ export function rateLimiter(opts: RateLimitOptions) {
     const now = Date.now()
 
     let entry = store.get(key)
+
+    // Cleanup expired entry inline (replaces setInterval which is dead code in Edge)
     if (!entry || now > entry.resetAt) {
       entry = { count: 0, resetAt: now + windowMs }
       store.set(key, entry)
