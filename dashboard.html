@@ -462,18 +462,80 @@
     @media (max-width: 1024px) {
       .bottom-grid { grid-template-columns: 1fr; }
     }
+    /* ── MOBILE: Hamburger sidebar overlay ── */
+    .hamburger-btn {
+      display: none;
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      color: var(--text-primary);
+      font-size: 1.25rem;
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: background 0.18s;
+      flex-shrink: 0;
+    }
+    .hamburger-btn:hover {
+      background: rgba(139,92,246,.12);
+    }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 99;
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+    .sidebar-overlay.open { display: block; }
+
     @media (max-width: 768px) {
+      .hamburger-btn { display: flex; align-items: center; }
       .sidebar {
-        width: 100%; height: auto;
-        position: relative; border-right: none;
-        border-bottom: 1px solid var(--border-color); padding: 1rem 0;
+        transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+        z-index: 100;
+        width: 280px;
       }
-      .main-container { flex-direction: column; }
-      .main-content { margin-left: 0; padding: 1rem; max-width: 100%; }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .main-container { flex-direction: row; }
+      .main-content { margin-left: 0; padding: 1.25rem 1rem; max-width: 100%; width: 100%; }
       .hero-row { grid-template-columns: 1fr; }
       .hero-card { grid-column: span 1; }
-      .page-header { flex-direction: column; gap: 1rem; }
-      .quick-actions { grid-template-columns: 1fr; }
+      .page-header { flex-direction: column; gap: 0.75rem; }
+      .page-header h1 { font-size: 1.3rem; }
+      .user-chip { align-self: flex-start; }
+      .charts-row { grid-template-columns: 1fr; }
+      .bottom-grid { grid-template-columns: 1fr; }
+      .quick-actions { grid-template-columns: 1fr 1fr; }
+      .hero-value { font-size: 1.8rem; }
+      .kpi-value { font-size: 1.1rem; }
+      /* Banner "volver al agente" para mobile */
+      .mobile-agent-banner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: rgba(139,92,246,.12);
+        border: 1px solid rgba(139,92,246,.3);
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        color: var(--violet);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: background 0.18s;
+      }
+      .mobile-agent-banner:hover {
+        background: rgba(139,92,246,.22);
+      }
+    }
+    @media (min-width: 769px) {
+      .mobile-agent-banner { display: none; }
     }
 
     /* ── HEALTH SCORE WIDGET ── */
@@ -662,12 +724,16 @@
         <a href="invoices.html"     class="nav-item"><span class="nav-icon">📄</span> Facturas</a>
         <a href="clients.html"      class="nav-item"><span class="nav-icon">👥</span> Clientes</a>
         <a href="transactions.html" class="nav-item"><span class="nav-icon">💰</span> Transacciones</a>
+            <a href="catalogo.html" class="nav-item"><span class="nav-icon">📦</span> Catálogo</a>
         <a href="reports.html"      class="nav-item"><span class="nav-icon">📈</span> Reportes</a>
         <a href="documents.html"    class="nav-item"><span class="nav-icon">📋</span> Documentos</a>
         <hr style="border-color:rgba(255,255,255,.08);margin:.5rem .5rem">
         <a href="cazador.html"  class="nav-item"><span class="nav-icon">🗡️</span> El Cazador</a>
         <a href="pacto.html"    class="nav-item"><span class="nav-icon">🔥</span> El Pacto</a>
         <a href="demonio.html"  class="nav-item"><span class="nav-icon">😈</span> El Demonio</a>
+        <a href="whatsapp.html" class="nav-item"><span class="nav-icon">💬</span> WhatsApp</a>
+        <hr style="border-color:rgba(255,255,255,.08);margin:.5rem .5rem">
+        <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
       </nav>
       <div class="sidebar-footer">
         <button class="btn btn-secondary" style="width:100%;" onclick="logout()">Cerrar sesión</button>
@@ -676,13 +742,24 @@
     </aside>
 
     <!-- ── MAIN ── -->
+    <!-- Sidebar overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
     <main class="main-content">
+
+      <!-- Mobile: link back to agent -->
+      <a href="mobile.html" class="mobile-agent-banner">
+        💬 Volver al Agente · Diablilla
+      </a>
 
       <!-- HEADER -->
       <div class="page-header">
-        <div>
-          <h1>Centro de mando</h1>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Menú">☰</button>
+          <div>
+            <h1>Centro de mando</h1>
           <div class="date-line" id="dateDisplay">—</div>
+          </div>
         </div>
         <div class="user-chip">
           <div class="user-name-block">
@@ -870,7 +947,7 @@
     </main>
   </div>
 
-  <script src="js/app.js"></script>
+  
   <script>
     const API = 'https://diabolus-crm-api.vercel.app'
 
@@ -1180,6 +1257,22 @@
     loadDashboard()
     loadUsage()
 
+
+    // ── Mobile sidebar toggle ──
+    function toggleSidebar() {
+      document.querySelector('.sidebar').classList.toggle('open')
+      document.getElementById('sidebarOverlay').classList.toggle('open')
+    }
+    function closeSidebar() {
+      document.querySelector('.sidebar').classList.remove('open')
+      document.getElementById('sidebarOverlay').classList.remove('open')
+    }
+    // Close sidebar on nav click (mobile)
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', closeSidebar)
+    })
+
+
     // ── Uso del agente IA ──
     async function loadUsage() {
       try {
@@ -1232,6 +1325,6 @@
       })
     }
   </script>
-<script src="sidebar.js"></script>
+<script src="sidebar.js?v=3"></script>
 </body>
 </html>

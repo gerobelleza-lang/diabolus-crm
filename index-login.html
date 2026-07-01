@@ -105,6 +105,39 @@
       font-size: 0.75rem;
       font-family: var(--font-mono);
     }
+
+    /* ── MOBILE RESPONSIVE ── */
+    @media (max-width: 480px) {
+      .login-wrap {
+        padding: 1rem;
+        align-items: flex-start;
+        padding-top: 15vh;
+      }
+      .login-box {
+        padding: 2rem 1.5rem;
+        border-radius: 0.75rem;
+      }
+      .login-mark svg {
+        max-width: 200px !important;
+      }
+      .login-tagline {
+        font-size: 0.75rem;
+        margin-bottom: 1.75rem;
+      }
+      .login-btn {
+        padding: 1rem;
+        font-size: 1rem;
+      }
+      .form-group input {
+        padding: 0.875rem 0.75rem;
+        font-size: 1rem;
+      }
+    }
+
+    /* Beta privada: ocultar registro */
+    .register-link {
+      display: none;
+    }
   </style>
   <link rel="stylesheet" href="diabolus-tokens.css">
 </head>
