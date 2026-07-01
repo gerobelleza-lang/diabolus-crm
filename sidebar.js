@@ -129,6 +129,56 @@
       '<div class="dsb-ver">Diabolus CRM v2.1</div>' +
       '</div>';
 
+    // ── MOBILE: inject overlay, hamburger, and banners ──
+    if (window.innerWidth < 768 || true) { // always inject, CSS controls visibility
+      // Overlay
+      if (!document.getElementById('dsb-overlay')) {
+        var ov = document.createElement('div');
+        ov.id = 'dsb-overlay';
+        ov.className = 'dsb-overlay';
+        ov.onclick = function() { window.__dsbCloseSidebar(); };
+        document.body.appendChild(ov);
+      }
+
+      // Hamburger — find the page header or first h1
+      var pageHeader = document.querySelector('.page-header');
+      if (pageHeader && !document.getElementById('dsb-hamburger')) {
+        var hb = document.createElement('button');
+        hb.id = 'dsb-hamburger';
+        hb.className = 'dsb-hamburger';
+        hb.setAttribute('aria-label', 'Menú');
+        hb.textContent = '☰';
+        hb.onclick = function() { window.__dsbToggleSidebar(); };
+        // Insert at the beginning of page header
+        var firstChild = pageHeader.firstChild;
+        if (firstChild && firstChild.style) {
+          // If there's a flex wrapper, insert before it
+          firstChild.insertBefore(hb, firstChild.firstChild);
+        } else {
+          pageHeader.insertBefore(hb, pageHeader.firstChild);
+        }
+      }
+
+      // Mobile banners — insert before main content sections
+      var mainContent = document.querySelector('.main-content') || document.querySelector('.main') || document.querySelector('main');
+      if (mainContent && !document.getElementById('dsb-mob-banners')) {
+        var bannersDiv = document.createElement('div');
+        bannersDiv.id = 'dsb-mob-banners';
+        var isDashboard = (page === 'dashboard');
+        var isChat = (page === 'chat');
+        bannersDiv.innerHTML =
+          (isDashboard ? '' : '<a href="dashboard.html" class="dsb-mob-banner dsb-mob-dash">📊 ← Dashboard</a>') +
+          '<a href="mobile.html" class="dsb-mob-banner dsb-mob-agent">💬 Diablilla · Agente IA</a>';
+        // Insert after the page header or at the top
+        var ph = mainContent.querySelector('.page-header');
+        if (ph && ph.nextSibling) {
+          mainContent.insertBefore(bannersDiv, ph.nextSibling);
+        } else {
+          mainContent.insertBefore(bannersDiv, mainContent.firstChild);
+        }
+      }
+    }
+
     var authEl = document.getElementById('salonName') || document.getElementById('salonNameSidebar');
     if (authEl) {
       var observer = new MutationObserver(function () {
@@ -151,6 +201,20 @@
     var items = sec.querySelector('.dsb-sec-items');
     if (arr)   arr.classList.toggle('dsb-open',   !!state[key]);
     if (items) items.classList.toggle('dsb-open', !!state[key]);
+  };
+
+  // ── MOBILE: sidebar toggle ──
+  window.__dsbToggleSidebar = function() {
+    var sidebar = document.querySelector('aside.sidebar');
+    var overlay = document.getElementById('dsb-overlay');
+    if (sidebar) sidebar.classList.toggle('dsb-open');
+    if (overlay) overlay.classList.toggle('dsb-open');
+  };
+  window.__dsbCloseSidebar = function() {
+    var sidebar = document.querySelector('aside.sidebar');
+    var overlay = document.getElementById('dsb-overlay');
+    if (sidebar) sidebar.classList.remove('dsb-open');
+    if (overlay) overlay.classList.remove('dsb-open');
   };
 
   document.addEventListener('click', function (e) {
