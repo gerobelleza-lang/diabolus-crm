@@ -3,313 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>El Pacto — Suscripción Premium — Diabolus CRM</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#8B5CF6">
+  <title>El Pacto — Diabolus</title>
+  <link rel="icon" href="favicon.ico">
   <link rel="stylesheet" href="diabolus-tokens.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: var(--ink);
-      color: var(--text-primary);
-      font-family: var(--font-body);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 2rem;
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .checkout-card {
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: 1.5rem; max-width: 480px; width: 90%; padding: 3rem 2.5rem;
+      text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3);
     }
-
-    .container {
-      max-width: 500px;
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border-color);
-      border-radius: 1rem;
-      padding: 3rem 2rem;
-      text-align: center;
+    .logo { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem; }
+    .price { font-size: 3rem; font-weight: 800; color: var(--violet); margin: 1rem 0 0.25rem; }
+    .price-period { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; }
+    .features { text-align: left; margin: 1.5rem 0 2rem; }
+    .feature { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; font-size: 0.95rem; }
+    .feature-icon { color: #22c55e; font-size: 1.1rem; }
+    .cta-btn {
+      display: block; width: 100%; padding: 1rem; border: none; border-radius: 0.75rem;
+      background: var(--violet); color: white; font-size: 1.1rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
     }
-
-    .header {
-      margin-bottom: 2rem;
-    }
-
-    .icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-
-    .title {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .subtitle {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-    }
-
-    .pricing {
-      background: linear-gradient(135deg, rgba(139,92,246,.1) 0%, rgba(139,92,246,.05) 100%);
-      border: 2px solid var(--violet);
-      border-radius: 0.75rem;
-      padding: 2rem;
-      margin: 2rem 0;
-    }
-
-    .price {
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--violet);
-      margin-bottom: 0.25rem;
-    }
-
-    .period {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-    }
-
-    .features {
-      text-align: left;
-      margin: 2rem 0;
-    }
-
-    .feature {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-      font-size: 0.95rem;
-    }
-
-    .feature-icon {
-      flex-shrink: 0;
-      width: 1.5rem;
-      height: 1.5rem;
-      background: rgba(139,92,246,.15);
-      border-radius: 0.35rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--violet);
-      font-weight: 600;
-      font-size: 0.8rem;
-    }
-
-    .feature-text {
-      flex: 1;
-    }
-
-    .cta-section {
-      margin-top: 2rem;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 1rem;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.18s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-
-    .btn-primary {
-      background: var(--violet);
-      color: white;
-      margin-bottom: 0.75rem;
-    }
-
-    .btn-primary:hover {
-      background: #7C3AED;
-      transform: translateY(-2px);
-    }
-
-    .btn-primary:disabled {
-      background: rgba(139,92,246,.5);
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .btn-secondary {
-      background: transparent;
-      color: var(--text-secondary);
-      border: 1px solid var(--border-color);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(139,92,246,.05);
-      color: var(--text-primary);
-    }
-
-    .footer {
-      margin-top: 2rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--border-color);
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    .footer a {
-      color: var(--violet);
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
-    .info-box {
-      background: rgba(59,130,246,.1);
-      border: 1px solid rgba(59,130,246,.2);
-      border-radius: 0.5rem;
-      padding: 1rem;
-      margin: 1.5rem 0;
-      color: #3B82F6;
-      font-size: 0.9rem;
-      line-height: 1.5;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 0.875rem;
-      height: 0.875rem;
-      border: 2px solid rgba(255,255,255,.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    .cta-btn:hover { background: var(--violet-hover); transform: translateY(-1px); }
+    .cta-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .already { margin-top: 1rem; }
+    .already a { color: var(--violet); }
+    .back-link { display: block; margin-top: 1.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; }
+    .status { margin-top: 1rem; font-size: 0.9rem; }
+    .status.error { color: #ef4444; }
+    .status.success { color: #22c55e; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <div class="icon">🔥</div>
-      <div class="title">El Pacto</div>
-      <div class="subtitle">Suscripción Premium para Diabolus CRM</div>
-    </div>
-
-    <div class="pricing">
-      <div class="price">€49</div>
-      <div class="period">por mes, facturación automática</div>
-    </div>
+  <div class="checkout-card">
+    <div class="logo">🔥</div>
+    <h1>El Pacto</h1>
+    <p class="subtitle">Tu tesorería con Diablilla — cobros, facturas, recordatorios automáticos</p>
+    <div class="price">€49<span style="font-size:1rem;font-weight:400;color:var(--text-secondary)">/mes</span></div>
+    <p class="price-period">Oferta de lanzamiento · Sin permanencia</p>
 
     <div class="features">
-      <div class="feature">
-        <div class="feature-icon">✓</div>
-        <div class="feature-text">Acceso a todos los módulos premium</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">✓</div>
-        <div class="feature-text">El Cazador — cobrador automático ilimitado</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">✓</div>
-        <div class="feature-text">Diablilla — Agente IA sin límite de mensajes</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">✓</div>
-        <div class="feature-text">Integraciones: Stripe, WhatsApp, Telegram</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">✓</div>
-        <div class="feature-text">Soporte prioritario 24/7</div>
-      </div>
+      <div class="feature"><span class="feature-icon">✅</span> Diablilla IA — 3 cerebros (voz + texto + WhatsApp)</div>
+      <div class="feature"><span class="feature-icon">✅</span> Facturación inteligente y recordatorios Cazador</div>
+      <div class="feature"><span class="feature-icon">✅</span> Cobro Bizum integrado</div>
+      <div class="feature"><span class="feature-icon">✅</span> Dashboard tesorería + Score salud financiera</div>
+      <div class="feature"><span class="feature-icon">✅</span> Ficha cliente 360° — facturas, pagos, historial</div>
+      <div class="feature"><span class="feature-icon">✅</span> Exportación gestoría + firma digital</div>
+      <div class="feature"><span class="feature-icon">✅</span> WhatsApp Business + El Demonio (captación)</div>
     </div>
 
-    <div class="info-box">
-      💳 Puedes cambiar tu método de pago o cancelar en cualquier momento desde Configuración.
-    </div>
-
-    <div class="cta-section">
-      <button class="btn btn-primary" id="checkoutBtn" onclick="startCheckout()">
-        🔥 Iniciar Suscripción
-      </button>
-      <button class="btn btn-secondary" onclick="goBack()">Volver</button>
-    </div>
-
-    <div class="footer">
-      Al hacer clic en "Iniciar Suscripción", aceptas nuestros <a href="#">Términos de Servicio</a> y <a href="#">Política de Privacidad</a>.
-      <br><br>
-      ¿Preguntas? Escribe a <a href="mailto:hola@diabolus.es">hola@diabolus.es</a>
-    </div>
+    <button class="cta-btn" id="ctaBtn" onclick="startCheckout()">Firmar El Pacto 🔥</button>
+    <div id="status" class="status"></div>
+    <a href="dashboard.html" class="back-link">← Volver al dashboard</a>
   </div>
 
   <script>
-    const API = window.location.origin;
-    const token = localStorage.getItem('auth_token');
+    const API = 'https://diabolus-crm-api.vercel.app';
+    const token = localStorage.getItem('sb_access_token');
 
-    function goBack() {
-      window.history.back();
-    }
+    // Check if already subscribed
+    (async () => {
+      if (!token) return;
+      try {
+        const r = await fetch(`${API}/api/stripe/subscription`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const d = await r.json();
+        if (d.active || d.plan === 'pacto') {
+          document.getElementById('ctaBtn').textContent = '✅ Ya tienes El Pacto';
+          document.getElementById('ctaBtn').disabled = true;
+          document.getElementById('status').textContent = 'Tu suscripción está activa.';
+          document.getElementById('status').className = 'status success';
+        }
+      } catch {}
+    })();
 
     async function startCheckout() {
-      const btn = document.getElementById('checkoutBtn');
+      const btn = document.getElementById('ctaBtn');
+      const status = document.getElementById('status');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Abriendo portal seguro…';
+      btn.textContent = 'Redirigiendo a Stripe...';
+      status.textContent = '';
 
       try {
-        const res = await fetch(`${API}/api/stripe/checkout`, {
+        if (!token) {
+          window.location.href = 'index-login.html?redirect=checkout';
+          return;
+        }
+        const r = await fetch(`${API}/api/stripe/checkout`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify({})
         });
-
-        const data = await res.json();
-
-        if (data.url) {
-          window.location.href = data.url;
+        const d = await r.json();
+        if (d.url) {
+          window.location.href = d.url;
         } else {
-          alert('Error: ' + (data.error || 'Desconocido'));
+          status.textContent = d.error || 'Error al crear sesión de pago';
+          status.className = 'status error';
           btn.disabled = false;
-          btn.textContent = '🔥 Iniciar Suscripción';
+          btn.textContent = 'Firmar El Pacto 🔥';
         }
-      } catch (err) {
-        console.error('Error:', err);
-        alert('Error al procesar la solicitud');
+      } catch (e) {
+        status.textContent = 'Error de conexión';
+        status.className = 'status error';
         btn.disabled = false;
-        btn.textContent = '🔥 Iniciar Suscripción';
+        btn.textContent = 'Firmar El Pacto 🔥';
       }
     }
-
-    // Check if user is already subscribed
-    window.addEventListener('load', async () => {
-      if (!token) {
-        window.location.href = '/';
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API}/api/stripe/subscription`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-
-        if (data.pacto_activo) {
-          alert('Ya tienes El Pacto activo. Ir a configuración.');
-          window.location.href = '/settings.html';
-        }
-      } catch (err) {
-        console.error('Error checking subscription:', err);
-      }
-    });
   </script>
 </body>
 </html>

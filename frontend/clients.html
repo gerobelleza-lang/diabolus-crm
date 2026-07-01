@@ -546,7 +546,17 @@ async function openDetail(clientId) {
       return;
     }
 
-    const { client, invoices, transactions, auditLog, summary } = res;
+    const { client, invoices, transactions, cazador, kpis } = res;
+    const auditLog = [];
+    const summary = {
+      totalFacturado: kpis.totalFacturado,
+      totalCobrado: kpis.totalCobrado,
+      deudaPendiente: kpis.saldoPendiente,
+      facturas: kpis.numFacturas,
+      pagos: transactions.length,
+      recordatoriosEnviados: (cazador || []).length,
+      ultimaActividad: kpis.ultimaActividad
+    };
     document.getElementById('detailTitle').querySelector('span').textContent = `👤 ${client.name}`;
 
     // Build tabs
@@ -596,7 +606,8 @@ async function openDetail(clientId) {
           <div class="info-row"><span class="lbl">Cliente desde</span><span class="val">${fmtDate(client.created_at)}</span></div>
           <div class="info-row"><span class="lbl">Última actividad</span><span class="val">${fmtDate(summary.ultimaActividad)}</span></div>
         </div>
-        <div style="display:flex;gap:0.75rem">
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+          <a href="ficha-cliente.html?id=${clientId}" class="btn btn-primary" style="flex:1;text-align:center;text-decoration:none">📋 Ficha 360°</a>
           <a href="invoices.html" class="btn btn-primary" style="flex:1;text-align:center;text-decoration:none">+ Nueva Factura</a>
           <button class="btn btn-secondary" onclick="openEditModal('${clientId}')">✏️ Editar</button>
         </div>
@@ -814,6 +825,6 @@ loadMe();
       });
     }
   </script>
-<script src="sidebar.js"></script>
+<script src="sidebar.js?v=3"></script>
 </body>
 </html>

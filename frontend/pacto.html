@@ -554,8 +554,7 @@
     }
 
     @media(max-width:768px){
-      .sidebar { display: none; }
-      .main { margin-left: 0; }
+      .main { margin-left: 0; padding-top: 50px; }
       .form-grid { grid-template-columns: 1fr; }
       .radio-group { grid-template-columns: 1fr; }
     }
@@ -575,7 +574,7 @@
 <body>
 
 <!-- ── SIDEBAR ── -->
-<nav class="sidebar">
+<aside class="sidebar">
   <div class="sidebar-logo">
     <span>😈 Diabolus</span>
     <small>Centro de Mando</small>
@@ -623,7 +622,7 @@
       <a href="pacto.html"        class="nav-item active"><span class="nav-icon">🔥</span> El Pacto</a>
     </div>
   </div>
-</nav>
+</aside>
 
 <!-- ── MAIN ── -->
 <div class="main">
@@ -1290,5 +1289,6 @@ init()
   }
   document.addEventListener('DOMContentLoaded', () => setTimeout(loadPipeline, 1500));
 </script>
+<script src="sidebar.js?v=4"></script>
 </body>
 </html>
