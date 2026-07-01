@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resumen Mensual · Diabolus CRM</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #1e1e2e;
+      --accent: #7c3aed;
+      --accent2: #a78bfa;
+      --green: #22c55e;
+      --red: #ef4444;
+      --orange: #f97316;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --card: #16161f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--accent2); text-decoration: none; font-size: 13px;
+      padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent);
+      transition: background .2s;
+    }
+    .back-btn:hover { background: rgba(124,58,237,.15); }
+    .header-title { font-size: 20px; font-weight: 700; color: var(--text); flex: 1; }
+    .header-sub { font-size: 12px; color: var(--muted); }
+
+    /* ── Controls ── */
+    .controls {
+      padding: 20px 24px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .controls label { font-size: 13px; color: var(--muted); }
+    .month-picker {
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text); padding: 8px 14px; border-radius: 8px; font-size: 14px;
+      cursor: pointer;
+    }
+    .btn {
+      padding: 8px 18px; border-radius: 8px; border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-pdf { background: #dc2626; color: #fff; }
+    .btn-pdf:hover { background: #b91c1c; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Main layout ── */
+    .main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+    /* ── KPI cards ── */
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin-bottom: 28px;
+    }
+    .kpi {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+    }
+    .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
+    .kpi-value { font-size: 28px; font-weight: 700; }
+    .kpi-value.green { color: var(--green); }
+    .kpi-value.red   { color: var(--red); }
+    .kpi-value.accent { color: var(--accent2); }
+    .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Section ── */
+    .section {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; margin-bottom: 20px; overflow: hidden;
+    }
+    .section-header {
+      padding: 14px 20px;
+      background: rgba(124,58,237,.08); border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--accent2);
+    }
+    .section-body { padding: 0; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: 10px 16px; text-align: left;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 11px 16px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.04); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.03); }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .amount-pos { color: var(--green); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .amount-neg { color: var(--red);   font-weight: 600; font-variant-numeric: tabular-nums; }
+    .amount-neu { color: var(--accent2); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* ── Badge tipo ── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .badge-in  { background: rgba(34,197,94,.15); color: var(--green); }
+    .badge-out { background: rgba(239,68,68,.15);  color: var(--red); }
+    .badge-paid    { background: rgba(34,197,94,.15); color: var(--green); }
+    .badge-pending { background: rgba(249,115,22,.15); color: var(--orange); }
+    .badge-overdue { background: rgba(239,68,68,.15);  color: var(--red); }
+
+    /* ── Facturas mini-grid ── */
+    .fac-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; padding: 20px;
+    }
+    .fac-item { text-align: center; }
+    .fac-item + .fac-item { border-left: 1px solid var(--border); }
+    .fac-num { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .fac-label { font-size: 11px; color: var(--muted); }
+    .fac-sub { font-size: 11px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+    /* ── Empty & loading ── */
+    .empty { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; }
+    .loading { text-align: center; padding: 60px; color: var(--muted); font-size: 14px; }
+    .spinner {
+      display: inline-block; width: 24px; height: 24px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Print styles ── */
+    @media print {
+      body { background: #fff; color: #111; }
+      .header, .controls { display: none; }
+      .kpi, .section { border: 1px solid #ddd; background: #fff; }
+      .section-header { background: #f3f4f6; color: #1e1b4b; }
+      .kpi-value.green { color: #15803d; }
+      .kpi-value.red   { color: #b91c1c; }
+      .kpi-value.accent { color: #6d28d9; }
+      th { color: #6b7280; }
+      td { color: #111; }
+      .amount-pos { color: #15803d; }
+      .amount-neg { color: #b91c1c; }
+      .amount-neu { color: #6d28d9; }
+      .badge-in  { background: #dcfce7; color: #15803d; }
+      .badge-out { background: #fee2e2; color: #b91c1c; }
+      .back-btn, .btn { display: none; }
+      .main { max-width: 100%; padding: 10px; }
+      .print-footer { display: block !important; }
+    }
+    .print-footer {
+      display: none; text-align: center;
+      font-size: 10px; color: #999; margin-top: 20px; padding-top: 10px;
+      border-top: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <a href="dashboard.html" class="back-btn">&#8592; Dashboard</a>
+  <div>
+    <div class="header-title">&#128197; Resumen Mensual</div>
+    <div class="header-sub">Informe detallado para el socio</div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <label for="monthPicker">Mes:</label>
+  <input type="month" id="monthPicker" class="month-picker" />
+  <button class="btn btn-primary" id="loadBtn">
+    <span>&#128260;</span> Cargar
+  </button>
+  <button class="btn btn-pdf" id="pdfBtn" disabled>
+    <span>&#128196;</span> Descargar PDF
+  </button>
+  <button class="btn" style="background:var(--surface);border:1px solid var(--border)" onclick="window.print()">
+    &#128424; Imprimir
+  </button>
+</div>
+
+<!-- Main content -->
+<div class="main" id="mainContent">
+  <div class="loading"><span class="spinner"></span>Selecciona un mes y pulsa Cargar</div>
+</div>
+
+<!-- Print footer -->
+<div class="print-footer" id="printFooter">
+  Generado por Diabolus CRM &middot; <span id="printDate"></span> &middot; Documento interno &mdash; no es factura oficial
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const API_BASE = 'https://diabolus-crm.vercel.app'
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+const picker  = document.getElementById('monthPicker')
+const loadBtn = document.getElementById('loadBtn')
+const pdfBtn  = document.getElementById('pdfBtn')
+const content = document.getElementById('mainContent')
+const printDateEl = document.getElementById('printDate')
+
+// Default: current month
+const now = new Date()
+picker.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+printDateEl.textContent = now.toLocaleDateString('es-ES')
+
+// ── Auth token ───────────────────────────────────────────────────────────────
+function getToken() {
+  return localStorage.getItem('diabolus_token') || sessionStorage.getItem('diabolus_token') || ''
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0)
+const sign = (n) => (n >= 0 ? '+' : '') + fmt(n)
+
+function monthLabel(ym) {
+  if (!ym) return ''
+  const [y, m] = ym.split('-')
+  const MESES = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+  return `${MESES[parseInt(m)]} ${y}`
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadSummary() {
+  const month = picker.value
+  if (!month) { alert('Selecciona un mes primero'); return }
+
+  const token = getToken()
+  if (!token) {
+    content.innerHTML = '<div class="empty">&#128274; Debes iniciar sesión para ver el resumen.</div>'
+    return
+  }
+
+  content.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando datos...</div>'
+  loadBtn.disabled = true
+  pdfBtn.disabled  = true
+
+  try {
+    const res = await fetch(`${API_BASE}/api/reports/monthly-summary?month=${month}&format=json`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error || `Error ${res.status}`)
+    }
+    const data = await res.json()
+    renderSummary(data, month)
+    pdfBtn.disabled = false
+  } catch (e) {
+    content.innerHTML = `<div class="empty">&#9888;&#65039; Error al cargar: ${e.message}</div>`
+  } finally {
+    loadBtn.disabled = false
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderSummary(d, month) {
+  const { resumen, por_categoria, facturas, transacciones } = d
+  const label = monthLabel(month)
+  const netoClass = resumen.neto >= 0 ? 'green' : 'red'
+
+  let html = ''
+
+  // ── Título período ────────────────────────────────────────────────────────
+  html += `
+  <div style="margin-bottom:20px">
+    <h2 style="font-size:22px;font-weight:700;color:var(--accent2)">${label}</h2>
+    <p style="font-size:12px;color:var(--muted)">${d.salon} &middot; ${d.fechas.desde} al ${d.fechas.hasta}</p>
+  </div>`
+
+  // ── KPIs ──────────────────────────────────────────────────────────────────
+  html += `
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">&#8593; Ingresos</div>
+      <div class="kpi-value green">${fmt(resumen.ingresos)}</div>
+      <div class="kpi-sub">${transacciones.filter(t=>t.tipo==='income').length} movimientos</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">&#8595; Gastos</div>
+      <div class="kpi-value red">${fmt(resumen.gastos)}</div>
+      <div class="kpi-sub">${transacciones.filter(t=>t.tipo==='expense').length} movimientos</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">= Resultado Neto</div>
+      <div class="kpi-value ${netoClass}">${sign(resumen.neto)}</div>
+      <div class="kpi-sub">${resumen.neto >= 0 ? 'Positivo este mes' : 'Negativo este mes'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">&#128196; Facturas cobradas</div>
+      <div class="kpi-value accent">${fmt(facturas.importe_cobrado)}</div>
+      <div class="kpi-sub">${facturas.cobradas} de ${facturas.total} emitidas</div>
+    </div>
+  </div>`
+
+  // ── Desglose por categoría ────────────────────────────────────────────────
+  html += `
+  <div class="section">
+    <div class="section-header">Desglose por Categoria</div>
+    <div class="section-body">`
+
+  if (!por_categoria || por_categoria.length === 0) {
+    html += '<div class="empty">Sin movimientos este mes</div>'
+  } else {
+    html += `
+    <table>
+      <thead><tr>
+        <th>Categoria</th>
+        <th class="text-right">Ingresos</th>
+        <th class="text-right">Gastos</th>
+        <th class="text-right">Neto</th>
+      </tr></thead>
+      <tbody>`
+    for (const cat of por_categoria) {
+      const nc = cat.neto >= 0 ? 'amount-pos' : 'amount-neg'
+      html += `
+      <tr>
+        <td>${escHtml(cat.categoria)}</td>
+        <td class="text-right">${cat.ingresos > 0 ? '<span class="amount-pos">' + fmt(cat.ingresos) + '</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+        <td class="text-right">${cat.gastos > 0 ? '<span class="amount-neg">' + fmt(cat.gastos) + '</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+        <td class="text-right"><span class="${nc}">${sign(cat.neto)}</span></td>
+      </tr>`
+    }
+    html += '</tbody></table>'
+  }
+  html += '</div></div>'
+
+  // ── Facturas del mes ──────────────────────────────────────────────────────
+  html += `
+  <div class="section">
+    <div class="section-header">Facturas del Mes</div>
+    <div class="section-body">
+      <div class="fac-grid">
+        <div class="fac-item">
+          <div class="fac-num" style="color:var(--accent2)">${facturas.total}</div>
+          <div class="fac-label">Total emitidas</div>
+        </div>
+        <div class="fac-item">
+          <div class="fac-num" style="color:var(--green)">${facturas.cobradas}</div>
+          <div class="fac-label">Cobradas</div>
+          <div class="fac-sub" style="color:var(--green)">${fmt(facturas.importe_cobrado)}</div>
+        </div>
+        <div class="fac-item">
+          <div class="fac-num" style="color:var(--orange)">${facturas.pendientes}</div>
+          <div class="fac-label">Pendientes</div>
+        </div>
+        <div class="fac-item">
+          <div class="fac-num" style="color:var(--red)">${facturas.vencidas}</div>
+          <div class="fac-label">Vencidas</div>
+          <div class="fac-sub" style="color:var(--red)">${fmt(facturas.importe_pendiente)}</div>
+        </div>
+      </div>
+    </div>
+  </div>`
+
+  // ── Todos los movimientos ─────────────────────────────────────────────────
+  html += `
+  <div class="section">
+    <div class="section-header">Todos los Movimientos del Mes (${transacciones.length})</div>
+    <div class="section-body">`
+
+  if (!transacciones || transacciones.length === 0) {
+    html += '<div class="empty">Sin movimientos este mes</div>'
+  } else {
+    html += `
+    <table>
+      <thead><tr>
+        <th>Fecha</th>
+        <th>Descripcion</th>
+        <th>Categoria</th>
+        <th>Cliente</th>
+        <th>Tipo</th>
+        <th class="text-right">Importe</th>
+        <th>Estado</th>
+      </tr></thead>
+      <tbody>`
+    for (const tx of transacciones) {
+      const amtClass = tx.tipo === 'income' ? 'amount-pos' : 'amount-neg'
+      const typeBadge = tx.tipo === 'income'
+        ? '<span class="badge badge-in">Ingreso</span>'
+        : '<span class="badge badge-out">Gasto</span>'
+      const statusLabel = {
+        pendiente: '<span class="badge" style="background:rgba(100,116,139,.15);color:var(--muted)">Pendiente</span>',
+        revisado:  '<span class="badge" style="background:rgba(34,197,94,.12);color:var(--green)">Revisado</span>',
+        enviado_gestoria: '<span class="badge" style="background:rgba(124,58,237,.15);color:var(--accent2)">Gestoria</span>',
+      }[tx.estado] || '<span class="badge" style="color:var(--muted)">-</span>'
+      html += `
+      <tr>
+        <td style="color:var(--muted);white-space:nowrap">${tx.fecha || '—'}</td>
+        <td>${escHtml(tx.descripcion || '—')}</td>
+        <td style="color:var(--muted)">${escHtml(tx.categoria || '—')}</td>
+        <td style="color:var(--muted)">${escHtml(tx.cliente || '—')}</td>
+        <td>${typeBadge}</td>
+        <td class="text-right"><span class="${amtClass}">${tx.tipo === 'income' ? '+' : '-'}${fmt(Math.abs(tx.importe))}</span></td>
+        <td>${statusLabel}</td>
+      </tr>`
+    }
+    html += '</tbody></table>'
+  }
+  html += '</div></div>'
+
+  // ── Pie ───────────────────────────────────────────────────────────────────
+  html += `
+  <div style="text-align:center;padding:20px;font-size:11px;color:var(--muted)">
+    Generado por Diabolus CRM &middot; ${new Date().toLocaleDateString('es-ES')} &middot;
+    Documento interno &mdash; no es factura oficial
+  </div>`
+
+  content.innerHTML = html
+}
+
+// ── PDF download ──────────────────────────────────────────────────────────────
+pdfBtn.addEventListener('click', async () => {
+  const month = picker.value
+  if (!month) return
+  const token = getToken()
+  if (!token) { alert('Debes iniciar sesión'); return }
+
+  pdfBtn.disabled = true
+  pdfBtn.textContent = '⏳ Generando...'
+
+  try {
+    const res = await fetch(`${API_BASE}/api/reports/monthly-summary?month=${month}&format=pdf`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!res.ok) throw new Error(`Error ${res.status}`)
+    const blob = await res.blob()
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url
+    a.download = `diabolus-resumen-${month}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    alert('Error generando PDF: ' + e.message)
+  } finally {
+    pdfBtn.disabled = false
+    pdfBtn.innerHTML = '<span>&#128196;</span> Descargar PDF'
+  }
+})
+
+// ── Events ────────────────────────────────────────────────────────────────────
+loadBtn.addEventListener('click', loadSummary)
+picker.addEventListener('keydown', e => { if (e.key === 'Enter') loadSummary() })
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+// Auto-load current month on page load
+loadSummary()
+</script>
+<script src="sidebar.js"></script>
+</body>
+</html>

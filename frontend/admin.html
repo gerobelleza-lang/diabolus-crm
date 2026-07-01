@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diabolus — Panel Super Admin</title>
+<style>
+  :root {
+    --red: #e63939;
+    --red-dark: #b52e2e;
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --muted: #888;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --blue: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 2rem;
+  }
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 2.5rem; width: 100%; max-width: 380px;
+    text-align: center;
+  }
+  .login-box .logo { font-size: 2rem; font-weight: 900; color: var(--red); letter-spacing: -1px; margin-bottom: 0.5rem; }
+  .login-box p { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+  .login-box input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.75rem 1rem; color: var(--text);
+    font-size: 1rem; margin-bottom: 1rem; outline: none;
+  }
+  .login-box input:focus { border-color: var(--red); }
+  .login-box button {
+    width: 100%; background: var(--red); color: white; border: none;
+    border-radius: 8px; padding: 0.75rem; font-size: 1rem; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .login-box button:hover { background: var(--red-dark); }
+  .login-error { color: var(--red); font-size: 0.8rem; margin-top: 0.5rem; display: none; }
+
+  /* PANEL */
+  #panel { display: none; }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .header-left { display: flex; align-items: center; gap: 1rem; }
+  .logo-sm { font-size: 1.3rem; font-weight: 900; color: var(--red); }
+  .badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 0.2rem 0.7rem; font-size: 0.75rem; color: var(--muted); }
+  .header-right { display: flex; align-items: center; gap: 0.75rem; }
+  .refresh-btn {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.4rem 0.9rem; color: var(--text); font-size: 0.8rem; cursor: pointer;
+  }
+  .refresh-btn:hover { border-color: var(--red); }
+  .logout-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.4rem 0.9rem; color: var(--muted); font-size: 0.8rem; cursor: pointer;
+  }
+  .logout-btn:hover { color: var(--red); border-color: var(--red); }
+  .last-update { font-size: 0.75rem; color: var(--muted); }
+
+  main { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+
+  /* STATS CARDS */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem; margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.25rem;
+  }
+  .stat-card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+  .stat-card .value { font-size: 2rem; font-weight: 700; line-height: 1; }
+  .stat-card .sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+  .stat-card.red .value { color: var(--red); }
+  .stat-card.green .value { color: var(--green); }
+  .stat-card.yellow .value { color: var(--yellow); }
+  .stat-card.blue .value { color: var(--blue); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 0.6rem 1rem; font-size: 0.85rem; color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.2s;
+  }
+  .tab.active { color: var(--red); border-bottom-color: var(--red); }
+  .tab:hover { color: var(--text); }
+
+  /* TABLES */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th {
+    padding: 0.75rem 1rem; text-align: left; font-size: 0.7rem;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted);
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); color: var(--text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface2); }
+
+  .pill {
+    display: inline-block; padding: 0.15rem 0.6rem; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 600;
+  }
+  .pill.green { background: #16532430; color: var(--green); }
+  .pill.red { background: #7f1d1d30; color: #f87171; }
+  .pill.yellow { background: #78350f30; color: var(--yellow); }
+  .pill.blue { background: #1e3a5f30; color: var(--blue); }
+  .pill.gray { background: #ffffff10; color: var(--muted); }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 3rem; color: var(--muted); }
+  .spinner { display: inline-block; width: 1.5rem; height: 1.5rem; border: 2px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-card .value { font-size: 1.5rem; }
+    main { padding: 1rem; }
+    header { padding: 0.75rem 1rem; }
+    .last-update { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">😈 DIABOLUS</div>
+    <p>Panel Super Admin — acceso restringido</p>
+    <input type="password" id="secret-input" placeholder="Clave de acceso" autocomplete="current-password">
+    <button onclick="doLogin()">Entrar</button>
+    <p class="login-error" id="login-error">Clave incorrecta</p>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div id="panel">
+  <header>
+    <div class="header-left">
+      <span class="logo-sm">😈 Diabolus</span>
+      <span class="badge">Super Admin</span>
+    </div>
+    <div class="header-right">
+      <span class="last-update" id="last-update"></span>
+      <button class="refresh-btn" onclick="loadData()">⟳ Actualizar</button>
+      <button class="logout-btn" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats-grid" id="stats-grid">
+      <div class="loading"><div class="spinner"></div><br>Cargando...</div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('tenants')">Tenants</div>
+      <div class="tab" onclick="switchTab('leads')">Leads B2B</div>
+      <div class="tab" onclick="switchTab('invoices')">Facturas</div>
+      <div class="tab" onclick="switchTab('activity')">Actividad</div>
+    </div>
+
+    <div class="tab-content active" id="tab-tenants">
+      <div class="table-wrap"><div class="loading">Cargando...</div></div>
+    </div>
+    <div class="tab-content" id="tab-leads">
+      <div class="table-wrap"><div class="loading">Cargando...</div></div>
+    </div>
+    <div class="tab-content" id="tab-invoices">
+      <div class="table-wrap"><div class="loading">Cargando...</div></div>
+    </div>
+    <div class="tab-content" id="tab-activity">
+      <div class="table-wrap"><div class="loading">Cargando...</div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = 'https://diabolus-crm-api.vercel.app';
+let currentSecret = '';
+let refreshTimer = null;
+
+function doLogin() {
+  const val = document.getElementById('secret-input').value.trim();
+  if (!val) return;
+  currentSecret = val;
+  localStorage.setItem('diabolus_admin_secret', val);
+  loadData();
+}
+
+function doLogout() {
+  localStorage.removeItem('diabolus_admin_secret');
+  currentSecret = '';
+  document.getElementById('panel').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  clearInterval(refreshTimer);
+}
+
+document.getElementById('secret-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function showPanel(data) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('panel').style.display = 'block';
+  renderStats(data);
+  renderTenants(data.salons || []);
+  renderLeads(data.leads || []);
+  renderInvoices(data.invoiceStats || [], data.transactionStats || []);
+  renderActivity(data.audit || []);
+  document.getElementById('last-update').textContent =
+    'Actualizado: ' + new Date().toLocaleTimeString('es-ES');
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(`${API}/api/internal/admin/panel?secret=${encodeURIComponent(currentSecret)}`);
+    if (res.status === 403) {
+      document.getElementById('login-error').style.display = 'block';
+      document.getElementById('panel').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+      currentSecret = '';
+      localStorage.removeItem('diabolus_admin_secret');
+      return;
+    }
+    const data = await res.json();
+    if (data.ok) showPanel(data);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderStats(data) {
+  const salons = data.salons || [];
+  const leads = data.leads || [];
+  const invoiceStats = data.invoiceStats || [];
+  const txStats = data.transactionStats || [];
+
+  const totalInvoiced = invoiceStats.reduce((s, i) => s + (parseFloat(i.total) || 0), 0);
+  const paidInvoices = invoiceStats.find(i => i.status === 'paid');
+  const paidTotal = parseFloat(paidInvoices?.total || 0);
+  const pendingLeads = leads.filter(l => l.estado === 'nuevo' || l.estado === 'contactado').length;
+  const hotLeads = leads.filter(l => l.estado === 'respondio' || l.estado === 'cita_agendada').length;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card red">
+      <div class="label">Tenants</div>
+      <div class="value">${salons.length}</div>
+      <div class="sub">${salons.filter(s => s.is_active).length} activos</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="label">Leads B2B</div>
+      <div class="value">${leads.length}</div>
+      <div class="sub">${pendingLeads} en pipeline</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="label">Leads calientes</div>
+      <div class="value">${hotLeads}</div>
+      <div class="sub">respondieron / cita</div>
+    </div>
+    <div class="stat-card green">
+      <div class="label">Facturado total</div>
+      <div class="value">${totalInvoiced.toLocaleString('es-ES', {style:'currency',currency:'EUR',minimumFractionDigits:0})}</div>
+      <div class="sub">${invoiceStats.reduce((s,i)=>s+parseInt(i.count||0),0)} facturas</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">El Pacto activo</div>
+      <div class="value" style="color:var(--red)">${salons.filter(s=>s.pacto_activo).length}</div>
+      <div class="sub">salones con Demonio</div>
+    </div>
+  `;
+}
+
+function renderTenants(salons) {
+  if (!salons.length) {
+    document.getElementById('tab-tenants').innerHTML = '<div class="table-wrap"><div class="loading">Sin tenants</div></div>';
+    return;
+  }
+  document.getElementById('tab-tenants').innerHTML = `
+    <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Nombre</th><th>Plan</th><th>Estado</th><th>Pacto</th><th>Alta</th>
+      </tr></thead>
+      <tbody>${salons.map(s => `
+        <tr>
+          <td>${s.name || '—'}</td>
+          <td><span class="pill ${s.plan === 'pro' ? 'red' : s.plan === 'enterprise' ? 'yellow' : 'gray'}">${s.plan || 'basico'}</span></td>
+          <td><span class="pill ${s.is_active ? 'green' : 'red'}">${s.is_active ? 'Activo' : 'Inactivo'}</span></td>
+          <td><span class="pill ${s.pacto_activo ? 'red' : 'gray'}">${s.pacto_activo ? '😈 Sí' : 'No'}</span></td>
+          <td>${s.created_at ? new Date(s.created_at).toLocaleDateString('es-ES') : '—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>`;
+}
+
+function renderLeads(leads) {
+  if (!leads.length) {
+    document.getElementById('tab-leads').innerHTML = '<div class="table-wrap"><div class="loading">Sin leads</div></div>';
+    return;
+  }
+  const colorMap = { nuevo:'blue', contactado:'yellow', respondio:'green', cita_agendada:'green', descartado:'red', convertido:'green' };
+  document.getElementById('tab-leads').innerHTML = `
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nombre</th><th>Ciudad</th><th>Estado</th><th>Alta</th></tr></thead>
+      <tbody>${leads.map(l => `
+        <tr>
+          <td>${l.nombre || '—'}</td>
+          <td>${l.ciudad || '—'}</td>
+          <td><span class="pill ${colorMap[l.estado] || 'gray'}">${l.estado || '—'}</span></td>
+          <td>${l.created_at ? new Date(l.created_at).toLocaleDateString('es-ES') : '—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>`;
+}
+
+function renderInvoices(invoiceStats, txStats) {
+  const rows = invoiceStats.map(i => {
+    const colorMap = { paid:'green', pending:'yellow', overdue:'red', draft:'gray', sent:'blue' };
+    return `<tr>
+      <td><span class="pill ${colorMap[i.status] || 'gray'}">${i.status || '—'}</span></td>
+      <td>${i.count}</td>
+      <td>${parseFloat(i.total || 0).toLocaleString('es-ES', {style:'currency',currency:'EUR'})}</td>
+    </tr>`;
+  });
+  const txRows = txStats.map(t => `<tr>
+    <td><span class="pill ${t.type === 'ingreso' ? 'green' : 'red'}">${t.type || '—'}</span></td>
+    <td>${t.count}</td>
+    <td>${parseFloat(t.total || 0).toLocaleString('es-ES', {style:'currency',currency:'EUR'})}</td>
+  </tr>`);
+
+  document.getElementById('tab-invoices').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div>
+        <h3 style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;text-transform:uppercase">Facturas por estado</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Estado</th><th>Nº</th><th>Total</th></tr></thead>
+          <tbody>${rows.join('') || '<tr><td colspan="3" style="text-align:center;color:var(--muted)">Sin datos</td></tr>'}</tbody>
+        </table></div>
+      </div>
+      <div>
+        <h3 style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;text-transform:uppercase">Movimientos por tipo</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Tipo</th><th>Nº</th><th>Total</th></tr></thead>
+          <tbody>${txRows.join('') || '<tr><td colspan="3" style="text-align:center;color:var(--muted)">Sin datos</td></tr>'}</tbody>
+        </table></div>
+      </div>
+    </div>`;
+}
+
+function renderActivity(audit) {
+  if (!audit.length) {
+    document.getElementById('tab-activity').innerHTML = '<div class="table-wrap"><div class="loading">Sin actividad</div></div>';
+    return;
+  }
+  document.getElementById('tab-activity').innerHTML = `
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Acción</th><th>Fecha</th></tr></thead>
+      <tbody>${audit.map(a => `
+        <tr>
+          <td>${a.action || a.tool_name || '—'}</td>
+          <td>${a.created_at ? new Date(a.created_at).toLocaleString('es-ES') : '—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>`;
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['tenants','leads','invoices','activity'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(el => {
+    el.classList.toggle('active', el.id === `tab-${name}`);
+  });
+}
+
+// Auto-init
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('diabolus_admin_secret');
+  if (saved) {
+    currentSecret = saved;
+    loadData();
+  }
+  // Auto-refresh cada 60s
+  refreshTimer = setInterval(() => {
+    if (currentSecret && document.getElementById('panel').style.display !== 'none') loadData();
+  }, 60000);
+});
+</script>
+</body>
+</html>
