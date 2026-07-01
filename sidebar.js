@@ -84,7 +84,21 @@
       '.dsb-ico{font-size:.88rem;width:1.05rem;text-align:center;flex-shrink:0}',
       '.dsb-badge{margin-left:auto;font-size:.54rem;font-weight:700;padding:.08rem .32rem;border-radius:20px;background:rgba(139,92,246,.18);color:#a78bfa;letter-spacing:.04em;border:1px solid rgba(139,92,246,.22);white-space:nowrap}',
       '.dsb-foot{padding:.8rem .7rem;border-top:1px solid rgba(255,255,255,.07);margin-top:auto}',
-      '.dsb-ver{text-align:center;font-size:.58rem;color:rgba(255,255,255,.18);margin-top:.35rem;font-family:monospace}'
+      '.dsb-ver{text-align:center;font-size:.58rem;color:rgba(255,255,255,.18);margin-top:.35rem;font-family:monospace}',
+      /* ── MOBILE RESPONSIVE ── */
+      '@media(max-width:768px){',
+      'aside.sidebar,nav.sidebar,#db-sidebar{position:fixed!important;left:-280px!important;top:0!important;width:260px!important;height:100vh!important;z-index:9999!important;transition:left .3s ease!important;overflow-y:auto!important;background:#12121a!important;box-shadow:none!important;display:flex!important;flex-direction:column!important}',
+      'aside.sidebar.dsb-open,nav.sidebar.dsb-open,#db-sidebar.dsb-open{left:0!important;box-shadow:4px 0 20px rgba(0,0,0,.5)!important}',
+      '}',
+      '.dsb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;opacity:0;pointer-events:none;transition:opacity .3s}',
+      '.dsb-overlay.dsb-open{opacity:1;pointer-events:auto}',
+      '.dsb-hamburger{display:none;background:none;border:1px solid rgba(255,255,255,.15);color:#fff;font-size:1.4rem;padding:.3rem .6rem;border-radius:6px;cursor:pointer;z-index:100;position:fixed;top:12px;left:12px;z-index:9000}',
+      '@media(max-width:768px){.dsb-hamburger{display:block}}',
+      '.dsb-mob-banner{display:none;padding:.6rem 1rem;text-decoration:none;font-size:.85rem;font-weight:600;border-radius:8px;text-align:center;margin:4px 8px}',
+      '@media(max-width:768px){.dsb-mob-banner{display:block}}',
+      '.dsb-mob-dash{background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.25)}',
+      '.dsb-mob-agent{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}'
+
     ].join('');
     document.head.appendChild(s);
   }
@@ -92,7 +106,7 @@
   var LOGO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220" style="width:100%;max-width:186px;display:block;margin:0 auto" aria-label="Diabolus"><defs><filter id="dsb-fs" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="12" result="b1"/><feGaussianBlur stdDeviation="5" result="b2"/><feGaussianBlur stdDeviation="2" result="b3"/><feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="b3"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="dsb-fg" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="dsb-sd" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".85"/></filter><linearGradient id="dsb-gv" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#E0D0FF"/><stop offset="40%" stop-color="#C4B5FD"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="350" y="160" font-family="Georgia,\'Times New Roman\',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#1a0033" stroke-width="18" filter="url(#dsb-sd)" transform="skewX(-18)">Diabolus</text><text x="350" y="160" font-family="Georgia,\'Times New Roman\',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="none" stroke="#8B5CF6" stroke-width="3" filter="url(#dsb-fs)" transform="skewX(-18)" opacity=".9">Diabolus</text><text x="350" y="160" font-family="Georgia,\'Times New Roman\',serif" font-size="140" font-weight="900" font-style="italic" text-anchor="middle" fill="url(#dsb-gv)" stroke="#C4B5FD" stroke-width=".4" transform="skewX(-18)">Diabolus</text><line x1="30" y1="178" x2="620" y2="168" stroke="#E3BE7A" stroke-width="1.2" stroke-linecap="round" filter="url(#dsb-fg)" opacity=".85"/></svg>';
 
   function render() {
-    var sidebar = document.querySelector('aside.sidebar');
+    var sidebar = document.querySelector('aside.sidebar') || document.querySelector('nav.sidebar') || document.querySelector('aside[id*="sidebar"]') || document.querySelector('#db-sidebar');
     if (!sidebar) return;
 
     var state   = getState();
@@ -140,27 +154,19 @@
         document.body.appendChild(ov);
       }
 
-      // Hamburger — find the page header or first h1
-      var pageHeader = document.querySelector('.page-header');
-      if (pageHeader && !document.getElementById('dsb-hamburger')) {
+      // Hamburger — fixed position button
+      if (!document.getElementById('dsb-hamburger')) {
         var hb = document.createElement('button');
         hb.id = 'dsb-hamburger';
         hb.className = 'dsb-hamburger';
         hb.setAttribute('aria-label', 'Menú');
         hb.textContent = '☰';
-        hb.onclick = function() { window.__dsbToggleSidebar(); };
-        // Insert at the beginning of page header
-        var firstChild = pageHeader.firstChild;
-        if (firstChild && firstChild.style) {
-          // If there's a flex wrapper, insert before it
-          firstChild.insertBefore(hb, firstChild.firstChild);
-        } else {
-          pageHeader.insertBefore(hb, pageHeader.firstChild);
-        }
+        hb.onclick = function(e) { e.stopPropagation(); window.__dsbToggleSidebar(); };
+        document.body.appendChild(hb);
       }
 
       // Mobile banners — insert before main content sections
-      var mainContent = document.querySelector('.main-content') || document.querySelector('.main') || document.querySelector('main');
+      var mainContent = document.querySelector('.main-content') || document.querySelector('.main') || document.querySelector('main') || document.querySelector('.db-main') || document.querySelector('.container');
       if (mainContent && !document.getElementById('dsb-mob-banners')) {
         var bannersDiv = document.createElement('div');
         bannersDiv.id = 'dsb-mob-banners';
@@ -205,17 +211,27 @@
 
   // ── MOBILE: sidebar toggle ──
   window.__dsbToggleSidebar = function() {
-    var sidebar = document.querySelector('aside.sidebar');
+    var sidebar = document.querySelector('aside.sidebar') || document.querySelector('nav.sidebar') || document.querySelector('aside[id*="sidebar"]') || document.querySelector('#db-sidebar');
     var overlay = document.getElementById('dsb-overlay');
     if (sidebar) sidebar.classList.toggle('dsb-open');
     if (overlay) overlay.classList.toggle('dsb-open');
   };
   window.__dsbCloseSidebar = function() {
-    var sidebar = document.querySelector('aside.sidebar');
+    var sidebar = document.querySelector('aside.sidebar') || document.querySelector('nav.sidebar') || document.querySelector('aside[id*="sidebar"]') || document.querySelector('#db-sidebar');
     var overlay = document.getElementById('dsb-overlay');
     if (sidebar) sidebar.classList.remove('dsb-open');
     if (overlay) overlay.classList.remove('dsb-open');
   };
+
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', function (e) {
+    if (window.innerWidth < 768) {
+      var sb = document.querySelector('aside.sidebar') || document.querySelector('nav.sidebar') || document.querySelector('aside[id*="sidebar"]') || document.querySelector('#db-sidebar');
+      if (sb && sb.classList.contains('dsb-open') && !sb.contains(e.target) && !e.target.classList.contains('dsb-hamburger')) {
+        window.__dsbCloseSidebar();
+      }
+    }
+  });
 
   document.addEventListener('click', function (e) {
     var el = e.target.closest('a[href]');
