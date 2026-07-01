@@ -52,8 +52,8 @@ app.post('/', async (c) => {
     }
 
     const model = hd ? MODEL_HD : MODEL_STD;
-    // Speed 0.85 — más pausado para lectura clara de números y cifras
-    const ttsSpeed = Math.min(4.0, Math.max(0.25, speed || 0.85));
+    // Speed 0.95 — más pausado para lectura clara de números y cifras
+    const ttsSpeed = Math.min(4.0, Math.max(0.25, speed || 0.95));
 
     const costPerChar = model === MODEL_HD ? 0.00003 : 0.000015;
     const cost = (clean.length * costPerChar).toFixed(4);
