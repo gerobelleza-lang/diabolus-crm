@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diabolus · Verificar Documento</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #15101F; --surface: #211A33; --surface2: #2A2140;
+      --border: rgba(139,92,246,.18); --accent: #8B5CF6;
+      --gold: #E3BE7A; --text: #e8e8f0; --muted: #A39FB5;
+      --green: #22c55e; --red: #ef4444;
+      --radius: 14px; --font: 'Hanken Grotesk','Inter',system-ui,sans-serif;
+      --mono: 'IBM Plex Mono','Courier New',monospace;
+    }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+    header {
+      display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--accent); }
+    .logo span { color: var(--gold); }
+
+    main {
+      max-width: 640px; margin: 0 auto; padding: 40px 20px;
+    }
+
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 32px; line-height: 1.6; }
+
+    /* Drop zone */
+    .drop-zone {
+      background: var(--surface); border: 2px dashed rgba(139,92,246,.35);
+      border-radius: var(--radius); padding: 36px; text-align: center;
+      cursor: pointer; transition: all .2s; position: relative; margin-bottom: 20px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: rgba(139,92,246,.05); }
+    .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: none; }
+    .drop-zone .icon { font-size: 40px; margin-bottom: 10px; }
+    .drop-zone p { font-size: 14px; color: var(--muted); }
+    .file-chosen { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 8px; }
+
+    .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--muted); font-size: 13px; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .hash-input-row { display: flex; gap: 10px; margin-bottom: 28px; }
+    .hash-input-row input {
+      flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 16px; color: var(--text); font-family: var(--mono); font-size: 13px; outline: none;
+      transition: border-color .2s;
+    }
+    .hash-input-row input:focus { border-color: var(--accent); }
+    .hash-input-row input::placeholder { font-family: var(--font); color: var(--muted); }
+    .btn-verify {
+      padding: 12px 20px; font-size: 14px; font-weight: 700;
+      background: var(--accent); color: #fff; border: none; border-radius: 10px;
+      cursor: pointer; white-space: nowrap; transition: all .2s;
+    }
+    .btn-verify:hover { background: #7c3aed; }
+    .btn-verify:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Result cards */
+    .result-card { border-radius: var(--radius); padding: 28px; display: none; }
+    .result-card.verified {
+      background: linear-gradient(135deg, rgba(34,197,94,.1), rgba(34,197,94,.04));
+      border: 1px solid rgba(34,197,94,.35);
+    }
+    .result-card.not-found {
+      background: linear-gradient(135deg, rgba(239,68,68,.1), rgba(239,68,68,.04));
+      border: 1px solid rgba(239,68,68,.35);
+    }
+
+    .result-icon { font-size: 48px; text-align: center; margin-bottom: 16px; }
+    .result-title { font-size: 22px; font-weight: 800; text-align: center; margin-bottom: 6px; }
+    .result-sub { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 24px; }
+
+    .result-card.verified .result-title { color: var(--green); }
+    .result-card.not-found .result-title { color: var(--red); }
+
+    .hash-block {
+      font-family: var(--mono); font-size: 12px; color: var(--gold);
+      background: rgba(227,190,122,.07); border: 1px solid rgba(227,190,122,.2);
+      border-radius: 9px; padding: 14px; word-break: break-all; margin-bottom: 20px;
+      letter-spacing: .5px;
+    }
+    .hash-block .lbl { font-family: var(--font); font-size: 11px; color: var(--muted); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field { background: rgba(255,255,255,.04); border-radius: 9px; padding: 12px 14px; }
+    .field .k { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+    .field .v { font-size: 14px; font-weight: 600; color: var(--text); margin-top: 3px; }
+
+    .powered {
+      text-align: center; margin-top: 40px; font-size: 12px; color: var(--muted);
+    }
+    .powered a { color: var(--accent); text-decoration: none; }
+
+    /* Spinner */
+    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.2); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 500px) {
+      .fields { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <div class="logo">D<span>·</span></div>
+  <span style="font-size:14px;color:var(--muted);margin-left:4px;">Verificación de documentos</span>
+</header>
+
+<main>
+  <h1>🔍 Verificar documento</h1>
+  <p class="subtitle">Comprueba si un documento tiene sellado de tiempo registrado en Diabolus. Sube el archivo original o introduce el hash SHA-256 directamente.</p>
+
+  <!-- Drop zone -->
+  <div class="drop-zone" id="drop-zone">
+    <input type="file" id="file-input" />
+    <div class="icon">📎</div>
+    <p>Arrastra el documento aquí para verificarlo</p>
+    <p style="font-size:11px;margin-top:4px;color:var(--muted)">El archivo no se sube — se procesa localmente en tu navegador</p>
+    <p class="file-chosen" id="file-chosen" style="display:none"></p>
+  </div>
+
+  <div class="divider">o introduce el hash directamente</div>
+
+  <div class="hash-input-row">
+    <input type="text" id="hash-input" placeholder="SHA-256: a3f9bc2d1e..." />
+    <button class="btn-verify" id="btn-verify" onclick="verifyByHash()">Verificar</button>
+  </div>
+
+  <!-- Result: verified -->
+  <div class="result-card verified" id="result-verified">
+    <div class="result-icon">✅</div>
+    <div class="result-title">Documento verificado</div>
+    <div class="result-sub">Este documento está registrado en el libro inmutable de Diabolus</div>
+    <div class="hash-block">
+      <div class="lbl">Huella SHA-256</div>
+      <span id="r-hash"></span>
+    </div>
+    <div class="fields">
+      <div class="field"><div class="k">Nombre</div><div class="v" id="r-name"></div></div>
+      <div class="field"><div class="k">Tipo</div><div class="v" id="r-type"></div></div>
+      <div class="field"><div class="k">Sellado el</div><div class="v" id="r-date"></div></div>
+      <div class="field"><div class="k">Nivel</div><div class="v" id="r-level"></div></div>
+      <div class="field"><div class="k">Entidad</div><div class="v" id="r-salon"></div></div>
+      <div class="field"><div class="k">ID certificado</div><div class="v" id="r-id" style="font-family:var(--mono);font-size:11px"></div></div>
+    </div>
+  </div>
+
+  <!-- Result: not found -->
+  <div class="result-card not-found" id="result-notfound">
+    <div class="result-icon">❌</div>
+    <div class="result-title">Documento no encontrado</div>
+    <div class="result-sub" id="notfound-msg">Este documento no tiene sellado de tiempo registrado en Diabolus o ha sido modificado desde su sellado.</div>
+    <div class="hash-block" id="notfound-hash" style="display:none">
+      <div class="lbl">Hash calculado</div>
+      <span id="r-notfound-hash"></span>
+    </div>
+  </div>
+
+  <div class="powered">
+    Verificación de documentos por <a href="https://gerobelleza-lang.github.io/diabolus-crm">Diabolus</a> · SHA-256 + sellado de tiempo
+  </div>
+</main>
+
+<script>
+  const API = 'https://diabolus-crm-api.vercel.app';
+
+  // ── Auto-verify from URL hash param ───────────────────────
+  window.addEventListener('load', () => {
+    const params = new URLSearchParams(location.search);
+    const hash = params.get('hash');
+    if (hash) {
+      document.getElementById('hash-input').value = hash;
+      verifyByHash();
+    }
+  });
+
+  // ── File drop handling ─────────────────────────────────────
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  fileInput.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+  });
+
+  async function processFile(file) {
+    document.getElementById('file-chosen').textContent = `📄 ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    document.getElementById('file-chosen').style.display = 'block';
+    hideResults();
+
+    // Compute SHA-256 in browser
+    const buf = await file.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    const hash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+
+    document.getElementById('hash-input').value = hash;
+    verifyHash(hash);
+  }
+
+  // ── Verify by hash input ───────────────────────────────────
+  async function verifyByHash() {
+    const hash = document.getElementById('hash-input').value.trim();
+    if (!hash) return;
+    verifyHash(hash);
+  }
+
+  async function verifyHash(hash) {
+    const btn = document.getElementById('btn-verify');
+    btn.innerHTML = '<span class="spinner"></span>';
+    btn.disabled = true;
+    hideResults();
+
+    try {
+      const res = await fetch(`${API}/api/documents/verify/${encodeURIComponent(hash)}`);
+      const data = await res.json();
+      showResult(data);
+    } catch (err) {
+      showNotFound('Error de conexión: ' + err.message, hash);
+    } finally {
+      btn.innerHTML = 'Verificar';
+      btn.disabled = false;
+    }
+  }
+
+  // ── Show results ───────────────────────────────────────────
+  function hideResults() {
+    document.getElementById('result-verified').style.display = 'none';
+    document.getElementById('result-notfound').style.display = 'none';
+  }
+
+  function showResult(data) {
+    if (data.verified) {
+      document.getElementById('r-hash').textContent = data.hash;
+      document.getElementById('r-name').textContent = data.document_name;
+      document.getElementById('r-type').textContent = data.document_type || '—';
+      document.getElementById('r-date').textContent = data.stamped_at_madrid || new Date(data.stamped_at).toLocaleString('es-ES',{timeZone:'Europe/Madrid'});
+      document.getElementById('r-level').textContent = data.level_label || 'Sellado de tiempo';
+      document.getElementById('r-salon').textContent = data.salon_name || '—';
+      document.getElementById('r-id').textContent = data.certificate_id;
+      document.getElementById('result-verified').style.display = 'block';
+      document.getElementById('result-verified').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      showNotFound(data.message, data.hash);
+    }
+  }
+
+  function showNotFound(msg, hash) {
+    document.getElementById('notfound-msg').textContent = msg || 'Documento no registrado en Diabolus.';
+    if (hash) {
+      document.getElementById('r-notfound-hash').textContent = hash;
+      document.getElementById('notfound-hash').style.display = 'block';
+    }
+    document.getElementById('result-notfound').style.display = 'block';
+    document.getElementById('result-notfound').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</body>
+</html>

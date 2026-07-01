@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de Cookies — Diabolus</title>
+  <meta name="robots" content="noindex">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --red: #e63946;
+      --dark: #0d0d0f;
+      --dark2: #141416;
+      --dark3: #1c1c1f;
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f0f0;
+      --muted: #888;
+    }
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,13,15,0.95);
+      backdrop-filter: blur(10px);
+    }
+    .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-decoration: none; color: var(--text); }
+    .logo span { color: var(--red); }
+    nav a.back { color: var(--muted); text-decoration: none; font-size: 14px; }
+    nav a.back:hover { color: var(--text); }
+    .content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+    }
+    .content h1 {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+    .content .updated {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    h2 { font-size: 20px; font-weight: 700; margin: 36px 0 12px; color: var(--text); }
+    p { color: #ccc; margin-bottom: 14px; font-size: 15px; }
+    ul { color: #ccc; padding-left: 24px; margin-bottom: 14px; font-size: 15px; }
+    ul li { margin-bottom: 6px; }
+    a { color: var(--red); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    th {
+      background: var(--dark3);
+      color: var(--text);
+      text-align: left;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+    }
+    td {
+      color: #ccc;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--muted); text-decoration: none; margin: 0 8px; }
+    footer a:hover { color: var(--text); }
+    @media (max-width: 600px) {
+      nav { padding: 16px 20px; }
+      table { font-size: 12px; }
+      th, td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">Dia<span>bolus</span></a>
+  <a href="/" class="back">← Volver</a>
+</nav>
+
+<div class="content">
+  <h1>Política de Cookies</h1>
+  <p class="updated">Última actualización: junio de 2026</p>
+
+  <h2>1. ¿Qué son las cookies?</h2>
+  <p>Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando visitas un sitio web. Sirven para recordar tus preferencias, mantener tu sesión iniciada y mejorar la experiencia de uso.</p>
+
+  <h2>2. Cookies que utilizamos</h2>
+  <p>Diabolus utiliza exclusivamente cookies técnicas y funcionales estrictamente necesarias para el funcionamiento de la plataforma. <strong>No utilizamos cookies de terceros, cookies publicitarias ni cookies de seguimiento de comportamiento.</strong></p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Tipo</th>
+        <th>Finalidad</th>
+        <th>Duración</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>sb-*</code></td>
+        <td>Técnica / Sesión</td>
+        <td>Gestión de sesión autenticada de usuario (Supabase Auth). Necesaria para mantener el acceso a la plataforma.</td>
+        <td>Sesión / 7 días</td>
+      </tr>
+      <tr>
+        <td><code>diabolus_prefs</code></td>
+        <td>Funcional</td>
+        <td>Preferencias de interfaz del usuario (idioma, modo oscuro, etc.).</td>
+        <td>1 año</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Base jurídica</h2>
+  <p>Las cookies técnicas y estrictamente necesarias están exentas de requerir consentimiento previo según el art. 22.2 de la LSSI y las directrices de la AEPD, dado que son imprescindibles para la prestación del servicio solicitado por el usuario.</p>
+
+  <h2>4. Cómo gestionar o eliminar las cookies</h2>
+  <p>Puedes configurar tu navegador para bloquear o eliminar cookies en cualquier momento. Ten en cuenta que bloquear las cookies técnicas puede impedir el correcto funcionamiento de la plataforma (por ejemplo, no podrás mantener la sesión iniciada).</p>
+  <p>Instrucciones por navegador:</p>
+  <ul>
+    <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener">Google Chrome</a></li>
+    <li><a href="https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias" target="_blank" rel="noopener">Mozilla Firefox</a></li>
+    <li><a href="https://support.apple.com/es-es/guide/safari/sfri11471/mac" target="_blank" rel="noopener">Safari</a></li>
+    <li><a href="https://support.microsoft.com/es-es/help/17442/windows-internet-explorer-delete-manage-cookies" target="_blank" rel="noopener">Microsoft Edge</a></li>
+  </ul>
+
+  <h2>5. Cambios en esta política</h2>
+  <p>Si en el futuro añadimos nuevas cookies (por ejemplo, analíticas o de terceros), actualizaremos esta política y, si fuera necesario, solicitaremos tu consentimiento. La fecha de "última actualización" refleja siempre la versión vigente.</p>
+
+  <h2>6. Contacto</h2>
+  <p>Para cualquier consulta sobre el uso de cookies, puedes escribirnos a <a href="mailto:hola@diabolus.es">hola@diabolus.es</a>.</p>
+</div>
+
+<footer>
+  <p>© 2026 Diabolus · Gerobelleza SL · CIF B22665194</p>
+  <p style="margin-top:8px">
+    <a href="/">Inicio</a>
+    <a href="/aviso-legal.html">Aviso Legal</a>
+    <a href="/privacidad.html">Privacidad</a>
+    <a href="/cookies.html">Cookies</a>
+    <a href="mailto:hola@diabolus.es">hola@diabolus.es</a>
+  </p>
+</footer>
+
+</body>
+</html>

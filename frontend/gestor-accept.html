@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diabolus CRM — Aceptar invitación del gestor</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{background:#111;border:1px solid #222;border-radius:16px;padding:40px;width:100%;max-width:460px}
+  .logo{text-align:center;margin-bottom:28px}
+  .logo h1{font-size:24px;font-weight:800;color:#dc2626}
+  .logo p{color:#555;font-size:13px;margin-top:6px}
+  h2{font-size:18px;font-weight:700;margin-bottom:8px;color:#eee}
+  .sub{font-size:13px;color:#666;margin-bottom:24px;line-height:1.6}
+  .info-box{background:#0e0e0e;border:1px solid #1e1e1e;border-radius:10px;padding:18px;margin-bottom:24px}
+  .info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1a1a}
+  .info-row:last-child{border-bottom:none}
+  .info-label{font-size:12px;color:#666}
+  .info-value{font-size:13px;color:#ddd;font-weight:500}
+  .btn-primary{width:100%;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s;margin-bottom:12px}
+  .btn-primary:hover{background:#b91c1c}
+  .btn-primary:disabled{background:#333;color:#555;cursor:not-allowed}
+  .btn-secondary{width:100%;background:transparent;color:#666;border:1px solid #333;border-radius:8px;padding:12px;font-size:14px;cursor:pointer;transition:all .2s}
+  .btn-secondary:hover{border-color:#555;color:#aaa}
+  .error-msg{background:#1a0505;border:1px solid #7f1d1d;border-radius:8px;padding:12px;font-size:13px;color:#fca5a5;margin-bottom:16px;display:none}
+  .success-state{text-align:center;padding:20px 0}
+  .success-state .icon{font-size:48px;margin-bottom:16px}
+  .success-state h3{font-size:18px;font-weight:700;color:#4ade80;margin-bottom:8px}
+  .success-state p{font-size:13px;color:#666;margin-bottom:24px}
+  .loading{text-align:center;padding:40px;color:#555}
+  .spinner{display:inline-block;width:24px;height:24px;border:2px solid #333;border-top-color:#dc2626;border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .login-section{margin-top:20px;padding-top:20px;border-top:1px solid #1e1e1e}
+  .login-section h4{font-size:13px;color:#888;margin-bottom:14px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11px;color:#666;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px}
+  .field input{width:100%;background:#1a1a1a;border:1px solid #333;border-radius:7px;padding:11px 13px;color:#fff;font-size:13px}
+  .field input:focus{outline:none;border-color:#dc2626}
+</style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <h1>🔥 DIABOLUS CRM</h1>
+    <p>Invitación del gestor</p>
+  </div>
+
+  <!-- Loading state -->
+  <div id="state-loading" class="loading">
+    <div class="spinner"></div>
+    <p style="margin-top:16px">Comprobando invitación…</p>
+  </div>
+
+  <!-- Error state -->
+  <div id="state-error" style="display:none">
+    <div class="error-msg" id="error-text" style="display:block"></div>
+    <a href="index-login.html" style="display:block;text-align:center;color:#dc2626;font-size:13px;margin-top:16px">← Ir al panel de Diabolus</a>
+  </div>
+
+  <!-- Invite info state (ready to accept) -->
+  <div id="state-invite" style="display:none">
+    <h2>Invitación de gestor</h2>
+    <p class="sub">Tu gestor te invita a conectar tu cuenta de Diabolus. Así podrá acceder a tus datos para ayudarte con la gestión.</p>
+
+    <div class="info-box">
+      <div class="info-row"><span class="info-label">Gestor</span><span class="info-value" id="inv-gestor-name">—</span></div>
+      <div class="info-row"><span class="info-label">Asesoría</span><span class="info-value" id="inv-company">—</span></div>
+      <div class="info-row"><span class="info-label">Invitado a</span><span class="info-value" id="inv-email">—</span></div>
+      <div class="info-row"><span class="info-label">Válida hasta</span><span class="info-value" id="inv-expires">—</span></div>
+    </div>
+
+    <div class="error-msg" id="accept-error"></div>
+
+    <!-- Case A: user has salon JWT -->
+    <div id="accept-auth-ok" style="display:none">
+      <p style="font-size:13px;color:#666;margin-bottom:16px">Sesión detectada en este dispositivo. Acepta para vincular tu negocio:</p>
+      <button class="btn-primary" onclick="acceptInvite()" id="accept-btn">✅ Aceptar invitación</button>
+      <button class="btn-secondary" onclick="declineInvite()">No gracias</button>
+    </div>
+
+    <!-- Case B: user needs to log in first -->
+    <div id="accept-needs-login" style="display:none">
+      <p style="font-size:13px;color:#666;margin-bottom:16px">Necesitas iniciar sesión en Diabolus para vincular tu cuenta:</p>
+      <div class="login-section">
+        <h4>Entrar en Diabolus</h4>
+        <div class="error-msg" id="login-error"></div>
+        <form id="login-form">
+          <div class="field"><label>Email</label><input type="email" id="l-email" placeholder="tu@negocio.com" required autocomplete="email"></div>
+          <div class="field"><label>Contraseña</label><input type="password" id="l-password" placeholder="••••••••" required></div>
+          <button class="btn-primary" type="submit" id="login-btn">Entrar y aceptar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success state -->
+  <div id="state-success" style="display:none">
+    <div class="success-state">
+      <div class="icon">🎉</div>
+      <h3>¡Vinculación completada!</h3>
+      <p>Tu gestor ahora tiene acceso a los datos que necesita para ayudarte. Puedes revocar este acceso en cualquier momento desde tu panel.</p>
+      <a href="index-login.html"><button class="btn-primary" style="margin-bottom:0">Ir a mi panel →</button></a>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://diabolus-crm-api.vercel.app'
+const SALON_TOKEN_KEY = 'diabolus_token' // same key used by main dashboard
+const inviteToken = new URLSearchParams(location.search).get('token')
+
+let inviteInfo = null
+let salonToken = localStorage.getItem(SALON_TOKEN_KEY)
+
+function show(stateId) {
+  ['state-loading','state-error','state-invite','state-success'].forEach(id =>
+    document.getElementById(id).style.display = id === stateId ? 'block' : 'none'
+  )
+}
+
+async function init() {
+  if (!inviteToken) {
+    document.getElementById('error-text').textContent = 'No se encontró token de invitación en la URL.'
+    show('state-error')
+    return
+  }
+
+  const res = await fetch(`${API}/gestor/invite-info?token=${encodeURIComponent(inviteToken)}`)
+  const data = await res.json()
+
+  if (!res.ok) {
+    document.getElementById('error-text').textContent = data.error || 'Invitación inválida o caducada.'
+    show('state-error')
+    return
+  }
+
+  inviteInfo = data
+  document.getElementById('inv-gestor-name').textContent = data.gestor_name
+  document.getElementById('inv-company').textContent = data.company_name || data.gestor_name
+  document.getElementById('inv-email').textContent = data.invited_email
+  document.getElementById('inv-expires').textContent = new Date(data.expires_at).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })
+
+  show('state-invite')
+
+  if (salonToken) {
+    document.getElementById('accept-auth-ok').style.display = 'block'
+  } else {
+    document.getElementById('accept-needs-login').style.display = 'block'
+  }
+}
+
+async function acceptInvite() {
+  const btn = document.getElementById('accept-btn')
+  const errEl = document.getElementById('accept-error')
+  errEl.style.display = 'none'
+  btn.disabled = true; btn.textContent = 'Vinculando…'
+
+  const res = await fetch(`${API}/gestor/accept-invite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${salonToken}` },
+    body: JSON.stringify({ invite_token: inviteToken })
+  })
+  const data = await res.json()
+
+  if (!res.ok) {
+    errEl.textContent = data.error || 'Error al aceptar la invitación'
+    errEl.style.display = 'block'
+    btn.disabled = false; btn.textContent = '✅ Aceptar invitación'
+    return
+  }
+
+  show('state-success')
+}
+
+function declineInvite() {
+  location.href = 'index-login.html'
+}
+
+// Login + accept combo
+document.getElementById('login-form').onsubmit = async (e) => {
+  e.preventDefault()
+  const btn = document.getElementById('login-btn')
+  const errEl = document.getElementById('login-error')
+  errEl.style.display = 'none'
+  btn.disabled = true; btn.textContent = 'Entrando…'
+
+  // Login to Diabolus (main auth endpoint)
+  const loginRes = await fetch(`${API}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: document.getElementById('l-email').value, password: document.getElementById('l-password').value })
+  })
+  const loginData = await loginRes.json()
+
+  if (!loginRes.ok) {
+    errEl.textContent = loginData.error || 'Credenciales incorrectas'
+    errEl.style.display = 'block'
+    btn.disabled = false; btn.textContent = 'Entrar y aceptar'
+    return
+  }
+
+  salonToken = loginData.token
+  localStorage.setItem(SALON_TOKEN_KEY, salonToken)
+  btn.textContent = 'Aceptando…'
+  await acceptInvite()
+}
+
+init()
+</script>
+  <script>
+    // PWA — registro del Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[SW] registrado:', reg.scope);
+        }).catch(err => {
+          console.warn('[SW] error al registrar:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

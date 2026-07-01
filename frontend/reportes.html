@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportes — Diabolus CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
+  <div class="flex h-screen">
+    <div class="w-64 bg-black border-r border-gray-800 p-6 fixed left-0 top-0 h-screen">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">⚡</div>
+        <span class="font-bold text-xl">DIABOLUS</span>
+      </div>
+      <nav class="space-y-2">
+        <a href="/diabolus-crm/dashboard.html" class="block px-4 py-3 text-gray-400 hover:bg-gray-800 rounded">📊 Dashboard</a>
+        <a href="/diabolus-crm/transacciones.html" class="block px-4 py-3 text-gray-400 hover:bg-gray-800 rounded">💰 Transacciones</a>
+        <a href="/diabolus-crm/clientes.html" class="block px-4 py-3 text-gray-400 hover:bg-gray-800 rounded">👥 Clientes</a>
+        <a href="/diabolus-crm/reportes.html" class="block px-4 py-3 bg-orange-500/20 border-l-2 border-orange-500 text-orange-400 rounded">📈 Reportes</a>
+      </nav>
+      <div class="border-t border-gray-800 mt-auto pt-4">
+        <button onclick="logout()" class="w-full px-4 py-3 text-gray-400 hover:bg-gray-800 rounded">🚪 Salir</button>
+      </div>
+    </div>
+
+    <main class="ml-64 flex-1 overflow-auto p-8">
+      <h1 class="text-4xl font-bold mb-8">Reportes</h1>
+      <div class="grid grid-cols-4 gap-6 mb-8">
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Ingresos semana</p><p class="text-3xl font-bold text-green-400 mt-2">€<span id="weekIncome">0.00</span></p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Gastos semana</p><p class="text-3xl font-bold text-red-400 mt-2">€<span id="weekExpenses">0.00</span></p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Balance</p><p class="text-3xl font-bold text-blue-400 mt-2">€<span id="weekBalance">0.00</span></p></div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6"><p class="text-gray-400 text-sm">Transacciones</p><p class="text-3xl font-bold text-purple-400 mt-2"><span id="txCount">0</span></p></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-8 mb-8">
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+          <h3 class="text-lg font-bold mb-4">Ingresos diarios</h3>
+          <div style="position: relative; height: 250px;">
+            <canvas id="chartDaily"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+          <h3 class="text-lg font-bold mb-4">Distribución gastos</h3>
+          <div style="position: relative; height: 250px;">
+            <canvas id="chartExpenses"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+        <h3 class="text-lg font-bold mb-4">Top conceptos</h3>
+        <div id="topConceptsTable" class="space-y-3">
+          <p class="text-gray-400">Cargando...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://emygbvxkhfbwyhbapaae.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVteWdidnhraGZid3loYmFwYWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODM3MjcsImV4cCI6MjA5Njg1OTcyN30.HpcYlWwggML7FGHLKerj17sLwj3CiFmYKZdL4iSV9YM';
+    const { createClient } = window.supabase;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    if (!localStorage.getItem('token')) window.location.href = '/diabolus-crm/';
+    function logout() { localStorage.clear(); window.location.href = '/diabolus-crm/'; }
+
+    async function loadReports() {
+      try {
+        const { data: transactions, error } = await supabase
+          .from('transactions')
+          .select('*');
+
+        if (error) {
+          console.log('Modo demo:', error.message);
+          loadDemoReports();
+          return;
+        }
+
+        const now = new Date();
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        let weekIncome = 0, weekExpenses = 0;
+        const conceptMap = {};
+        const dailyData = {};
+
+        transactions.forEach(tx => {
+          const txDate = new Date(tx.created_at);
+          if (txDate >= weekAgo) {
+            const amount = parseFloat(tx.amount) || 0;
+            if (tx.type === 'income') weekIncome += amount;
+            else weekExpenses += amount;
+
+            const day = txDate.toLocaleDateString('es-ES', {weekday: 'short'});
+            dailyData[day] = (dailyData[day] || 0) + (tx.type === 'income' ? amount : -amount);
+
+            const concept = tx.concept || 'Otro';
+            conceptMap[concept] = (conceptMap[concept] || 0) + amount;
+          }
+        });
+
+        document.getElementById('weekIncome').textContent = weekIncome.toFixed(2);
+        document.getElementById('weekExpenses').textContent = weekExpenses.toFixed(2);
+        document.getElementById('weekBalance').textContent = (weekIncome - weekExpenses).toFixed(2);
+        document.getElementById('txCount').textContent = transactions.length;
+
+        initCharts(dailyData, conceptMap);
+        loadTopConcepts(conceptMap);
+
+      } catch (err) {
+        console.error('Error:', err);
+        loadDemoReports();
+      }
+    }
+
+    function loadDemoReports() {
+      document.getElementById('weekIncome').textContent = '3250.00';
+      document.getElementById('weekExpenses').textContent = '850.00';
+      document.getElementById('weekBalance').textContent = '2400.00';
+      document.getElementById('txCount').textContent = '23';
+
+      const dailyData = {Lun: 450, Mar: 520, Mié: 380, Jue: 610, Vie: 450, Sáb: 520, Dom: 280};
+      const conceptMap = {'Corte': 585, 'Tinte': 415, 'Manicura': 235};
+
+      initCharts(dailyData, conceptMap);
+      loadTopConcepts(conceptMap);
+    }
+
+    function initCharts(dailyData, conceptMap) {
+      const days = Object.keys(dailyData);
+      const amounts = Object.values(dailyData);
+
+      const ctx1 = document.getElementById('chartDaily').getContext('2d');
+      new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: days,
+          datasets: [{
+            label: 'Ingresos netos',
+            data: amounts,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {labels: {color: '#9ca3af'}}}, scales: {y: {ticks: {color: '#9ca3af'}, grid: {color: '#374151'}}, x: {ticks: {color: '#9ca3af'}}}}
+      });
+
+      const ctx2 = document.getElementById('chartExpenses').getContext('2d');
+      new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(conceptMap),
+          datasets: [{
+            data: Object.values(conceptMap),
+            backgroundColor: ['#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'],
+            borderColor: '#111827',
+            borderWidth: 2
+          }]
+        },
+        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom', labels: {color: '#9ca3af'}}}}
+      });
+    }
+
+    function loadTopConcepts(conceptMap) {
+      const sorted = Object.entries(conceptMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const maxAmount = Math.max(...sorted.map(e => e[1]));
+      
+      document.getElementById('topConceptsTable').innerHTML = sorted.map(([concept, amount]) => {
+        const percentage = Math.round((amount / maxAmount) * 100);
+        return `
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-semibold w-24">${concept}</p>
+            <div class="w-40 bg-gray-700 rounded h-2"><div class="bg-orange-500 h-2 rounded" style="width: ${percentage}%"></div></div>
+            <p class="font-bold text-orange-400 w-20 text-right">€${amount.toFixed(2)}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    loadReports();
+  </script>
+</body>
+</html>

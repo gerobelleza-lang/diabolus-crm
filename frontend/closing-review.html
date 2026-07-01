@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revisar cierre mensual — Diabolus CRM</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8B5CF6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diabolus">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<style>
+  :root{--red:#dc2626;--bg:#0a0a0a;--card:#111;--border:#222;--muted:#666;--text:#fff;--sub:#aaa;--green:#4ade80;--amber:#fbbf24}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  .wrap{max-width:680px;margin:0 auto;padding:24px 16px 60px}
+  .logo{text-align:center;padding:32px 0 24px}
+  .logo h1{font-size:22px;font-weight:800;color:var(--red)}
+  .logo p{color:var(--muted);font-size:13px;margin-top:4px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+  .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .badge-pending{background:#1c1308;color:var(--amber);border:1px solid #78350f}
+  .badge-sent{background:#052e16;color:var(--green);border:1px solid #166534}
+  .section-title{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:4px}
+  .metric{background:#0d0d0d;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+  .metric .num{font-size:20px;font-weight:700}
+  .metric .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+  .cat-row{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-bottom:1px solid #1a1a1a}
+  .cat-row:last-child{border-bottom:none}
+  .inv-table{width:100%;border-collapse:collapse;font-size:13px}
+  .inv-table th{text-align:left;color:var(--muted);padding:8px 6px;font-weight:400;border-bottom:1px solid var(--border)}
+  .inv-table td{padding:10px 6px;border-bottom:1px solid #1a1a1a}
+  .inv-table tr:last-child td{border-bottom:none}
+  .status-paid{color:var(--green)} .status-pending{color:var(--amber)} .status-overdue{color:#f87171}
+  .btn{display:block;width:100%;padding:15px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;text-align:center;margin-top:8px}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--sub);font-size:14px;padding:12px;margin-top:8px}
+  .notice{background:#111827;border:1px solid #1e3a5f;border-radius:8px;padding:14px 16px;font-size:13px;color:#93c5fd;line-height:1.6;margin-bottom:16px}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #444;border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;display:none;z-index:99;border:1px solid #333}
+  .val-green{color:var(--green)} .val-red{color:#f87171}
+</style>
+  <link rel="stylesheet" href="diabolus-tokens.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="logo"><h1>🔥 DIABOLUS CRM</h1><p>Centro de mando inteligente</p></div>
+
+  <div id="loading" class="card" style="text-align:center;padding:40px;">
+    <span class="spinner"></span> Cargando cierre…
+  </div>
+  <div id="already" class="card" style="display:none;text-align:center;padding:40px;">
+    <p style="font-size:32px;">✅</p><h2 style="margin:12px 0 8px;">Cierre ya enviado</h2>
+    <p style="color:var(--sub)">Este cierre ya fue aprobado y enviado a tu gestor.</p>
+  </div>
+  <div id="expired" class="card" style="display:none;text-align:center;padding:40px;">
+    <p style="font-size:32px;">⏱️</p><h2 style="margin:12px 0 8px;">Enlace caducado</h2>
+    <p style="color:var(--sub)">Han pasado más de 7 días. Contacta con tu gestor para reenviar.</p>
+  </div>
+  <div id="error-card" class="card" style="display:none;text-align:center;padding:40px;">
+    <p style="font-size:32px;">⚠️</p><h2 style="margin:12px 0 8px;" id="error-msg">Error</h2>
+  </div>
+
+  <div id="main" style="display:none;">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+        <div>
+          <h2 style="margin:0 0 6px;" id="period-title">Cierre mensual</h2>
+          <p style="color:var(--sub);font-size:14px;" id="gestor-info"></p>
+        </div>
+        <span class="badge badge-pending" id="status-badge">Pendiente</span>
+      </div>
+      <p class="notice">Tu gestor ha preparado este resumen. Revísalo y pulsa <strong>Aprobar y enviar</strong> para que lo reciba. Si algo no cuadra, contacta con tu gestor antes de aprobar.</p>
+    </div>
+
+    <div class="card" id="no-movements-card" style="display:none;text-align:center;padding:32px;">
+      <p style="font-size:32px;">📋</p><h3 style="margin:12px 0 8px;">Sin movimientos</h3>
+      <p style="color:var(--sub);font-size:14px;">No hay ingresos, gastos ni facturas registradas en este periodo.</p>
+    </div>
+
+    <div class="card" id="summary-card">
+      <p class="section-title">Resumen del periodo</p>
+      <div class="summary-grid">
+        <div class="metric"><div class="num val-green" id="m-income">—</div><div class="lbl">Ingresos</div></div>
+        <div class="metric"><div class="num val-red" id="m-expenses">—</div><div class="lbl">Gastos</div></div>
+        <div class="metric"><div class="num" id="m-saldo">—</div><div class="lbl">Saldo neto</div></div>
+      </div>
+    </div>
+
+    <div class="card" id="cat-card" style="display:none;">
+      <p class="section-title">Gastos por categoría</p>
+      <div id="cat-list"></div>
+    </div>
+
+    <div class="card" id="inv-card" style="display:none;">
+      <p class="section-title">Facturas emitidas</p>
+      <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
+        <span style="font-size:13px;color:var(--sub)">Total: <b id="inv-total" style="color:var(--text)">—</b></span>
+        <span style="font-size:13px;color:var(--sub)">Cobradas: <b style="color:var(--green)" id="inv-paid">—</b></span>
+        <span style="font-size:13px;color:var(--sub)">Pendientes: <b style="color:var(--amber)" id="inv-pending">—</b></span>
+        <span style="font-size:13px;color:var(--sub)">Vencidas: <b style="color:#f87171" id="inv-overdue">—</b></span>
+      </div>
+      <table class="inv-table">
+        <thead><tr><th>Nº</th><th>Cliente</th><th>Importe</th><th>Estado</th><th>Fecha</th></tr></thead>
+        <tbody id="inv-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <button class="btn" id="approve-btn">✅ Aprobar y enviar al gestor</button>
+      <button class="btn btn-ghost" onclick="history.back()">← Volver</button>
+      <p style="color:var(--muted);font-size:12px;text-align:center;margin-top:12px;">
+        Al aprobar, tu gestor recibirá este resumen. No incluye estimaciones de IVA.
+      </p>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+const API='https://diabolus-crm-api.vercel.app'
+const token=new URLSearchParams(location.search).get('token')
+const fmt=n=>n!=null?n.toFixed(2)+'€':'—'
+const toast=(msg,ms=3000)=>{const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',ms)}
+
+async function load(){
+  if(!token){document.getElementById('loading').innerHTML='<p style="color:#f87171">Enlace inválido.</p>';return}
+  try{
+    const r=await fetch(`${API}/closing/review/${token}`)
+    const d=await r.json()
+    document.getElementById('loading').style.display='none'
+    if(d.already_approved){document.getElementById('already').style.display='block';return}
+    if(r.status===410){document.getElementById('expired').style.display='block';return}
+    if(!r.ok){document.getElementById('error-card').style.display='block';document.getElementById('error-msg').textContent=d.error||'Error';return}
+    document.getElementById('main').style.display='block'
+    document.getElementById('period-title').textContent=`Cierre de ${d.period} — ${d.salon_name}`
+    document.getElementById('gestor-info').textContent=`Preparado por ${d.gestor_name}${d.gestor_company?' · '+d.gestor_company:''}`
+    const data=d.data
+    if(!data)return
+    if(!data.has_movements){document.getElementById('no-movements-card').style.display='block';document.getElementById('summary-card').style.display='none';return}
+    const s=data.summary
+    document.getElementById('m-income').textContent=fmt(s.income)
+    document.getElementById('m-expenses').textContent=fmt(s.expenses)
+    const sEl=document.getElementById('m-saldo')
+    sEl.textContent=fmt(s.saldo);sEl.className='num '+(s.saldo>=0?'val-green':'val-red')
+    if(data.expenses_by_category?.length){
+      document.getElementById('cat-card').style.display='block'
+      const list=document.getElementById('cat-list')
+      data.expenses_by_category.forEach(c=>{
+        const div=document.createElement('div');div.className='cat-row'
+        div.innerHTML=`<span style="color:#ccc;text-transform:capitalize">${c.category}</span><span style="font-weight:600">${fmt(c.amount)}</span>`
+        list.appendChild(div)
+      })
+    }
+    const inv=data.invoices
+    if(inv&&inv.total>0){
+      document.getElementById('inv-card').style.display='block'
+      document.getElementById('inv-total').textContent=inv.total
+      document.getElementById('inv-paid').textContent=inv.paid
+      document.getElementById('inv-pending').textContent=inv.pending
+      document.getElementById('inv-overdue').textContent=inv.overdue
+      const tbody=document.getElementById('inv-body')
+      ;(inv.list||[]).forEach(i=>{
+        const cls=i.status==='paid'?'status-paid':i.status==='overdue'?'status-overdue':'status-pending'
+        const lbl={paid:'Cobrada',pending:'Pendiente',overdue:'Vencida'}
+        tbody.innerHTML+=`<tr><td style="font-weight:600">${i.number||'—'}</td><td>${i.client}</td><td style="font-weight:600">${fmt(i.total)}</td><td class="${cls}">${lbl[i.status]||i.status}</td><td style="color:var(--muted)">${i.issue_date||'—'}</td></tr>`
+      })
+    }
+  }catch(e){document.getElementById('loading').innerHTML='<p style="color:#f87171">Error de conexión.</p>'}
+}
+
+document.getElementById('approve-btn').addEventListener('click',async()=>{
+  const btn=document.getElementById('approve-btn')
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Enviando…'
+  try{
+    const r=await fetch(`${API}/closing/review/${token}/approve`,{method:'POST'})
+    const d=await r.json()
+    if(d.ok){
+      btn.innerHTML='✅ ¡Aprobado! Tu gestor lo recibirá en breve.'
+      btn.style.background='#166534'
+      document.getElementById('status-badge').className='badge badge-sent'
+      document.getElementById('status-badge').textContent='Enviado'
+      toast('Cierre aprobado y enviado ✅')
+    }else{toast(d.error||'Error al aprobar',5000);btn.disabled=false;btn.innerHTML='✅ Aprobar y enviar al gestor'}
+  }catch(e){toast('Error de conexión',5000);btn.disabled=false;btn.innerHTML='✅ Aprobar y enviar al gestor'}
+})
+load()
+</script>
+  <script>
+    // PWA — registro del Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[SW] registrado:', reg.scope);
+        }).catch(err => {
+          console.warn('[SW] error al registrar:', err);
+        });
+      });
+    }
+  </script>
+<script src="sidebar.js"></script>
+</body>
+</html>
