@@ -1,111 +1,264 @@
 /**
- * 🪞 El Confesor — El único Diablo que no empuja.
+ * 🪞 El Confesor v2 — Guía, onboarding, ayuda contextual
  *
- * Maneja: ayuda, guía, preguntas sobre la app, intents no clasificados.
- * Tono: empático, paciente, cero prisas.
+ * El 9º y último Diablo. El único que NUNCA ejecuta acciones.
  *
- * Temp: 0.7 (humano, cálido)
- * max_tokens: 600 (paso a paso, no listas interminables)
+ * REGLA ABSOLUTA: El Confesor NUNCA ejecuta acciones.
+ * No crea pending actions, no emite intents, no muta datos.
+ * Solo enseña al usuario cómo hablar con Diablilla.
+ *
+ * Arquitectura v2:
+ *   Capa 0 — Retrieval: stats del usuario (1 query paralela con Promise.all, head:true)
+ *   Capa 1 — LLM: guía contextual con DIABLO_METAS dinámicos
+ *   (No hay Capa 2 ni 3: no valida ni ejecuta nada)
+ *
+ * Complejidad 0.6 — el onboarding merece cerebro decente.
  */
 
-import { DIABLO_METAS } from './metas'
+import { DIABLO_METAS, DIABLO_TAGS } from './metas'
 import { routeToLLM, callOpenRouter } from '../llm-router'
 import { logDiabloUsage } from './metrics'
 import { getSalonAIConfig } from '../memory'
 import type { BrainTier } from '../memory'
-import type { DiabloHandler, DiabloResponse, IntentClassification } from './metas'
+import type { DiabloHandler, DiabloMeta, DiabloResponse, IntentClassification } from './metas'
 import type { AgentInput } from '../core'
 
-const CONFESOR_SYSTEM_PROMPT = `Eres El Confesor de Diabolus. El único Diablo que no empuja, no vende, no cobra. Escuchas.
+// ─── Types ──────────────────────────────────────────────────────────────────
 
-PERSONALIDAD:
-- Empático y paciente. Si el usuario está frustrado, baja el ritmo
-- Explica paso a paso: UN paso, pausa, siguiente paso. Nunca listas de 10 cosas
-- Si lleva meses sin facturar, no regañas — ayudas a dar el primer paso
-- Tono cercano, cálido, sin prisas. Como un compañero que sabe del tema
+export interface UserStats {
+  totalInvoices: number
+  totalExpenses: number
+  totalIncomes: number
+  totalClients: number
+  totalDocuments: number
+  hasUsedAgent: boolean
+}
 
-CÓMO EXPLICAS:
-- Primero confirma que entiendes la duda: "Entendido, quieres saber cómo..."
-- Luego el paso concreto: "Escríbele a Diablilla: 'factura a López 500€ instalación'"
-- Si hay varios pasos, ve uno a uno
-- Usa ejemplos reales del contexto del usuario cuando puedas
+export type UserLevel = 'novato' | 'intermedio' | 'avanzado'
 
-FUNCIONES QUE PUEDES EXPLICAR:
-- Facturas: "factura a [nombre] [importe] [concepto]" → crea borrador
-- Gastos: "gasté 80€ en material" → registra gasto
-- Ingresos: "cobré 300€ de García" → registra ingreso
-- Clientes: "nuevo cliente Ana García" → da de alta
-- Recordatorios: "manda recordatorio a López" → WhatsApp/email
-- Balance: "¿cómo voy?" → resumen financiero
-- Legal: "¿cuánto IVA aplico?" → consulta legislación
-- Catálogo: productos con precio e IVA preconfigurado
-- Fotos de tickets: envía foto → registra automáticamente
+// ─── Capa 0: Retrieval — Stats del usuario (1 sola ronda con Promise.all) ──
 
-LÍMITES ESTRICTOS:
-- NUNCA ejecutas acciones. Solo guías
-- Si el usuario quiere hacer algo, dale el comando exacto para Diablilla
-- Si no puedes resolver: "Esto se lo paso a Diablilla"`
-
-async function handle(input: AgentInput, classification: IntentClassification): Promise<DiabloResponse> {
-  const { tenantId, userId = 'unknown' } = input
-  const userInput = (input.text || '').trim()
-
-  // ── Static help response ──────────────────────────────────────────────────
-  if (classification.intent === 'ayuda') {
-    return {
-      replyText: [
-        '🪞 <b>Hola. Soy El Confesor. Estoy aquí para ayudarte.</b>',
-        '',
-        'Pregúntame lo que necesites:',
-        '',
-        '🧾 "¿Cómo creo una factura?"',
-        '💰 "¿Cómo registro un gasto?"',
-        '👥 "¿Cómo añado un cliente?"',
-        '📩 "¿Cómo mando un recordatorio?"',
-        '📊 "¿Cómo veo mi balance?"',
-        '',
-        'Sin prisas. Estoy aquí. 🪞',
-      ].join('\n'),
-    }
-  }
-
-  // ── LLM-powered guidance ──────────────────────────────────────────────────
+export async function fetchUserStats(
+  supabase: any,
+  salonId: string
+): Promise<UserStats> {
   try {
-    const aiConfig = await getSalonAIConfig(tenantId)
-    const brainTier: BrainTier = aiConfig.brain_tier || 'rapida'
-    const routing = routeToLLM(0.3, userInput, false, brainTier)
+    const [invoices, expenses, incomes, clients, documents] = await Promise.all([
+      supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('salon_id', salonId),
+      supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('salon_id', salonId).eq('type', 'expense'),
+      supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('salon_id', salonId).eq('type', 'income'),
+      supabase.from('clients').select('id', { count: 'exact', head: true }).eq('salon_id', salonId),
+      supabase.from('documents').select('id', { count: 'exact', head: true }).eq('salon_id', salonId),
+    ])
 
-    const startMs = Date.now()
-    const { text: response, usage } = await callOpenRouter(
-      routing.model,
-      userInput,
-      CONFESOR_SYSTEM_PROMPT,
-      { temperature: 0.7, max_tokens: 600 }
-    )
-
-    if (usage) {
-      logDiabloUsage(userId, tenantId, {
-        diablo: 'confesor', ...usage, response_ms: Date.now() - startMs
-      })
+    const stats: UserStats = {
+      totalInvoices: invoices.count ?? 0,
+      totalExpenses: expenses.count ?? 0,
+      totalIncomes: incomes.count ?? 0,
+      totalClients: clients.count ?? 0,
+      totalDocuments: documents.count ?? 0,
+      hasUsedAgent: false,
     }
-
-    return {
-      replyText: response,
-      routing: {
-        level: routing.level,
-        model: routing.model,
-        label: '🪞 El Confesor',
-        estimatedCost: `€${routing.estimatedCost}`,
-      },
-    }
+    stats.hasUsedAgent = (stats.totalInvoices + stats.totalExpenses + stats.totalIncomes + stats.totalClients) > 0
+    return stats
   } catch {
-    return {
-      replyText: 'Estoy aquí para ayudarte. ¿Qué necesitas saber? Pregúntame sobre facturas, gastos, clientes o cualquier función.',
-    }
+    return fallbackStats()
   }
 }
 
+function fallbackStats(): UserStats {
+  return {
+    totalInvoices: 0, totalExpenses: 0, totalIncomes: 0,
+    totalClients: 0, totalDocuments: 0, hasUsedAgent: false,
+  }
+}
+
+// ─── User level detection ──────────────────────────────────────────────────
+
+export function detectUserLevel(stats: UserStats): UserLevel {
+  const total = stats.totalInvoices + stats.totalExpenses + stats.totalIncomes
+  if (total === 0) return 'novato'
+  if (total < 20) return 'intermedio'
+  return 'avanzado'
+}
+
+// ─── Capacidades dinámicas desde DIABLO_METAS ──────────────────────────────
+
+/** Example commands per Diablo (for guidance, NOT execution) */
+const DIABLO_EXAMPLES: Record<string, string[]> = {
+  facturador: ['"factura a López 500€ instalación"', '"nueva factura para Ana García"'],
+  contable:   ['"gasté 80€ en productos"', '"cobré 300€ de García"', '"¿cómo voy este mes?"'],
+  cobrador:   ['"¿quién me debe?"', '"facturas vencidas"'],
+  closer:     ['"nuevo cliente Ana García 600123456"', '"busca a López"'],
+  cazador:    ['"manda recordatorio a López"'],
+  abogado:    ['"¿cuánto IVA aplico a servicios?"', '"¿qué dice la ley sobre facturas?"'],
+  escribano:  ['"albarán para Cliente Prueba, 3 cajas tinte a 50€"', '"presupuesto para García"'],
+  guardian:   ['"¿cómo está mi salud financiera?"'],
+}
+
+export function buildCapabilitiesList(): string {
+  const lines: string[] = []
+  for (const [name, meta] of Object.entries(DIABLO_METAS)) {
+    if (name === 'confesor') continue
+    const tag = DIABLO_TAGS[name as keyof typeof DIABLO_TAGS]
+    lines.push(`• ${meta.emoji} **${meta.displayName}** — ${meta.description}`)
+    const examples = DIABLO_EXAMPLES[name]
+    if (examples) {
+      for (const ex of examples.slice(0, 2)) {
+        lines.push(`  → _${ex}_`)
+      }
+    }
+  }
+  return lines.join('\n')
+}
+
+// ─── Suggested next actions based on stats ─────────────────────────────────
+
+export function suggestNextActions(stats: UserStats): string[] {
+  const suggestions: string[] = []
+
+  if (stats.totalClients === 0) {
+    suggestions.push('Empieza registrando un cliente: _"nuevo cliente María García 600123456"_')
+  }
+  if (stats.totalInvoices === 0 && stats.totalClients > 0) {
+    suggestions.push('Crea tu primera factura: _"factura a [nombre] por [importe]"_')
+  }
+  if (stats.totalExpenses === 0) {
+    suggestions.push('Apunta tu primer gasto: _"gasto 50€ en productos"_')
+  }
+  if (stats.totalIncomes === 0 && stats.totalInvoices > 0) {
+    suggestions.push('Registra un cobro: _"ingreso 200€ de [cliente]"_')
+  }
+  if (stats.totalDocuments === 0 && stats.totalClients > 0) {
+    suggestions.push('Crea un albarán: _"albarán para [cliente], 3 cajas de tinte a 50€"_')
+  }
+  if (stats.totalInvoices > 0 && stats.totalExpenses > 0) {
+    suggestions.push('Consulta tu balance: _"¿cuánto llevo este mes?"_')
+  }
+
+  return suggestions.slice(0, 3)
+}
+
+// ─── System prompt builder ─────────────────────────────────────────────────
+
+export function buildSystemPrompt(stats: UserStats, level: UserLevel): string {
+  const capabilities = buildCapabilitiesList()
+  const suggestions = suggestNextActions(stats)
+
+  const levelContext: Record<UserLevel, string> = {
+    novato: 'El usuario es NUEVO — no ha usado el sistema. Sé especialmente claro y amable. Guía paso a paso, un paso a la vez.',
+    intermedio: 'El usuario ya tiene experiencia básica. Puedes ser más directo y mostrar funciones avanzadas.',
+    avanzado: 'El usuario es veterano. Sé conciso, enfócate en lo que pregunta sin explicar lo básico.',
+  }
+
+  const statsLine = `Datos del usuario: ${stats.totalClients} clientes, ${stats.totalInvoices} facturas, ${stats.totalExpenses} gastos, ${stats.totalIncomes} ingresos, ${stats.totalDocuments} documentos.`
+
+  const suggestionsBlock = suggestions.length > 0
+    ? `\n\nSUGERENCIAS PARA ESTE USUARIO:\n${suggestions.map(s => `• ${s}`).join('\n')}`
+    : ''
+
+  return `Eres El Confesor de Diabolus — el guía del sistema.
+Tu ÚNICA misión es ENSEÑAR al usuario cómo hablar con Diablilla.
+NUNCA ejecutas acciones. NUNCA creas facturas, gastos, clientes ni documentos.
+Solo explicas qué comandos usar y cómo formularlos.
+
+${levelContext[level]}
+${statsLine}
+
+CAPACIDADES DEL SISTEMA (lo que Diablilla puede hacer vía sus Diablos):
+${capabilities}
+${suggestionsBlock}
+
+REGLAS:
+1. Responde siempre en español
+2. Sé breve y directo — máximo 3-4 frases
+3. Siempre incluye al menos UN ejemplo concreto de comando que el usuario pueda copiar y pegar
+4. Si el usuario pregunta por algo que NO hacemos, dilo claramente
+5. JAMÁS digas que vas a crear/enviar/registrar algo — solo ENSEÑA el comando
+6. Si detectas que el usuario quiere hacer algo concreto (ej: "no sé cómo hacer una factura"), enséñale el comando exacto
+7. Tono: profesional pero cercano, empático con novatos
+8. También puedes explicar: fotos de tickets (enviar foto → registro automático) y catálogo de productos`
+}
+
+// ─── Quick help (intent 'ayuda') — Dinámico ───────────────────────────────
+
+export function buildQuickHelp(stats: UserStats): string {
+  const capabilities = buildCapabilitiesList()
+  const suggestions = suggestNextActions(stats)
+
+  let response = `Soy tu Diablilla 😈 — hablo con 8 especialistas para gestionar tu tesorería.\n\n**Lo que puedo hacer:**\n${capabilities}`
+
+  if (suggestions.length > 0) {
+    response += `\n\n**Te sugiero empezar por:**\n${suggestions.map(s => `• ${s}`).join('\n')}`
+  }
+
+  return response
+}
+
+// ─── Capa 1: LLM call ─────────────────────────────────────────────────────
+
+async function callLlm(
+  systemPrompt: string,
+  userInput: string,
+  brainTier: BrainTier
+): Promise<{ text: string; usage?: any }> {
+  // Complejidad 0.6 — onboarding merece cerebro decente
+  const routing = routeToLLM(0.6, userInput, false, brainTier)
+
+  const { text, usage } = await callOpenRouter(routing.model, userInput, systemPrompt, {
+    temperature: 0.6,
+    max_tokens: 500,
+  })
+
+  return { text: text.trim(), usage }
+}
+
+// ─── Main handler ──────────────────────────────────────────────────────────
+
+async function handleConfesor(
+  input: AgentInput,
+  classification: IntentClassification
+): Promise<DiabloResponse> {
+  const supabase = (await import('../core')).default?.supabase
+    ?? (await import('./index')).getSupabase()
+
+  const salonId = input.tenantId
+  const userId = input.userId || 'unknown'
+  const userInput = (input.text || '').trim()
+
+  // Capa 0: Stats (1 ronda paralela)
+  const stats = await fetchUserStats(supabase, salonId)
+  const level = detectUserLevel(stats)
+
+  // Intent 'ayuda' → respuesta rápida sin LLM
+  if (classification.intent === 'ayuda') {
+    return { replyText: buildQuickHelp(stats) }
+  }
+
+  // Todo lo demás → LLM con contexto enriquecido
+  const aiConfig = await getSalonAIConfig(salonId)
+  const brainTier: BrainTier = aiConfig.brain_tier || 'pacto'
+  const systemPrompt = buildSystemPrompt(stats, level)
+
+  const startMs = Date.now()
+  const { text, usage } = await callLlm(systemPrompt, userInput, brainTier)
+  const responseMs = Date.now() - startMs
+
+  // Log usage
+  if (usage) {
+    logDiabloUsage(userId, salonId, {
+      diablo: 'confesor',
+      ...usage,
+      response_ms: responseMs,
+    })
+  }
+
+  return { replyText: text }
+}
+
+// ─── Export como DiabloHandler ─────────────────────────────────────────────
+
 export const ConfesorDiablo: DiabloHandler = {
   meta: DIABLO_METAS.confesor,
-  handle,
+  handle: handleConfesor,
 }
