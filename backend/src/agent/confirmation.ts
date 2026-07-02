@@ -17,6 +17,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { suggestCategory } from './tools'
+import { INVOICE_STATUS, mapStatusToDB, isValidDBStatus } from './diablos/invoice-status'
 
 function getSupabase() {
   return createClient(
@@ -449,7 +450,7 @@ async function executeCrearFactura(
       client_id:  p.cliente_id || null,
       salon_id:   salonId,
       total:      total,
-      status:     'pending',
+      status:     INVOICE_STATUS.DRAFT,
       issue_date: p.fecha      || today(),
       due_date:   p.vencimiento || null,
     })
@@ -496,8 +497,20 @@ async function executeCambiarEstado(
 ): Promise<{ ok: boolean; message: string }> {
   const supabase = getSupabase()
 
-  const updates: Record<string, any> = { status: p.nuevo_estado }
-  if (p.nuevo_estado === 'pagada') {
+  // Mapear estado español → DB via INVOICE_STATUS (fuente única de verdad)
+  const mapped = mapStatusToDB(p.nuevo_estado)
+  if (mapped.dbStatus === null) {
+    return { ok: false, message: mapped.derivedError || `Estado "${p.nuevo_estado}" no válido para la BD.` }
+  }
+  const dbStatus = mapped.dbStatus
+
+  // Validación final: solo valores del CHECK constraint
+  if (!isValidDBStatus(dbStatus)) {
+    return { ok: false, message: `❌ Estado "${dbStatus}" rechazado por el constraint de la BD.` }
+  }
+
+  const updates: Record<string, any> = { status: dbStatus }
+  if (dbStatus === INVOICE_STATUS.PAID) {
     updates.paid_at = new Date().toISOString()
   }
 
@@ -509,16 +522,21 @@ async function executeCambiarEstado(
 
   if (error) return { ok: false, message: `Error al actualizar: ${error.message}` }
 
-  const estadoEmoji = {
-    pagada:   '✅',
-    pendiente:'⏳',
-    vencida:  '🔴',
-    anulada:  '❌',
-  }[p.nuevo_estado] || '•'
+  const estadoEmoji: Record<string, string> = {
+    [INVOICE_STATUS.DRAFT]: '📝',
+    [INVOICE_STATUS.SENT]:  '📤',
+    [INVOICE_STATUS.PAID]:  '✅',
+  }
+  const emoji = estadoEmoji[dbStatus] || '•'
+  const displayName: Record<string, string> = {
+    [INVOICE_STATUS.DRAFT]: 'borrador',
+    [INVOICE_STATUS.SENT]:  'enviada',
+    [INVOICE_STATUS.PAID]:  'pagada',
+  }
 
   return {
     ok: true,
-    message: `${estadoEmoji} Factura ${p.factura_numero || ''} marcada como *${p.nuevo_estado}*${p.cliente_nombre ? `\n• Cliente: ${p.cliente_nombre}` : ''}`,
+    message: `${emoji} Factura ${p.factura_numero || ''} marcada como *${displayName[dbStatus] || dbStatus}*${p.cliente_nombre ? `\n• Cliente: ${p.cliente_nombre}` : ''}`,
   }
 }
 
