@@ -309,10 +309,11 @@ async function handleIncomeExpense(
   }
 
   // Capa 2: Validación determinista
-  const validated = validateTransaction(extracted, isIncome)
-  if ('needsInfo' in validated || 'replyText' in validated) {
-    return validated as DiabloResponse
+  const validatedResult = validateTransaction(extracted, isIncome)
+  if ('needsInfo' in validatedResult || 'replyText' in validatedResult) {
+    return validatedResult as DiabloResponse
   }
+  const validated = validatedResult as ValidatedTransaction
 
   // Capa 3: Confirmation Gate
   const actionType = validated.type === TRANSACTION_TYPE.INCOME ? 'registrar_ingreso' : 'registrar_gasto'

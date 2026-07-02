@@ -208,10 +208,11 @@ function extractWithRegex(userInput: string, intent: string): ExtractedData {
     
     const mapped = mapStatusToDB(rawEstado)
     if (mapped.isDerived || mapped.dbStatus === null) {
-      // Estado derivado — devolver error amigable con redirección
-      return { replyText: mapped.derivedError || `Estado "${rawEstado}" no válido.` }
+      // Estado derivado — marcamos error para que el handler lo gestione
+      estadoDeseado = '__derived_error__'
+    } else {
+      estadoDeseado = mapped.dbStatus
     }
-    estadoDeseado = mapped.dbStatus
   }
 
   // Referencia factura
@@ -655,6 +656,15 @@ async function handleCambiarEstado(
   userId?: string
 ): Promise<DiabloResponse> {
   const supabase = getSupabase()
+
+  // Check for derived status error
+  if (extracted.estado_deseado === '__derived_error__') {
+    let rawEstado = 'pagada'
+    if (/vencid/i.test(userInput)) rawEstado = 'vencida'
+    else if (/anuld|cancel/i.test(userInput)) rawEstado = 'anulada'
+    const mapped = mapStatusToDB(rawEstado)
+    return { replyText: mapped.derivedError || `Estado "${rawEstado}" no válido.` }
+  }
 
   // mapStatusToDB ya se aplicó en extractWithRegex, pero double-check
   let nuevoEstado = extracted.estado_deseado || INVOICE_STATUS.PAID

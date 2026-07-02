@@ -92,6 +92,11 @@ export function createApp() {
     c.json({ status: 'ok', timestamp: new Date().toISOString() })
   )
 
+  // Version check — no auth required
+  app.get('/version', (c) =>
+    c.json({ version: 'v2-diablos-fix', deployed: '2026-07-03T00:00:00Z', commit: 'ts-fix-deploy' })
+  )
+
   // ─── Public Routes ─────────────────────────────────────────────────────────
   app.use('/auth/*', authLimiter)
   app.route('/auth', authRoutes)

@@ -344,10 +344,9 @@ async function handle(input: AgentInput, classification: IntentClassification): 
         diablo: 'abogado',
         ...usage,
         response_ms: Date.now() - startMs,
-        chunks_retrieved: chunks.length,
-        citations_verified: validation.verified.length,
-        citations_removed: validation.unverified.length,
-      })
+      }
+      // Extra context (not in DiabloUsage type): chunks_retrieved, citations_verified/removed
+      )
     }
 
     return {

@@ -219,8 +219,7 @@ async function handleConfesor(
   input: AgentInput,
   classification: IntentClassification
 ): Promise<DiabloResponse> {
-  const supabase = (await import('../core')).default?.supabase
-    ?? (await import('./index')).getSupabase()
+  const supabase = (await import('./index')).getSupabase()
 
   const salonId = input.tenantId
   const userId = input.userId || 'unknown'
@@ -237,7 +236,7 @@ async function handleConfesor(
 
   // Todo lo demás → LLM con contexto enriquecido
   const aiConfig = await getSalonAIConfig(salonId)
-  const brainTier: BrainTier = aiConfig.brain_tier || 'pacto'
+  const brainTier: BrainTier = aiConfig.brain_tier || 'inteligente'
   const systemPrompt = buildSystemPrompt(stats, level)
 
   const startMs = Date.now()

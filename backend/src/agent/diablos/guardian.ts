@@ -726,3 +726,108 @@ guardianRoutes.post('/scan', async (c) => {
 })
 
 export { guardianRoutes }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DiabloHandler + getDashboardContext (required by core.ts and index.ts)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import { DIABLO_METAS } from './metas'
+import type { DiabloHandler, DiabloResponse, IntentClassification } from './metas'
+import type { AgentInput } from '../core'
+
+export interface DashboardContext {
+  text: string
+  structured: {
+    pendingCount: number
+    overdueCount: number
+    monthIncome: number
+    monthExpenses: number
+    lastMonthIncome: number
+  }
+}
+
+export async function getDashboardContext(salonId: string): Promise<DashboardContext> {
+  const SB_URL = process.env.SUPABASE_URL as string
+  const SB_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY) as string
+  const headers = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' }
+
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString()
+
+  const defaults: DashboardContext = {
+    text: 'Sin datos disponibles.',
+    structured: { pendingCount: 0, overdueCount: 0, monthIncome: 0, monthExpenses: 0, lastMonthIncome: 0 },
+  }
+
+  try {
+    const [invR, txR, txLastR] = await Promise.all([
+      fetch(`${SB_URL}/rest/v1/invoices?salon_id=eq.${salonId}&status=eq.sent&select=total,due_date`, { headers }),
+      fetch(`${SB_URL}/rest/v1/transactions?salon_id=eq.${salonId}&created_at=gte.${monthStart}&select=type,amount`, { headers }),
+      fetch(`${SB_URL}/rest/v1/transactions?salon_id=eq.${salonId}&type=eq.income&created_at=gte.${lastMonthStart}&created_at=lte.${lastMonthEnd}&select=amount`, { headers }),
+    ])
+
+    const invoices: any[] = invR.ok ? await invR.json() : []
+    const txns: any[] = txR.ok ? await txR.json() : []
+    const txLast: any[] = txLastR.ok ? await txLastR.json() : []
+
+    const overdueCount = invoices.filter((i: any) => i.due_date && new Date(i.due_date) < now).length
+    const pendingCount = invoices.length
+    let monthIncome = 0, monthExpenses = 0
+    for (const t of txns) {
+      if (t.type === 'income') monthIncome += parseFloat(t.amount) || 0
+      else monthExpenses += parseFloat(t.amount) || 0
+    }
+    const lastMonthIncome = txLast.reduce((s: number, t: any) => s + (parseFloat(t.amount) || 0), 0)
+
+    const structured = { pendingCount, overdueCount, monthIncome, monthExpenses, lastMonthIncome }
+    const neto = monthIncome - monthExpenses
+    const text = `Facturas pendientes: ${pendingCount} (${overdueCount} vencidas). Este mes: ingresos ${monthIncome.toFixed(0)}€, gastos ${monthExpenses.toFixed(0)}€, neto ${neto.toFixed(0)}€.`
+
+    return { text, structured }
+  } catch {
+    return defaults
+  }
+}
+
+async function handleGuardian(input: AgentInput, classification: IntentClassification): Promise<DiabloResponse> {
+  const salonId = input.tenantId
+  const ctx = await getDashboardContext(salonId)
+  const s = ctx.structured
+  const score = computeHealthScore({
+    overdueCount: s.overdueCount,
+    overdueAmount: 0,
+    highSeverityCount: s.overdueCount,
+    uninvoicedIncomeTotal: 0,
+    income30d: s.monthIncome,
+    expenses30d: s.monthExpenses,
+    balance30d: s.monthIncome - s.monthExpenses,
+  })
+  const emoji = healthEmoji(score)
+
+  const lines: string[] = [
+    `${emoji} Salud financiera: ${score}/100`,
+    ``,
+    `📊 Este mes:`,
+    `  Ingresos: ${formatEur(s.monthIncome)}`,
+    `  Gastos: ${formatEur(s.monthExpenses)}`,
+    `  Neto: ${formatEur(s.monthIncome - s.monthExpenses)}`,
+    ``,
+    `📋 Facturas pendientes: ${s.pendingCount}`,
+    `⚠️ Vencidas: ${s.overdueCount}`,
+  ]
+
+  if (s.lastMonthIncome > 0) {
+    const diff = s.monthIncome - s.lastMonthIncome
+    const pct = ((diff / s.lastMonthIncome) * 100).toFixed(0)
+    lines.push(`📈 vs mes anterior: ${diff >= 0 ? '+' : ''}${pct}%`)
+  }
+
+  return { replyText: lines.join('\n') }
+}
+
+export const GuardianDiablo: DiabloHandler = {
+  meta: DIABLO_METAS.guardian,
+  handle: handleGuardian,
+}

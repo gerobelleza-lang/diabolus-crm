@@ -227,6 +227,8 @@ async function handle(input: AgentInput, classification: IntentClassification): 
       diablo: 'cobrador',
       prompt_tokens: 200,
       completion_tokens: 50,
+      total_tokens: 250,
+      model_used: 'nousresearch/hermes-3-llama-3.1-70b',
       response_ms: Date.now() - startMs,
     })
   }
