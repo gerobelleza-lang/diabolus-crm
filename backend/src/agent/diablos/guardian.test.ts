@@ -126,26 +126,43 @@ function collectAllowedNumbers(
   return nums
 }
 
+function isNumberAllowed(n: number, allowed: Set<number>): boolean {
+  if (isNaN(n)) return false
+  for (const a of allowed) {
+    if (Math.abs(n - a) < 0.01) return true
+  }
+  return false
+}
+
+function sentenceHasInvented(sentence: string, allowed: Set<number>): boolean {
+  const matches = sentence.match(/\d+(?:[.,]\d+)*/g)
+  if (!matches) return false
+  for (const match of matches) {
+    const numDirect = parseFloat(match.replace(',', '.'))
+    const numSpanish = parseFloat(match.replace(/\./g, '').replace(',', '.'))
+    if (isNaN(numDirect) && isNaN(numSpanish)) continue
+    if (!isNumberAllowed(numDirect, allowed) && !isNumberAllowed(numSpanish, allowed)) {
+      return true
+    }
+  }
+  return false
+}
+
 function validateLlmNumbers(
   text: string,
   allowed: Set<number>
 ): { cleaned: string; inventedCount: number } {
+  const sentences = text.split(/(?<=[.!?\n])\s+/).filter(s => s.trim())
   let inventedCount = 0
-  const cleaned = text.replace(/\d+(?:[.,]\d+)*/g, (match) => {
-    const numDirect = parseFloat(match.replace(',', '.'))
-    const numSpanish = parseFloat(match.replace(/\./g, '').replace(',', '.'))
-    if (isNaN(numDirect) && isNaN(numSpanish)) return match
-    const isAllowed = (n: number): boolean => {
-      if (isNaN(n)) return false
-      for (const a of allowed) {
-        if (Math.abs(n - a) < 0.01) return true
-      }
-      return false
+  const kept: string[] = []
+  for (const sentence of sentences) {
+    if (sentenceHasInvented(sentence, allowed)) {
+      inventedCount++
+    } else {
+      kept.push(sentence)
     }
-    if (isAllowed(numDirect) || isAllowed(numSpanish)) return match
-    inventedCount++
-    return '[X]'
-  })
+  }
+  const cleaned = kept.join(' ').trim()
   return { cleaned, inventedCount }
 }
 
@@ -447,29 +464,30 @@ console.log('\n🔒 validateLlmNumbers — ANTI-INVENCIÓN')
   assertIncludes(cleaned, '45 días', '[UNIT] 45 preservado')
 }
 
-// 7.3 ⚔️ INYECCIÓN LITERAL: número inventado → eliminado
+// 7.3 ⚔️ INYECCIÓN LITERAL: frase con número inventado → frase entera eliminada
 {
   const allowed = new Set([3, 1250, 45])
   const { cleaned, inventedCount } = validateLlmNumbers(
     'Tienes 3 facturas por 1250€. El 78% de tus clientes son morosos.',
     allowed
   )
-  assertEq(inventedCount, 1, '[UNIT] ⚔️ INYECCIÓN: 78 inventado → detectado')
+  assertEq(inventedCount, 1, '[UNIT] ⚔️ INYECCIÓN: 1 frase con inventado detectada')
   assertNotIncludes(cleaned, '78', '[UNIT] ⚔️ INYECCIÓN: 78 eliminado del texto')
-  assertIncludes(cleaned, '[X]', '[UNIT] ⚔️ INYECCIÓN: reemplazado con [X]')
-  assertIncludes(cleaned, '3 facturas', '[UNIT] ⚔️ INYECCIÓN: 3 preservado')
+  assertNotIncludes(cleaned, 'morosos', '[UNIT] ⚔️ INYECCIÓN: frase entera eliminada')
+  assertIncludes(cleaned, '3 facturas', '[UNIT] ⚔️ INYECCIÓN: frase válida preservada')
   assertIncludes(cleaned, '1250€', '[UNIT] ⚔️ INYECCIÓN: 1250 preservado')
 }
 
-// 7.4 Múltiples inventados
+// 7.4 Frase con múltiples inventados → eliminada, frase válida preservada
 {
   const allowed = new Set([500])
   const { cleaned, inventedCount } = validateLlmNumbers(
     'Factura de 500€. Representa un 15% del total de 3333€ mensuales.',
     allowed
   )
-  assertEq(inventedCount, 2, '[UNIT] 15 y 3333 inventados → 2 detectados')
-  assertIncludes(cleaned, '500€', '[UNIT] 500 preservado')
+  assertEq(inventedCount, 1, '[UNIT] 1 frase con inventados eliminada')
+  assertIncludes(cleaned, '500€', '[UNIT] frase válida con 500 preservada')
+  assertNotIncludes(cleaned, '15%', '[UNIT] frase inventada eliminada')
 }
 
 // 7.5 Formato español (1.250,50) — número real en allowed
@@ -482,15 +500,16 @@ console.log('\n🔒 validateLlmNumbers — ANTI-INVENCIÓN')
   assertEq(inventedCount, 0, '[UNIT] 1.250,50 = 1250.50 → válido')
 }
 
-// 7.6 Número inventado en formato español
+// 7.6 Número inventado en formato español → frase eliminada
 {
   const allowed = new Set([500])
   const { cleaned, inventedCount } = validateLlmNumbers(
-    'Total: 2.750,00€ de deuda.',
+    'Importe válido: 500€. Total: 2.750,00€ de deuda.',
     allowed
   )
-  assertEq(inventedCount, 1, '[UNIT] 2.750,00 inventado → detectado')
-  assertIncludes(cleaned, '[X]', '[UNIT] reemplazado')
+  assertEq(inventedCount, 1, '[UNIT] 2.750,00 inventado → frase eliminada')
+  assertIncludes(cleaned, '500€', '[UNIT] frase válida preservada')
+  assertNotIncludes(cleaned, '2.750', '[UNIT] frase con inventado eliminada')
 }
 
 // 7.7 Tolerancia 0.01 para redondeo
@@ -513,33 +532,33 @@ console.log('\n🔒 validateLlmNumbers — ANTI-INVENCIÓN')
   assertEq(inventedCount, 0, '[UNIT] 0 en allowed → válido')
 }
 
-// 7.9 Set vacío → todo inventado
+// 7.9 Set vacío → frase eliminada
 {
   const { cleaned, inventedCount } = validateLlmNumbers(
     'Hay 5 facturas por 3000€.',
     new Set()
   )
-  assertEq(inventedCount, 2, '[UNIT] set vacío → todos inventados')
+  assertEq(inventedCount, 1, '[UNIT] set vacío → frase eliminada')
+  assertEq(cleaned, '', '[UNIT] sin frases válidas → texto vacío')
 }
 
-// 7.10 ⚔️ INYECCIÓN COMPLEJA: LLM intenta proyectar tendencia
+// 7.10 ⚔️ INYECCIÓN COMPLEJA: frase inventada eliminada, frase válida preservada
 {
   const allowed = new Set([3, 1500, 45, 75])
   const { cleaned, inventedCount } = validateLlmNumbers(
-    'Con 3 facturas vencidas por 1500€ y tendencia del último trimestre, ' +
-    'proyectamos una morosidad del 23% y pérdidas de 4500€ en 90 días.',
+    'Tienes 3 facturas vencidas por 1500€. Proyectamos morosidad del 23% y pérdidas de 4500€.',
     allowed
   )
-  assert(inventedCount >= 2, '[UNIT] ⚔️ INYECCIÓN COMPLEJA: múltiples inventados detectados')
+  assert(inventedCount >= 1, '[UNIT] ⚔️ INYECCIÓN COMPLEJA: frase con inventados eliminada')
   assertNotIncludes(cleaned, '23', '[UNIT] ⚔️ porcentaje inventado eliminado')
   assertNotIncludes(cleaned, '4500', '[UNIT] ⚔️ proyección inventada eliminada')
-  assertIncludes(cleaned, '3 facturas', '[UNIT] ⚔️ dato real preservado')
+  assertIncludes(cleaned, '3 facturas', '[UNIT] ⚔️ frase válida preservada')
   assertIncludes(cleaned, '1500€', '[UNIT] ⚔️ dato real preservado')
 }
 
-// 7.11 ⚔️ INYECCIÓN: intenta inyectar score falso
+// 7.11 ⚔️ INYECCIÓN: frase con score falso → eliminada
 {
-  const allowed = new Set([65, 2, 800])
+  const allowed = new Set([65, 2, 800, 100])
   const { cleaned, inventedCount } = validateLlmNumbers(
     'Salud: 65/100. Con 2 morosos por 800€. Si no actúas, caerá a 30 puntos.',
     allowed
@@ -624,11 +643,10 @@ console.log('\n🔗 Integración lógica end-to-end')
   assert(allowed.has(65), '[UNIT] e2e: 65 (days_overdue) en allowed')
   assert(allowed.has(60), '[UNIT] e2e: 60 (score) en allowed')
 
-  // Step 6: Validar texto LLM simulado
+  // Step 6: Validar texto LLM simulado — frase con inventado eliminada
   const fakeText = 'Moroso por 1200€ desde hace 65 días, otro por 300€. Proyección: perderás 5000€.'
   const { cleaned, inventedCount } = validateLlmNumbers(fakeText, allowed)
-  assert(inventedCount >= 1, '[UNIT] e2e: 5000 inventado detectado')
-  assertIncludes(cleaned, '1200€', '[UNIT] e2e: dato real preservado')
+  assert(inventedCount >= 1, '[UNIT] e2e: frase con 5000 inventado eliminada')
   assertNotIncludes(cleaned, '5000', '[UNIT] e2e: proyección eliminada')
 }
 

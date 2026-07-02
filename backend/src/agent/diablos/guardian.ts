@@ -204,40 +204,55 @@ export function collectAllowedNumbers(
 
 /**
  * 🔒 ANTI-INVENCIÓN: valida que toda cifra en texto LLM
- * existe en datos de entrada. Si no → reemplaza con [X].
+ * existe en datos de entrada. Si contiene cifra inventada →
+ * ELIMINA LA FRASE ENTERA (no enmascara con [X]).
  *
  * Patrón: mismo enfoque que citas falsas del Abogado.
  */
+
+/** Verifica si un número está en el set allowed (tolerancia 0.01) */
+function isNumberAllowed(n: number, allowed: Set<number>): boolean {
+  if (isNaN(n)) return false
+  for (const a of allowed) {
+    if (Math.abs(n - a) < 0.01) return true
+  }
+  return false
+}
+
+/** Comprueba si una frase contiene algún número inventado */
+export function sentenceHasInvented(sentence: string, allowed: Set<number>): boolean {
+  const matches = sentence.match(/\d+(?:[.,]\d+)*/g)
+  if (!matches) return false
+  for (const match of matches) {
+    const numDirect = parseFloat(match.replace(',', '.'))
+    const numSpanish = parseFloat(match.replace(/\./g, '').replace(',', '.'))
+    if (isNaN(numDirect) && isNaN(numSpanish)) continue
+    if (!isNumberAllowed(numDirect, allowed) && !isNumberAllowed(numSpanish, allowed)) {
+      return true // frase contiene al menos 1 inventado
+    }
+  }
+  return false
+}
+
 export function validateLlmNumbers(
   text: string,
   allowed: Set<number>
 ): { cleaned: string; inventedCount: number } {
+  // Separar en frases por . ! ? o \n seguido de espacio real
+  // \s+ evita cortar dentro de números como 1.250,50
+  const sentences = text.split(/(?<=[.!?\n])\s+/).filter(s => s.trim())
   let inventedCount = 0
+  const kept: string[] = []
 
-  const cleaned = text.replace(/\d+(?:[.,]\d+)*/g, (match) => {
-    // Parse directo (formato internacional: 1250.50)
-    const numDirect = parseFloat(match.replace(',', '.'))
-
-    // Parse español (1.250,50 → 1250.50)
-    const numSpanish = parseFloat(match.replace(/\./g, '').replace(',', '.'))
-
-    if (isNaN(numDirect) && isNaN(numSpanish)) return match
-
-    // Verificar contra números permitidos (tolerancia 0.01)
-    const isAllowed = (n: number): boolean => {
-      if (isNaN(n)) return false
-      for (const a of allowed) {
-        if (Math.abs(n - a) < 0.01) return true
-      }
-      return false
+  for (const sentence of sentences) {
+    if (sentenceHasInvented(sentence, allowed)) {
+      inventedCount++
+    } else {
+      kept.push(sentence)
     }
+  }
 
-    if (isAllowed(numDirect) || isAllowed(numSpanish)) return match
-
-    inventedCount++
-    return '[X]'
-  })
-
+  const cleaned = kept.join(' ').trim()
   return { cleaned, inventedCount }
 }
 
@@ -507,12 +522,15 @@ async function verbalizeV2(
     const data = await res.json()
     const raw: string = data.choices?.[0]?.message?.content || context
 
-    // Capa 3: Anti-invención
+    // Capa 3: Anti-invención — elimina frases con cifras inventadas
     const { cleaned, inventedCount } = validateLlmNumbers(raw, allowed)
-    if (inventedCount > 0) {
-      return cleaned + '\n(Cifras no verificadas eliminadas.)'
+    if (inventedCount > 0 && cleaned.length > 0) {
+      return cleaned
     }
-    return cleaned
+    if (inventedCount > 0 && cleaned.length === 0) {
+      return context // todas las frases eran inventadas → fallback determinista
+    }
+    return cleaned || raw
   } catch {
     return context // fallback determinista
   }
