@@ -305,7 +305,7 @@ export async function executePendingAction(
       break
     case 'crear_albaran':
     case 'crear_presupuesto':
-      result = await executeCrearDocumento(action.parameters, action.salon_id)
+      result = await executeCrearDocumento(action.parameters, action.salon_id, action.user_id)
       break
     default:
       result = { ok: false, message: `Tipo de acción desconocida: ${action.action_type}` }

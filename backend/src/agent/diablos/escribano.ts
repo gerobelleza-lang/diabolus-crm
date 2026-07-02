@@ -431,7 +431,8 @@ async function handle(input: AgentInput, classification: IntentClassification): 
  */
 export async function executeCrearDocumento(
   p: Record<string, any>,
-  salonId: string
+  salonId: string,
+  userId?: string
 ): Promise<{ ok: boolean; message: string }> {
   const supabase = getSupabase()
   const docType = p.doc_type as 'albaran' | 'presupuesto'
@@ -456,6 +457,7 @@ export async function executeCrearDocumento(
     p_client_id: p.cliente_id,
     p_notes:     p.notas || null,
     p_lines:     linesJsonb,
+    p_user_id:   userId || null,
   })
 
   if (error) {
