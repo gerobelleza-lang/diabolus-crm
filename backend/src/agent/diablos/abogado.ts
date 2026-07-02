@@ -46,34 +46,76 @@ interface ValidationResult {
 
 // ─── CAPA 0: Retrieval determinista ───
 
+// Spanish stopwords — removed from query to improve recall
+const STOPWORDS = new Set([
+  'a', 'al', 'algo', 'como', 'con', 'cual', 'cuál', 'cuando', 'cuándo',
+  'cuanto', 'cuánto', 'cuántos', 'de', 'del', 'debo', 'desde', 'donde',
+  'dónde', 'el', 'ella', 'ellos', 'en', 'entre', 'era', 'esa', 'ese',
+  'eso', 'esta', 'estas', 'este', 'esto', 'estos', 'fue', 'ha', 'hay',
+  'la', 'las', 'le', 'les', 'lo', 'los', 'me', 'mi', 'muy', 'más',
+  'no', 'nos', 'o', 'otra', 'otro', 'para', 'pero', 'por', 'porque',
+  'que', 'qué', 'quien', 'quién', 'se', 'si', 'sí', 'sin', 'sobre',
+  'son', 'su', 'sus', 'también', 'te', 'tengo', 'ti', 'tiene', 'todo',
+  'tu', 'tus', 'un', 'una', 'unas', 'uno', 'unos', 'ya', 'yo',
+])
+
+/**
+ * Extract content words from a natural language query.
+ * Removes stopwords, punctuation, and non-alpha chars.
+ * Returns sanitized words safe for to_tsquery (only [a-záéíóúñü]+).
+ */
+export function extractQueryWords(query: string): string[] {
+  return query
+    .toLowerCase()
+    .replace(/[¿?¡!.,;:()"""''«»\-_/\\]/g, ' ')
+    .split(/\s+/)
+    .map(w => w.replace(/[^a-záéíóúñü]/g, ''))
+    .filter(w => w.length > 2 && !STOPWORDS.has(w))
+}
+
+/**
+ * Build OR-based tsquery string from extracted words.
+ * Each word is sanitized to prevent tsquery injection.
+ */
+export function buildTsQuery(words: string[]): string {
+  return words.join(' | ')
+}
+
 async function retrieveLegalChunks(query: string): Promise<LegalChunk[]> {
   const supabase = getSupabaseAdmin()
 
-  // Primary: full-text search with Spanish config
-  const { data: ftsResults, error: ftsError } = await supabase
-    .from('legal_knowledge')
-    .select('id, doc_name, article, title, content, keywords, category')
-    .textSearch('search_vector', query, { type: 'plain', config: 'spanish' })
-    .order('id')  // ts_rank not available via PostgREST; we get top matches
-    .limit(5)
+  // Extract content words, sanitize, build OR query
+  const words = extractQueryWords(query)
 
-  if (!ftsError && ftsResults && ftsResults.length > 0) {
-    return ftsResults as LegalChunk[]
+  if (words.length > 0) {
+    const tsq = buildTsQuery(words)
+
+    // Use RPC or raw filter for to_tsquery with OR logic
+    // PostgREST textSearch with type 'phrase' won't do OR, so we use .or filter
+    const { data: ftsResults, error: ftsError } = await supabase
+      .from('legal_knowledge')
+      .select('id, doc_name, article, title, content, keywords, category')
+      .textSearch('search_vector', tsq, { config: 'spanish' })
+      .limit(5)
+
+    if (!ftsError && ftsResults && ftsResults.length > 0) {
+      return ftsResults as LegalChunk[]
+    }
   }
 
-  // Fallback: keyword overlap search
-  const words = query
+  // Fallback: keyword overlap search using extracted words
+  const fallbackWords = words.length > 0 ? words : query
     .toLowerCase()
     .replace(/[¿?¡!.,;:()]/g, '')
     .split(/\s+/)
     .filter(w => w.length > 3)
 
-  if (words.length === 0) return []
+  if (fallbackWords.length === 0) return []
 
   const { data: kwResults } = await supabase
     .from('legal_knowledge')
     .select('id, doc_name, article, title, content, keywords, category')
-    .overlaps('keywords', words)
+    .overlaps('keywords', fallbackWords)
     .limit(5)
 
   return (kwResults as LegalChunk[]) || []
@@ -129,7 +171,8 @@ Si la pregunta es muy genérica y puedes dar una orientación general SIN citar 
 function extractCitations(text: string): CitationMatch[] {
   const citations: CitationMatch[] = []
   // Match patterns like "Art. 164 Ley 37/1992", "artículo 28 RD-ley 13/2022", etc.
-  const pattern = /(?:Art(?:ículo)?\.?\s*(\d+(?:\.\d+)?(?:\s*(?:bis|ter|quáter|quinquies))?))\s+(?:de\s+)?(?:la\s+)?((?:Ley|Real Decreto|RD|RD-ley|RDL|LO|LIRPF|LIVA|LIS|LGSS|ET|CE|LOPD|RGPD|TRLGSS|LISOS)\s*(?:Orgánica\s*)?(?:\d+\/\d{4})?(?:\s*,?\s*de\s+\d+\s+de\s+\w+)?)/gi
+  // IMPORTANT: RD-ley BEFORE RD to prevent partial match (RD captures before RD-ley)
+  const pattern = /(?:Art(?:ículo)?\.?\s*(\d+(?:\.\d+)?(?:\s*(?:bis|ter|quáter|quinquies))?))\s+(?:de\s+)?(?:la\s+)?((?:Ley|Real Decreto|RD-ley|RDL|RD|LO|LIRPF|LIVA|LIS|LGSS|ET|CE|LOPD|RGPD|TRLGSS|LISOS)\s*(?:Orgánica\s*)?(?:\d+\/\d{4})?(?:\s*,?\s*de\s+\d+\s+de\s+\w+)?)/gi
   let match
   while ((match = pattern.exec(text)) !== null) {
     citations.push({
