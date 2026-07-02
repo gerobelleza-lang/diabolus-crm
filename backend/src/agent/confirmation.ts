@@ -18,6 +18,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { suggestCategory } from './tools'
 import { INVOICE_STATUS, mapStatusToDB, isValidDBStatus } from './diablos/invoice-status'
+import { executeCrearDocumento } from './diablos/escribano'
 
 function getSupabase() {
   return createClient(
@@ -69,6 +70,8 @@ const SUMMARIES: Record<string, string> = {
   cambiar_estado_factura: '🔄 Cambiar estado de factura',
   enviar_recordatorio:    '📩 Enviar recordatorio de cobro',
   enviar_factura:         '📧 Crear factura y enviar al cliente',
+  crear_albaran:          '📜 Crear albarán (borrador)',
+  crear_presupuesto:      '📋 Crear presupuesto (borrador)',
 }
 
 function buildCardFields(
@@ -157,6 +160,25 @@ function buildCardFields(
         { label: 'Líneas',   value: lineasText || '—' },
         { label: 'Total',    value: formatImporte(total) },
         { label: 'Acción',   value: '🧾 Crear factura + 📧 Enviar email' },
+      ]
+    }
+
+    case 'crear_albaran':
+    case 'crear_presupuesto': {
+      const docLineas = p.lineas || []
+      const docTotal = p.total || docLineas.reduce((acc: number, l: any) =>
+        acc + (l.subtotal || (l.cantidad || 1) * l.precio_unitario), 0)
+      const docLineasText = docLineas.map((l: any) =>
+        `${l.concepto} × ${l.cantidad || 1} = ${formatImporte((l.cantidad || 1) * l.precio_unitario)}`
+      ).join(' · ')
+      const docLabel = actionType === 'crear_presupuesto' ? 'Presupuesto' : 'Albarán'
+      return [
+        { label: 'Tipo',     value: docLabel },
+        { label: 'Cliente',  value: p.cliente_nombre || '—' },
+        { label: 'Líneas',   value: docLineasText || '—' },
+        { label: 'Total',    value: formatImporte(docTotal) },
+        { label: 'Fecha',    value: formatDate(p.fecha) },
+        ...(p.notas ? [{ label: 'Notas', value: p.notas }] : []),
       ]
     }
 
@@ -280,6 +302,10 @@ export async function executePendingAction(
       break
     case 'enviar_factura':
       result = await executeEnviarFactura(action.parameters, action.salon_id)
+      break
+    case 'crear_albaran':
+    case 'crear_presupuesto':
+      result = await executeCrearDocumento(action.parameters, action.salon_id)
       break
     default:
       result = { ok: false, message: `Tipo de acción desconocida: ${action.action_type}` }

@@ -418,17 +418,16 @@ async function handle(input: AgentInput, classification: IntentClassification): 
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Ejecuta la creación del documento en BD.
+ * Ejecuta la creación del documento en BD via RPC atómica.
  *
- * Flujo: next_doc_number() → INSERT documents → INSERT document_items
+ * `create_document_atomic()` ejecuta TODO en una sola transacción PL/pgSQL:
+ *  1. Verificar propiedad del salón (auth.uid())
+ *  2. Generar número secuencial (next_doc_number + advisory lock)
+ *  3. INSERT documents (cabecera)
+ *  4. INSERT document_items (líneas)
  *
- * ⚠️ NOTA SOBRE TRANSACCIONALIDAD:
- * PostgREST (supabase-js) ejecuta cada llamada en su propia transacción.
- * next_doc_number() consume el número atómicamente (pg_advisory_xact_lock).
- * Si el INSERT posterior falla, el número queda consumido (hueco).
- * Mitigación: rollback manual (DELETE cabecera si items fallan).
- * Mejora futura: RPC atómica `create_document_atomic()` que haga todo
- * en una sola transacción PL/pgSQL (requiere migración adicional).
+ * Si CUALQUIER paso falla → rollback automático. Cero documentos huérfanos,
+ * cero huecos de numeración.
  */
 export async function executeCrearDocumento(
   p: Record<string, any>,
@@ -438,71 +437,59 @@ export async function executeCrearDocumento(
   const docType = p.doc_type as 'albaran' | 'presupuesto'
   const lineas = p.lineas || []
 
-  // Total calculado en código (doble-check)
+  // Total calculado en código (doble-check antes de enviar a BD)
   const total = Math.round(
     lineas.reduce((s: number, l: any) => s + (l.subtotal || l.cantidad * l.precio_unitario), 0) * 100
   ) / 100
 
-  // Step 1: Generar número (atómico en BD)
-  const { data: numData, error: numErr } = await supabase
-    .rpc('next_doc_number', {
-      p_salon_id: salonId,
-      p_doc_type: docType,
-    })
+  // Preparar líneas como JSONB para la RPC
+  const linesJsonb = lineas.map((l: any) => ({
+    concepto:        l.concepto,
+    cantidad:        l.cantidad,
+    precio_unitario: l.precio_unitario,
+  }))
 
-  if (numErr || !numData) {
-    return { ok: false, message: `Error al generar número: ${numErr?.message || 'sin respuesta'}` }
-  }
+  // ── RPC atómica: una sola transacción ──────────────────────────────────────
+  const { data, error } = await supabase.rpc('create_document_atomic', {
+    p_salon_id:  salonId,
+    p_type:      docType,
+    p_client_id: p.cliente_id,
+    p_notes:     p.notas || null,
+    p_lines:     linesJsonb,
+  })
 
-  const docNumber = numData as string
-
-  // Step 2: Insertar cabecera
-  const { data: doc, error: docErr } = await supabase
-    .from('documents')
-    .insert({
-      salon_id:   salonId,
-      client_id:  p.cliente_id,
-      type:       docType,
-      doc_number: docNumber,
-      status:     DOCUMENT_STATUS.DRAFT,
-      total:      total,
-      notes:      p.notas || null,
-      date:       p.fecha || new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }),
-    })
-    .select('id, doc_number')
-    .single()
-
-  if (docErr || !doc) {
-    return { ok: false, message: `Error al crear documento: ${docErr?.message || 'sin respuesta'}` }
-  }
-
-  // Step 3: Insertar líneas
-  if (lineas.length > 0) {
-    const items = lineas.map((l: any) => ({
-      document_id:     doc.id,
-      concepto:        l.concepto,
-      cantidad:        l.cantidad,
-      precio_unitario: l.precio_unitario,
-      subtotal:        l.subtotal || Math.round(l.cantidad * l.precio_unitario * 100) / 100,
-    }))
-
-    const { error: itemsErr } = await supabase
-      .from('document_items')
-      .insert(items)
-
-    if (itemsErr) {
-      // Rollback manual: eliminar cabecera (service role ignora RLS DELETE policy)
-      await supabase.from('documents').delete().eq('id', doc.id)
-      return { ok: false, message: `Error al crear líneas: ${itemsErr.message}` }
+  if (error) {
+    // Errores específicos de la RPC
+    if (error.message?.includes('UNAUTHORIZED')) {
+      return { ok: false, message: '❌ No tienes permiso para crear documentos en este salón.' }
     }
+    if (error.message?.includes('NO_LINES')) {
+      return { ok: false, message: '❌ Se necesita al menos una línea en el documento.' }
+    }
+    return { ok: false, message: `Error al crear documento: ${error.message}` }
   }
 
+  if (!data) {
+    return { ok: false, message: 'Error: la BD no devolvió datos del documento creado.' }
+  }
+
+  const result = data as { id: string; doc_number: string; total: number; lines_count: number }
   const typeLabel = docType === 'presupuesto' ? 'Presupuesto' : 'Albarán'
   const typeEmoji = docType === 'presupuesto' ? '📋' : '📜'
 
+  // Verificar que el total de BD coincide con el calculado en código
+  const bdTotal = Number(result.total)
+  if (Math.abs(bdTotal - total) > 0.01) {
+    // Discrepancia: reportar pero no bloquear (el doc ya se creó)
+    return {
+      ok: true,
+      message: `${typeEmoji} ${typeLabel} creado\n• Número: ${result.doc_number}\n• Cliente: ${p.cliente_nombre || '—'}\n• Líneas: ${result.lines_count}\n• Total: ${formatEur(bdTotal)}\n• Estado: borrador\n⚠️ Discrepancia de total: código=${formatEur(total)}, BD=${formatEur(bdTotal)}`,
+    }
+  }
+
   return {
     ok: true,
-    message: `${typeEmoji} ${typeLabel} creado\n• Número: ${docNumber}\n• Cliente: ${p.cliente_nombre || '—'}\n• Líneas: ${lineas.length}\n• Total: ${formatEur(total)}\n• Estado: borrador`,
+    message: `${typeEmoji} ${typeLabel} creado\n• Número: ${result.doc_number}\n• Cliente: ${p.cliente_nombre || '—'}\n• Líneas: ${result.lines_count}\n• Total: ${formatEur(total)}\n• Estado: borrador`,
   }
 }
 

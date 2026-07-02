@@ -41,6 +41,14 @@ const ALBARAN_KEYWORDS = [
   'genera albarán', 'generar albarán', 'nuevo albarán',
 ];
 
+// ── PRESUPUESTO ────────────────────────────────────────────────────────────────
+const PRESUPUESTO_KEYWORDS = [
+  'presupuesto', 'presupuestar',
+  'crea un presupuesto', 'crear presupuesto', 'hacer presupuesto',
+  'genera presupuesto', 'generar presupuesto', 'nuevo presupuesto',
+  'hazme un presupuesto', 'prepara presupuesto',
+];
+
 // ── FACTURA SEND ───────────────────────────────────────────────────────────────
 const SEND_INVOICE_KEYWORDS = [
   'manda la factura', 'manda factura', 'envía la factura', 'envia la factura',
@@ -59,6 +67,11 @@ export function parseUserInput(input: string): ParsedInput {
   // ── ALBARÁN — va ANTES que income para evitar falsos positivos ─────────────
   if (includesAny(lowerInput, ALBARAN_KEYWORDS)) {
     return parseAlbaran(input, amounts);
+  }
+
+  // ── PRESUPUESTO — va ANTES que income para evitar falsos positivos ────────
+  if (includesAny(lowerInput, PRESUPUESTO_KEYWORDS)) {
+    return parsePresupuesto(input, amounts);
   }
 
   // ── ENVÍO FACTURA ──────────────────────────────────────────────────────────
@@ -145,6 +158,36 @@ function parseAlbaran(input: string, amounts: number[]): ParsedInput {
 
   return {
     intent: 'crear_albaran',
+    data: {
+      clientName,
+      items,
+      total: amount,
+      rawInput: input,
+    },
+    confidence: clientName ? 0.9 : 0.7,
+  };
+}
+
+// ── parsePresupuesto ───────────────────────────────────────────────────────────
+function parsePresupuesto(input: string, amounts: number[]): ParsedInput {
+  const amount = amounts.find(a => a > 0) || 0;
+
+  let clientName: string | null = null;
+  const paraMatch = input.match(/(?:para|a)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)?)/i);
+  if (paraMatch) clientName = paraMatch[1];
+
+  let description: string | null = null;
+  const porMatch = input.match(/(?:por|de)\s+([a-záéíóúñA-ZÁÉÍÓÚÑ][a-záéíóúñA-ZÁÉÍÓÚÑ\s]{2,50}?)(?:\s*\d|$)/i);
+  if (porMatch) description = porMatch[1].trim();
+
+  const items = description && amount
+    ? [{ description: description.charAt(0).toUpperCase() + description.slice(1), quantity: 1, unit_price: amount }]
+    : amount
+      ? [{ description: 'Servicio presupuestado', quantity: 1, unit_price: amount }]
+      : [];
+
+  return {
+    intent: 'crear_presupuesto',
     data: {
       clientName,
       items,

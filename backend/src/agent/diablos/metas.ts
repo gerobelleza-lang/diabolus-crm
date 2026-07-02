@@ -88,7 +88,7 @@ export const DIABLO_METAS: Record<DiabloName, DiabloMeta> = {
   },
   escribano: {
     name: 'escribano', emoji: '📜', displayName: 'El Escribano',
-    description: 'Contratos y documentos', temperature: 0.2,
+    description: 'Albaranes y presupuestos', temperature: 0.2,
   },
   guardian: {
     name: 'guardian', emoji: '🛡️', displayName: 'El Guardián',
