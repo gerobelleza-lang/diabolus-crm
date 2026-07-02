@@ -493,6 +493,16 @@ function buildPreview(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// HEURÍSTICA: ¿parece multi-línea?
+// Si hay 2+ importes en € en el input, regex no puede extraer correctamente
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function looksMultiLine(input: string): boolean {
+  const matches = input.match(/\d+(?:[.,]\d{1,2})?\s*€/g)
+  return (matches?.length ?? 0) >= 2
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // HANDLER PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -508,10 +518,22 @@ async function handle(input: AgentInput, classification: IntentClassification): 
 
   // ── CAPA 1: Extracción ────────────────────────────────────────────────────
   let extracted = await extractWithLLM(userInput)
+  let usedFallback = false
 
   // Fallback a regex si LLM falló
   if (!extracted) {
+    // SEGURIDAD: si el input parece multi-línea (varios importes en €),
+    // el regex NO puede extraer correctamente → rechazar, no crear parcial
+    if (looksMultiLine(userInput)) {
+      return {
+        replyText: '⚠️ No pude procesar la factura completa. Parece que tiene varias líneas y necesito que me las confirmes una a una.\n\n' +
+          'Por favor, repítelo así:\n' +
+          '• "Factura a [cliente] por [concepto] [importe]€"\n\n' +
+          'O simplifica: "Factura a García, consultoría 500€, formación 300€" → y lo proceso con el extractor inteligente.',
+      }
+    }
     extracted = extractWithRegex(userInput, classification.intent)
+    usedFallback = true
   }
 
   // Forzar acción según intent del router si es cambiar_estado
